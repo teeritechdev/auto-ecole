@@ -53,7 +53,8 @@ export const routes: Routes = [
   {
     path: 'rapports',
     component: RapportsComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['ADMIN', 'SECRETAIRE', 'CAISSIERE'] }
   },
   {
     path: 'utilisateurs',

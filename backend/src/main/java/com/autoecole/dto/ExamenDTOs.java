@@ -32,6 +32,7 @@ public class ExamenDTOs {
         private Long moniteurId;
         private String moniteurNomComplet;
         private LocalDateTime dateEnregistrement;
+        private boolean valideParAdmin;
     }
 
     @Data
@@ -57,6 +58,12 @@ public class ExamenDTOs {
         private String observations;
 
         private Long moniteurId;
+    }
+
+    @Data
+    @NoArgsConstructor
+    public static class ValidationPassagesRequest {
+        private java.util.List<Long> passageIds;
     }
 
     @Data

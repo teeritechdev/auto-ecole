@@ -55,4 +55,8 @@ public class PassageExamen {
     @Builder.Default
     @Column(name = "date_enregistrement", nullable = false)
     private LocalDateTime dateEnregistrement = LocalDateTime.now();
+
+    @Builder.Default
+    @Column(name = "valide_par_admin", nullable = false)
+    private boolean valideParAdmin = false;
 }

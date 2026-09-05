@@ -40,5 +40,7 @@ public interface PassageExamenRepository extends JpaRepository<PassageExamen, Lo
 
     List<PassageExamen> findTop10ByDatePassageGreaterThanEqualOrderByDatePassageAsc(LocalDate today);
 
+    List<PassageExamen> findByValideParAdminFalseAndResultatOrderByDatePassageAsc(ResultatExamen resultat);
+
     long countByResultat(ResultatExamen resultat);
 }

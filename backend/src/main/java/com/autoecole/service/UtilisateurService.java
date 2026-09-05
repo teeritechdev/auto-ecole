@@ -40,6 +40,7 @@ public class UtilisateurService {
 
     @Transactional
     public UtilisateurDTO createUtilisateur(CreateUtilisateurRequest request) {
+        validateImage(request.getPhotoProfile());
         if (utilisateurRepository.existsByUsername(request.getUsername())) {
             throw new BadRequestException("Un compte avec cet identifiant existe déjà: " + request.getUsername());
         }
@@ -57,6 +58,7 @@ public class UtilisateurService {
                 .nom(request.getNom().trim())
                 .prenom(request.getPrenom().trim())
                 .telephone(request.getTelephone())
+                .photoProfile(request.getPhotoProfile())
                 .role(role)
                 .actif(true)
                 .build();
@@ -69,6 +71,7 @@ public class UtilisateurService {
 
     @Transactional
     public UtilisateurDTO updateUtilisateur(Long id, UpdateUtilisateurRequest request) {
+        validateImage(request.getPhotoProfile());
         Utilisateur user = utilisateurRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Utilisateur non trouvé avec l'id: " + id));
 
@@ -83,6 +86,7 @@ public class UtilisateurService {
         user.setNom(request.getNom().trim());
         user.setPrenom(request.getPrenom().trim());
         user.setTelephone(request.getTelephone());
+        user.setPhotoProfile(request.getPhotoProfile());
         user.setRole(role);
 
         if (request.getActif() != null) {
@@ -111,6 +115,36 @@ public class UtilisateurService {
         auditService.logAction(action, "Utilisateur", user.getUsername(), "Changement d'état du compte à: " + (user.isActif() ? "Actif" : "Désactivé"), null);
     }
 
+    @Transactional
+    public UtilisateurDTO updatePhoto(Long id, String photoProfile) {
+        validateImage(photoProfile);
+        Utilisateur user = utilisateurRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Utilisateur non trouvé avec l'id: " + id));
+        user.setPhotoProfile(photoProfile);
+        return mapToDTO(utilisateurRepository.save(user));
+    }
+
+    @Transactional
+    public UtilisateurDTO updateCurrentUserPhoto(String photoProfile) {
+        validateImage(photoProfile);
+        Utilisateur user = auditService.getCurrentUser();
+        if (user == null) {
+            throw new ResourceNotFoundException("Utilisateur non identifié");
+        }
+        user.setPhotoProfile(photoProfile);
+        return mapToDTO(utilisateurRepository.save(user));
+    }
+
+    private void validateImage(String imageData) {
+        if (imageData == null || imageData.isBlank()) return;
+        if (!imageData.matches("^data:image/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$")) {
+            throw new BadRequestException("Format d'image non pris en charge");
+        }
+        if (imageData.length() > 2_800_000) {
+            throw new BadRequestException("L'image ne doit pas dépasser 2 Mo");
+        }
+    }
+
     public UtilisateurDTO mapToDTO(Utilisateur u) {
         return UtilisateurDTO.builder()
                 .id(u.getId())
@@ -119,6 +153,7 @@ public class UtilisateurService {
                 .nom(u.getNom())
                 .prenom(u.getPrenom())
                 .telephone(u.getTelephone())
+                .photoProfile(u.getPhotoProfile())
                 .role(u.getRole().getCode().name())
                 .roleLibelle(u.getRole().getLibelle())
                 .actif(u.isActif())

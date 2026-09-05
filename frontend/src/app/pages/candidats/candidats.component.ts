@@ -19,8 +19,8 @@ import { Candidat, CategoriePermis, Forfait } from '../../core/models/models';
           <p>Consultez, enregistrez et suivez les parcours administratifs et forfaits</p>
         </div>
         <div class="header-buttons">
-          <button class="btn btn-outline btn-sm" (click)="exporterPdf()">📄 Export PDF</button>
-          <button class="btn btn-outline btn-sm" (click)="exporterExcel()">📊 Export Excel</button>
+          <button class="btn btn-outline btn-sm" *ngIf="canSeeFinancialData" (click)="exporterPdf()">📄 Export PDF</button>
+          <button class="btn btn-outline btn-sm" *ngIf="canSeeFinancialData" (click)="exporterExcel()">📊 Export Excel</button>
           <button class="btn btn-primary" *ngIf="canEdit" (click)="openCreateModal()">
             ➕ Inscrire un Candidat
           </button>
@@ -73,9 +73,9 @@ import { Candidat, CategoriePermis, Forfait } from '../../core/models/models';
                 <th>N° Dossier</th>
                 <th>Candidat</th>
                 <th>Contact</th>
-                <th>Permis / Forfait</th>
-                <th>Montant</th>
-                <th>Versé / Reste</th>
+                <th>{{ canSeeFinancialData ? 'Permis / Forfait' : 'Permis' }}</th>
+                <th *ngIf="canSeeFinancialData">Montant</th>
+                <th *ngIf="canSeeFinancialData">Versé / Reste</th>
                 <th>Statut</th>
                 <th>Échéance</th>
                 <th class="text-right">Actions</th>
@@ -83,10 +83,10 @@ import { Candidat, CategoriePermis, Forfait } from '../../core/models/models';
             </thead>
             <tbody>
               <tr *ngIf="loading">
-                <td colspan="9" class="text-center py-4">Chargement des candidats...</td>
+                <td [attr.colspan]="canSeeFinancialData ? 9 : 7" class="text-center py-4">Chargement des candidats...</td>
               </tr>
               <tr *ngIf="!loading && candidats.length === 0">
-                <td colspan="9" class="text-center py-4">Aucun candidat trouvé pour ces critères.</td>
+                <td [attr.colspan]="canSeeFinancialData ? 9 : 7" class="text-center py-4">Aucun candidat trouvé pour ces critères.</td>
               </tr>
               <tr *ngFor="let c of candidats">
                 <td>
@@ -102,12 +102,12 @@ import { Candidat, CategoriePermis, Forfait } from '../../core/models/models';
                 </td>
                 <td>
                   <span class="badge badge-programme">{{ c.categoriePermisCode }}</span>
-                  <div class="forfait-sub">{{ c.forfaitNom }}</div>
+                  <div class="forfait-sub" *ngIf="canSeeFinancialData">{{ c.forfaitNom }}</div>
                 </td>
-                <td>
+                <td *ngIf="canSeeFinancialData">
                   <strong>{{ c.montantForfait | number }} FCFA</strong>
                 </td>
-                <td>
+                <td *ngIf="canSeeFinancialData">
                   <div class="text-success font-semibold">{{ c.totalVerse | number }} FCFA</div>
                   <small [ngClass]="c.soldeRestant > 0 ? 'text-danger' : 'text-muted'">
                     Reste : {{ c.soldeRestant | number }} FCFA
@@ -408,6 +408,10 @@ export class CandidatsComponent implements OnInit {
 
   get isAdmin(): boolean {
     return this.authService.hasRole(['ADMIN']);
+  }
+
+  get canSeeFinancialData(): boolean {
+    return this.authService.hasRole(['ADMIN', 'SECRETAIRE', 'CAISSIERE']);
   }
 
   loadParams(): void {

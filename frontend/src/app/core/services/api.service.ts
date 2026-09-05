@@ -115,6 +115,14 @@ export class ApiService {
     return this.http.get<PassageExamen[]>(`${this.base}/examens/prochains`);
   }
 
+  public getPassagesAValider(): Observable<PassageExamen[]> {
+    return this.http.get<PassageExamen[]>(`${this.base}/examens/a-valider`);
+  }
+
+  public validerPassages(passageIds: number[]): Observable<PassageExamen[]> {
+    return this.http.post<PassageExamen[]>(`${this.base}/examens/valider`, { passageIds });
+  }
+
   public programmerPassage(data: any): Observable<PassageExamen> {
     return this.http.post<PassageExamen>(`${this.base}/examens`, data);
   }
@@ -199,6 +207,22 @@ export class ApiService {
 
   public toggleActifUtilisateur(id: number): Observable<void> {
     return this.http.patch<void>(`${this.base}/utilisateurs/${id}/toggle-actif`, {});
+  }
+
+  public updateUtilisateurPhoto(id: number, photoProfile: string | null): Observable<UtilisateurDTO> {
+    return this.http.patch<UtilisateurDTO>(`${this.base}/utilisateurs/${id}/photo`, { photoProfile });
+  }
+
+  public updateMyPhoto(photoProfile: string | null): Observable<UtilisateurDTO> {
+    return this.http.patch<UtilisateurDTO>(`${this.base}/utilisateurs/me/photo`, { photoProfile });
+  }
+
+  public getLogo(): Observable<{ logoData: string | null }> {
+    return this.http.get<{ logoData: string | null }>(`${this.base}/configuration/logo`);
+  }
+
+  public updateLogo(logoData: string | null): Observable<{ logoData: string | null }> {
+    return this.http.put<{ logoData: string | null }>(`${this.base}/configuration/logo`, { logoData });
   }
 
   // ================= AUDIT =================

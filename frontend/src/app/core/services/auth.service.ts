@@ -51,6 +51,17 @@ export class AuthService {
     return this.http.post<void>(`${this.apiUrl}/change-password`, data);
   }
 
+  public updateMyPhoto(photoProfile: string | null): Observable<User> {
+    return this.http.patch<User>('http://localhost:8080/api/utilisateurs/me/photo', { photoProfile }).pipe(
+      tap(user => {
+        const current = this.currentUserValue;
+        const updatedUser = { ...current, ...user, token: current?.token } as User;
+        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+        this.currentUserSubject.next(updatedUser);
+      })
+    );
+  }
+
   public logout(): void {
     localStorage.removeItem('currentUser');
     localStorage.removeItem('jwtToken');

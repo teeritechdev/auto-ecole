@@ -18,6 +18,21 @@ import { CategoriePermis, Forfait } from '../../core/models/models';
       </div>
 
       <div class="grid-2-col">
+        <div class="card brand-settings-card">
+          <div class="card-header">
+            <div class="card-title">🏷️ Logo de l'entreprise</div>
+          </div>
+          <div class="logo-settings">
+            <div class="logo-preview">
+              <img *ngIf="logoData" [src]="logoData" alt="Logo actuel" />
+              <span *ngIf="!logoData">🚗</span>
+            </div>
+            <input type="file" accept="image/png,image/jpeg,image/webp" (change)="onLogoSelected($event)" />
+            <p class="form-help">Le logo sera affiché sur toutes les pages. JPG, PNG ou WebP, maximum 2 Mo.</p>
+            <div *ngIf="logoError" class="alert alert-danger">{{ logoError }}</div>
+          </div>
+        </div>
+
         <!-- 1. FORFAITS -->
         <div class="card">
           <div class="card-header">
@@ -155,6 +170,10 @@ import { CategoriePermis, Forfait } from '../../core/models/models';
 
     .text-right { text-align: right; }
     .text-success { color: #15803d; }
+    .logo-settings { display: flex; flex-direction: column; align-items: flex-start; gap: 0.75rem; }
+    .logo-preview { width: 7rem; height: 7rem; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 0.75rem; background: #eff6ff; color: #2563eb; font-size: 2.5rem; }
+    .logo-preview img { width: 100%; height: 100%; object-fit: contain; }
+    .form-help { color: var(--text-muted); font-size: 0.8rem; margin: 0; }
   `]
 })
 export class ParametrageComponent implements OnInit {
@@ -170,6 +189,8 @@ export class ParametrageComponent implements OnInit {
   isEditCat = false;
   selectedCatId: number | null = null;
   catForm: any = { code: '', libelle: '', description: '', actif: true };
+  logoData: string | null = null;
+  logoError = '';
 
   constructor(private apiService: ApiService) {}
 
@@ -180,6 +201,25 @@ export class ParametrageComponent implements OnInit {
   loadData(): void {
     this.apiService.getForfaits().subscribe({ next: (res) => this.forfaits = res });
     this.apiService.getCategories().subscribe({ next: (res) => this.categories = res });
+    this.apiService.getLogo().subscribe({ next: (res) => this.logoData = res.logoData });
+  }
+
+  onLogoSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      this.logoError = 'Le logo ne doit pas dépasser 2 Mo.';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.apiService.updateLogo(reader.result as string).subscribe({
+        next: response => { this.logoData = response.logoData; this.logoError = ''; },
+        error: err => this.logoError = err.error?.message || 'Impossible d’enregistrer le logo.'
+      });
+    };
+    reader.readAsDataURL(file);
   }
 
   openForfaitModal(): void {

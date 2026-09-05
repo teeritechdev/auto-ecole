@@ -5,6 +5,7 @@ export interface User {
   nom: string;
   prenom: string;
   role: 'ADMIN' | 'SECRETAIRE' | 'CAISSIERE' | 'MONITEUR';
+  photoProfile?: string;
   token?: string;
 }
 
@@ -15,6 +16,7 @@ export interface UtilisateurDTO {
   nom: string;
   prenom: string;
   telephone?: string;
+  photoProfile?: string;
   role: string;
   roleLibelle: string;
   actif: boolean;
@@ -115,6 +117,7 @@ export interface PassageExamen {
   moniteurId?: number;
   moniteurNomComplet?: string;
   dateEnregistrement: string;
+  valideParAdmin: boolean;
 }
 
 export interface BilanExamensCandidat {

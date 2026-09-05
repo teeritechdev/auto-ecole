@@ -63,6 +63,20 @@ public class ExamenController {
         return ResponseEntity.ok(examenService.getProchainsExamens());
     }
 
+    @GetMapping("/a-valider")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Lister les candidats proposés par les moniteurs")
+    public ResponseEntity<List<PassageExamenDTO>> getPassagesAValider() {
+        return ResponseEntity.ok(examenService.getPassagesAValider());
+    }
+
+    @PostMapping("/valider")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Valider plusieurs candidats pour leur épreuve")
+    public ResponseEntity<List<PassageExamenDTO>> validerPassages(@Valid @RequestBody ValidationPassagesRequest request) {
+        return ResponseEntity.ok(examenService.validerPassages(request.getPassageIds()));
+    }
+
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'MONITEUR')")
     @Operation(summary = "Programmer ou enregistrer un passage d'examen (limite 5 passages par épreuve)")

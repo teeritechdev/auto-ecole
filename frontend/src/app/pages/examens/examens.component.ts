@@ -5,6 +5,7 @@ import { RouterModule } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { Candidat, PassageExamen } from '../../core/models/models';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-examens',
@@ -131,48 +132,71 @@ import { Candidat, PassageExamen } from '../../core/models/models';
             <div class="modal-body">
               <div *ngIf="formError" class="alert alert-danger">⚠️ {{ formError }}</div>
 
-              <div class="form-group">
-                <label class="form-label">Candidat <span class="required">*</span></label>
-                <select class="form-control" [(ngModel)]="newPassage.candidatId" name="candidatId" required>
-                  <option [ngValue]="null">-- Sélectionner le candidat --</option>
-                  <option *ngFor="let c of allCandidats" [value]="c.id">
-                    {{ c.numeroDossier }} — {{ c.nom }} {{ c.prenom }} ({{ c.categoriePermisCode }})
-                  </option>
-                </select>
-              </div>
+              <ng-container *ngIf="programmerStep === 1; else programmerDetails">
+                <div class="step-indicator">Étape 1 sur 2</div>
+                <div class="form-group">
+                  <label class="form-label">Choisir l'épreuve à programmer <span class="required">*</span></label>
+                  <select class="form-control" [(ngModel)]="newPassage.typeEpreuve" name="typeEpreuve" (change)="onTypeEpreuveChange()" required>
+                    <option value="CODE">1. Code de la route</option>
+                    <option value="CRENEAU">2. Manœuvre / Créneau</option>
+                    <option value="CIRCULATION">3. Conduite en circulation</option>
+                  </select>
+                </div>
+                <p class="form-help">Le type d'épreuve sera appliqué à tous les candidats sélectionnés à l'étape suivante.</p>
+              </ng-container>
 
-              <div class="form-group">
-                <label class="form-label">Type d'épreuve <span class="required">*</span></label>
-                <select class="form-control" [(ngModel)]="newPassage.typeEpreuve" name="typeEpreuve" required>
-                  <option value="CODE">1. Code de la route</option>
-                  <option value="CRENEAU">2. Manœuvre / Créneau</option>
-                  <option value="CIRCULATION">3. Conduite en circulation</option>
-                </select>
-              </div>
+              <ng-template #programmerDetails>
+                <div class="step-indicator">Étape 2 sur 2 · {{ newPassage.typeEpreuve }}</div>
+                <div class="form-group">
+                  <label class="form-label">Candidats <span class="required">*</span></label>
+                  <div class="candidats-list">
+                    <label class="candidat-option" *ngFor="let c of eligibleCandidats">
+                      <input
+                        type="checkbox"
+                        [checked]="isCandidatSelected(c.id)"
+                        (change)="toggleCandidat(c.id)"
+                      />
+                      <span class="candidat-option-text">
+                        <strong>{{ c.numeroDossier }}</strong>
+                        <span>{{ c.nom }} {{ c.prenom }} ({{ c.categoriePermisCode }})</span>
+                      </span>
+                    </label>
+                  </div>
+                  <div class="form-help" *ngIf="eligibleCandidats.length === 0">
+                    Aucun candidat n'est actuellement éligible pour cette épreuve.
+                  </div>
+                  <div class="form-help">Cochez les candidats concernés par cette programmation.</div>
+                  <div class="selection-count" *ngIf="selectedCandidatIds.length > 0">
+                    {{ selectedCandidatIds.length }} candidat(s) sélectionné(s)
+                  </div>
+                </div>
 
-              <div class="form-group">
-                <label class="form-label">Date du passage <span class="required">*</span></label>
-                <input type="date" class="form-control" [(ngModel)]="newPassage.datePassage" name="datePassage" required />
-              </div>
+                <div class="form-group">
+                  <label class="form-label">Date du passage <span class="required">*</span></label>
+                  <input type="date" class="form-control" [(ngModel)]="newPassage.datePassage" name="datePassage" required />
+                </div>
 
-              <div class="form-group">
-                <label class="form-label">Résultat initial</label>
-                <select class="form-control" [(ngModel)]="newPassage.resultat" name="resultat">
-                  <option value="PROGRAMME">PROGRAMMÉ (En attente)</option>
-                  <option value="REUSSI">RÉUSSI (Admis)</option>
-                  <option value="ECHEC">ÉCHEC</option>
-                  <option value="AJOURNE">AJOURNÉ</option>
-                </select>
-              </div>
+                <div class="form-group">
+                  <label class="form-label">Résultat initial</label>
+                  <select class="form-control" [(ngModel)]="newPassage.resultat" name="resultat">
+                    <option value="PROGRAMME">PROGRAMMÉ (En attente)</option>
+                    <option value="REUSSI">RÉUSSI (Admis)</option>
+                    <option value="ECHEC">ÉCHEC</option>
+                    <option value="AJOURNE">AJOURNÉ</option>
+                  </select>
+                </div>
 
-              <div class="form-group">
-                <label class="form-label">Observations</label>
-                <textarea class="form-control" rows="2" [(ngModel)]="newPassage.observations" name="observations" placeholder="Remarques éventuelles..."></textarea>
-              </div>
+                <div class="form-group">
+                  <label class="form-label">Observations</label>
+                  <textarea class="form-control" rows="2" [(ngModel)]="newPassage.observations" name="observations" placeholder="Remarques éventuelles..."></textarea>
+                </div>
+              </ng-template>
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-secondary" (click)="showProgrammerModal = false">Annuler</button>
-              <button type="submit" class="btn btn-primary" [disabled]="saving || !newPassage.candidatId">
+              <button *ngIf="programmerStep === 2" type="button" class="btn btn-secondary" (click)="programmerStep = 1" [disabled]="saving">Retour</button>
+              <button *ngIf="programmerStep === 1" type="button" class="btn btn-primary" (click)="programmerStep = 2">Continuer</button>
+              <button *ngIf="programmerStep === 2" type="submit" class="btn btn-primary" [disabled]="saving || selectedCandidatIds.length === 0 || !newPassage.datePassage">
                 {{ saving ? 'Enregistrement...' : 'Confirmer la Programmation' }}
               </button>
             </div>
@@ -275,11 +299,72 @@ import { Candidat, PassageExamen } from '../../core/models/models';
     }
 
     .text-right { text-align: right; }
+
+    .step-indicator {
+      margin-bottom: 1.25rem;
+      color: var(--primary);
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+
+    .form-help {
+      margin-top: 0.35rem;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+    }
+
+    .candidats-list {
+      max-height: 13rem;
+      overflow-y: auto;
+      border: 1px solid var(--border-color);
+      border-radius: 0.5rem;
+      background: #fff;
+    }
+
+    .candidat-option {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.7rem 0.85rem;
+      cursor: pointer;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .candidat-option:last-child {
+      border-bottom: 0;
+    }
+
+    .candidat-option:hover {
+      background: #f8fafc;
+    }
+
+    .candidat-option input {
+      width: 1.1rem;
+      height: 1.1rem;
+      flex: 0 0 auto;
+      accent-color: var(--primary);
+    }
+
+    .candidat-option-text {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+      font-size: 0.85rem;
+    }
+
+    .selection-count {
+      margin-top: 0.6rem;
+      color: var(--primary);
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
   `]
 })
 export class ExamensComponent implements OnInit {
   passages: PassageExamen[] = [];
   allCandidats: Candidat[] = [];
+  eligibleCandidats: Candidat[] = [];
+  allExamens: PassageExamen[] = [];
   loading = false;
   saving = false;
 
@@ -290,8 +375,9 @@ export class ExamensComponent implements OnInit {
   totalElements = 0;
 
   showProgrammerModal = false;
+  programmerStep = 1;
+  selectedCandidatIds: number[] = [];
   newPassage: any = {
-    candidatId: null,
     typeEpreuve: 'CODE',
     datePassage: new Date().toISOString().substring(0, 10),
     resultat: 'PROGRAMME',
@@ -336,8 +422,20 @@ export class ExamensComponent implements OnInit {
   }
 
   loadCandidats(): void {
-    this.apiService.getCandidats('', '', undefined, 0, 200).subscribe({
-      next: (res) => this.allCandidats = res.content || []
+    forkJoin({
+      candidats: this.apiService.getCandidats('', '', undefined, 0, 200),
+      examens: this.apiService.getPassages(undefined, '', '', 0, 1000)
+    }).subscribe({
+      next: ({ candidats, examens }) => {
+        this.allCandidats = candidats.content || [];
+        this.allExamens = examens.content || [];
+        this.updateEligibleCandidats();
+      },
+      error: (err) => {
+        console.error(err);
+        this.allCandidats = [];
+        this.eligibleCandidats = [];
+      }
     });
   }
 
@@ -355,8 +453,9 @@ export class ExamensComponent implements OnInit {
 
   openProgrammerModal(): void {
     this.formError = '';
+    this.programmerStep = 1;
+    this.selectedCandidatIds = [];
     this.newPassage = {
-      candidatId: null,
       typeEpreuve: 'CODE',
       datePassage: new Date().toISOString().substring(0, 10),
       resultat: 'PROGRAMME',
@@ -365,13 +464,61 @@ export class ExamensComponent implements OnInit {
     this.showProgrammerModal = true;
   }
 
+  onTypeEpreuveChange(): void {
+    this.selectedCandidatIds = [];
+    this.updateEligibleCandidats();
+  }
+
+  private updateEligibleCandidats(): void {
+    this.eligibleCandidats = this.allCandidats.filter(candidat => {
+      if (candidat.statutDossier === 'EXPIRE' || candidat.statutDossier === 'EXPIRE_NON_SOLDE') {
+        return false;
+      }
+
+      const examensCandidat = this.allExamens.filter(examen => examen.candidatId === candidat.id);
+      const code = examensCandidat.filter(examen => examen.typeEpreuve === 'CODE');
+      const creneau = examensCandidat.filter(examen => examen.typeEpreuve === 'CRENEAU');
+      const circulation = examensCandidat.filter(examen => examen.typeEpreuve === 'CIRCULATION');
+
+      if (this.newPassage.typeEpreuve === 'CODE') {
+        return !code.some(examen => examen.resultat === 'REUSSI' || examen.resultat === 'PROGRAMME') && code.length < 5;
+      }
+
+      if (this.newPassage.typeEpreuve === 'CRENEAU') {
+        return code.some(examen => examen.resultat === 'REUSSI')
+          && !creneau.some(examen => examen.resultat === 'REUSSI' || examen.resultat === 'PROGRAMME')
+          && creneau.length < 5;
+      }
+
+      return creneau.some(examen => examen.resultat === 'REUSSI')
+        && !circulation.some(examen => examen.resultat === 'REUSSI' || examen.resultat === 'PROGRAMME')
+        && circulation.length < 5;
+    });
+  }
+
+  isCandidatSelected(candidatId: number): boolean {
+    return this.selectedCandidatIds.includes(candidatId);
+  }
+
+  toggleCandidat(candidatId: number): void {
+    if (this.isCandidatSelected(candidatId)) {
+      this.selectedCandidatIds = this.selectedCandidatIds.filter(id => id !== candidatId);
+    } else {
+      this.selectedCandidatIds = [...this.selectedCandidatIds, candidatId];
+    }
+  }
+
   saveProgrammer(): void {
-    if (!this.newPassage.candidatId) return;
+    if (this.selectedCandidatIds.length === 0) return;
 
     this.saving = true;
     this.formError = '';
 
-    this.apiService.programmerPassage(this.newPassage).subscribe({
+    const requests = this.selectedCandidatIds.map(candidatId =>
+      this.apiService.programmerPassage({ ...this.newPassage, candidatId })
+    );
+
+    forkJoin(requests).subscribe({
       next: () => {
         this.saving = false;
         this.showProgrammerModal = false;

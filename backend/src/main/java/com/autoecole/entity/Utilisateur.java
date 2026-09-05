@@ -35,6 +35,10 @@ public class Utilisateur {
     @Column(length = 30)
     private String telephone;
 
+    @Lob
+    @Column(name = "photo_profile", columnDefinition = "LONGTEXT")
+    private String photoProfile;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "role_id", nullable = false)
     private Role role;

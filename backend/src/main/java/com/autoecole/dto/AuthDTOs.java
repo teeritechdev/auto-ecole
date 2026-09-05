@@ -33,6 +33,7 @@ public class AuthDTOs {
         private String nom;
         private String prenom;
         private String role;
+        private String photoProfile;
     }
 
     @Data

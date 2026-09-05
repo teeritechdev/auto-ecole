@@ -27,6 +27,7 @@ import { UtilisateurDTO } from '../../core/models/models';
           <table class="custom-table">
             <thead>
               <tr>
+                <th>Photo</th>
                 <th>Identifiant</th>
                 <th>Nom & Prénom</th>
                 <th>Email</th>
@@ -39,9 +40,15 @@ import { UtilisateurDTO } from '../../core/models/models';
             </thead>
             <tbody>
               <tr *ngIf="loading">
-                <td colspan="8" class="text-center py-4">Chargement des utilisateurs...</td>
+                <td colspan="9" class="text-center py-4">Chargement des utilisateurs...</td>
               </tr>
               <tr *ngFor="let u of utilisateurs">
+                <td>
+                  <div class="user-photo-small">
+                    <img *ngIf="u.photoProfile" [src]="u.photoProfile" alt="Photo utilisateur" />
+                    <span *ngIf="!u.photoProfile">{{ getInitials(u) }}</span>
+                  </div>
+                </td>
                 <td><strong>{{ u.username }}</strong></td>
                 <td>{{ u.nom }} {{ u.prenom }}</td>
                 <td>{{ u.email }}</td>
@@ -128,6 +135,12 @@ import { UtilisateurDTO } from '../../core/models/models';
                 </select>
               </div>
 
+              <div class="form-group">
+                <label class="form-label">Photo de profil</label>
+                <input type="file" accept="image/png,image/jpeg,image/webp" (change)="onPhotoSelected($event)" />
+                <div class="form-help">JPG, PNG ou WebP, maximum 2 Mo.</div>
+              </div>
+
               <div class="form-group" *ngIf="isEdit">
                 <label class="form-label">Nouveau mot de passe (laisser vide pour ne pas changer)</label>
                 <input type="password" class="form-control" [(ngModel)]="currentUserForm.password" name="password" placeholder="••••••••" />
@@ -162,6 +175,22 @@ import { UtilisateurDTO } from '../../core/models/models';
     }
 
     .text-right { text-align: right; }
+
+    .user-photo-small {
+      width: 2.5rem;
+      height: 2.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      border-radius: 50%;
+      background: #2563eb;
+      color: white;
+      font-weight: 700;
+    }
+
+    .user-photo-small img { width: 100%; height: 100%; object-fit: cover; }
+    .form-help { color: var(--text-muted); font-size: 0.8rem; margin-top: 0.35rem; }
   `]
 })
 export class UtilisateursComponent implements OnInit {
@@ -173,6 +202,7 @@ export class UtilisateursComponent implements OnInit {
   isEdit = false;
   selectedId: number | null = null;
   formError = '';
+  pendingPhoto: string | null = null;
 
   currentUserForm: any = {
     username: '',
@@ -216,6 +246,7 @@ export class UtilisateursComponent implements OnInit {
       email: '',
       telephone: '',
       role: 'SECRETAIRE'
+      , photoProfile: null
     };
     this.showModal = true;
   }
@@ -230,7 +261,8 @@ export class UtilisateursComponent implements OnInit {
       email: u.email,
       telephone: u.telephone,
       role: u.role,
-      password: ''
+      password: '',
+      photoProfile: u.photoProfile || null
     };
     this.showModal = true;
   }
@@ -264,6 +296,23 @@ export class UtilisateursComponent implements OnInit {
         }
       });
     }
+  }
+
+  getInitials(user: UtilisateurDTO): string {
+    return `${user.nom?.[0] || ''}${user.prenom?.[0] || ''}`.toUpperCase() || 'U';
+  }
+
+  onPhotoSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      this.formError = 'La photo ne doit pas dépasser 2 Mo.';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => this.currentUserForm.photoProfile = reader.result as string;
+    reader.readAsDataURL(file);
   }
 
   toggleActif(u: UtilisateurDTO): void {

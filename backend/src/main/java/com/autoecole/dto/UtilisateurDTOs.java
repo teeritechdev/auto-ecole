@@ -24,6 +24,7 @@ public class UtilisateurDTOs {
         private String nom;
         private String prenom;
         private String telephone;
+        private String photoProfile;
         private String role;
         private String roleLibelle;
         private boolean actif;
@@ -52,6 +53,7 @@ public class UtilisateurDTOs {
         private String prenom;
 
         private String telephone;
+        private String photoProfile;
 
         @NotNull(message = "Le rôle est obligatoire")
         private RoleEnum role;
@@ -80,5 +82,6 @@ public class UtilisateurDTOs {
         private RoleEnum role;
 
         private Boolean actif;
+        private String photoProfile;
     }
 }

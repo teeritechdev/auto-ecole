@@ -39,6 +39,7 @@ public class AuthService {
 
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         String role = userDetails.getAuthorities().iterator().next().getAuthority().replace("ROLE_", "");
+        Utilisateur user = utilisateurRepository.findById(userDetails.getId()).orElseThrow();
 
         auditService.logAction("CONNEXION", "Utilisateur", userDetails.getUsername(), "Connexion réussie de l'utilisateur", null);
 
@@ -50,6 +51,7 @@ public class AuthService {
                 .nom(userDetails.getNom())
                 .prenom(userDetails.getPrenom())
                 .role(role)
+                .photoProfile(user.getPhotoProfile())
                 .build();
     }
 

@@ -26,7 +26,7 @@ import {
           <span class="dossier-pill">N° Dossier : {{ candidat.numeroDossier }}</span>
         </div>
         <div class="action-buttons">
-          <button class="btn btn-outline btn-sm" (click)="imprimerReleve()">
+          <button class="btn btn-outline btn-sm" *ngIf="canSeeFinancialData" (click)="imprimerReleve()">
             📑 Télécharger Relevé Financier PDF
           </button>
           <button class="btn btn-success" *ngIf="canAddPayment && candidat.soldeRestant > 0" (click)="openPaiementModal()">
@@ -43,14 +43,14 @@ import {
         ⚠️ <strong>Attention :</strong> Ce dossier expire dans <strong>{{ candidat.joursRestants }} jours</strong> (le {{ candidat.dateEcheance | date:'dd/MM/yyyy' }}).
       </div>
 
-      <div *ngIf="candidat.statutDossier === 'EXPIRE_NON_SOLDE'" class="alert alert-danger">
+      <div *ngIf="canSeeFinancialData && candidat.statutDossier === 'EXPIRE_NON_SOLDE'" class="alert alert-danger">
         ⛔ <strong>Dossier Expiré non soldé :</strong> La période de validité de 8 mois est échue avec un solde restant de {{ candidat.soldeRestant | number }} FCFA.
       </div>
 
       <!-- 360° SUMMARY CARDS -->
       <div class="stats-grid">
         <!-- Forfait -->
-        <div class="stat-card primary">
+        <div class="stat-card primary" *ngIf="canSeeFinancialData">
           <div class="stat-icon primary">📄</div>
           <div class="stat-info">
             <div class="stat-label">Forfait Souscrit</div>
@@ -60,7 +60,7 @@ import {
         </div>
 
         <!-- Versé -->
-        <div class="stat-card success">
+        <div class="stat-card success" *ngIf="canSeeFinancialData">
           <div class="stat-icon success">💳</div>
           <div class="stat-info">
             <div class="stat-label">Total Déjà Versé</div>
@@ -70,7 +70,7 @@ import {
         </div>
 
         <!-- Reste dû -->
-        <div class="stat-card" [ngClass]="candidat.soldeRestant > 0 ? 'danger' : 'success'">
+        <div class="stat-card" *ngIf="canSeeFinancialData" [ngClass]="candidat.soldeRestant > 0 ? 'danger' : 'success'">
           <div class="stat-icon" [ngClass]="candidat.soldeRestant > 0 ? 'danger' : 'success'">⚖️</div>
           <div class="stat-info">
             <div class="stat-label">Solde Restant Dû</div>
@@ -99,7 +99,7 @@ import {
         <button class="tab-btn" [class.active]="activeTab === 'dossier'" (click)="activeTab = 'dossier'">
           📋 Dossier Administratif
         </button>
-        <button class="tab-btn" [class.active]="activeTab === 'paiements'" (click)="activeTab = 'paiements'">
+        <button class="tab-btn" *ngIf="canSeeFinancialData" [class.active]="activeTab === 'paiements'" (click)="activeTab = 'paiements'">
           💰 Historique des Versements ({{ paiements.length }})
         </button>
         <button class="tab-btn" [class.active]="activeTab === 'examens'" (click)="activeTab = 'examens'">
@@ -146,7 +146,7 @@ import {
       </div>
 
       <!-- TAB 2 : HISTORIQUE DES PAIEMENTS -->
-      <div class="card tab-content" *ngIf="activeTab === 'paiements'">
+      <div class="card tab-content" *ngIf="canSeeFinancialData && activeTab === 'paiements'">
         <div class="card-header">
           <div class="card-title">Détail des Versements Enregistrés</div>
           <button class="btn btn-success btn-sm" *ngIf="canAddPayment && candidat.soldeRestant > 0" (click)="openPaiementModal()">
@@ -576,16 +576,24 @@ export class CandidatDetailComponent implements OnInit {
     return this.authService.hasRole(['ADMIN', 'MONITEUR']);
   }
 
+  get canSeeFinancialData(): boolean {
+    return this.authService.hasRole(['ADMIN', 'SECRETAIRE', 'CAISSIERE']);
+  }
+
   loadAll(): void {
     this.apiService.getCandidatById(this.candidatId).subscribe({
       next: (c) => this.candidat = c,
       error: (err) => console.error(err)
     });
 
-    this.apiService.getPaiementsByCandidat(this.candidatId).subscribe({
-      next: (p) => this.paiements = p,
-      error: (err) => console.error(err)
-    });
+    if (this.canSeeFinancialData) {
+      this.apiService.getPaiementsByCandidat(this.candidatId).subscribe({
+        next: (p) => this.paiements = p,
+        error: (err) => console.error(err)
+      });
+    } else {
+      this.paiements = [];
+    }
 
     this.apiService.getBilanExamensCandidat(this.candidatId).subscribe({
       next: (b) => this.bilan = b,

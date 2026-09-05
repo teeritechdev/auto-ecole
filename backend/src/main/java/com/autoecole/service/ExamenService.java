@@ -106,6 +106,8 @@ public class ExamenService {
                 .resultat(request.getResultat() != null ? request.getResultat() : ResultatExamen.PROGRAMME)
                 .observations(request.getObservations())
                 .moniteur(moniteur)
+                .valideParAdmin(moniteur != null && moniteur.getRole() != null
+                        && moniteur.getRole().getCode() == com.autoecole.entity.enums.RoleEnum.ADMIN)
                 .dateEnregistrement(LocalDateTime.now())
                 .build();
 
@@ -115,6 +117,31 @@ public class ExamenService {
 
         return mapToDTO(saved);
     }
+
+        public List<PassageExamenDTO> getPassagesAValider() {
+                return passageRepository.findByValideParAdminFalseAndResultatOrderByDatePassageAsc(ResultatExamen.PROGRAMME)
+                                .stream().map(this::mapToDTO).collect(Collectors.toList());
+        }
+
+        @Transactional
+        public List<PassageExamenDTO> validerPassages(List<Long> passageIds) {
+                if (passageIds == null || passageIds.isEmpty()) {
+                        throw new BadRequestException("Sélectionnez au moins un candidat");
+                }
+
+                List<PassageExamenDTO> result = passageIds.stream()
+                                .map(id -> passageRepository.findById(id)
+                                                .orElseThrow(() -> new ResourceNotFoundException("Passage d'examen introuvable")))
+                                .filter(passage -> passage.getResultat() == ResultatExamen.PROGRAMME && !passage.isValideParAdmin())
+                                .peek(passage -> passage.setValideParAdmin(true))
+                                .map(passageRepository::save)
+                                .map(this::mapToDTO)
+                                .collect(Collectors.toList());
+
+                auditService.logAction("VALIDATION_EXAMENS", "PassageExamen", passageIds.toString(),
+                                result.size() + " candidat(s) validé(s) par l'administrateur", null);
+                return result;
+        }
 
     @Transactional
     public PassageExamenDTO updateResultatPassage(Long passageId, UpdatePassageRequest request) {
@@ -163,6 +190,7 @@ public class ExamenService {
                 .moniteurId(pe.getMoniteur() != null ? pe.getMoniteur().getId() : null)
                 .moniteurNomComplet(pe.getMoniteur() != null ? pe.getMoniteur().getNom() + " " + pe.getMoniteur().getPrenom() : "")
                 .dateEnregistrement(pe.getDateEnregistrement())
+                .valideParAdmin(pe.isValideParAdmin())
                 .build();
     }
 }

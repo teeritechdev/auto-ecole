@@ -9,11 +9,11 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "passages_examens", indexes = {
-    @Index(name = "idx_passage_candidat", columnList = "candidat_id"),
+    @Index(name = "idx_passage_inscription", columnList = "inscription_id"),
     @Index(name = "idx_passage_epreuve", columnList = "type_epreuve"),
     @Index(name = "idx_passage_date", columnList = "date_passage")
 }, uniqueConstraints = {
-    @UniqueConstraint(name = "uk_candidat_epreuve_passage", columnNames = {"candidat_id", "type_epreuve", "numero_passage"})
+    @UniqueConstraint(name = "uk_inscription_epreuve_passage", columnNames = {"inscription_id", "type_epreuve", "numero_passage"})
 })
 @Getter
 @Setter
@@ -27,8 +27,8 @@ public class PassageExamen {
     private Long id;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "candidat_id", nullable = false)
-    private Candidat candidat;
+    @JoinColumn(name = "inscription_id", nullable = false)
+    private Inscription inscription;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "type_epreuve", length = 30, nullable = false)

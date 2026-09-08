@@ -29,6 +29,8 @@ import java.util.stream.Collectors;
 public class CandidatService {
 
     private final CandidatRepository candidatRepository;
+    private final InscriptionRepository inscriptionRepository;
+    private final InscriptionService inscriptionService;
     private final CategoriePermisRepository categorieRepository;
     private final ForfaitRepository forfaitRepository;
     private final PaiementRepository paiementRepository;
@@ -50,14 +52,12 @@ public class CandidatService {
     public CandidatDTO getCandidatById(Long id) {
         Candidat c = candidatRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Candidat non trouvé avec l'id: " + id));
-        c.recalculerSoldeEtStatut();
         return mapToDTO(c);
     }
 
     public CandidatDTO getCandidatByNumeroDossier(String numeroDossier) {
         Candidat c = candidatRepository.findByNumeroDossier(numeroDossier)
                 .orElseThrow(() -> new ResourceNotFoundException("Candidat non trouvé avec le numéro de dossier: " + numeroDossier));
-        c.recalculerSoldeEtStatut();
         return mapToDTO(c);
     }
 
@@ -80,12 +80,7 @@ public class CandidatService {
         }
 
         LocalDate dateInsc = request.getDateInscription() != null ? request.getDateInscription() : LocalDate.now();
-        LocalDate dateEcheance = dateInsc.plusMonths(8); // RG05: 8 mois de validité
-
         String numeroDossier = genererNumeroDossierUnique(dateInsc.getYear());
-
-        BigDecimal totalVerse = (premierVersement != null) ? premierVersement : BigDecimal.ZERO;
-        BigDecimal soldeRestant = forfait.getMontant().subtract(totalVerse);
 
         Candidat candidat = Candidat.builder()
                 .numeroDossier(numeroDossier)
@@ -96,27 +91,21 @@ public class CandidatService {
                 .telephone(request.getTelephone().trim())
                 .email(request.getEmail() != null ? request.getEmail().trim().toLowerCase() : null)
                 .contactsUrgence(request.getContactsUrgence())
-                .dateInscription(dateInsc)
                 .dateReceptionDossier(request.getDateReceptionDossier())
                 .dateDepotDossier(request.getDateDepotDossier())
-                .dateEcheance(dateEcheance)
-                .statutDossier(StatutDossier.EN_COURS)
-                .categoriePermis(categorie)
-                .forfait(forfait)
-                .montantForfait(forfait.getMontant())
-                .totalVerse(totalVerse)
-                .soldeRestant(soldeRestant)
                 .build();
 
-        candidat.recalculerSoldeEtStatut();
         Candidat savedCandidat = candidatRepository.save(candidat);
+
+        BigDecimal totalVerse = (premierVersement != null) ? premierVersement : BigDecimal.ZERO;
+        Inscription inscription = inscriptionService.creerInscriptionInitiale(savedCandidat, categorie, forfait, dateInsc, totalVerse);
 
         Utilisateur currentUser = auditService.getCurrentUser();
 
         // Si premier versement fourni lors de l'enregistrement
         if (premierVersement != null && premierVersement.compareTo(BigDecimal.ZERO) > 0) {
             Paiement paiement = Paiement.builder()
-                    .candidat(savedCandidat)
+                    .inscription(inscription)
                     .utilisateur(currentUser)
                     .typeVersement(TypeVersement.PREMIER_VERSEMENT)
                     .montant(premierVersement)
@@ -134,7 +123,7 @@ public class CandidatService {
                     .numeroRecu(numRecu)
                     .nomClient(savedCandidat.getNom() + " " + savedCandidat.getPrenom())
                     .montant(premierVersement)
-                    .soldeRestant(savedCandidat.getSoldeRestant())
+                    .soldeRestant(inscription.getSoldeRestant())
                     .imprimePar(currentUser != null ? currentUser.getNom() + " " + currentUser.getPrenom() : "Secrétariat")
                     .build();
             recuRepository.save(recu);
@@ -152,10 +141,10 @@ public class CandidatService {
             transactionCaisseRepository.save(tx);
         }
 
-        auditService.logAction("CREATION_CANDIDAT", "Candidat", savedCandidat.getNumeroDossier(), 
+        auditService.logAction("CREATION_CANDIDAT", "Candidat", savedCandidat.getNumeroDossier(),
                 "Inscription du candidat " + savedCandidat.getNom() + " " + savedCandidat.getPrenom() + " pour le forfait " + forfait.getNom(), null);
 
-        return mapToDTO(savedCandidat);
+        return mapToDTO(savedCandidat, inscription);
     }
 
     @Transactional
@@ -178,19 +167,13 @@ public class CandidatService {
         candidat.setContactsUrgence(request.getContactsUrgence());
         candidat.setDateReceptionDossier(request.getDateReceptionDossier());
         candidat.setDateDepotDossier(request.getDateDepotDossier());
-        candidat.setCategoriePermis(categorie);
-
-        // Si le forfait a changé
-        if (!candidat.getForfait().getId().equals(forfait.getId())) {
-            candidat.setForfait(forfait);
-            candidat.setMontantForfait(forfait.getMontant());
-            candidat.recalculerSoldeEtStatut();
-        }
 
         Candidat updated = candidatRepository.save(candidat);
+        Inscription active = inscriptionService.mettreAJourCategorieEtForfait(id, categorie, forfait);
+
         auditService.logAction("MODIFICATION_CANDIDAT", "Candidat", updated.getNumeroDossier(), "Mise à jour fiche candidat", null);
 
-        return mapToDTO(updated);
+        return mapToDTO(updated, active);
     }
 
     @Transactional
@@ -210,10 +193,10 @@ public class CandidatService {
     @Transactional
     public void verifierExpirationsDossiers() {
         log.info("Vérification automatique des dossiers expirés...");
-        List<Candidat> aExpirer = candidatRepository.findCandidatsAExpirer(LocalDate.now());
-        for (Candidat c : aExpirer) {
-            c.recalculerSoldeEtStatut();
-            candidatRepository.save(c);
+        List<Inscription> aExpirer = inscriptionRepository.findInscriptionsActivesAExpirer(LocalDate.now());
+        for (Inscription i : aExpirer) {
+            i.recalculerSoldeEtStatut();
+            inscriptionRepository.save(i);
         }
     }
 
@@ -242,13 +225,19 @@ public class CandidatService {
     }
 
     public CandidatDTO mapToDTO(Candidat c) {
+        Inscription active = inscriptionService.getInscriptionActive(c.getId());
+        active.recalculerSoldeEtStatut();
+        return mapToDTO(c, active);
+    }
+
+    public CandidatDTO mapToDTO(Candidat c, Inscription i) {
         LocalDate now = LocalDate.now();
         long joursRestants = 0;
         boolean procheExpiration = false;
 
-        if (c.getDateEcheance() != null) {
-            joursRestants = ChronoUnit.DAYS.between(now, c.getDateEcheance());
-            procheExpiration = (joursRestants >= 0 && joursRestants <= 30 && c.getStatutDossier() != StatutDossier.SOLDE);
+        if (i.getDateEcheance() != null) {
+            joursRestants = ChronoUnit.DAYS.between(now, i.getDateEcheance());
+            procheExpiration = (joursRestants >= 0 && joursRestants <= 30 && i.getStatutDossier() != StatutDossier.SOLDE);
         }
 
         return CandidatDTO.builder()
@@ -261,19 +250,21 @@ public class CandidatService {
                 .telephone(c.getTelephone())
                 .email(c.getEmail())
                 .contactsUrgence(c.getContactsUrgence())
-                .dateInscription(c.getDateInscription())
+                .dateInscription(i.getDateInscription())
                 .dateReceptionDossier(c.getDateReceptionDossier())
                 .dateDepotDossier(c.getDateDepotDossier())
-                .dateEcheance(c.getDateEcheance())
-                .statutDossier(c.getStatutDossier())
-                .categoriePermisId(c.getCategoriePermis() != null ? c.getCategoriePermis().getId() : null)
-                .categoriePermisCode(c.getCategoriePermis() != null ? c.getCategoriePermis().getCode() : null)
-                .categoriePermisLibelle(c.getCategoriePermis() != null ? c.getCategoriePermis().getLibelle() : null)
-                .forfaitId(c.getForfait() != null ? c.getForfait().getId() : null)
-                .forfaitNom(c.getForfait() != null ? c.getForfait().getNom() : null)
-                .montantForfait(c.getMontantForfait())
-                .totalVerse(c.getTotalVerse())
-                .soldeRestant(c.getSoldeRestant())
+                .dateEcheance(i.getDateEcheance())
+                .statutDossier(i.getStatutDossier())
+                .inscriptionActiveId(i.getId())
+                .numeroCycle(i.getNumeroCycle())
+                .categoriePermisId(i.getCategoriePermis() != null ? i.getCategoriePermis().getId() : null)
+                .categoriePermisCode(i.getCategoriePermis() != null ? i.getCategoriePermis().getCode() : null)
+                .categoriePermisLibelle(i.getCategoriePermis() != null ? i.getCategoriePermis().getLibelle() : null)
+                .forfaitId(i.getForfait() != null ? i.getForfait().getId() : null)
+                .forfaitNom(i.getForfait() != null ? i.getForfait().getNom() : null)
+                .montantForfait(i.getMontantForfait())
+                .totalVerse(i.getTotalVerse())
+                .soldeRestant(i.getSoldeRestant())
                 .dateCreation(c.getDateCreation())
                 .procheExpiration(procheExpiration)
                 .joursRestants(joursRestants)

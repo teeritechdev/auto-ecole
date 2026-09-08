@@ -9,7 +9,7 @@ import com.autoecole.entity.*;
 import com.autoecole.entity.enums.*;
 import com.autoecole.exception.BadRequestException;
 import com.autoecole.exception.ResourceNotFoundException;
-import com.autoecole.repository.CandidatRepository;
+import com.autoecole.repository.InscriptionRepository;
 import com.autoecole.repository.PaiementRepository;
 import com.autoecole.repository.RecuRepository;
 import com.autoecole.repository.TransactionCaisseRepository;
@@ -31,7 +31,8 @@ import java.util.stream.Collectors;
 public class PaiementService {
 
     private final PaiementRepository paiementRepository;
-    private final CandidatRepository candidatRepository;
+    private final InscriptionRepository inscriptionRepository;
+    private final InscriptionService inscriptionService;
     private final RecuRepository recuRepository;
     private final TransactionCaisseRepository transactionCaisseRepository;
     private final CandidatService candidatService;
@@ -56,26 +57,26 @@ public class PaiementService {
 
     @Transactional
     public PaiementDTO enregistrerPaiement(CreatePaiementRequest request) {
-        Candidat candidat = candidatRepository.findById(request.getCandidatId())
-                .orElseThrow(() -> new ResourceNotFoundException("Candidat introuvable"));
+        Inscription inscription = inscriptionService.getInscriptionActive(request.getCandidatId());
+        Candidat candidat = inscription.getCandidat();
 
         BigDecimal montant = request.getMontant();
         if (montant == null || montant.compareTo(BigDecimal.ZERO) <= 0) {
             throw new BadRequestException("Le montant du versement doit être supérieur à 0");
         }
 
-        // Vérifier si le candidat est déjà soldé
-        if (candidat.getSoldeRestant().compareTo(BigDecimal.ZERO) <= 0) {
+        // Vérifier si l'inscription est déjà soldée
+        if (inscription.getSoldeRestant().compareTo(BigDecimal.ZERO) <= 0) {
             throw new BadRequestException("Le dossier de ce candidat est déjà intégralement soldé");
         }
 
         // Vérifier le dépassement du solde restant
-        if (montant.compareTo(candidat.getSoldeRestant()) > 0) {
-            throw new BadRequestException("Le montant versé (" + montant + " FCFA) dépasse le solde restant dû (" + candidat.getSoldeRestant() + " FCFA)");
+        if (montant.compareTo(inscription.getSoldeRestant()) > 0) {
+            throw new BadRequestException("Le montant versé (" + montant + " FCFA) dépasse le solde restant dû (" + inscription.getSoldeRestant() + " FCFA)");
         }
 
-        // Vérifier s'il s'agit du premier versement
-        long nbPaiementsValides = paiementRepository.countByCandidatIdAndStatut(candidat.getId(), StatutPaiement.VALIDE);
+        // Vérifier s'il s'agit du premier versement de ce cycle d'inscription
+        long nbPaiementsValides = paiementRepository.countByInscriptionIdAndStatut(inscription.getId(), StatutPaiement.VALIDE);
         TypeVersement typeVersement;
 
         if (nbPaiementsValides == 0) {
@@ -95,7 +96,7 @@ public class PaiementService {
 
         // 1. Enregistrement du paiement
         Paiement paiement = Paiement.builder()
-                .candidat(candidat)
+                .inscription(inscription)
                 .utilisateur(currentUser)
                 .typeVersement(typeVersement)
                 .montant(montant)
@@ -106,10 +107,10 @@ public class PaiementService {
 
         Paiement savedPaiement = paiementRepository.save(paiement);
 
-        // 2. Mise à jour atomique du solde candidat (RG09, RG07)
-        candidat.setTotalVerse(candidat.getTotalVerse().add(montant));
-        candidat.recalculerSoldeEtStatut();
-        candidatRepository.save(candidat);
+        // 2. Mise à jour atomique du solde de l'inscription (RG09, RG07)
+        inscription.setTotalVerse(inscription.getTotalVerse().add(montant));
+        inscription.recalculerSoldeEtStatut();
+        inscriptionRepository.save(inscription);
 
         // 3. Génération du reçu unique séquentiel (RG08)
         String numeroRecu = candidatService.genererNumeroRecuUnique(LocalDateTime.now().getYear());
@@ -118,7 +119,7 @@ public class PaiementService {
                 .numeroRecu(numeroRecu)
                 .nomClient(candidat.getNom() + " " + candidat.getPrenom())
                 .montant(montant)
-                .soldeRestant(candidat.getSoldeRestant())
+                .soldeRestant(inscription.getSoldeRestant())
                 .imprimePar(currentUser != null ? currentUser.getNom() + " " + currentUser.getPrenom() : "Caisse")
                 .build();
         recuRepository.save(recu);
@@ -136,7 +137,7 @@ public class PaiementService {
         transactionCaisseRepository.save(tx);
 
         auditService.logAction("ENCAISSEMENT_VERSEMENT", "Paiement", numeroRecu,
-                "Encaissement de " + montant + " FCFA pour le candidat " + candidat.getNumeroDossier() + " (Nouveau solde: " + candidat.getSoldeRestant() + " FCFA)", null);
+                "Encaissement de " + montant + " FCFA pour le candidat " + candidat.getNumeroDossier() + " (Nouveau solde: " + inscription.getSoldeRestant() + " FCFA)", null);
 
         return mapToDTO(savedPaiement);
     }
@@ -153,7 +154,7 @@ public class PaiementService {
         BigDecimal ancienMontant = paiement.getMontant();
         BigDecimal nouveauMontant = request.getMontant();
 
-        Candidat candidat = paiement.getCandidat();
+        Inscription inscription = paiement.getInscription();
 
         // Validation si c'est le 1er versement
         if (paiement.getTypeVersement() == TypeVersement.PREMIER_VERSEMENT) {
@@ -166,17 +167,17 @@ public class PaiementService {
 
         Utilisateur currentUser = auditService.getCurrentUser();
 
-        // Recalcul du total versé candidat
+        // Recalcul du total versé de l'inscription
         BigDecimal difference = nouveauMontant.subtract(ancienMontant);
-        BigDecimal nouveauTotal = candidat.getTotalVerse().add(difference);
+        BigDecimal nouveauTotal = inscription.getTotalVerse().add(difference);
 
-        if (nouveauTotal.compareTo(candidat.getMontantForfait()) > 0) {
+        if (nouveauTotal.compareTo(inscription.getMontantForfait()) > 0) {
             throw new BadRequestException("La modification entraîne un dépassement du forfait");
         }
 
-        candidat.setTotalVerse(nouveauTotal);
-        candidat.recalculerSoldeEtStatut();
-        candidatRepository.save(candidat);
+        inscription.setTotalVerse(nouveauTotal);
+        inscription.recalculerSoldeEtStatut();
+        inscriptionRepository.save(inscription);
 
         // Mise à jour du paiement
         paiement.setMontant(nouveauMontant);
@@ -191,7 +192,7 @@ public class PaiementService {
         // Mise à jour du reçu
         recuRepository.findByPaiementId(paiementId).ifPresent(recu -> {
             recu.setMontant(nouveauMontant);
-            recu.setSoldeRestant(candidat.getSoldeRestant());
+            recu.setSoldeRestant(inscription.getSoldeRestant());
             recuRepository.save(recu);
         });
 
@@ -211,12 +212,13 @@ public class PaiementService {
         }
 
         Utilisateur currentUser = auditService.getCurrentUser();
-        Candidat candidat = paiement.getCandidat();
+        Inscription inscription = paiement.getInscription();
+        Candidat candidat = inscription.getCandidat();
 
-        // Déduire le montant du candidat
-        candidat.setTotalVerse(candidat.getTotalVerse().subtract(paiement.getMontant()));
-        candidat.recalculerSoldeEtStatut();
-        candidatRepository.save(candidat);
+        // Déduire le montant de l'inscription
+        inscription.setTotalVerse(inscription.getTotalVerse().subtract(paiement.getMontant()));
+        inscription.recalculerSoldeEtStatut();
+        inscriptionRepository.save(inscription);
 
         paiement.setStatut(StatutPaiement.ANNULE);
         paiement.setMotifModification(request.getMotif());
@@ -244,12 +246,13 @@ public class PaiementService {
 
     public PaiementDTO mapToDTO(Paiement p) {
         Recu recu = p.getRecu() != null ? p.getRecu() : recuRepository.findByPaiementId(p.getId()).orElse(null);
+        Candidat candidat = p.getInscription() != null ? p.getInscription().getCandidat() : null;
 
         return PaiementDTO.builder()
                 .id(p.getId())
-                .candidatId(p.getCandidat() != null ? p.getCandidat().getId() : null)
-                .candidatNumeroDossier(p.getCandidat() != null ? p.getCandidat().getNumeroDossier() : null)
-                .candidatNomComplet(p.getCandidat() != null ? p.getCandidat().getNom() + " " + p.getCandidat().getPrenom() : null)
+                .candidatId(candidat != null ? candidat.getId() : null)
+                .candidatNumeroDossier(candidat != null ? candidat.getNumeroDossier() : null)
+                .candidatNomComplet(candidat != null ? candidat.getNom() + " " + candidat.getPrenom() : null)
                 .utilisateurId(p.getUtilisateur() != null ? p.getUtilisateur().getId() : null)
                 .utilisateurNomComplet(p.getUtilisateur() != null ? p.getUtilisateur().getNom() + " " + p.getUtilisateur().getPrenom() : null)
                 .typeVersement(p.getTypeVersement())

@@ -26,6 +26,7 @@ public class DataInitializerService implements CommandLineRunner {
     private final CategoriePermisRepository categorieRepository;
     private final ForfaitRepository forfaitRepository;
     private final CandidatRepository candidatRepository;
+    private final InscriptionRepository inscriptionRepository;
     private final PaiementRepository paiementRepository;
     private final RecuRepository recuRepository;
     private final PassageExamenRepository passageRepository;
@@ -147,19 +148,26 @@ public class DataInitializerService implements CommandLineRunner {
                 .lieuNaissance("Abidjan")
                 .telephone("0708091011")
                 .email("bakary.traore@email.ci")
-                .dateInscription(dateInsc1)
-                .dateEcheance(dateInsc1.plusMonths(8))
-                .categoriePermis(catB)
-                .forfait(f1)
-                .montantForfait(f1.getMontant())
-                .totalVerse(new BigDecimal("40000"))
-                .soldeRestant(new BigDecimal("60000"))
-                .statutDossier(StatutDossier.EN_COURS)
                 .build();
         c1 = candidatRepository.save(c1);
 
-        Paiement p1 = Paiement.builder()
+        Inscription i1 = Inscription.builder()
                 .candidat(c1)
+                .categoriePermis(catB)
+                .forfait(f1)
+                .montantForfait(f1.getMontant())
+                .dateInscription(dateInsc1)
+                .dateEcheance(dateInsc1.plusMonths(8))
+                .totalVerse(new BigDecimal("40000"))
+                .soldeRestant(new BigDecimal("60000"))
+                .statutDossier(StatutDossier.EN_COURS)
+                .numeroCycle(1)
+                .active(true)
+                .build();
+        i1 = inscriptionRepository.save(i1);
+
+        Paiement p1 = Paiement.builder()
+                .inscription(i1)
                 .utilisateur(admin)
                 .typeVersement(TypeVersement.PREMIER_VERSEMENT)
                 .montant(new BigDecimal("40000"))
@@ -191,7 +199,7 @@ public class DataInitializerService implements CommandLineRunner {
 
         // Passage examen Code pour C1 (Réussi)
         passageRepository.save(PassageExamen.builder()
-                .candidat(c1)
+                .inscription(i1)
                 .typeEpreuve(TypeEpreuve.CODE)
                 .numeroPassage(1)
                 .datePassage(LocalDate.now().minusDays(5))
@@ -210,19 +218,26 @@ public class DataInitializerService implements CommandLineRunner {
                 .lieuNaissance("Bouaké")
                 .telephone("0506070809")
                 .email("fatou.kone@email.ci")
-                .dateInscription(dateInsc2)
-                .dateEcheance(dateInsc2.plusMonths(8))
-                .categoriePermis(catB)
-                .forfait(f2)
-                .montantForfait(f2.getMontant())
-                .totalVerse(new BigDecimal("125000"))
-                .soldeRestant(BigDecimal.ZERO)
-                .statutDossier(StatutDossier.SOLDE)
                 .build();
         c2 = candidatRepository.save(c2);
 
-        Paiement p2_1 = paiementRepository.save(Paiement.builder()
+        Inscription i2 = Inscription.builder()
                 .candidat(c2)
+                .categoriePermis(catB)
+                .forfait(f2)
+                .montantForfait(f2.getMontant())
+                .dateInscription(dateInsc2)
+                .dateEcheance(dateInsc2.plusMonths(8))
+                .totalVerse(new BigDecimal("125000"))
+                .soldeRestant(BigDecimal.ZERO)
+                .statutDossier(StatutDossier.SOLDE)
+                .numeroCycle(1)
+                .active(true)
+                .build();
+        i2 = inscriptionRepository.save(i2);
+
+        Paiement p2_1 = paiementRepository.save(Paiement.builder()
+                .inscription(i2)
                 .utilisateur(admin)
                 .typeVersement(TypeVersement.PREMIER_VERSEMENT)
                 .montant(new BigDecimal("50000"))
@@ -240,7 +255,7 @@ public class DataInitializerService implements CommandLineRunner {
                 .build());
 
         Paiement p2_2 = paiementRepository.save(Paiement.builder()
-                .candidat(c2)
+                .inscription(i2)
                 .utilisateur(admin)
                 .typeVersement(TypeVersement.VERSEMENT_SUIVANT)
                 .montant(new BigDecimal("75000"))
@@ -279,7 +294,7 @@ public class DataInitializerService implements CommandLineRunner {
 
         // Passages d'examens pour C2 (Code réussi, Créneau réussi, Circulation programmée)
         passageRepository.save(PassageExamen.builder()
-                .candidat(c2)
+                .inscription(i2)
                 .typeEpreuve(TypeEpreuve.CODE)
                 .numeroPassage(1)
                 .datePassage(LocalDate.now().minusMonths(1))
@@ -289,7 +304,7 @@ public class DataInitializerService implements CommandLineRunner {
                 .build());
 
         passageRepository.save(PassageExamen.builder()
-                .candidat(c2)
+                .inscription(i2)
                 .typeEpreuve(TypeEpreuve.CRENEAU)
                 .numeroPassage(1)
                 .datePassage(LocalDate.now().minusDays(12))
@@ -299,7 +314,7 @@ public class DataInitializerService implements CommandLineRunner {
                 .build());
 
         passageRepository.save(PassageExamen.builder()
-                .candidat(c2)
+                .inscription(i2)
                 .typeEpreuve(TypeEpreuve.CIRCULATION)
                 .numeroPassage(1)
                 .datePassage(LocalDate.now().plusDays(4))

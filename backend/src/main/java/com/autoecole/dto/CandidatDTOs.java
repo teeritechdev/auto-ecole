@@ -34,6 +34,8 @@ public class CandidatDTOs {
         private LocalDate dateDepotDossier;
         private LocalDate dateEcheance;
         private StatutDossier statutDossier;
+        private Long inscriptionActiveId;
+        private int numeroCycle;
         private Long categoriePermisId;
         private String categoriePermisCode;
         private String categoriePermisLibelle;

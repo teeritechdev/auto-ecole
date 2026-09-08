@@ -31,7 +31,7 @@ public class CandidatController {
             @RequestParam(required = false) String recherche,
             @RequestParam(required = false) StatutDossier statut,
             @RequestParam(required = false) Long categorieId,
-            @PageableDefault(size = 15, sort = "dateInscription", direction = Sort.Direction.DESC) Pageable pageable
+            @PageableDefault(size = 15, sort = "dateCreation", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         return ResponseEntity.ok(candidatService.rechercherCandidats(recherche, statut, categorieId, pageable));
     }

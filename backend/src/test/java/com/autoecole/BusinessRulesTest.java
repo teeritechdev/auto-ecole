@@ -20,7 +20,7 @@ class BusinessRulesTest {
                 .montant(new BigDecimal("100000"))
                 .build();
 
-        Candidat candidat = Candidat.builder()
+        Inscription inscription = Inscription.builder()
                 .forfait(forfait)
                 .montantForfait(forfait.getMontant())
                 .totalVerse(new BigDecimal("100000"))
@@ -28,10 +28,10 @@ class BusinessRulesTest {
                 .dateEcheance(LocalDate.now().plusMonths(8))
                 .build();
 
-        candidat.recalculerSoldeEtStatut();
+        inscription.recalculerSoldeEtStatut();
 
-        assertEquals(BigDecimal.ZERO, candidat.getSoldeRestant());
-        assertEquals(StatutDossier.SOLDE, candidat.getStatutDossier());
+        assertEquals(BigDecimal.ZERO, inscription.getSoldeRestant());
+        assertEquals(StatutDossier.SOLDE, inscription.getStatutDossier());
     }
 
     @Test
@@ -46,7 +46,7 @@ class BusinessRulesTest {
         LocalDate dateInsc = LocalDate.now().minusMonths(9);
         LocalDate dateEcheance = dateInsc.plusMonths(8);
 
-        Candidat candidat = Candidat.builder()
+        Inscription inscription = Inscription.builder()
                 .forfait(forfait)
                 .montantForfait(forfait.getMontant())
                 .totalVerse(new BigDecimal("40000"))
@@ -54,10 +54,10 @@ class BusinessRulesTest {
                 .dateEcheance(dateEcheance)
                 .build();
 
-        candidat.recalculerSoldeEtStatut();
+        inscription.recalculerSoldeEtStatut();
 
-        assertEquals(new BigDecimal("60000"), candidat.getSoldeRestant());
-        assertEquals(StatutDossier.EXPIRE_NON_SOLDE, candidat.getStatutDossier());
+        assertEquals(new BigDecimal("60000"), inscription.getSoldeRestant());
+        assertEquals(StatutDossier.EXPIRE_NON_SOLDE, inscription.getStatutDossier());
     }
 
     @Test
@@ -71,7 +71,7 @@ class BusinessRulesTest {
         LocalDate dateInsc = LocalDate.now().minusMonths(1);
         LocalDate dateEcheance = dateInsc.plusMonths(8);
 
-        Candidat candidat = Candidat.builder()
+        Inscription inscription = Inscription.builder()
                 .forfait(forfait)
                 .montantForfait(forfait.getMontant())
                 .totalVerse(new BigDecimal("40000"))
@@ -79,10 +79,10 @@ class BusinessRulesTest {
                 .dateEcheance(dateEcheance)
                 .build();
 
-        candidat.recalculerSoldeEtStatut();
+        inscription.recalculerSoldeEtStatut();
 
-        assertEquals(new BigDecimal("60000"), candidat.getSoldeRestant());
-        assertEquals(StatutDossier.EN_COURS, candidat.getStatutDossier());
+        assertEquals(new BigDecimal("60000"), inscription.getSoldeRestant());
+        assertEquals(StatutDossier.EN_COURS, inscription.getStatutDossier());
     }
 
     @Test
@@ -96,7 +96,7 @@ class BusinessRulesTest {
         LocalDate dateInsc = LocalDate.now().minusMonths(10);
         LocalDate dateEcheance = dateInsc.plusMonths(8);
 
-        Candidat candidat = Candidat.builder()
+        Inscription inscription = Inscription.builder()
                 .forfait(forfait)
                 .montantForfait(forfait.getMontant())
                 .totalVerse(new BigDecimal("125000"))
@@ -104,10 +104,10 @@ class BusinessRulesTest {
                 .dateEcheance(dateEcheance)
                 .build();
 
-        candidat.recalculerSoldeEtStatut();
+        inscription.recalculerSoldeEtStatut();
 
-        assertEquals(BigDecimal.ZERO, candidat.getSoldeRestant());
-        assertEquals(StatutDossier.SOLDE, candidat.getStatutDossier());
+        assertEquals(BigDecimal.ZERO, inscription.getSoldeRestant());
+        assertEquals(StatutDossier.SOLDE, inscription.getStatutDossier());
     }
 
     @Test
@@ -118,7 +118,7 @@ class BusinessRulesTest {
                 .montant(new BigDecimal("125000"))
                 .build();
 
-        Candidat candidat = Candidat.builder()
+        Inscription inscription = Inscription.builder()
                 .forfait(forfait)
                 .montantForfait(forfait.getMontant())
                 .totalVerse(BigDecimal.ZERO)
@@ -126,9 +126,9 @@ class BusinessRulesTest {
                 .dateEcheance(LocalDate.now().plusMonths(8))
                 .build();
 
-        candidat.recalculerSoldeEtStatut();
+        inscription.recalculerSoldeEtStatut();
 
-        assertEquals(new BigDecimal("125000"), candidat.getSoldeRestant());
-        assertEquals(StatutDossier.EN_COURS, candidat.getStatutDossier());
+        assertEquals(new BigDecimal("125000"), inscription.getSoldeRestant());
+        assertEquals(StatutDossier.EN_COURS, inscription.getStatutDossier());
     }
 }

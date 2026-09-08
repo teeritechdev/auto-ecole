@@ -2,6 +2,7 @@ package com.autoecole.service;
 
 import com.autoecole.dto.ExamenDTOs.*;
 import com.autoecole.entity.Candidat;
+import com.autoecole.entity.Inscription;
 import com.autoecole.entity.PassageExamen;
 import com.autoecole.entity.Utilisateur;
 import com.autoecole.entity.enums.ResultatExamen;
@@ -28,6 +29,7 @@ public class ExamenService {
 
     private final PassageExamenRepository passageRepository;
     private final CandidatRepository candidatRepository;
+    private final InscriptionService inscriptionService;
     private final UtilisateurRepository utilisateurRepository;
     private final AuditService auditService;
 
@@ -77,17 +79,16 @@ public class ExamenService {
 
     @Transactional
     public PassageExamenDTO programmerOuEnregistrerPassage(CreatePassageRequest request) {
-        Candidat candidat = candidatRepository.findById(request.getCandidatId())
-                .orElseThrow(() -> new ResourceNotFoundException("Candidat introuvable"));
+        Inscription inscription = inscriptionService.getInscriptionActive(request.getCandidatId());
 
-        long count = passageRepository.countByCandidatIdAndTypeEpreuve(candidat.getId(), request.getTypeEpreuve());
+        long count = passageRepository.countByInscriptionIdAndTypeEpreuve(inscription.getId(), request.getTypeEpreuve());
         int numeroPassage = request.getNumeroPassage() != null ? request.getNumeroPassage() : (int) (count + 1);
 
         if (numeroPassage > 5) {
             throw new BadRequestException("Nombre maximal de 5 passages atteint pour l'épreuve " + request.getTypeEpreuve().name());
         }
 
-        if (passageRepository.findByCandidatIdAndTypeEpreuveAndNumeroPassage(candidat.getId(), request.getTypeEpreuve(), numeroPassage).isPresent()) {
+        if (passageRepository.findByInscriptionIdAndTypeEpreuveAndNumeroPassage(inscription.getId(), request.getTypeEpreuve(), numeroPassage).isPresent()) {
             throw new BadRequestException("Le passage n°" + numeroPassage + " pour l'épreuve " + request.getTypeEpreuve().name() + " existe déjà pour ce candidat");
         }
 
@@ -99,7 +100,7 @@ public class ExamenService {
         }
 
         PassageExamen passage = PassageExamen.builder()
-                .candidat(candidat)
+                .inscription(inscription)
                 .typeEpreuve(request.getTypeEpreuve())
                 .numeroPassage(numeroPassage)
                 .datePassage(request.getDatePassage())
@@ -112,7 +113,7 @@ public class ExamenService {
                 .build();
 
         PassageExamen saved = passageRepository.save(passage);
-        auditService.logAction("ENREGISTREMENT_EXAMEN", "PassageExamen", candidat.getNumeroDossier(),
+        auditService.logAction("ENREGISTREMENT_EXAMEN", "PassageExamen", inscription.getCandidat().getNumeroDossier(),
                 "Passage " + numeroPassage + " (" + request.getTypeEpreuve() + ") - Résultat: " + saved.getResultat(), null);
 
         return mapToDTO(saved);
@@ -153,7 +154,7 @@ public class ExamenService {
         passage.setObservations(request.getObservations());
 
         PassageExamen updated = passageRepository.save(passage);
-        auditService.logAction("MAJ_RESULTAT_EXAMEN", "PassageExamen", passage.getCandidat().getNumeroDossier(),
+        auditService.logAction("MAJ_RESULTAT_EXAMEN", "PassageExamen", passage.getInscription().getCandidat().getNumeroDossier(),
                 "Mise à jour passage " + passage.getNumeroPassage() + " (" + passage.getTypeEpreuve() + ") -> " + request.getResultat(), null);
 
         return mapToDTO(updated);
@@ -164,7 +165,7 @@ public class ExamenService {
         PassageExamen passage = passageRepository.findById(passageId)
                 .orElseThrow(() -> new ResourceNotFoundException("Passage d'examen introuvable"));
 
-        String numDossier = passage.getCandidat().getNumeroDossier();
+        String numDossier = passage.getInscription().getCandidat().getNumeroDossier();
         passageRepository.delete(passage);
         auditService.logAction("SUPPRESSION_PASSAGE_EXAMEN", "PassageExamen", numDossier,
                 "Suppression passage " + passage.getNumeroPassage() + " (" + passage.getTypeEpreuve() + ")", null);
@@ -177,11 +178,12 @@ public class ExamenService {
     }
 
     public PassageExamenDTO mapToDTO(PassageExamen pe) {
+        Candidat candidat = pe.getInscription() != null ? pe.getInscription().getCandidat() : null;
         return PassageExamenDTO.builder()
                 .id(pe.getId())
-                .candidatId(pe.getCandidat() != null ? pe.getCandidat().getId() : null)
-                .candidatNumeroDossier(pe.getCandidat() != null ? pe.getCandidat().getNumeroDossier() : "")
-                .candidatNomComplet(pe.getCandidat() != null ? pe.getCandidat().getNom() + " " + pe.getCandidat().getPrenom() : "")
+                .candidatId(candidat != null ? candidat.getId() : null)
+                .candidatNumeroDossier(candidat != null ? candidat.getNumeroDossier() : "")
+                .candidatNomComplet(candidat != null ? candidat.getNom() + " " + candidat.getPrenom() : "")
                 .typeEpreuve(pe.getTypeEpreuve())
                 .numeroPassage(pe.getNumeroPassage())
                 .datePassage(pe.getDatePassage())

@@ -17,16 +17,20 @@ import java.util.Optional;
 @Repository
 public interface PassageExamenRepository extends JpaRepository<PassageExamen, Long> {
 
-    List<PassageExamen> findByCandidatIdOrderByTypeEpreuveAscNumeroPassageAsc(Long candidatId);
+    @Query("SELECT pe FROM PassageExamen pe WHERE pe.inscription.candidat.id = :candidatId " +
+           "ORDER BY pe.typeEpreuve ASC, pe.numeroPassage ASC")
+    List<PassageExamen> findByCandidatIdOrderByTypeEpreuveAscNumeroPassageAsc(@Param("candidatId") Long candidatId);
 
-    List<PassageExamen> findByCandidatIdAndTypeEpreuveOrderByNumeroPassageAsc(Long candidatId, TypeEpreuve typeEpreuve);
+    @Query("SELECT pe FROM PassageExamen pe WHERE pe.inscription.candidat.id = :candidatId AND pe.typeEpreuve = :typeEpreuve " +
+           "ORDER BY pe.numeroPassage ASC")
+    List<PassageExamen> findByCandidatIdAndTypeEpreuveOrderByNumeroPassageAsc(@Param("candidatId") Long candidatId, @Param("typeEpreuve") TypeEpreuve typeEpreuve);
 
-    Optional<PassageExamen> findByCandidatIdAndTypeEpreuveAndNumeroPassage(Long candidatId, TypeEpreuve typeEpreuve, Integer numeroPassage);
+    Optional<PassageExamen> findByInscriptionIdAndTypeEpreuveAndNumeroPassage(Long inscriptionId, TypeEpreuve typeEpreuve, Integer numeroPassage);
 
-    long countByCandidatIdAndTypeEpreuve(Long candidatId, TypeEpreuve typeEpreuve);
+    long countByInscriptionIdAndTypeEpreuve(Long inscriptionId, TypeEpreuve typeEpreuve);
 
     @Query("SELECT pe FROM PassageExamen pe WHERE " +
-           "(:candidatId IS NULL OR pe.candidat.id = :candidatId) " +
+           "(:candidatId IS NULL OR pe.inscription.candidat.id = :candidatId) " +
            "AND (:typeEpreuve IS NULL OR pe.typeEpreuve = :typeEpreuve) " +
            "AND (:resultat IS NULL OR pe.resultat = :resultat) " +
            "AND (:dateRef IS NULL OR pe.datePassage = :dateRef)")

@@ -16,14 +16,12 @@ import java.util.List;
 @Repository
 public interface PaiementRepository extends JpaRepository<Paiement, Long> {
 
-    List<Paiement> findByCandidatIdOrderByDatePaiementDesc(Long candidatId);
+    List<Paiement> findByInscriptionIdOrderByDatePaiementDesc(Long inscriptionId);
 
-    List<Paiement> findByCandidatIdAndStatutOrderByDatePaiementAsc(Long candidatId, StatutPaiement statut);
-
-    long countByCandidatIdAndStatut(Long candidatId, StatutPaiement statut);
+    long countByInscriptionIdAndStatut(Long inscriptionId, StatutPaiement statut);
 
     @Query("SELECT p FROM Paiement p WHERE " +
-           "(:candidatId IS NULL OR p.candidat.id = :candidatId) " +
+           "(:candidatId IS NULL OR p.inscription.candidat.id = :candidatId) " +
            "AND (:statut IS NULL OR p.statut = :statut) " +
            "AND (:debut IS NULL OR p.datePaiement >= :debut) " +
            "AND (:fin IS NULL OR p.datePaiement <= :fin)")
@@ -35,8 +33,11 @@ public interface PaiementRepository extends JpaRepository<Paiement, Long> {
             Pageable pageable
     );
 
-    @Query("SELECT COALESCE(SUM(p.montant), 0) FROM Paiement p WHERE p.candidat.id = :candidatId AND p.statut = 'VALIDE'")
-    BigDecimal sumTotalValideByCandidat(@Param("candidatId") Long candidatId);
+    @Query("SELECT p FROM Paiement p WHERE p.inscription.candidat.id = :candidatId ORDER BY p.datePaiement DESC")
+    List<Paiement> findByCandidatIdOrderByDatePaiementDesc(@Param("candidatId") Long candidatId);
+
+    @Query("SELECT COALESCE(SUM(p.montant), 0) FROM Paiement p WHERE p.inscription.id = :inscriptionId AND p.statut = 'VALIDE'")
+    BigDecimal sumTotalValideByInscription(@Param("inscriptionId") Long inscriptionId);
 
     @Query("SELECT COALESCE(SUM(p.montant), 0) FROM Paiement p WHERE p.statut = 'VALIDE' AND p.datePaiement BETWEEN :debut AND :fin")
     BigDecimal sumTotalValideBetween(@Param("debut") LocalDateTime debut, @Param("fin") LocalDateTime fin);

@@ -19,12 +19,14 @@ import { forkJoin } from 'rxjs';
           <p>Épreuves de Code, Créneau et Circulation (Jusqu'à 5 passages par épreuve)</p>
         </div>
         <div class="header-buttons">
-          <button class="btn btn-primary" *ngIf="canAdd" (click)="openProgrammerModal()">
-            ➕ Programmer un Examen
-          </button>
+          @if (canAdd) {
+            <button class="btn btn-primary" (click)="openProgrammerModal()">
+              ➕ Programmer un Examen
+            </button>
+          }
         </div>
       </div>
-
+    
       <!-- FILTERS -->
       <div class="card filter-card">
         <div class="filter-grid">
@@ -36,7 +38,7 @@ import { forkJoin } from 'rxjs';
               <option value="CIRCULATION">3. Conduite en circulation</option>
             </select>
           </div>
-
+    
           <div>
             <select class="form-control" [(ngModel)]="resultatFiltre" (change)="loadPassages()">
               <option value="">Tous les résultats</option>
@@ -46,13 +48,13 @@ import { forkJoin } from 'rxjs';
               <option value="AJOURNE">AJOURNÉ</option>
             </select>
           </div>
-
+    
           <div>
             <button class="btn btn-secondary" (click)="resetFiltres()">Réinitialiser</button>
           </div>
         </div>
       </div>
-
+    
       <!-- EXAM TABLE -->
       <div class="card">
         <div class="table-responsive">
@@ -66,190 +68,212 @@ import { forkJoin } from 'rxjs';
                 <th>Résultat</th>
                 <th>Moniteur</th>
                 <th>Observations</th>
-                <th class="text-right" *ngIf="canAdd">Action</th>
+                @if (canAdd) {
+                  <th class="text-right">Action</th>
+                }
               </tr>
             </thead>
             <tbody>
-              <tr *ngIf="loading">
-                <td colspan="8" class="text-center py-4">Chargement des sessions d'examens...</td>
-              </tr>
-              <tr *ngIf="!loading && passages.length === 0">
-                <td colspan="8" class="text-center py-4">Aucune session d'examen trouvée.</td>
-              </tr>
-              <tr *ngFor="let p of passages">
-                <td><strong>{{ p.datePassage | date:'dd/MM/yyyy' }}</strong></td>
-                <td>
-                  <a [routerLink]="['/candidats', p.candidatId]" class="candidat-link">
-                    <strong>{{ p.candidatNomComplet }}</strong>
-                  </a>
-                  <div class="sub-text">{{ p.candidatNumeroDossier }}</div>
-                </td>
-                <td>
+              @if (loading) {
+                <tr>
+                  <td colspan="8" class="text-center py-4">Chargement des sessions d'examens...</td>
+                </tr>
+              }
+              @if (!loading && passages.length === 0) {
+                <tr>
+                  <td colspan="8" class="text-center py-4">Aucune session d'examen trouvée.</td>
+                </tr>
+              }
+              @for (p of passages; track p) {
+                <tr>
+                  <td><strong>{{ p.datePassage | date:'dd/MM/yyyy' }}</strong></td>
+                  <td>
+                    <a [routerLink]="['/candidats', p.candidatId]" class="candidat-link">
+                      <strong>{{ p.candidatNomComplet }}</strong>
+                    </a>
+                    <div class="sub-text">{{ p.candidatNumeroDossier }}</div>
+                  </td>
+                  <td>
                   <span class="badge" [ngClass]="{
                     'badge-programme': p.typeEpreuve === 'CODE',
                     'badge-solde': p.typeEpreuve === 'CRENEAU',
                     'badge-en-cours': p.typeEpreuve === 'CIRCULATION'
                   }">{{ p.typeEpreuve }}</span>
-                </td>
-                <td>
-                  <strong>Passage {{ p.numeroPassage }}/5</strong>
-                </td>
-                <td>
-                  <span class="badge" [ngClass]="getBadgeClass(p.resultat)">
-                    {{ p.resultat }}
-                  </span>
-                </td>
-                <td>{{ p.moniteurNomComplet || 'Non affecté' }}</td>
-                <td>
-                  <span class="obs-text">{{ p.observations || '—' }}</span>
-                </td>
-                <td class="text-right" *ngIf="canAdd">
-                  <button class="btn btn-outline btn-sm" (click)="openUpdateModal(p)">
-                    ✏️ Noter
-                  </button>
-                </td>
-              </tr>
+                  </td>
+                  <td>
+                    <strong>Passage {{ p.numeroPassage }}/5</strong>
+                  </td>
+                  <td>
+                    <span class="badge" [ngClass]="getBadgeClass(p.resultat)">
+                      {{ p.resultat }}
+                    </span>
+                  </td>
+                  <td>{{ p.moniteurNomComplet || 'Non affecté' }}</td>
+                  <td>
+                    <span class="obs-text">{{ p.observations || '—' }}</span>
+                  </td>
+                  @if (canAdd) {
+                    <td class="text-right">
+                      <button class="btn btn-outline btn-sm" (click)="openUpdateModal(p)">
+                        ✏️ Noter
+                      </button>
+                    </td>
+                  }
+                </tr>
+              }
             </tbody>
           </table>
         </div>
-
-        <div class="pagination-bar" *ngIf="totalPages > 1">
-          <button class="btn btn-outline btn-sm" [disabled]="page === 0" (click)="changePage(page - 1)">◀ Précédent</button>
-          <span>Page {{ page + 1 }} sur {{ totalPages }} ({{ totalElements }} passages)</span>
-          <button class="btn btn-outline btn-sm" [disabled]="page >= totalPages - 1" (click)="changePage(page + 1)">Suivant ▶</button>
-        </div>
-      </div>
-
-      <!-- MODAL PROGRAMMER EXAMEN -->
-      <div class="modal-backdrop" *ngIf="showProgrammerModal">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h3>🎓 Programmer une Session d'Examen</h3>
-            <button class="btn btn-outline btn-sm" (click)="showProgrammerModal = false">✕</button>
+    
+        @if (totalPages > 1) {
+          <div class="pagination-bar">
+            <button class="btn btn-outline btn-sm" [disabled]="page === 0" (click)="changePage(page - 1)">◀ Précédent</button>
+            <span>Page {{ page + 1 }} sur {{ totalPages }} ({{ totalElements }} passages)</span>
+            <button class="btn btn-outline btn-sm" [disabled]="page >= totalPages - 1" (click)="changePage(page + 1)">Suivant ▶</button>
           </div>
-          <form (ngSubmit)="saveProgrammer()">
-            <div class="modal-body">
-              <div *ngIf="formError" class="alert alert-danger">⚠️ {{ formError }}</div>
-
-              <ng-container *ngIf="programmerStep === 1; else programmerDetails">
-                <div class="step-indicator">Étape 1 sur 2</div>
-                <div class="form-group">
-                  <label class="form-label">Choisir l'épreuve à programmer <span class="required">*</span></label>
-                  <select class="form-control" [(ngModel)]="newPassage.typeEpreuve" name="typeEpreuve" (change)="onTypeEpreuveChange()" required>
-                    <option value="CODE">1. Code de la route</option>
-                    <option value="CRENEAU">2. Manœuvre / Créneau</option>
-                    <option value="CIRCULATION">3. Conduite en circulation</option>
-                  </select>
-                </div>
-                <p class="form-help">Le type d'épreuve sera appliqué à tous les candidats sélectionnés à l'étape suivante.</p>
-              </ng-container>
-
-              <ng-template #programmerDetails>
-                <div class="step-indicator">Étape 2 sur 2 · {{ newPassage.typeEpreuve }}</div>
-                <div class="form-group">
-                  <label class="form-label">Candidats <span class="required">*</span></label>
-                  <div class="candidats-list">
-                    <label class="candidat-option" *ngFor="let c of eligibleCandidats">
-                      <input
-                        type="checkbox"
-                        [checked]="isCandidatSelected(c.id)"
-                        (change)="toggleCandidat(c.id)"
-                      />
-                      <span class="candidat-option-text">
-                        <strong>{{ c.numeroDossier }}</strong>
-                        <span>{{ c.nom }} {{ c.prenom }} ({{ c.categoriePermisCode }})</span>
-                      </span>
-                    </label>
+        }
+      </div>
+    
+      <!-- MODAL PROGRAMMER EXAMEN -->
+      @if (showProgrammerModal) {
+        <div class="modal-backdrop">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3>🎓 Programmer une Session d'Examen</h3>
+              <button class="btn btn-outline btn-sm" (click)="showProgrammerModal = false">✕</button>
+            </div>
+            <form (ngSubmit)="saveProgrammer()">
+              <div class="modal-body">
+                @if (formError) {
+                  <div class="alert alert-danger">⚠️ {{ formError }}</div>
+                }
+                @if (programmerStep === 1) {
+                  <div class="step-indicator">Étape 1 sur 2</div>
+                  <div class="form-group">
+                    <label class="form-label">Choisir l'épreuve à programmer <span class="required">*</span></label>
+                    <select class="form-control" [(ngModel)]="newPassage.typeEpreuve" name="typeEpreuve" (change)="onTypeEpreuveChange()" required>
+                      <option value="CODE">1. Code de la route</option>
+                      <option value="CRENEAU">2. Manœuvre / Créneau</option>
+                      <option value="CIRCULATION">3. Conduite en circulation</option>
+                    </select>
                   </div>
-                  <div class="form-help" *ngIf="eligibleCandidats.length === 0">
-                    Aucun candidat n'est actuellement éligible pour cette épreuve.
+                  <p class="form-help">Le type d'épreuve sera appliqué à tous les candidats sélectionnés à l'étape suivante.</p>
+                } @else {
+                  <div class="step-indicator">Étape 2 sur 2 · {{ newPassage.typeEpreuve }}</div>
+                  <div class="form-group">
+                    <label class="form-label">Candidats <span class="required">*</span></label>
+                    <div class="candidats-list">
+                      @for (c of eligibleCandidats; track c) {
+                        <label class="candidat-option">
+                          <input
+                            type="checkbox"
+                            [checked]="isCandidatSelected(c.id)"
+                            (change)="toggleCandidat(c.id)"
+                            />
+                          <span class="candidat-option-text">
+                            <strong>{{ c.numeroDossier }}</strong>
+                            <span>{{ c.nom }} {{ c.prenom }} ({{ c.categoriePermisCode }})</span>
+                          </span>
+                        </label>
+                      }
+                    </div>
+                    @if (eligibleCandidats.length === 0) {
+                      <div class="form-help">
+                        Aucun candidat n'est actuellement éligible pour cette épreuve.
+                      </div>
+                    }
+                    <div class="form-help">Cochez les candidats concernés par cette programmation.</div>
+                    @if (selectedCandidatIds.length > 0) {
+                      <div class="selection-count">
+                        {{ selectedCandidatIds.length }} candidat(s) sélectionné(s)
+                      </div>
+                    }
                   </div>
-                  <div class="form-help">Cochez les candidats concernés par cette programmation.</div>
-                  <div class="selection-count" *ngIf="selectedCandidatIds.length > 0">
-                    {{ selectedCandidatIds.length }} candidat(s) sélectionné(s)
+                  <div class="form-group">
+                    <label class="form-label">Date du passage <span class="required">*</span></label>
+                    <input type="date" class="form-control" [(ngModel)]="newPassage.datePassage" name="datePassage" required />
                   </div>
+                  <div class="form-group">
+                    <label class="form-label">Résultat initial</label>
+                    <select class="form-control" [(ngModel)]="newPassage.resultat" name="resultat">
+                      <option value="PROGRAMME">PROGRAMMÉ (En attente)</option>
+                      <option value="REUSSI">RÉUSSI (Admis)</option>
+                      <option value="ECHEC">ÉCHEC</option>
+                      <option value="AJOURNE">AJOURNÉ</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Observations</label>
+                    <textarea class="form-control" rows="2" [(ngModel)]="newPassage.observations" name="observations" placeholder="Remarques éventuelles..."></textarea>
+                  </div>
+                }
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" (click)="showProgrammerModal = false">Annuler</button>
+                @if (programmerStep === 2) {
+                  <button type="button" class="btn btn-secondary" (click)="programmerStep = 1" [disabled]="saving">Retour</button>
+                }
+                @if (programmerStep === 1) {
+                  <button type="button" class="btn btn-primary" (click)="programmerStep = 2">Continuer</button>
+                }
+                @if (programmerStep === 2) {
+                  <button type="submit" class="btn btn-primary" [disabled]="saving || selectedCandidatIds.length === 0 || !newPassage.datePassage">
+                    {{ saving ? 'Enregistrement...' : 'Confirmer la Programmation' }}
+                  </button>
+                }
+              </div>
+            </form>
+          </div>
+        </div>
+      }
+    
+      <!-- MODAL MAJ RÉSULTAT -->
+      @if (showUpdateModal) {
+        <div class="modal-backdrop">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3>✏️ Saisir / Mettre à jour le Résultat</h3>
+              <button class="btn btn-outline btn-sm" (click)="showUpdateModal = false">✕</button>
+            </div>
+            <form (ngSubmit)="saveUpdateResultat()">
+              <div class="modal-body">
+                @if (formError) {
+                  <div class="alert alert-danger">⚠️ {{ formError }}</div>
+                }
+                <div class="alert alert-info">
+                  Candidat : <strong>{{ targetPassage?.candidatNomComplet }}</strong><br>
+                  Épreuve : <strong>{{ targetPassage?.typeEpreuve }}</strong> (Passage {{ targetPassage?.numeroPassage }}/5)
                 </div>
-
                 <div class="form-group">
-                  <label class="form-label">Date du passage <span class="required">*</span></label>
-                  <input type="date" class="form-control" [(ngModel)]="newPassage.datePassage" name="datePassage" required />
+                  <label class="form-label">Date de passage réelle <span class="required">*</span></label>
+                  <input type="date" class="form-control" [(ngModel)]="updateData.datePassage" name="datePassage" required />
                 </div>
-
                 <div class="form-group">
-                  <label class="form-label">Résultat initial</label>
-                  <select class="form-control" [(ngModel)]="newPassage.resultat" name="resultat">
-                    <option value="PROGRAMME">PROGRAMMÉ (En attente)</option>
+                  <label class="form-label">Résultat d'examen <span class="required">*</span></label>
+                  <select class="form-control" [(ngModel)]="updateData.resultat" name="resultat" required>
+                    <option value="PROGRAMME">PROGRAMMÉ</option>
                     <option value="REUSSI">RÉUSSI (Admis)</option>
                     <option value="ECHEC">ÉCHEC</option>
                     <option value="AJOURNE">AJOURNÉ</option>
                   </select>
                 </div>
-
                 <div class="form-group">
-                  <label class="form-label">Observations</label>
-                  <textarea class="form-control" rows="2" [(ngModel)]="newPassage.observations" name="observations" placeholder="Remarques éventuelles..."></textarea>
+                  <label class="form-label">Observations & Commentaires pédagogiques</label>
+                  <textarea class="form-control" rows="3" [(ngModel)]="updateData.observations" name="observations" placeholder="Points forts, fautes éliminatoires..."></textarea>
                 </div>
-              </ng-template>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" (click)="showProgrammerModal = false">Annuler</button>
-              <button *ngIf="programmerStep === 2" type="button" class="btn btn-secondary" (click)="programmerStep = 1" [disabled]="saving">Retour</button>
-              <button *ngIf="programmerStep === 1" type="button" class="btn btn-primary" (click)="programmerStep = 2">Continuer</button>
-              <button *ngIf="programmerStep === 2" type="submit" class="btn btn-primary" [disabled]="saving || selectedCandidatIds.length === 0 || !newPassage.datePassage">
-                {{ saving ? 'Enregistrement...' : 'Confirmer la Programmation' }}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-
-      <!-- MODAL MAJ RÉSULTAT -->
-      <div class="modal-backdrop" *ngIf="showUpdateModal">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h3>✏️ Saisir / Mettre à jour le Résultat</h3>
-            <button class="btn btn-outline btn-sm" (click)="showUpdateModal = false">✕</button>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" (click)="showUpdateModal = false">Annuler</button>
+                <button type="submit" class="btn btn-primary" [disabled]="saving">
+                  {{ saving ? 'Mise à jour...' : 'Enregistrer la Décision' }}
+                </button>
+              </div>
+            </form>
           </div>
-          <form (ngSubmit)="saveUpdateResultat()">
-            <div class="modal-body">
-              <div *ngIf="formError" class="alert alert-danger">⚠️ {{ formError }}</div>
-
-              <div class="alert alert-info">
-                Candidat : <strong>{{ targetPassage?.candidatNomComplet }}</strong><br>
-                Épreuve : <strong>{{ targetPassage?.typeEpreuve }}</strong> (Passage {{ targetPassage?.numeroPassage }}/5)
-              </div>
-
-              <div class="form-group">
-                <label class="form-label">Date de passage réelle <span class="required">*</span></label>
-                <input type="date" class="form-control" [(ngModel)]="updateData.datePassage" name="datePassage" required />
-              </div>
-
-              <div class="form-group">
-                <label class="form-label">Résultat d'examen <span class="required">*</span></label>
-                <select class="form-control" [(ngModel)]="updateData.resultat" name="resultat" required>
-                  <option value="PROGRAMME">PROGRAMMÉ</option>
-                  <option value="REUSSI">RÉUSSI (Admis)</option>
-                  <option value="ECHEC">ÉCHEC</option>
-                  <option value="AJOURNE">AJOURNÉ</option>
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label class="form-label">Observations & Commentaires pédagogiques</label>
-                <textarea class="form-control" rows="3" [(ngModel)]="updateData.observations" name="observations" placeholder="Points forts, fautes éliminatoires..."></textarea>
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" (click)="showUpdateModal = false">Annuler</button>
-              <button type="submit" class="btn btn-primary" [disabled]="saving">
-                {{ saving ? 'Mise à jour...' : 'Enregistrer la Décision' }}
-              </button>
-            </div>
-          </form>
         </div>
-      </div>
+      }
     </div>
-  `,
+    `,
     styles: [`
     .page-header-bar {
       display: flex;

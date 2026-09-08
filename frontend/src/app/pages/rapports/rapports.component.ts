@@ -1,11 +1,11 @@
 import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 
 @Component({
     selector: 'app-rapports',
-    imports: [CommonModule, FormsModule],
+    imports: [FormsModule],
     template: `
     <div class="rapports-page">
       <div class="page-header-bar">

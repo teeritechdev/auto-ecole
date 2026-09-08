@@ -15,7 +15,7 @@ import { CategoriePermis, Forfait } from '../../core/models/models';
           <p>Configurez les forfaits de formation (RG01) et les catégories de permis de conduire</p>
         </div>
       </div>
-
+    
       <div class="grid-2-col">
         <div class="card brand-settings-card">
           <div class="card-header">
@@ -23,22 +23,28 @@ import { CategoriePermis, Forfait } from '../../core/models/models';
           </div>
           <div class="logo-settings">
             <div class="logo-preview">
-              <img *ngIf="logoData" [src]="logoData" alt="Logo actuel" />
-              <span *ngIf="!logoData">🚗</span>
+              @if (logoData) {
+                <img [src]="logoData" alt="Logo actuel" />
+              }
+              @if (!logoData) {
+                <span>🚗</span>
+              }
             </div>
             <input type="file" accept="image/png,image/jpeg,image/webp" (change)="onLogoSelected($event)" />
             <p class="form-help">Le logo sera affiché sur toutes les pages. JPG, PNG ou WebP, maximum 2 Mo.</p>
-            <div *ngIf="logoError" class="alert alert-danger">{{ logoError }}</div>
+            @if (logoError) {
+              <div class="alert alert-danger">{{ logoError }}</div>
+            }
           </div>
         </div>
-
+    
         <!-- 1. FORFAITS -->
         <div class="card">
           <div class="card-header">
             <div class="card-title">📦 Forfaits de Formation (RG01)</div>
             <button class="btn btn-primary btn-sm" (click)="openForfaitModal()">➕ Nouveau Forfait</button>
           </div>
-
+    
           <div class="table-responsive">
             <table class="custom-table">
               <thead>
@@ -50,26 +56,28 @@ import { CategoriePermis, Forfait } from '../../core/models/models';
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let f of forfaits">
-                  <td><strong>{{ f.nom }}</strong></td>
-                  <td><strong class="text-success">{{ f.montant | number }} FCFA</strong></td>
-                  <td><small class="text-muted">{{ f.description || '—' }}</small></td>
-                  <td class="text-right">
-                    <button class="btn btn-outline btn-sm" (click)="editForfait(f)">✏️</button>
-                  </td>
-                </tr>
+                @for (f of forfaits; track f) {
+                  <tr>
+                    <td><strong>{{ f.nom }}</strong></td>
+                    <td><strong class="text-success">{{ f.montant | number }} FCFA</strong></td>
+                    <td><small class="text-muted">{{ f.description || '—' }}</small></td>
+                    <td class="text-right">
+                      <button class="btn btn-outline btn-sm" (click)="editForfait(f)">✏️</button>
+                    </td>
+                  </tr>
+                }
               </tbody>
             </table>
           </div>
         </div>
-
+    
         <!-- 2. CATÉGORIES DE PERMIS -->
         <div class="card">
           <div class="card-header">
             <div class="card-title">🚗 Catégories de Permis (A1, B, C...)</div>
             <button class="btn btn-primary btn-sm" (click)="openCatModal()">➕ Nouvelle Catégorie</button>
           </div>
-
+    
           <div class="table-responsive">
             <table class="custom-table">
               <thead>
@@ -81,81 +89,87 @@ import { CategoriePermis, Forfait } from '../../core/models/models';
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let cat of categories">
-                  <td><span class="badge badge-programme">{{ cat.code }}</span></td>
-                  <td><strong>{{ cat.libelle }}</strong></td>
-                  <td><small class="text-muted">{{ cat.description || '—' }}</small></td>
-                  <td class="text-right">
-                    <button class="btn btn-outline btn-sm" (click)="editCat(cat)">✏️</button>
-                  </td>
-                </tr>
+                @for (cat of categories; track cat) {
+                  <tr>
+                    <td><span class="badge badge-programme">{{ cat.code }}</span></td>
+                    <td><strong>{{ cat.libelle }}</strong></td>
+                    <td><small class="text-muted">{{ cat.description || '—' }}</small></td>
+                    <td class="text-right">
+                      <button class="btn btn-outline btn-sm" (click)="editCat(cat)">✏️</button>
+                    </td>
+                  </tr>
+                }
               </tbody>
             </table>
           </div>
         </div>
       </div>
-
+    
       <!-- MODAL FORFAIT -->
-      <div class="modal-backdrop" *ngIf="showForfaitModal">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h3>{{ isEditForfait ? '✏️ Modifier le Forfait' : '➕ Nouveau Forfait' }}</h3>
-            <button class="btn btn-outline btn-sm" (click)="showForfaitModal = false">✕</button>
+      @if (showForfaitModal) {
+        <div class="modal-backdrop">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3>{{ isEditForfait ? '✏️ Modifier le Forfait' : '➕ Nouveau Forfait' }}</h3>
+              <button class="btn btn-outline btn-sm" (click)="showForfaitModal = false">✕</button>
+            </div>
+            <form (ngSubmit)="saveForfait()">
+              <div class="modal-body">
+                <div class="form-group">
+                  <label class="form-label">Nom du forfait <span class="required">*</span></label>
+                  <input type="text" class="form-control" [(ngModel)]="forfaitForm.nom" name="nom" required placeholder="Ex: Forfait Accéléré" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Montant (FCFA) <span class="required">*</span></label>
+                  <input type="number" class="form-control" [(ngModel)]="forfaitForm.montant" name="montant" required placeholder="Ex: 150000" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Description</label>
+                  <textarea class="form-control" rows="2" [(ngModel)]="forfaitForm.description" name="description"></textarea>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" (click)="showForfaitModal = false">Annuler</button>
+                <button type="submit" class="btn btn-primary">Enregistrer</button>
+              </div>
+            </form>
           </div>
-          <form (ngSubmit)="saveForfait()">
-            <div class="modal-body">
-              <div class="form-group">
-                <label class="form-label">Nom du forfait <span class="required">*</span></label>
-                <input type="text" class="form-control" [(ngModel)]="forfaitForm.nom" name="nom" required placeholder="Ex: Forfait Accéléré" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Montant (FCFA) <span class="required">*</span></label>
-                <input type="number" class="form-control" [(ngModel)]="forfaitForm.montant" name="montant" required placeholder="Ex: 150000" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Description</label>
-                <textarea class="form-control" rows="2" [(ngModel)]="forfaitForm.description" name="description"></textarea>
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" (click)="showForfaitModal = false">Annuler</button>
-              <button type="submit" class="btn btn-primary">Enregistrer</button>
-            </div>
-          </form>
         </div>
-      </div>
-
+      }
+    
       <!-- MODAL CATEGORIE -->
-      <div class="modal-backdrop" *ngIf="showCatModal">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h3>{{ isEditCat ? '✏️ Modifier la Catégorie' : '➕ Nouvelle Catégorie de Permis' }}</h3>
-            <button class="btn btn-outline btn-sm" (click)="showCatModal = false">✕</button>
+      @if (showCatModal) {
+        <div class="modal-backdrop">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3>{{ isEditCat ? '✏️ Modifier la Catégorie' : '➕ Nouvelle Catégorie de Permis' }}</h3>
+              <button class="btn btn-outline btn-sm" (click)="showCatModal = false">✕</button>
+            </div>
+            <form (ngSubmit)="saveCat()">
+              <div class="modal-body">
+                <div class="form-group">
+                  <label class="form-label">Code Catégorie <span class="required">*</span></label>
+                  <input type="text" class="form-control" [(ngModel)]="catForm.code" name="code" required placeholder="Ex: D" [disabled]="isEditCat" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Libellé <span class="required">*</span></label>
+                  <input type="text" class="form-control" [(ngModel)]="catForm.libelle" name="libelle" required placeholder="Ex: Permis D Transport en commun" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Description</label>
+                  <textarea class="form-control" rows="2" [(ngModel)]="catForm.description" name="description"></textarea>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" (click)="showCatModal = false">Annuler</button>
+                <button type="submit" class="btn btn-primary">Enregistrer</button>
+              </div>
+            </form>
           </div>
-          <form (ngSubmit)="saveCat()">
-            <div class="modal-body">
-              <div class="form-group">
-                <label class="form-label">Code Catégorie <span class="required">*</span></label>
-                <input type="text" class="form-control" [(ngModel)]="catForm.code" name="code" required placeholder="Ex: D" [disabled]="isEditCat" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Libellé <span class="required">*</span></label>
-                <input type="text" class="form-control" [(ngModel)]="catForm.libelle" name="libelle" required placeholder="Ex: Permis D Transport en commun" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Description</label>
-                <textarea class="form-control" rows="2" [(ngModel)]="catForm.description" name="description"></textarea>
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" (click)="showCatModal = false">Annuler</button>
-              <button type="submit" class="btn btn-primary">Enregistrer</button>
-            </div>
-          </form>
         </div>
-      </div>
+      }
     </div>
-  `,
+    `,
     styles: [`
     .page-header-bar {
       margin-bottom: 1.5rem;

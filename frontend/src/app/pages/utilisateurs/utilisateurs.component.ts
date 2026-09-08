@@ -20,7 +20,7 @@ import { UtilisateurDTO } from '../../core/models/models';
           </button>
         </div>
       </div>
-
+    
       <div class="card">
         <div class="table-responsive">
           <table class="custom-table">
@@ -38,124 +38,134 @@ import { UtilisateurDTO } from '../../core/models/models';
               </tr>
             </thead>
             <tbody>
-              <tr *ngIf="loading">
-                <td colspan="9" class="text-center py-4">Chargement des utilisateurs...</td>
-              </tr>
-              <tr *ngFor="let u of utilisateurs">
-                <td>
-                  <div class="user-photo-small">
-                    <img *ngIf="u.photoProfile" [src]="u.photoProfile" alt="Photo utilisateur" />
-                    <span *ngIf="!u.photoProfile">{{ getInitials(u) }}</span>
-                  </div>
-                </td>
-                <td><strong>{{ u.username }}</strong></td>
-                <td>{{ u.nom }} {{ u.prenom }}</td>
-                <td>{{ u.email }}</td>
-                <td>{{ u.telephone || '—' }}</td>
-                <td>
+              @if (loading) {
+                <tr>
+                  <td colspan="9" class="text-center py-4">Chargement des utilisateurs...</td>
+                </tr>
+              }
+              @for (u of utilisateurs; track u) {
+                <tr>
+                  <td>
+                    <div class="user-photo-small">
+                      @if (u.photoProfile) {
+                        <img [src]="u.photoProfile" alt="Photo utilisateur" />
+                      }
+                      @if (!u.photoProfile) {
+                        <span>{{ getInitials(u) }}</span>
+                      }
+                    </div>
+                  </td>
+                  <td><strong>{{ u.username }}</strong></td>
+                  <td>{{ u.nom }} {{ u.prenom }}</td>
+                  <td>{{ u.email }}</td>
+                  <td>{{ u.telephone || '—' }}</td>
+                  <td>
                   <span class="badge" [ngClass]="{
                     'badge-expire': u.role === 'ADMIN',
                     'badge-programme': u.role === 'SECRETAIRE',
                     'badge-solde': u.role === 'CAISSIERE',
                     'badge-ajourne': u.role === 'MONITEUR'
                   }">{{ u.roleLibelle }}</span>
-                </td>
-                <td>
-                  <span class="badge" [ngClass]="u.actif ? 'badge-solde' : 'badge-expire'">
-                    {{ u.actif ? 'ACTIF' : 'DÉSACTIVÉ' }}
-                  </span>
-                </td>
-                <td>{{ u.dateCreation | date:'dd/MM/yyyy' }}</td>
-                <td class="text-right">
-                  <div class="table-actions">
-                    <button class="btn btn-outline btn-sm" (click)="openEditModal(u)" title="Modifier">✏️</button>
-                    <button class="btn btn-sm" [ngClass]="u.actif ? 'btn-danger' : 'btn-success'" (click)="toggleActif(u)">
-                      {{ u.actif ? 'Désactiver' : 'Activer' }}
-                    </button>
-                  </div>
-                </td>
-              </tr>
+                  </td>
+                  <td>
+                    <span class="badge" [ngClass]="u.actif ? 'badge-solde' : 'badge-expire'">
+                      {{ u.actif ? 'ACTIF' : 'DÉSACTIVÉ' }}
+                    </span>
+                  </td>
+                  <td>{{ u.dateCreation | date:'dd/MM/yyyy' }}</td>
+                  <td class="text-right">
+                    <div class="table-actions">
+                      <button class="btn btn-outline btn-sm" (click)="openEditModal(u)" title="Modifier">✏️</button>
+                      <button class="btn btn-sm" [ngClass]="u.actif ? 'btn-danger' : 'btn-success'" (click)="toggleActif(u)">
+                        {{ u.actif ? 'Désactiver' : 'Activer' }}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
             </tbody>
           </table>
         </div>
       </div>
-
+    
       <!-- MODAL CRÉATION / MODIFICATION -->
-      <div class="modal-backdrop" *ngIf="showModal">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h3>{{ isEdit ? '✏️ Modifier l’utilisateur' : '👤 Créer un compte utilisateur' }}</h3>
-            <button class="btn btn-outline btn-sm" (click)="showModal = false">✕</button>
+      @if (showModal) {
+        <div class="modal-backdrop">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3>{{ isEdit ? '✏️ Modifier l’utilisateur' : '👤 Créer un compte utilisateur' }}</h3>
+              <button class="btn btn-outline btn-sm" (click)="showModal = false">✕</button>
+            </div>
+            <form (ngSubmit)="saveUtilisateur()">
+              <div class="modal-body">
+                @if (formError) {
+                  <div class="alert alert-danger">⚠️ {{ formError }}</div>
+                }
+                @if (!isEdit) {
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="form-label">Identifiant de connexion <span class="required">*</span></label>
+                      <input type="text" class="form-control" [(ngModel)]="currentUserForm.username" name="username" required placeholder="Ex: amadou" />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Mot de passe <span class="required">*</span></label>
+                      <input type="password" class="form-control" [(ngModel)]="currentUserForm.password" name="password" required placeholder="••••••••" />
+                    </div>
+                  </div>
+                }
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Nom <span class="required">*</span></label>
+                    <input type="text" class="form-control" [(ngModel)]="currentUserForm.nom" name="nom" required placeholder="Ex: KOUASSI" />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Prénom <span class="required">*</span></label>
+                    <input type="text" class="form-control" [(ngModel)]="currentUserForm.prenom" name="prenom" required placeholder="Ex: Jean" />
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Email <span class="required">*</span></label>
+                    <input type="email" class="form-control" [(ngModel)]="currentUserForm.email" name="email" required placeholder="user@autoecole.ci" />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Téléphone</label>
+                    <input type="tel" class="form-control" [(ngModel)]="currentUserForm.telephone" name="telephone" placeholder="0701020304" />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Rôle attribué <span class="required">*</span></label>
+                  <select class="form-control" [(ngModel)]="currentUserForm.role" name="role" required>
+                    <option value="ADMIN">Administrateur (Tous les droits)</option>
+                    <option value="SECRETAIRE">Secrétaire (Gestion candidats & inscriptions)</option>
+                    <option value="CAISSIERE">Caissière (Encaissements, reçus, caisse)</option>
+                    <option value="MONITEUR">Moniteur (Suivi pédagogique & examens)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Photo de profil</label>
+                  <input type="file" accept="image/png,image/jpeg,image/webp" (change)="onPhotoSelected($event)" />
+                  <div class="form-help">JPG, PNG ou WebP, maximum 2 Mo.</div>
+                </div>
+                @if (isEdit) {
+                  <div class="form-group">
+                    <label class="form-label">Nouveau mot de passe (laisser vide pour ne pas changer)</label>
+                    <input type="password" class="form-control" [(ngModel)]="currentUserForm.password" name="password" placeholder="••••••••" />
+                  </div>
+                }
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" (click)="showModal = false">Annuler</button>
+                <button type="submit" class="btn btn-primary" [disabled]="saving">
+                  {{ saving ? 'Enregistrement...' : 'Enregistrer' }}
+                </button>
+              </div>
+            </form>
           </div>
-          <form (ngSubmit)="saveUtilisateur()">
-            <div class="modal-body">
-              <div *ngIf="formError" class="alert alert-danger">⚠️ {{ formError }}</div>
-
-              <div class="form-row" *ngIf="!isEdit">
-                <div class="form-group">
-                  <label class="form-label">Identifiant de connexion <span class="required">*</span></label>
-                  <input type="text" class="form-control" [(ngModel)]="currentUserForm.username" name="username" required placeholder="Ex: amadou" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Mot de passe <span class="required">*</span></label>
-                  <input type="password" class="form-control" [(ngModel)]="currentUserForm.password" name="password" required placeholder="••••••••" />
-                </div>
-              </div>
-
-              <div class="form-row">
-                <div class="form-group">
-                  <label class="form-label">Nom <span class="required">*</span></label>
-                  <input type="text" class="form-control" [(ngModel)]="currentUserForm.nom" name="nom" required placeholder="Ex: KOUASSI" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Prénom <span class="required">*</span></label>
-                  <input type="text" class="form-control" [(ngModel)]="currentUserForm.prenom" name="prenom" required placeholder="Ex: Jean" />
-                </div>
-              </div>
-
-              <div class="form-row">
-                <div class="form-group">
-                  <label class="form-label">Email <span class="required">*</span></label>
-                  <input type="email" class="form-control" [(ngModel)]="currentUserForm.email" name="email" required placeholder="user@autoecole.ci" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Téléphone</label>
-                  <input type="tel" class="form-control" [(ngModel)]="currentUserForm.telephone" name="telephone" placeholder="0701020304" />
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label class="form-label">Rôle attribué <span class="required">*</span></label>
-                <select class="form-control" [(ngModel)]="currentUserForm.role" name="role" required>
-                  <option value="ADMIN">Administrateur (Tous les droits)</option>
-                  <option value="SECRETAIRE">Secrétaire (Gestion candidats & inscriptions)</option>
-                  <option value="CAISSIERE">Caissière (Encaissements, reçus, caisse)</option>
-                  <option value="MONITEUR">Moniteur (Suivi pédagogique & examens)</option>
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label class="form-label">Photo de profil</label>
-                <input type="file" accept="image/png,image/jpeg,image/webp" (change)="onPhotoSelected($event)" />
-                <div class="form-help">JPG, PNG ou WebP, maximum 2 Mo.</div>
-              </div>
-
-              <div class="form-group" *ngIf="isEdit">
-                <label class="form-label">Nouveau mot de passe (laisser vide pour ne pas changer)</label>
-                <input type="password" class="form-control" [(ngModel)]="currentUserForm.password" name="password" placeholder="••••••••" />
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" (click)="showModal = false">Annuler</button>
-              <button type="submit" class="btn btn-primary" [disabled]="saving">
-                {{ saving ? 'Enregistrement...' : 'Enregistrer' }}
-              </button>
-            </div>
-          </form>
         </div>
-      </div>
+      }
     </div>
-  `,
+    `,
     styles: [`
     .page-header-bar {
       display: flex;

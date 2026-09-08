@@ -18,28 +18,34 @@ import { Candidat, CategoriePermis, Forfait } from '../../core/models/models';
           <p>Consultez, enregistrez et suivez les parcours administratifs et forfaits</p>
         </div>
         <div class="header-buttons">
-          <button class="btn btn-outline btn-sm" *ngIf="canSeeFinancialData" (click)="exporterPdf()">📄 Export PDF</button>
-          <button class="btn btn-outline btn-sm" *ngIf="canSeeFinancialData" (click)="exporterExcel()">📊 Export Excel</button>
-          <button class="btn btn-primary" *ngIf="canEdit" (click)="openCreateModal()">
-            ➕ Inscrire un Candidat
-          </button>
+          @if (canSeeFinancialData) {
+            <button class="btn btn-outline btn-sm" (click)="exporterPdf()">📄 Export PDF</button>
+          }
+          @if (canSeeFinancialData) {
+            <button class="btn btn-outline btn-sm" (click)="exporterExcel()">📊 Export Excel</button>
+          }
+          @if (canEdit) {
+            <button class="btn btn-primary" (click)="openCreateModal()">
+              ➕ Inscrire un Candidat
+            </button>
+          }
         </div>
       </div>
-
+    
       <!-- FILTER BAR -->
       <div class="card filter-card">
         <div class="filter-grid">
           <div class="search-box">
             <span class="search-icon">🔍</span>
-            <input 
-              type="text" 
-              class="form-control" 
-              placeholder="Rechercher par nom, prénom, N° dossier, téléphone..." 
-              [(ngModel)]="recherche" 
+            <input
+              type="text"
+              class="form-control"
+              placeholder="Rechercher par nom, prénom, N° dossier, téléphone..."
+              [(ngModel)]="recherche"
               (keyup.enter)="loadCandidats()"
-            />
+              />
           </div>
-
+    
           <div>
             <select class="form-control" [(ngModel)]="statutFiltre" (change)="loadCandidats()">
               <option value="">Tous les statuts</option>
@@ -49,20 +55,22 @@ import { Candidat, CategoriePermis, Forfait } from '../../core/models/models';
               <option value="EXPIRE_NON_SOLDE">Expiré non soldé</option>
             </select>
           </div>
-
+    
           <div>
             <select class="form-control" [(ngModel)]="categorieFiltre" (change)="loadCandidats()">
               <option value="">Toutes les catégories</option>
-              <option *ngFor="let cat of categories" [value]="cat.id">{{ cat.code }} - {{ cat.libelle }}</option>
+              @for (cat of categories; track cat) {
+                <option [value]="cat.id">{{ cat.code }} - {{ cat.libelle }}</option>
+              }
             </select>
           </div>
-
+    
           <div>
             <button class="btn btn-secondary btn-block" (click)="resetFiltres()">Réinitialiser</button>
           </div>
         </div>
       </div>
-
+    
       <!-- CANDIDATS TABLE -->
       <div class="card table-card">
         <div class="table-responsive">
@@ -73,218 +81,247 @@ import { Candidat, CategoriePermis, Forfait } from '../../core/models/models';
                 <th>Candidat</th>
                 <th>Contact</th>
                 <th>{{ canSeeFinancialData ? 'Permis / Forfait' : 'Permis' }}</th>
-                <th *ngIf="canSeeFinancialData">Montant</th>
-                <th *ngIf="canSeeFinancialData">Versé / Reste</th>
+                @if (canSeeFinancialData) {
+                  <th>Montant</th>
+                }
+                @if (canSeeFinancialData) {
+                  <th>Versé / Reste</th>
+                }
                 <th>Statut</th>
                 <th>Échéance</th>
                 <th class="text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngIf="loading">
-                <td [attr.colspan]="canSeeFinancialData ? 9 : 7" class="text-center py-4">Chargement des candidats...</td>
-              </tr>
-              <tr *ngIf="!loading && candidats.length === 0">
-                <td [attr.colspan]="canSeeFinancialData ? 9 : 7" class="text-center py-4">Aucun candidat trouvé pour ces critères.</td>
-              </tr>
-              <tr *ngFor="let c of candidats">
-                <td>
-                  <strong class="dossier-code">{{ c.numeroDossier }}</strong>
-                </td>
-                <td>
-                  <div class="candidat-name">{{ c.nom }} {{ c.prenom }}</div>
-                  <small class="text-muted">Inscrit le {{ c.dateInscription | date:'dd/MM/yyyy' }}</small>
-                </td>
-                <td>
-                  <div>📞 {{ c.telephone }}</div>
-                  <small class="text-muted" *ngIf="c.email">✉️ {{ c.email }}</small>
-                </td>
-                <td>
-                  <span class="badge badge-programme">{{ c.categoriePermisCode }}</span>
-                  <div class="forfait-sub" *ngIf="canSeeFinancialData">{{ c.forfaitNom }}</div>
-                </td>
-                <td *ngIf="canSeeFinancialData">
-                  <strong>{{ c.montantForfait | number }} FCFA</strong>
-                </td>
-                <td *ngIf="canSeeFinancialData">
-                  <div class="text-success font-semibold">{{ c.totalVerse | number }} FCFA</div>
-                  <small [ngClass]="c.soldeRestant > 0 ? 'text-danger' : 'text-muted'">
-                    Reste : {{ c.soldeRestant | number }} FCFA
-                  </small>
-                </td>
-                <td>
+              @if (loading) {
+                <tr>
+                  <td [attr.colspan]="canSeeFinancialData ? 9 : 7" class="text-center py-4">Chargement des candidats...</td>
+                </tr>
+              }
+              @if (!loading && candidats.length === 0) {
+                <tr>
+                  <td [attr.colspan]="canSeeFinancialData ? 9 : 7" class="text-center py-4">Aucun candidat trouvé pour ces critères.</td>
+                </tr>
+              }
+              @for (c of candidats; track c) {
+                <tr>
+                  <td>
+                    <strong class="dossier-code">{{ c.numeroDossier }}</strong>
+                  </td>
+                  <td>
+                    <div class="candidat-name">{{ c.nom }} {{ c.prenom }}</div>
+                    <small class="text-muted">Inscrit le {{ c.dateInscription | date:'dd/MM/yyyy' }}</small>
+                  </td>
+                  <td>
+                    <div>📞 {{ c.telephone }}</div>
+                    @if (c.email) {
+                      <small class="text-muted">✉️ {{ c.email }}</small>
+                    }
+                  </td>
+                  <td>
+                    <span class="badge badge-programme">{{ c.categoriePermisCode }}</span>
+                    @if (canSeeFinancialData) {
+                      <div class="forfait-sub">{{ c.forfaitNom }}</div>
+                    }
+                  </td>
+                  @if (canSeeFinancialData) {
+                    <td>
+                      <strong>{{ c.montantForfait | number }} FCFA</strong>
+                    </td>
+                  }
+                  @if (canSeeFinancialData) {
+                    <td>
+                      <div class="text-success font-semibold">{{ c.totalVerse | number }} FCFA</div>
+                      <small [ngClass]="c.soldeRestant > 0 ? 'text-danger' : 'text-muted'">
+                        Reste : {{ c.soldeRestant | number }} FCFA
+                      </small>
+                    </td>
+                  }
+                  <td>
                   <span class="badge" [ngClass]="{
                     'badge-solde': c.statutDossier === 'SOLDE',
                     'badge-en-cours': c.statutDossier === 'EN_COURS',
                     'badge-expire': c.statutDossier === 'EXPIRE',
                     'badge-expire-non-solde': c.statutDossier === 'EXPIRE_NON_SOLDE'
                   }">
-                    {{ c.statutDossier }}
-                  </span>
-                </td>
-                <td>
-                  <div [ngClass]="{'text-warning font-semibold': c.procheExpiration}">
-                    {{ c.dateEcheance | date:'dd/MM/yyyy' }}
-                  </div>
-                  <small *ngIf="c.procheExpiration" class="badge badge-ajourne">Expire bientôt</small>
-                </td>
-                <td class="text-right">
-                  <div class="table-actions">
-                    <a [routerLink]="['/candidats', c.id]" class="btn btn-outline btn-sm" title="Fiche complète">
-                      👁️ Détails
-                    </a>
-                    <button class="btn btn-outline btn-sm" *ngIf="canEdit" (click)="openEditModal(c)" title="Modifier">
-                      ✏️
-                    </button>
-                    <button class="btn btn-danger btn-sm" *ngIf="isAdmin" (click)="openDeleteModal(c)" title="Supprimer">
-                      🗑️
-                    </button>
-                  </div>
-                </td>
-              </tr>
+                      {{ c.statutDossier }}
+                    </span>
+                  </td>
+                  <td>
+                    <div [ngClass]="{'text-warning font-semibold': c.procheExpiration}">
+                      {{ c.dateEcheance | date:'dd/MM/yyyy' }}
+                    </div>
+                    @if (c.procheExpiration) {
+                      <small class="badge badge-ajourne">Expire bientôt</small>
+                    }
+                  </td>
+                  <td class="text-right">
+                    <div class="table-actions">
+                      <a [routerLink]="['/candidats', c.id]" class="btn btn-outline btn-sm" title="Fiche complète">
+                        👁️ Détails
+                      </a>
+                      @if (canEdit) {
+                        <button class="btn btn-outline btn-sm" (click)="openEditModal(c)" title="Modifier">
+                          ✏️
+                        </button>
+                      }
+                      @if (isAdmin) {
+                        <button class="btn btn-danger btn-sm" (click)="openDeleteModal(c)" title="Supprimer">
+                          🗑️
+                        </button>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
             </tbody>
           </table>
         </div>
-
+    
         <!-- PAGINATION -->
-        <div class="pagination-bar" *ngIf="totalPages > 1">
-          <button class="btn btn-outline btn-sm" [disabled]="page === 0" (click)="changePage(page - 1)">
-            ◀ Précédent
-          </button>
-          <span>Page {{ page + 1 }} sur {{ totalPages }} ({{ totalElements }} candidats)</span>
-          <button class="btn btn-outline btn-sm" [disabled]="page >= totalPages - 1" (click)="changePage(page + 1)">
-            Suivant ▶
-          </button>
-        </div>
-      </div>
-
-      <!-- MODAL CRÉATION CANDIDAT -->
-      <div class="modal-backdrop" *ngIf="showCreateModal">
-        <div class="modal-content modal-lg">
-          <div class="modal-header">
-            <h3>📝 Inscription d'un Nouveau Candidat</h3>
-            <button class="btn btn-outline btn-sm" (click)="showCreateModal = false">✕</button>
+        @if (totalPages > 1) {
+          <div class="pagination-bar">
+            <button class="btn btn-outline btn-sm" [disabled]="page === 0" (click)="changePage(page - 1)">
+              ◀ Précédent
+            </button>
+            <span>Page {{ page + 1 }} sur {{ totalPages }} ({{ totalElements }} candidats)</span>
+            <button class="btn btn-outline btn-sm" [disabled]="page >= totalPages - 1" (click)="changePage(page + 1)">
+              Suivant ▶
+            </button>
           </div>
-          <form (ngSubmit)="saveCreateCandidat()">
+        }
+      </div>
+    
+      <!-- MODAL CRÉATION CANDIDAT -->
+      @if (showCreateModal) {
+        <div class="modal-backdrop">
+          <div class="modal-content modal-lg">
+            <div class="modal-header">
+              <h3>📝 Inscription d'un Nouveau Candidat</h3>
+              <button class="btn btn-outline btn-sm" (click)="showCreateModal = false">✕</button>
+            </div>
+            <form (ngSubmit)="saveCreateCandidat()">
+              <div class="modal-body">
+                @if (modalError) {
+                  <div class="alert alert-danger">⚠️ {{ modalError }}</div>
+                }
+                <h4 class="section-title">1. Informations Personnelles</h4>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Nom de famille <span class="required">*</span></label>
+                    <input type="text" class="form-control" [(ngModel)]="newCandidat.nom" name="nom" required placeholder="Ex: KOUADIO" />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Prénom(s) <span class="required">*</span></label>
+                    <input type="text" class="form-control" [(ngModel)]="newCandidat.prenom" name="prenom" required placeholder="Ex: Jean-Luc" />
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Date de naissance <span class="required">*</span></label>
+                    <input type="date" class="form-control" [(ngModel)]="newCandidat.dateNaissance" name="dateNaissance" required />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Lieu de naissance</label>
+                    <input type="text" class="form-control" [(ngModel)]="newCandidat.lieuNaissance" name="lieuNaissance" placeholder="Ex: Cocody, Abidjan" />
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Numéro Téléphone <span class="required">*</span></label>
+                    <input type="tel" class="form-control" [(ngModel)]="newCandidat.telephone" name="telephone" required placeholder="Ex: 0701020304" />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Adresse Email</label>
+                    <input type="email" class="form-control" [(ngModel)]="newCandidat.email" name="email" placeholder="candidat@email.com" />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Autres contacts utiles / Personne à prévenir</label>
+                  <input type="text" class="form-control" [(ngModel)]="newCandidat.contactsUrgence" name="contactsUrgence" placeholder="Nom et téléphone du contact d'urgence" />
+                </div>
+                <h4 class="section-title">2. Inscription & Forfait</h4>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Catégorie de permis <span class="required">*</span></label>
+                    <select class="form-control" [(ngModel)]="newCandidat.categoriePermisId" name="categoriePermisId" required>
+                      @for (cat of categories; track cat) {
+                        <option [value]="cat.id">{{ cat.code }} — {{ cat.libelle }}</option>
+                      }
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Forfait sélectionné <span class="required">*</span></label>
+                    <select class="form-control" [(ngModel)]="newCandidat.forfaitId" name="forfaitId" required>
+                      @for (f of forfaits; track f) {
+                        <option [value]="f.id">{{ f.nom }} ({{ f.montant | number }} FCFA)</option>
+                      }
+                    </select>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Date d'inscription <span class="required">*</span></label>
+                    <input type="date" class="form-control" [(ngModel)]="newCandidat.dateInscription" name="dateInscription" required />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Date de réception dossier</label>
+                    <input type="date" class="form-control" [(ngModel)]="newCandidat.dateReceptionDossier" name="dateReceptionDossier" />
+                  </div>
+                </div>
+                <h4 class="section-title">3. Premier Versement (Optionnel à l'inscription — Règle RG02 : 35 000 à 50 000 FCFA)</h4>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Montant du 1er versement (FCFA)</label>
+                    <input type="number" class="form-control" [(ngModel)]="newCandidat.montantPremierVersement" name="montantPremierVersement" placeholder="Ex: 40000" min="35000" max="50000" />
+                    <small class="text-muted">Si versé : doit être compris entre 35 000 et 50 000 FCFA.</small>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Mode de règlement</label>
+                    <select class="form-control" [(ngModel)]="newCandidat.modeReglementPremierVersement" name="modeReglementPremierVersement">
+                      <option value="ESPECES">Espèces</option>
+                      <option value="MOBILE_MONEY">Mobile Money (Wave / Orange / MTN / Moov)</option>
+                      <option value="VIREMENT">Virement bancaire</option>
+                      <option value="CHEQUE">Chèque</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" (click)="showCreateModal = false">Annuler</button>
+                <button type="submit" class="btn btn-primary" [disabled]="saving">
+                  {{ saving ? 'Enregistrement...' : 'Enregistrer le Candidat' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      }
+    
+      <!-- MODAL SUPPRESSION -->
+      @if (showDeleteModal) {
+        <div class="modal-backdrop">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3>⚠️ Confirmation de Suppression</h3>
+              <button class="btn btn-outline btn-sm" (click)="showDeleteModal = false">✕</button>
+            </div>
             <div class="modal-body">
-              <div *ngIf="modalError" class="alert alert-danger">⚠️ {{ modalError }}</div>
-
-              <h4 class="section-title">1. Informations Personnelles</h4>
-              <div class="form-row">
-                <div class="form-group">
-                  <label class="form-label">Nom de famille <span class="required">*</span></label>
-                  <input type="text" class="form-control" [(ngModel)]="newCandidat.nom" name="nom" required placeholder="Ex: KOUADIO" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Prénom(s) <span class="required">*</span></label>
-                  <input type="text" class="form-control" [(ngModel)]="newCandidat.prenom" name="prenom" required placeholder="Ex: Jean-Luc" />
-                </div>
-              </div>
-
-              <div class="form-row">
-                <div class="form-group">
-                  <label class="form-label">Date de naissance <span class="required">*</span></label>
-                  <input type="date" class="form-control" [(ngModel)]="newCandidat.dateNaissance" name="dateNaissance" required />
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Lieu de naissance</label>
-                  <input type="text" class="form-control" [(ngModel)]="newCandidat.lieuNaissance" name="lieuNaissance" placeholder="Ex: Cocody, Abidjan" />
-                </div>
-              </div>
-
-              <div class="form-row">
-                <div class="form-group">
-                  <label class="form-label">Numéro Téléphone <span class="required">*</span></label>
-                  <input type="tel" class="form-control" [(ngModel)]="newCandidat.telephone" name="telephone" required placeholder="Ex: 0701020304" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Adresse Email</label>
-                  <input type="email" class="form-control" [(ngModel)]="newCandidat.email" name="email" placeholder="candidat@email.com" />
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label class="form-label">Autres contacts utiles / Personne à prévenir</label>
-                <input type="text" class="form-control" [(ngModel)]="newCandidat.contactsUrgence" name="contactsUrgence" placeholder="Nom et téléphone du contact d'urgence" />
-              </div>
-
-              <h4 class="section-title">2. Inscription & Forfait</h4>
-              <div class="form-row">
-                <div class="form-group">
-                  <label class="form-label">Catégorie de permis <span class="required">*</span></label>
-                  <select class="form-control" [(ngModel)]="newCandidat.categoriePermisId" name="categoriePermisId" required>
-                    <option *ngFor="let cat of categories" [value]="cat.id">{{ cat.code }} — {{ cat.libelle }}</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Forfait sélectionné <span class="required">*</span></label>
-                  <select class="form-control" [(ngModel)]="newCandidat.forfaitId" name="forfaitId" required>
-                    <option *ngFor="let f of forfaits" [value]="f.id">{{ f.nom }} ({{ f.montant | number }} FCFA)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="form-row">
-                <div class="form-group">
-                  <label class="form-label">Date d'inscription <span class="required">*</span></label>
-                  <input type="date" class="form-control" [(ngModel)]="newCandidat.dateInscription" name="dateInscription" required />
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Date de réception dossier</label>
-                  <input type="date" class="form-control" [(ngModel)]="newCandidat.dateReceptionDossier" name="dateReceptionDossier" />
-                </div>
-              </div>
-
-              <h4 class="section-title">3. Premier Versement (Optionnel à l'inscription — Règle RG02 : 35 000 à 50 000 FCFA)</h4>
-              <div class="form-row">
-                <div class="form-group">
-                  <label class="form-label">Montant du 1er versement (FCFA)</label>
-                  <input type="number" class="form-control" [(ngModel)]="newCandidat.montantPremierVersement" name="montantPremierVersement" placeholder="Ex: 40000" min="35000" max="50000" />
-                  <small class="text-muted">Si versé : doit être compris entre 35 000 et 50 000 FCFA.</small>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Mode de règlement</label>
-                  <select class="form-control" [(ngModel)]="newCandidat.modeReglementPremierVersement" name="modeReglementPremierVersement">
-                    <option value="ESPECES">Espèces</option>
-                    <option value="MOBILE_MONEY">Mobile Money (Wave / Orange / MTN / Moov)</option>
-                    <option value="VIREMENT">Virement bancaire</option>
-                    <option value="CHEQUE">Chèque</option>
-                  </select>
-                </div>
+              <p>Êtes-vous certain de vouloir supprimer définitivement le dossier <strong>{{ selectedCandidat?.numeroDossier }}</strong> de <strong>{{ selectedCandidat?.nom }} {{ selectedCandidat?.prenom }}</strong> ?</p>
+              <div class="form-group mt-3">
+                <label class="form-label">Motif de suppression (obligatoire pour traçabilité) <span class="required">*</span></label>
+                <input type="text" class="form-control" [(ngModel)]="deleteMotif" placeholder="Ex: Erreur de saisie / Désistement" required />
               </div>
             </div>
             <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" (click)="showCreateModal = false">Annuler</button>
-              <button type="submit" class="btn btn-primary" [disabled]="saving">
-                {{ saving ? 'Enregistrement...' : 'Enregistrer le Candidat' }}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-
-      <!-- MODAL SUPPRESSION -->
-      <div class="modal-backdrop" *ngIf="showDeleteModal">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h3>⚠️ Confirmation de Suppression</h3>
-            <button class="btn btn-outline btn-sm" (click)="showDeleteModal = false">✕</button>
-          </div>
-          <div class="modal-body">
-            <p>Êtes-vous certain de vouloir supprimer définitivement le dossier <strong>{{ selectedCandidat?.numeroDossier }}</strong> de <strong>{{ selectedCandidat?.nom }} {{ selectedCandidat?.prenom }}</strong> ?</p>
-            <div class="form-group mt-3">
-              <label class="form-label">Motif de suppression (obligatoire pour traçabilité) <span class="required">*</span></label>
-              <input type="text" class="form-control" [(ngModel)]="deleteMotif" placeholder="Ex: Erreur de saisie / Désistement" required />
+              <button type="button" class="btn btn-secondary" (click)="showDeleteModal = false">Annuler</button>
+              <button type="button" class="btn btn-danger" [disabled]="!deleteMotif" (click)="confirmDelete()">Confirmer la Suppression</button>
             </div>
           </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" (click)="showDeleteModal = false">Annuler</button>
-            <button type="button" class="btn btn-danger" [disabled]="!deleteMotif" (click)="confirmDelete()">Confirmer la Suppression</button>
-          </div>
         </div>
-      </div>
+      }
     </div>
-  `,
+    `,
     styles: [`
     .page-header-bar {
       display: flex;

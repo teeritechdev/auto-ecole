@@ -15,7 +15,7 @@ import { HistoriqueAction } from '../../core/models/models';
           <p>Historique inaltérable de toutes les opérations sensibles réalisées sur la plateforme</p>
         </div>
       </div>
-
+    
       <div class="card filter-card">
         <div class="filter-grid">
           <div>
@@ -36,7 +36,7 @@ import { HistoriqueAction } from '../../core/models/models';
           </div>
         </div>
       </div>
-
+    
       <div class="card">
         <div class="table-responsive">
           <table class="custom-table">
@@ -52,36 +52,48 @@ import { HistoriqueAction } from '../../core/models/models';
               </tr>
             </thead>
             <tbody>
-              <tr *ngIf="loading">
-                <td colspan="7" class="text-center py-4">Chargement du journal d'audit...</td>
-              </tr>
-              <tr *ngIf="!loading && logs.length === 0">
-                <td colspan="7" class="text-center py-4">Aucune trace enregistrée.</td>
-              </tr>
-              <tr *ngFor="let l of logs">
-                <td>{{ l.timestamp | date:'dd/MM/yyyy HH:mm:ss' }}</td>
-                <td><strong>{{ l.utilisateurNomComplet }}</strong></td>
-                <td><span class="action-tag">{{ l.action }}</span></td>
-                <td><span class="badge badge-programme">{{ l.entiteCible }}</span></td>
-                <td><code>{{ l.identifiantCible || '—' }}</code></td>
-                <td><small>{{ l.details }}</small></td>
-                <td>
-                  <span *ngIf="l.motif" class="motif-tag">💬 {{ l.motif }}</span>
-                  <span *ngIf="!l.motif" class="text-muted">—</span>
-                </td>
-              </tr>
+              @if (loading) {
+                <tr>
+                  <td colspan="7" class="text-center py-4">Chargement du journal d'audit...</td>
+                </tr>
+              }
+              @if (!loading && logs.length === 0) {
+                <tr>
+                  <td colspan="7" class="text-center py-4">Aucune trace enregistrée.</td>
+                </tr>
+              }
+              @for (l of logs; track l) {
+                <tr>
+                  <td>{{ l.timestamp | date:'dd/MM/yyyy HH:mm:ss' }}</td>
+                  <td><strong>{{ l.utilisateurNomComplet }}</strong></td>
+                  <td><span class="action-tag">{{ l.action }}</span></td>
+                  <td><span class="badge badge-programme">{{ l.entiteCible }}</span></td>
+                  <td><code>{{ l.identifiantCible || '—' }}</code></td>
+                  <td><small>{{ l.details }}</small></td>
+                  <td>
+                    @if (l.motif) {
+                      <span class="motif-tag">💬 {{ l.motif }}</span>
+                    }
+                    @if (!l.motif) {
+                      <span class="text-muted">—</span>
+                    }
+                  </td>
+                </tr>
+              }
             </tbody>
           </table>
         </div>
-
-        <div class="pagination-bar" *ngIf="totalPages > 1">
-          <button class="btn btn-outline btn-sm" [disabled]="page === 0" (click)="changePage(page - 1)">◀ Précédent</button>
-          <span>Page {{ page + 1 }} sur {{ totalPages }} ({{ totalElements }} entrées d'audit)</span>
-          <button class="btn btn-outline btn-sm" [disabled]="page >= totalPages - 1" (click)="changePage(page + 1)">Suivant ▶</button>
-        </div>
+    
+        @if (totalPages > 1) {
+          <div class="pagination-bar">
+            <button class="btn btn-outline btn-sm" [disabled]="page === 0" (click)="changePage(page - 1)">◀ Précédent</button>
+            <span>Page {{ page + 1 }} sur {{ totalPages }} ({{ totalElements }} entrées d'audit)</span>
+            <button class="btn btn-outline btn-sm" [disabled]="page >= totalPages - 1" (click)="changePage(page + 1)">Suivant ▶</button>
+          </div>
+        }
       </div>
     </div>
-  `,
+    `,
     styles: [`
     .page-header-bar {
       margin-bottom: 1.5rem;

@@ -1,19 +1,19 @@
 import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 
 @Component({
     selector: 'app-login',
-    imports: [CommonModule, FormsModule],
+    imports: [FormsModule],
     template: `
     <div class="login-wrapper">
       <!-- Ambient Glow Orbs -->
       <div class="glow-orb glow-orb-1"></div>
       <div class="glow-orb glow-orb-2"></div>
       <div class="glow-orb glow-orb-3"></div>
-
+    
       <div class="login-container">
         <!-- Main Login Card -->
         <div class="login-card">
@@ -30,25 +30,27 @@ import { AuthService } from '../../core/services/auth.service';
               </div>
               <div class="badge-ring"></div>
             </div>
-
+    
             <h1 class="brand-title">NERWAYA AUTO-ÉCOLE</h1>
             <p class="brand-subtitle">Plateforme Intégrée de Gestion & Formation</p>
             <div class="brand-divider"></div>
           </div>
-
+    
           <!-- Alert Error -->
-          <div *ngIf="errorMessage" class="alert-box alert-error">
-            <div class="alert-icon-wrap">
-              <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="8" x2="12" y2="12"></line>
-                <line x1="12" y1="16" x2="12.01" y2="16"></line>
-              </svg>
+          @if (errorMessage) {
+            <div class="alert-box alert-error">
+              <div class="alert-icon-wrap">
+                <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="8" x2="12" y2="12"></line>
+                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+              </div>
+              <div class="alert-text">{{ errorMessage }}</div>
+              <button type="button" class="alert-close" (click)="errorMessage = ''" title="Fermer">✕</button>
             </div>
-            <div class="alert-text">{{ errorMessage }}</div>
-            <button type="button" class="alert-close" (click)="errorMessage = ''" title="Fermer">✕</button>
-          </div>
-
+          }
+    
           <!-- Login Form -->
           <form (ngSubmit)="onSubmit()" class="login-form">
             <!-- Username Input -->
@@ -75,10 +77,10 @@ import { AuthService } from '../../core/services/auth.service';
                   [disabled]="loading"
                   autocomplete="username"
                   autofocus
-                />
+                  />
               </div>
             </div>
-
+    
             <!-- Password Input -->
             <div class="form-field">
               <div class="field-label-row">
@@ -104,28 +106,32 @@ import { AuthService } from '../../core/services/auth.service';
                   placeholder="••••••••••••"
                   [disabled]="loading"
                   autocomplete="current-password"
-                />
+                  />
                 <button
                   type="button"
                   class="input-toggle-btn"
                   (click)="showPassword = !showPassword"
                   [title]="showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'"
                   tabindex="-1"
-                >
+                  >
                   <!-- Eye open -->
-                  <svg *ngIf="!showPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
-                  </svg>
+                  @if (!showPassword) {
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                  }
                   <!-- Eye slash -->
-                  <svg *ngIf="showPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                    <line x1="1" y1="1" x2="23" y2="23"></line>
-                  </svg>
+                  @if (showPassword) {
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                      <line x1="1" y1="1" x2="23" y2="23"></line>
+                    </svg>
+                  }
                 </button>
               </div>
             </div>
-
+    
             <!-- Extra Actions / Options -->
             <div class="form-extra-row">
               <label class="remember-me">
@@ -137,25 +143,31 @@ import { AuthService } from '../../core/services/auth.service';
                 Mot de passe oublié ?
               </button>
             </div>
-
+    
             <!-- Submit Button -->
             <button
               type="submit"
               class="btn-submit"
               [disabled]="loading || !username.trim() || !password.trim()"
-            >
-              <span *ngIf="loading" class="spinner-inline"></span>
-              <span *ngIf="!loading" class="btn-content">
-                <span>Accéder à l'espace de gestion</span>
-                <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <line x1="5" y1="12" x2="19" y2="12"></line>
-                  <polyline points="12 5 19 12 12 19"></polyline>
-                </svg>
-              </span>
-              <span *ngIf="loading">Connexion en cours...</span>
+              >
+              @if (loading) {
+                <span class="spinner-inline"></span>
+              }
+              @if (!loading) {
+                <span class="btn-content">
+                  <span>Accéder à l'espace de gestion</span>
+                  <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                  </svg>
+                </span>
+              }
+              @if (loading) {
+                <span>Connexion en cours...</span>
+              }
             </button>
           </form>
-
+    
           <!-- Security Footnote -->
           <div class="card-security-footer">
             <div class="security-badge">
@@ -167,44 +179,46 @@ import { AuthService } from '../../core/services/auth.service';
             </div>
           </div>
         </div>
-
+    
         <!-- Global Bottom Branding -->
         <div class="global-footer">
           <p>© 2026 <strong>Nerwaya Auto-École</strong>. Tous droits réservés.</p>
         </div>
       </div>
-
+    
       <!-- Forgot Password Modal -->
-      <div class="modal-backdrop" *ngIf="showForgotModal" (click)="showForgotModal = false">
-        <div class="modal-dialog" (click)="$event.stopPropagation()">
-          <div class="modal-dialog-header">
-            <div class="modal-dialog-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-              </svg>
+      @if (showForgotModal) {
+        <div class="modal-backdrop" (click)="showForgotModal = false">
+          <div class="modal-dialog" (click)="$event.stopPropagation()">
+            <div class="modal-dialog-header">
+              <div class="modal-dialog-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+              </div>
+              <h3>Assistance & Réinitialisation</h3>
             </div>
-            <h3>Assistance & Réinitialisation</h3>
-          </div>
-          <div class="modal-dialog-body">
-            <p>
-              Pour des raisons de sécurité et de conformité, la réinitialisation des mots de passe des comptes 
-              (Administrateur, Secrétariat, Caisse, Moniteur) est centralisée.
-            </p>
-            <div class="modal-info-box">
-              <strong>Que devez-vous faire ?</strong>
-              <p>Veuillez contacter l'administrateur système ou la direction de l'auto-école pour demander le renouvellement de vos identifiants d'accès.</p>
+            <div class="modal-dialog-body">
+              <p>
+                Pour des raisons de sécurité et de conformité, la réinitialisation des mots de passe des comptes
+                (Administrateur, Secrétariat, Caisse, Moniteur) est centralisée.
+              </p>
+              <div class="modal-info-box">
+                <strong>Que devez-vous faire ?</strong>
+                <p>Veuillez contacter l'administrateur système ou la direction de l'auto-école pour demander le renouvellement de vos identifiants d'accès.</p>
+              </div>
             </div>
-          </div>
-          <div class="modal-dialog-footer">
-            <button type="button" class="btn btn-primary" (click)="showForgotModal = false">
-              J'ai compris
-            </button>
+            <div class="modal-dialog-footer">
+              <button type="button" class="btn btn-primary" (click)="showForgotModal = false">
+                J'ai compris
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      }
     </div>
-  `,
+    `,
     styles: [`
     .login-wrapper {
       min-height: 100vh;

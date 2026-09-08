@@ -17,31 +17,41 @@ import { DashboardStats } from '../../core/models/models';
           <p>Bienvenue sur votre espace de gestion <strong>Nerwaya Auto-École</strong> (Profil : <span class="role-badge">{{ currentUser?.role }}</span>)</p>
         </div>
         <div class="quick-actions">
-          <a routerLink="/candidats" class="btn btn-primary btn-sm" *ngIf="hasRole(['ADMIN', 'SECRETAIRE'])">
-            ➕ Nouveau Candidat
-          </a>
-          <a routerLink="/paiements" class="btn btn-success btn-sm" *ngIf="hasRole(['ADMIN', 'CAISSIERE'])">
-            💵 Nouvel Encaissement
-          </a>
-          <a routerLink="/caisse" class="btn btn-secondary btn-sm" *ngIf="hasRole(['ADMIN', 'CAISSIERE'])">
-            🏦 Journal Caisse
-          </a>
+          @if (hasRole(['ADMIN', 'SECRETAIRE'])) {
+            <a routerLink="/candidats" class="btn btn-primary btn-sm">
+              ➕ Nouveau Candidat
+            </a>
+          }
+          @if (hasRole(['ADMIN', 'CAISSIERE'])) {
+            <a routerLink="/paiements" class="btn btn-success btn-sm">
+              💵 Nouvel Encaissement
+            </a>
+          }
+          @if (hasRole(['ADMIN', 'CAISSIERE'])) {
+            <a routerLink="/caisse" class="btn btn-secondary btn-sm">
+              🏦 Journal Caisse
+            </a>
+          }
         </div>
       </div>
-
+    
       <!-- ALERTE EXPIRATION SI EXISTANTE -->
-      <div *ngIf="stats?.alertesExpiration && stats!.alertesExpiration.length > 0" class="alert alert-warning">
-        <div class="alert-icon">⚠️</div>
-        <div class="alert-content">
-          <strong>Attention — {{ stats!.alertesExpiration.length }} dossier(s) proche(s) de l'expiration (RG05 - Validité 8 mois) :</strong>
-          <div class="alert-list">
-            <span *ngFor="let c of stats!.alertesExpiration" class="alert-tag">
-              {{ c.numeroDossier }} ({{ c.nom }} {{ c.prenom }}) - Reste {{ c.joursRestants }} j.
-            </span>
+      @if (stats?.alertesExpiration && stats!.alertesExpiration.length > 0) {
+        <div class="alert alert-warning">
+          <div class="alert-icon">⚠️</div>
+          <div class="alert-content">
+            <strong>Attention — {{ stats!.alertesExpiration.length }} dossier(s) proche(s) de l'expiration (RG05 - Validité 8 mois) :</strong>
+            <div class="alert-list">
+              @for (c of stats!.alertesExpiration; track c) {
+                <span class="alert-tag">
+                  {{ c.numeroDossier }} ({{ c.nom }} {{ c.prenom }}) - Reste {{ c.joursRestants }} j.
+                </span>
+              }
+            </div>
           </div>
         </div>
-      </div>
-
+      }
+    
       <!-- KPI STATS CARDS -->
       <div class="stats-grid">
         <!-- 1. Total Candidats -->
@@ -51,36 +61,40 @@ import { DashboardStats } from '../../core/models/models';
             <div class="stat-label">Total Candidats</div>
             <div class="stat-value">{{ stats?.totalCandidats || 0 }}</div>
             <div class="stat-sub">
-              <span>{{ stats?.candidatsEnCours || 0 }} en cours</span> • 
+              <span>{{ stats?.candidatsEnCours || 0 }} en cours</span> •
               <span class="text-success">{{ stats?.candidatsSoldes || 0 }} soldés</span>
             </div>
           </div>
         </div>
-
+    
         <!-- 2. Montant Total Encaissé -->
-        <div class="stat-card success" *ngIf="hasRole(['ADMIN', 'CAISSIERE', 'SECRETAIRE'])">
-          <div class="stat-icon success">💰</div>
-          <div class="stat-info">
-            <div class="stat-label">Total Encaissé</div>
-            <div class="stat-value">{{ (stats?.montantTotalEncaisse || 0) | number }} <small>FCFA</small></div>
-            <div class="stat-sub text-danger">
-              Reste dû : {{ (stats?.montantGlobalRestantDu || 0) | number }} FCFA
+        @if (hasRole(['ADMIN', 'CAISSIERE', 'SECRETAIRE'])) {
+          <div class="stat-card success">
+            <div class="stat-icon success">💰</div>
+            <div class="stat-info">
+              <div class="stat-label">Total Encaissé</div>
+              <div class="stat-value">{{ (stats?.montantTotalEncaisse || 0) | number }} <small>FCFA</small></div>
+              <div class="stat-sub text-danger">
+                Reste dû : {{ (stats?.montantGlobalRestantDu || 0) | number }} FCFA
+              </div>
             </div>
           </div>
-        </div>
-
+        }
+    
         <!-- 3. Solde Caisse Actuel -->
-        <div class="stat-card info" *ngIf="hasRole(['ADMIN', 'CAISSIERE'])">
-          <div class="stat-icon info">🏦</div>
-          <div class="stat-info">
-            <div class="stat-label">Solde de Caisse</div>
-            <div class="stat-value">{{ (stats?.soldeCaisseActuel || 0) | number }} <small>FCFA</small></div>
-            <div class="stat-sub">
-              Entrées : {{ (stats?.totalEntreesCaisse || 0) | number }} FCFA
+        @if (hasRole(['ADMIN', 'CAISSIERE'])) {
+          <div class="stat-card info">
+            <div class="stat-icon info">🏦</div>
+            <div class="stat-info">
+              <div class="stat-label">Solde de Caisse</div>
+              <div class="stat-value">{{ (stats?.soldeCaisseActuel || 0) | number }} <small>FCFA</small></div>
+              <div class="stat-sub">
+                Entrées : {{ (stats?.totalEntreesCaisse || 0) | number }} FCFA
+              </div>
             </div>
           </div>
-        </div>
-
+        }
+    
         <!-- 4. Réussite Examens -->
         <div class="stat-card warning">
           <div class="stat-icon warning">🎓</div>
@@ -93,7 +107,7 @@ import { DashboardStats } from '../../core/models/models';
           </div>
         </div>
       </div>
-
+    
       <!-- MAIN DASHBOARD CONTENT (2 COLUMNS) -->
       <div class="dashboard-grid">
         <!-- Prochains Examens -->
@@ -102,85 +116,97 @@ import { DashboardStats } from '../../core/models/models';
             <div class="card-title">📅 Prochains Examens Programmés</div>
             <a routerLink="/examens" class="btn btn-outline btn-sm">Voir tout</a>
           </div>
-          
-          <div *ngIf="!stats?.prochainsExamens || stats!.prochainsExamens.length === 0" class="empty-state">
-            Aucun examen programmé pour les prochains jours.
-          </div>
-
-          <div *ngIf="stats?.prochainsExamens && stats!.prochainsExamens.length > 0" class="table-responsive">
-            <table class="custom-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Candidat</th>
-                  <th>Épreuve</th>
-                  <th>Passage</th>
-                  <th>Statut</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let ex of stats!.prochainsExamens">
-                  <td><strong>{{ ex.datePassage | date:'dd/MM/yyyy' }}</strong></td>
-                  <td>{{ ex.candidatNomComplet }} ({{ ex.candidatNumeroDossier }})</td>
-                  <td><span class="badge badge-programme">{{ ex.typeEpreuve }}</span></td>
-                  <td>Passage n°{{ ex.numeroPassage }}/5</td>
-                  <td>
+    
+          @if (!stats?.prochainsExamens || stats!.prochainsExamens.length === 0) {
+            <div class="empty-state">
+              Aucun examen programmé pour les prochains jours.
+            </div>
+          }
+    
+          @if (stats?.prochainsExamens && stats!.prochainsExamens.length > 0) {
+            <div class="table-responsive">
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Candidat</th>
+                    <th>Épreuve</th>
+                    <th>Passage</th>
+                    <th>Statut</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (ex of stats!.prochainsExamens; track ex) {
+                    <tr>
+                      <td><strong>{{ ex.datePassage | date:'dd/MM/yyyy' }}</strong></td>
+                      <td>{{ ex.candidatNomComplet }} ({{ ex.candidatNumeroDossier }})</td>
+                      <td><span class="badge badge-programme">{{ ex.typeEpreuve }}</span></td>
+                      <td>Passage n°{{ ex.numeroPassage }}/5</td>
+                      <td>
                     <span class="badge" [ngClass]="{
                       'badge-programme': ex.resultat === 'PROGRAMME',
                       'badge-reussi': ex.resultat === 'REUSSI',
                       'badge-echec': ex.resultat === 'ECHEC',
                       'badge-ajourne': ex.resultat === 'AJOURNE'
                     }">{{ ex.resultat }}</span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
         </div>
-
+    
         <!-- Derniers Encaissements -->
-        <div class="card" *ngIf="hasRole(['ADMIN', 'CAISSIERE', 'SECRETAIRE'])">
-          <div class="card-header">
-            <div class="card-title">💵 Derniers Versements Enregistrés</div>
-            <a routerLink="/paiements" class="btn btn-outline btn-sm">Voir tout</a>
-          </div>
-
-          <div *ngIf="!stats?.derniersPaiements || stats!.derniersPaiements.length === 0" class="empty-state">
-            Aucun versement enregistré.
-          </div>
-
-          <div *ngIf="stats?.derniersPaiements && stats!.derniersPaiements.length > 0" class="table-responsive">
-            <table class="custom-table">
-              <thead>
-                <tr>
-                  <th>N° Reçu</th>
-                  <th>Candidat</th>
-                  <th>Montant</th>
-                  <th>Mode</th>
-                  <th>Statut</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let p of stats!.derniersPaiements">
-                  <td><strong>{{ p.numeroRecu || '-' }}</strong></td>
-                  <td>{{ p.candidatNomComplet }}</td>
-                  <td><strong class="text-success">{{ p.montant | number }} FCFA</strong></td>
-                  <td>{{ p.modeReglement }}</td>
-                  <td>
+        @if (hasRole(['ADMIN', 'CAISSIERE', 'SECRETAIRE'])) {
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">💵 Derniers Versements Enregistrés</div>
+              <a routerLink="/paiements" class="btn btn-outline btn-sm">Voir tout</a>
+            </div>
+            @if (!stats?.derniersPaiements || stats!.derniersPaiements.length === 0) {
+              <div class="empty-state">
+                Aucun versement enregistré.
+              </div>
+            }
+            @if (stats?.derniersPaiements && stats!.derniersPaiements.length > 0) {
+              <div class="table-responsive">
+                <table class="custom-table">
+                  <thead>
+                    <tr>
+                      <th>N° Reçu</th>
+                      <th>Candidat</th>
+                      <th>Montant</th>
+                      <th>Mode</th>
+                      <th>Statut</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (p of stats!.derniersPaiements; track p) {
+                      <tr>
+                        <td><strong>{{ p.numeroRecu || '-' }}</strong></td>
+                        <td>{{ p.candidatNomComplet }}</td>
+                        <td><strong class="text-success">{{ p.montant | number }} FCFA</strong></td>
+                        <td>{{ p.modeReglement }}</td>
+                        <td>
                     <span class="badge" [ngClass]="{
                       'badge-solde': p.statut === 'VALIDE',
                       'badge-expire': p.statut === 'ANNULE',
                       'badge-ajourne': p.statut === 'MODIFIE'
                     }">{{ p.statut }}</span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
           </div>
-        </div>
+        }
       </div>
     </div>
-  `,
+    `,
     styles: [`
     .welcome-banner {
       background: linear-gradient(135deg, #1e3a8a, #2563eb);

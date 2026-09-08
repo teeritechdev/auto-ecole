@@ -20,6 +20,6 @@ public class ConfigurationApplication {
     private Long id = 1L;
 
     @Lob
-    @Column(name = "logo_data", columnDefinition = "LONGTEXT")
+    @Column(name = "logo_data", columnDefinition = "TEXT")
     private String logoData;
 }

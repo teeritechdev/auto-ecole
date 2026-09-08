@@ -6,17 +6,21 @@ import com.autoecole.dto.AuthDTOs.LoginRequest;
 import com.autoecole.entity.Utilisateur;
 import com.autoecole.exception.BadRequestException;
 import com.autoecole.exception.ResourceNotFoundException;
+import com.autoecole.exception.TooManyRequestsException;
 import com.autoecole.repository.UtilisateurRepository;
 import com.autoecole.security.JwtUtils;
+import com.autoecole.security.LoginAttemptService;
 import com.autoecole.security.UserDetailsImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -27,12 +31,29 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtils;
     private final AuditService auditService;
+    private final LoginAttemptService loginAttemptService;
 
     @Transactional
     public JwtResponse login(LoginRequest request) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
-        );
+        String username = request.getUsername();
+
+        if (loginAttemptService.isBlocked(username)) {
+            long secondes = loginAttemptService.getRemainingLockoutSeconds(username);
+            throw new TooManyRequestsException(
+                    "Trop de tentatives échouées. Compte temporairement verrouillé, réessayez dans " + (secondes / 60 + 1) + " minute(s).");
+        }
+
+        Authentication authentication;
+        try {
+            authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(username, request.getPassword())
+            );
+        } catch (AuthenticationException ex) {
+            loginAttemptService.recordFailure(username);
+            throw ex;
+        }
+
+        loginAttemptService.recordSuccess(username);
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String jwt = jwtUtils.generateJwtToken(authentication);
@@ -53,6 +74,18 @@ public class AuthService {
                 .role(role)
                 .photoProfile(user.getPhotoProfile())
                 .build();
+    }
+
+    public void logout(String authorizationHeader) {
+        if (StringUtils.hasText(authorizationHeader) && authorizationHeader.startsWith("Bearer ")) {
+            String token = authorizationHeader.substring(7);
+            jwtUtils.revokeToken(token);
+
+            Utilisateur currentUser = auditService.getCurrentUser();
+            if (currentUser != null) {
+                auditService.logAction("DECONNEXION", "Utilisateur", currentUser.getUsername(), "Déconnexion et révocation du token", null);
+            }
+        }
     }
 
     @Transactional

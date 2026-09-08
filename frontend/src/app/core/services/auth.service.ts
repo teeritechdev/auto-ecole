@@ -3,12 +3,13 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { User } from '../models/models';
 import { Router } from '@angular/router';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:8080/api/auth';
+  private apiUrl = `${environment.apiUrl}/auth`;
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
 
@@ -52,7 +53,7 @@ export class AuthService {
   }
 
   public updateMyPhoto(photoProfile: string | null): Observable<User> {
-    return this.http.patch<User>('http://localhost:8080/api/utilisateurs/me/photo', { photoProfile }).pipe(
+    return this.http.patch<User>(`${environment.apiUrl}/utilisateurs/me/photo`, { photoProfile }).pipe(
       tap(user => {
         const current = this.currentUserValue;
         const updatedUser = { ...current, ...user, token: current?.token } as User;
@@ -62,7 +63,24 @@ export class AuthService {
     );
   }
 
+  /** Déconnexion explicite (action utilisateur) : révoque le token côté serveur. */
   public logout(): void {
+    this.http.post<void>(`${this.apiUrl}/logout`, {}).subscribe({
+      complete: () => this.clearLocalSession(),
+      error: () => this.clearLocalSession()
+    });
+  }
+
+  /**
+   * Déconnexion locale uniquement, sans appel réseau — utilisée par
+   * l'intercepteur HTTP en réaction à un 401 (le token est déjà rejeté par
+   * le serveur, un appel à /auth/logout provoquerait une boucle infinie).
+   */
+  public localLogout(): void {
+    this.clearLocalSession();
+  }
+
+  private clearLocalSession(): void {
     localStorage.removeItem('currentUser');
     localStorage.removeItem('jwtToken');
     this.currentUserSubject.next(null);

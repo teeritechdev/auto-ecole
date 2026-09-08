@@ -36,6 +36,9 @@ public class WebSecurityConfig {
     @Value("${app.cors.allowed-origins:http://localhost:4200,http://127.0.0.1:4200}")
     private String allowedOrigins;
 
+    @Value("${app.swagger.public:true}")
+    private boolean swaggerPublic;
+
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
@@ -61,16 +64,31 @@ public class WebSecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth ->
+            .authorizeHttpRequests(auth -> {
                 auth.requestMatchers(
                         "/api/auth/**",
-                        "/v3/api-docs/**",
-                        "/swagger-ui/**",
-                        "/swagger-ui.html",
                         "/api/public/**"
-                ).permitAll()
-                .anyRequest().authenticated()
-            );
+                ).permitAll();
+
+                // En production (APP_SWAGGER_PUBLIC=false), la documentation
+                // de l'API ne doit pas être exposée sans authentification :
+                // elle révèle la cartographie complète des endpoints internes.
+                if (swaggerPublic) {
+                    auth.requestMatchers(
+                            "/v3/api-docs/**",
+                            "/swagger-ui/**",
+                            "/swagger-ui.html"
+                    ).permitAll();
+                } else {
+                    auth.requestMatchers(
+                            "/v3/api-docs/**",
+                            "/swagger-ui/**",
+                            "/swagger-ui.html"
+                    ).hasRole("ADMIN");
+                }
+
+                auth.anyRequest().authenticated();
+            });
 
         http.authenticationProvider(authenticationProvider());
         http.addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class);

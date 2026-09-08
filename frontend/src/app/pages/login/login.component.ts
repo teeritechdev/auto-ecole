@@ -894,7 +894,7 @@ export class LoginComponent {
       error: (err) => {
         this.loading = false;
         if (err.status === 0) {
-          this.errorMessage = 'Impossible de contacter le serveur Backend (Spring Boot sur le port 8080). Assurez-vous que le backend et MySQL sont bien démarrés.';
+          this.errorMessage = 'Impossible de contacter le serveur Backend (Spring Boot sur le port 8080). Assurez-vous que le backend et PostgreSQL sont bien démarrés.';
         } else if (err.status === 401) {
           this.errorMessage = 'Identifiant ou mot de passe incorrect. Veuillez vérifier vos accès.';
         } else if (err.status === 403) {

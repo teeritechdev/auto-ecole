@@ -1,6 +1,7 @@
 package com.autoecole.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -44,6 +45,7 @@ public class AuthDTOs {
         private String ancienPassword;
 
         @NotBlank(message = "Le nouveau mot de passe est obligatoire")
+        @Size(min = 8, max = 100, message = "Le nouveau mot de passe doit contenir au moins 8 caractères")
         private String nouveauPassword;
     }
 }

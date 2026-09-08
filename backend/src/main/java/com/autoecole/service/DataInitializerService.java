@@ -5,13 +5,16 @@ import com.autoecole.entity.enums.*;
 import com.autoecole.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Base64;
 
 @Slf4j
 @Component
@@ -29,37 +32,69 @@ public class DataInitializerService implements CommandLineRunner {
     private final TransactionCaisseRepository transactionCaisseRepository;
     private final PasswordEncoder passwordEncoder;
 
+    @Value("${app.seed.enabled:true}")
+    private boolean seedEnabled;
+
     @Override
     public void run(String... args) {
         log.info("Initialisation des données de base de l'auto-école...");
 
-        // 1. Rôles
+        // 1. Rôles (toujours nécessaires au fonctionnement du contrôle d'accès)
         Role roleAdmin = initRole(RoleEnum.ADMIN, "Administrateur Général");
         Role roleSecretaire = initRole(RoleEnum.SECRETAIRE, "Secrétaire Administrative");
         Role roleCaissiere = initRole(RoleEnum.CAISSIERE, "Caissière / Comptable");
         Role roleMoniteur = initRole(RoleEnum.MONITEUR, "Moniteur Pédagogique");
 
-        // 2. Utilisateurs initiaux
-        Utilisateur admin = initUser("admin", "admin@autoecole.ci", "admin123", "KOUASSI", "Jean-Marc", "0701020304", roleAdmin);
-        Utilisateur secr = initUser("secretaire", "secretaire@autoecole.ci", "secretaire123", "YAO", "Aya Marie", "0702030405", roleSecretaire);
-        Utilisateur caisse = initUser("caissiere", "caissiere@autoecole.ci", "caissiere123", "KOFFI", "Affoué Esther", "0703040506", roleCaissiere);
-        Utilisateur moniteur = initUser("moniteur", "moniteur@autoecole.ci", "moniteur123", "DIABATE", "Ibrahim", "0704050607", roleMoniteur);
-
-        // 3. Catégories de permis
+        // 2. Catégories de permis et forfaits (données de référence, toujours créées)
         CategoriePermis catA1 = initCategorie("A1", "Permis Moto légère (125 cm³)", "Conduite motocyclettes");
         CategoriePermis catB = initCategorie("B", "Permis B Véhicule Léger", "Véhicules particuliers jusqu'à 3.5T");
         CategoriePermis catC = initCategorie("C", "Permis C Poids Lourd", "Transport de marchandises > 3.5T");
 
-        // 4. Forfaits initiaux (RG01)
         Forfait f1 = initForfait("Forfait 1", new BigDecimal("100000"), "Formation standard (Code + Conduite 20h)");
         Forfait f2 = initForfait("Forfait 2", new BigDecimal("125000"), "Formation complète accélérée avec perfectionnement");
 
-        // 5. Données de démonstration (si la base est neuve)
-        if (candidatRepository.count() == 0) {
-            initDemoData(admin, moniteur, catB, catA1, catC, f1, f2);
+        if (seedEnabled) {
+            // 3. Comptes de démonstration à mots de passe connus + jeu de données
+            //    (uniquement en développement/démo : APP_SEED_ENABLED=false en production)
+            Utilisateur admin = initUser("admin", "admin@autoecole.ci", "admin123", "KOUASSI", "Jean-Marc", "0701020304", roleAdmin);
+            initUser("secretaire", "secretaire@autoecole.ci", "secretaire123", "YAO", "Aya Marie", "0702030405", roleSecretaire);
+            initUser("caissiere", "caissiere@autoecole.ci", "caissiere123", "KOFFI", "Affoué Esther", "0703040506", roleCaissiere);
+            Utilisateur moniteur = initUser("moniteur", "moniteur@autoecole.ci", "moniteur123", "DIABATE", "Ibrahim", "0704050607", roleMoniteur);
+
+            if (candidatRepository.count() == 0) {
+                initDemoData(admin, moniteur, catB, catA1, catC, f1, f2);
+            }
+        } else {
+            ensureAtLeastOneAdmin(roleAdmin);
         }
 
         log.info("Initialisation des données terminée avec succès.");
+    }
+
+    /**
+     * En production (APP_SEED_ENABLED=false), aucun compte à mot de passe
+     * connu n'est créé. Si la base est totalement vierge, un unique compte
+     * admin est provisionné avec un mot de passe aléatoire affiché UNE SEULE
+     * FOIS dans les logs du serveur — à récupérer et changer immédiatement.
+     */
+    private void ensureAtLeastOneAdmin(Role roleAdmin) {
+        if (utilisateurRepository.count() > 0) {
+            return;
+        }
+        String tempPassword = generateSecureRandomPassword();
+        initUser("admin", "admin@autoecole.local", tempPassword, "Administrateur", "Système", null, roleAdmin);
+
+        log.warn("=====================================================================");
+        log.warn(" Aucun utilisateur en base : compte admin initial créé.");
+        log.warn(" Identifiant : admin");
+        log.warn(" Mot de passe temporaire (à changer immédiatement, non ré-affiché) : {}", tempPassword);
+        log.warn("=====================================================================");
+    }
+
+    private String generateSecureRandomPassword() {
+        byte[] randomBytes = new byte[18];
+        new SecureRandom().nextBytes(randomBytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
     }
 
     private Role initRole(RoleEnum code, String libelle) {

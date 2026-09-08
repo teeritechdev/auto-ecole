@@ -21,7 +21,7 @@ L'application sera développée avec :
 
 - **Backend : Java / Spring Boot**
 - **Frontend : Angular**
-- **Base de données : MySQL**
+- **Base de données : PostgreSQL**
 - **API : REST**
 - **Accès aux données : Spring Data JPA / Hibernate**
 - **Sécurité : Spring Security**
@@ -495,7 +495,7 @@ L'application sera organisée en deux applications principales.
                 │ JPA / Hibernate
                 │
 ┌───────────────▼───────────────┐
-│             MYSQL             │
+│           POSTGRESQL           │
 │          Base de données       │
 └───────────────────────────────┘
 ```
@@ -536,7 +536,7 @@ Contient la logique métier.
 
 ### Repository
 
-Gère l'accès à MySQL avec Spring Data JPA.
+Gère l'accès à PostgreSQL avec Spring Data JPA.
 
 ### Entity
 
@@ -593,7 +593,7 @@ L'interface devra être :
 
 ---
 
-# 18. Base de données MySQL
+# 18. Base de données PostgreSQL
 
 La base de données devra être relationnelle et assurer l'intégrité des données.
 
@@ -866,7 +866,7 @@ Le projet devra fournir :
 
 1. application Angular fonctionnelle ;
 2. API Spring Boot fonctionnelle ;
-3. base de données MySQL ;
+3. base de données PostgreSQL ;
 4. système d'authentification ;
 5. gestion des rôles ;
 6. gestion des candidats ;
@@ -924,10 +924,10 @@ Les calculs des paiements et de la caisse devront être vérifiés avec plusieur
 | Phase | Contenu |
 |---|---|
 | **1. Analyse** | Validation du cahier des charges et des règles métier |
-| **2. Conception** | UML, architecture, base MySQL, API et maquettes |
+| **2. Conception** | UML, architecture, base PostgreSQL, API et maquettes |
 | **3. Backend** | Développement Spring Boot |
 | **4. Frontend** | Développement Angular |
-| **5. Intégration** | Connexion Angular ↔ Spring Boot ↔ MySQL |
+| **5. Intégration** | Connexion Angular ↔ Spring Boot ↔ PostgreSQL |
 | **6. Tests** | Tests fonctionnels, sécurité et cohérence |
 | **7. Déploiement** | Installation et configuration |
 | **8. Formation** | Formation des utilisateurs |
@@ -980,7 +980,7 @@ Le projet consiste à développer une application web professionnelle de gestion
 
 La solution cible repose sur :
 
-**Java + Spring Boot + Angular + MySQL**
+**Java + Spring Boot + Angular + PostgreSQL**
 
 avec une architecture séparant clairement le frontend, le backend et la base de données.
 

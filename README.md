@@ -5,7 +5,7 @@ Application web complète pour la gestion administrative, pédagogique et financ
 **Stack Technique :**
 - **Backend :** Java 21 • Spring Boot 3.2.5 • Spring Data JPA • Spring Security (JWT) • Springdoc OpenAPI (Swagger UI) • OpenPDF • Apache POI
 - **Frontend :** Angular 18 (Standalone Components) • TypeScript • RxJS • Chart.js • CSS Modern Responsive
-- **Base de données :** MySQL 8.0+
+- **Base de données :** PostgreSQL 16+
 - **Environnement cible :** Ubuntu Linux / Windows / macOS
 - **IDE & Outils recommandés :** IntelliJ IDEA • DBeaver Community Edition (DBeaver CE) • Postman / Swagger UI
 
@@ -14,14 +14,15 @@ Application web complète pour la gestion administrative, pédagogique et financ
 ## 📋 Table des Matières
 1. [Fonctionnalités & Rôles](#-fonctionnalités--rôles)
 2. [Prérequis sous Ubuntu](#-prérequis-sous-ubuntu)
-3. [Configuration de la Base de Données (MySQL & DBeaver CE)](#-configuration-de-la-base-de-données-mysql--dbeaver-ce)
+3. [Configuration de la Base de Données (PostgreSQL & DBeaver CE)](#-configuration-de-la-base-de-données-postgresql--dbeaver-ce)
 4. [Ouverture et Lancement dans IntelliJ IDEA](#-ouverture-et-lancement-dans-intellij-idea)
 5. [Lancement du Frontend Angular](#-lancement-du-frontend-angular)
-6. [Comptes & Identifiants par Défaut](#-comptes--identifiants-par-défaut)
-7. [Documentation API Swagger](#-documentation-api-swagger)
-8. [Règles de Gestion Métier (RG01 - RG14)](#-règles-de-gestion-métier-rg01---rg14)
-9. [Architecture du Projet](#-architecture-du-projet)
-10. [Dépannage & Commandes Utiles](#-dépannage--commandes-utiles)
+6. [Variables d'Environnement (Production)](#-variables-denvironnement-production)
+7. [Comptes & Identifiants par Défaut](#-comptes--identifiants-par-défaut)
+8. [Documentation API Swagger](#-documentation-api-swagger)
+9. [Règles de Gestion Métier (RG01 - RG14)](#-règles-de-gestion-métier-rg01---rg14)
+10. [Architecture du Projet](#-architecture-du-projet)
+11. [Dépannage & Commandes Utiles](#-dépannage--commandes-utiles)
 
 ---
 
@@ -58,17 +59,17 @@ node -v
 npm -v
 ```
 
-### 3. MySQL Server (ou Docker)
-**Option A : Installation native MySQL**
+### 3. PostgreSQL Server (ou Docker)
+**Option A : Installation native PostgreSQL**
 ```bash
-sudo apt install -y mysql-server
-sudo systemctl enable mysql
-sudo systemctl start mysql
+sudo apt install -y postgresql postgresql-contrib
+sudo systemctl enable postgresql
+sudo systemctl start postgresql
 ```
 
 **Option B : Docker & Docker Compose** (recommandé si vous avez Docker)
 ```bash
-# Lance MySQL 8.0 en arrière-plan avec le port 3306 exposé
+# Lance PostgreSQL 16 en arrière-plan avec le port 5432 exposé
 docker compose up -d
 ```
 
@@ -81,24 +82,23 @@ sudo snap install dbeaver-ce
 
 ---
 
-## 🗄️ Configuration de la Base de Données (MySQL & DBeaver CE)
+## 🗄️ Configuration de la Base de Données (PostgreSQL & DBeaver CE)
 
-### Étape 1 : Création de la base de données dans MySQL
-Connectez-vous au serveur MySQL :
+### Étape 1 : Création de la base de données dans PostgreSQL
+Connectez-vous au serveur PostgreSQL (l'utilisateur système `postgres` est créé par l'installation) :
 ```bash
-sudo mysql -u root
+sudo -u postgres psql
 ```
-Exécutez la commande SQL suivante :
+Exécutez les commandes SQL suivantes :
 ```sql
-CREATE DATABASE IF NOT EXISTS auto_ecole_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE auto_ecole_db;
 
--- Si vous souhaitez configurer un mot de passe pour root (exemple : root) :
-ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'root';
-FLUSH PRIVILEGES;
-EXIT;
+-- Définir le mot de passe de l'utilisateur postgres (exemple : postgres) :
+ALTER USER postgres WITH PASSWORD 'postgres';
+\q
 ```
 
-> 💡 **Note :** Spring Boot est configuré avec `createDatabaseIfNotExist=true` et `hibernate.ddl-auto: update`. Toutes les tables et relations sont créées automatiquement dès le premier démarrage.
+> 💡 **Note :** PostgreSQL ne crée pas la base automatiquement au démarrage (contrairement à MySQL) — l'étape ci-dessus est donc obligatoire avant le premier lancement. Une fois la base créée, Spring Boot (`hibernate.ddl-auto: update`) crée automatiquement toutes les tables et relations.
 
 ---
 
@@ -106,23 +106,18 @@ EXIT;
 
 1. **Lancez DBeaver CE** depuis le menu Ubuntu ou en ligne de commande (`dbeaver-ce`).
 2. Cliquez sur **Nouvelle connexion** (icône prise électrique avec un `+`) ou faites `Ctrl + N` -> *Connexion à une base de données*.
-3. Sélectionnez **MySQL** puis cliquez sur **Suivant**.
+3. Sélectionnez **PostgreSQL** puis cliquez sur **Suivant**.
 4. Renseignez les paramètres de connexion :
    - **Hôte (Host) :** `localhost` (ou `127.0.0.1`)
-   - **Port :** `3306`
+   - **Port :** `5432`
    - **Base de données (Database) :** `auto_ecole_db`
-   - **Nom d'utilisateur (Username) :** `root` (ou `autoecole_user` si vous utilisez Docker)
-   - **Mot de passe (Password) :** votre mot de passe (ou laissez vide si aucun mot de passe n'a été défini)
+   - **Nom d'utilisateur (Username) :** `postgres`
+   - **Mot de passe (Password) :** votre mot de passe (`postgres` par défaut ci-dessus)
 
-5. **Propriétés du pilote (Important pour MySQL 8+) :**
-   - Allez dans l'onglet **Propriétés du pilote (Driver Properties)**.
-   - Réglez `allowPublicKeyRetrieval` sur **`TRUE`**.
-   - Réglez `useSSL` sur **`FALSE`** (pour le développement local).
-
-6. Cliquez sur **Tester la connexion** :
-   - DBeaver téléchargera automatiquement le pilote JDBC officiel MySQL si nécessaire.
+5. Cliquez sur **Tester la connexion** :
+   - DBeaver téléchargera automatiquement le pilote JDBC officiel PostgreSQL si nécessaire.
    - Le message "Connecté" s'affiche avec succès.
-7. Cliquez sur **Terminer**.
+6. Cliquez sur **Terminer**.
 
 Vous pouvez maintenant visualiser l'arborescence des tables (`utilisateurs`, `candidats`, `paiements`, `recus`, `passages_examen`, `transactions_caisse`, `historique_actions`, etc.) et exécuter des requêtes SQL directement.
 
@@ -155,10 +150,11 @@ server:
 
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/auto_ecole_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
-    username: root
-    password: "" # <-- Ajustez votre mot de passe MySQL ici si nécessaire
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/auto_ecole_db}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
 ```
+Les valeurs après `:` sont les valeurs par défaut utilisées en local si aucune variable d'environnement n'est définie — rien à changer pour un usage en développement. Pour la production, voir [Variables d'environnement](#-variables-denvironnement-production) ci-dessous.
 
 ### 5. Démarrer le Backend
 - **Option 1 (Graphique) :** Ouvrez la classe [AutoEcoleApplication.java](file:///backend/src/main/java/com/autoecole/AutoEcoleApplication.java), puis cliquez sur la flèche verte ▶️ à côté de `public class AutoEcoleApplication` -> **Run 'AutoEcoleApplication'**.
@@ -192,9 +188,24 @@ Une fois compilé, ouvrez votre navigateur web sur :
 
 ---
 
+## 🔐 Variables d'Environnement (Production)
+
+En local, tout fonctionne sans rien configurer (valeurs par défaut de développement). **Avant tout déploiement en production**, définissez ces variables d'environnement :
+
+| Variable | Rôle | Exemple |
+|---|---|---|
+| `JWT_SECRET` | Clé de signature des JWT. Le défaut est un placeholder **non sécurisé**, volontairement identifiable dans les logs au démarrage. | `openssl rand -base64 64` |
+| `DB_URL` / `DB_USERNAME` / `DB_PASSWORD` | Connexion PostgreSQL | — |
+| `APP_SEED_ENABLED` | `false` désactive les comptes de démo (`admin/admin123`, etc.) et les données de démonstration. Un unique compte `admin` est alors créé avec un mot de passe aléatoire **affiché une seule fois** dans les logs au premier démarrage. | `false` |
+| `APP_SWAGGER_PUBLIC` | `false` restreint Swagger UI / `/v3/api-docs` aux utilisateurs ADMIN authentifiés (au lieu d'un accès public). | `false` |
+| `CORS_ALLOWED_ORIGINS` | Origines autorisées à appeler l'API (liste séparée par des virgules) | `https://monapp.exemple.com` |
+| `JWT_EXPIRATION_MS` | Durée de validité du token, en millisecondes (défaut : 2h) | `7200000` |
+
+---
+
 ## 🔑 Comptes & Identifiants par Défaut
 
-Lors du premier démarrage, les comptes suivants sont créés automatiquement avec mot de passe haché par BCrypt :
+Lors du premier démarrage (avec `APP_SEED_ENABLED=true`, valeur par défaut), les comptes suivants sont créés automatiquement avec mot de passe haché par BCrypt :
 
 | Rôle | Identifiant (Username) | Mot de Passe | Nom & Prénom | Téléphone |
 |---|---|---|---|---|
@@ -278,7 +289,7 @@ achille/
 │   │   │   │   ├── security/        # Filtre JWT, UserDetailsService, WebSecurityConfig
 │   │   │   │   └── service/         # Logique métier, exports PDF/Excel, initialisation des données
 │   │   │   └── resources/
-│   │   │       └── application.yml  # Configuration Spring Boot & MySQL
+│   │   │       └── application.yml  # Configuration Spring Boot & PostgreSQL
 │   │   └── test/java/com/autoecole/ # Tests unitaires des règles de gestion (BusinessRulesTest)
 │   └── pom.xml                      # Configuration Maven & dépendances
 │
@@ -293,7 +304,7 @@ achille/
 │   ├── angular.json
 │   └── package.json
 │
-├── docker-compose.yml               # Service MySQL 8.0 pour démarrage rapide
+├── docker-compose.yml               # Service PostgreSQL 16 pour démarrage rapide
 ├── run-backend.sh                   # Script de lancement Backend Ubuntu
 ├── run-frontend.sh                  # Script de lancement Frontend Ubuntu
 └── README.md                        # Documentation officielle du projet
@@ -303,20 +314,22 @@ achille/
 
 ## 🛠️ Dépannage & Commandes Utiles
 
-### 1. Erreur de connexion MySQL : `Access denied for user 'root'@'localhost'`
-Sous Ubuntu, le compte MySQL root utilise parfois le plugin `auth_socket`. Pour permettre la connexion avec mot de passe :
+### 1. Erreur de connexion PostgreSQL : `password authentication failed for user "postgres"`
+Vérifiez que le mot de passe défini dans `application.yml` correspond bien à celui de l'utilisateur `postgres` :
 ```bash
-sudo mysql -u root
+sudo -u postgres psql
 ```
 Puis exécutez :
 ```sql
-ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '';
-FLUSH PRIVILEGES;
-EXIT;
+ALTER USER postgres WITH PASSWORD 'postgres';
+\q
 ```
 
-### 2. Erreur `Public Key Retrieval is not allowed` dans DBeaver
-Dans DBeaver : Clic droit sur la connexion -> *Éditer la connexion* -> *Propriétés du pilote* -> mettre `allowPublicKeyRetrieval` à `TRUE`.
+### 2. Erreur `FATAL: Peer authentication failed` (installation native)
+Sous Ubuntu, PostgreSQL utilise par défaut l'authentification `peer` pour les connexions locales. Éditez `/etc/postgresql/16/main/pg_hba.conf`, remplacez la méthode `peer`/`ident` par `md5` pour les lignes `local` et `host` concernant `postgres`, puis redémarrez :
+```bash
+sudo systemctl restart postgresql
+```
 
 ### 3. Exécuter les tests unitaires du Backend
 ```bash
@@ -342,4 +355,4 @@ npm run build
 
 ---
 
-✨ **Projet Auto-École — Conforme au Cahier des Charges Final (Spring Boot 3 + Angular 18 + MySQL).**
+✨ **Projet Auto-École — Conforme au Cahier des Charges Final (Spring Boot 3 + Angular 18 + PostgreSQL).**

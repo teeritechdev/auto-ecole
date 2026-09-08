@@ -1,6 +1,7 @@
 package com.autoecole.controller;
 
 import com.autoecole.dto.UtilisateurDTOs.*;
+import com.autoecole.exception.BadRequestException;
 import com.autoecole.service.UtilisateurService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -59,18 +60,28 @@ public class UtilisateurController {
 
     @PatchMapping("/{id}/photo")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<UtilisateurDTO> updatePhoto(@PathVariable Long id, @RequestBody PhotoRequest request) {
+    public ResponseEntity<UtilisateurDTO> updatePhoto(@PathVariable Long id, @Valid @RequestBody PhotoRequest request) {
+        validatePhoto(request.getPhotoProfile());
         return ResponseEntity.ok(utilisateurService.updatePhoto(id, request.getPhotoProfile()));
     }
 
     @PatchMapping("/me/photo")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<UtilisateurDTO> updateMyPhoto(@RequestBody PhotoRequest request) {
+    public ResponseEntity<UtilisateurDTO> updateMyPhoto(@Valid @RequestBody PhotoRequest request) {
+        validatePhoto(request.getPhotoProfile());
         return ResponseEntity.ok(utilisateurService.updateCurrentUserPhoto(request.getPhotoProfile()));
+    }
+
+    private void validatePhoto(String photoProfile) {
+        if (photoProfile == null || photoProfile.isBlank()) return;
+        if (!photoProfile.matches("^data:image/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$")) {
+            throw new BadRequestException("Format de photo non pris en charge");
+        }
     }
 
     @lombok.Data
     public static class PhotoRequest {
+        @jakarta.validation.constraints.Size(max = 2_800_000, message = "Photo trop volumineuse (2 Mo max)")
         private String photoProfile;
     }
 }

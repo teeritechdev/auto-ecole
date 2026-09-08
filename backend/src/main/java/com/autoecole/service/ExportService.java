@@ -70,12 +70,12 @@ public class ExportService {
             int rowIdx = 1;
             for (CandidatDTO c : candidats) {
                 org.apache.poi.ss.usermodel.Row row = sheet.createRow(rowIdx++);
-                row.createCell(0).setCellValue(c.getNumeroDossier());
-                row.createCell(1).setCellValue(c.getNom());
-                row.createCell(2).setCellValue(c.getPrenom());
-                row.createCell(3).setCellValue(c.getTelephone());
-                row.createCell(4).setCellValue(c.getCategoriePermisCode() != null ? c.getCategoriePermisCode() : "");
-                row.createCell(5).setCellValue(c.getForfaitNom() != null ? c.getForfaitNom() : "");
+                row.createCell(0).setCellValue(sanitizeForExcel(c.getNumeroDossier()));
+                row.createCell(1).setCellValue(sanitizeForExcel(c.getNom()));
+                row.createCell(2).setCellValue(sanitizeForExcel(c.getPrenom()));
+                row.createCell(3).setCellValue(sanitizeForExcel(c.getTelephone()));
+                row.createCell(4).setCellValue(sanitizeForExcel(c.getCategoriePermisCode() != null ? c.getCategoriePermisCode() : ""));
+                row.createCell(5).setCellValue(sanitizeForExcel(c.getForfaitNom() != null ? c.getForfaitNom() : ""));
                 row.createCell(6).setCellValue(c.getMontantForfait() != null ? c.getMontantForfait().doubleValue() : 0);
                 row.createCell(7).setCellValue(c.getTotalVerse() != null ? c.getTotalVerse().doubleValue() : 0);
                 row.createCell(8).setCellValue(c.getSoldeRestant() != null ? c.getSoldeRestant().doubleValue() : 0);
@@ -341,11 +341,11 @@ public class ExportService {
                 org.apache.poi.ss.usermodel.Row row = sheet.createRow(r++);
                 row.createCell(0).setCellValue(tx.getDateTransaction() != null ? tx.getDateTransaction().toString() : "");
                 row.createCell(1).setCellValue(tx.getTypeMouvement().name());
-                row.createCell(2).setCellValue(tx.getLibelle());
-                row.createCell(3).setCellValue(tx.getCategorie() != null ? tx.getCategorie() : "");
-                row.createCell(4).setCellValue(tx.getReferencePiece() != null ? tx.getReferencePiece() : "");
+                row.createCell(2).setCellValue(sanitizeForExcel(tx.getLibelle()));
+                row.createCell(3).setCellValue(sanitizeForExcel(tx.getCategorie() != null ? tx.getCategorie() : ""));
+                row.createCell(4).setCellValue(sanitizeForExcel(tx.getReferencePiece() != null ? tx.getReferencePiece() : ""));
                 row.createCell(5).setCellValue(tx.getMontant().doubleValue());
-                row.createCell(6).setCellValue(tx.getUtilisateurNomComplet());
+                row.createCell(6).setCellValue(sanitizeForExcel(tx.getUtilisateurNomComplet()));
             }
 
             for (int i = 0; i < cols.length; i++) {
@@ -355,6 +355,24 @@ public class ExportService {
             workbook.write(out);
             return out.toByteArray();
         }
+    }
+
+    /**
+     * Neutralise l'injection de formules Excel (CSV/Excel Formula Injection) :
+     * préfixe d'une apostrophe toute valeur commençant par un caractère
+     * interprété comme un déclencheur de formule par Excel/LibreOffice
+     * ( = + - @ tab retour-chariot ), pour qu'elle soit toujours traitée
+     * comme du texte brut à l'ouverture du fichier.
+     */
+    private String sanitizeForExcel(String value) {
+        if (value == null || value.isEmpty()) {
+            return value;
+        }
+        char first = value.charAt(0);
+        if (first == '=' || first == '+' || first == '-' || first == '@' || first == '\t' || first == '\r') {
+            return "'" + value;
+        }
+        return value;
     }
 
     private void addTableRow(PdfPTable table, String label, String value, com.lowagie.text.Font f1, com.lowagie.text.Font f2) {

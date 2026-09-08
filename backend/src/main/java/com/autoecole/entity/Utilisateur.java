@@ -36,7 +36,7 @@ public class Utilisateur {
     private String telephone;
 
     @Lob
-    @Column(name = "photo_profile", columnDefinition = "LONGTEXT")
+    @Column(name = "photo_profile", columnDefinition = "TEXT")
     private String photoProfile;
 
     @ManyToOne(fetch = FetchType.EAGER)

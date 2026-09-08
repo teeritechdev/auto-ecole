@@ -4,6 +4,7 @@ import com.autoecole.dto.AuthDTOs.*;
 import com.autoecole.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +23,14 @@ public class AuthController {
     @Operation(summary = "Connexion utilisateur et obtention du token JWT")
     public ResponseEntity<JwtResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
         return ResponseEntity.ok(authService.login(loginRequest));
+    }
+
+    @PostMapping("/logout")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Déconnexion : révoque immédiatement le token JWT côté serveur")
+    public ResponseEntity<Void> logout(HttpServletRequest request) {
+        authService.logout(request.getHeader("Authorization"));
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/change-password")

@@ -7,10 +7,9 @@ import { AuthService } from '../../core/services/auth.service';
 import { Candidat, CategoriePermis, Forfait } from '../../core/models/models';
 
 @Component({
-  selector: 'app-candidats',
-  standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
-  template: `
+    selector: 'app-candidats',
+    imports: [CommonModule, FormsModule, RouterModule],
+    template: `
     <div class="candidats-page">
       <!-- HEADER ACTIONS -->
       <div class="page-header-bar">
@@ -286,7 +285,7 @@ import { Candidat, CategoriePermis, Forfait } from '../../core/models/models';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .page-header-bar {
       display: flex;
       align-items: center;

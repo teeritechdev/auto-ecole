@@ -4,10 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 
 @Component({
-  selector: 'app-rapports',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-rapports',
+    imports: [CommonModule, FormsModule],
+    template: `
     <div class="rapports-page">
       <div class="page-header-bar">
         <div>
@@ -57,7 +56,7 @@ import { ApiService } from '../../core/services/api.service';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .page-header-bar {
       margin-bottom: 1.5rem;
     }

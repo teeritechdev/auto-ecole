@@ -5,10 +5,9 @@ import { ApiService } from '../../core/services/api.service';
 import { UtilisateurDTO } from '../../core/models/models';
 
 @Component({
-  selector: 'app-utilisateurs',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-utilisateurs',
+    imports: [CommonModule, FormsModule],
+    template: `
     <div class="utilisateurs-page">
       <div class="page-header-bar">
         <div>
@@ -157,7 +156,7 @@ import { UtilisateurDTO } from '../../core/models/models';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .page-header-bar {
       display: flex;
       align-items: center;

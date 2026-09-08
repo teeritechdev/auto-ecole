@@ -6,10 +6,9 @@ import { AuthService } from '../../core/services/auth.service';
 import { RecapCaisse, TransactionCaisse } from '../../core/models/models';
 
 @Component({
-  selector: 'app-caisse',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-caisse',
+    imports: [CommonModule, FormsModule],
+    template: `
     <div class="caisse-page">
       <!-- HEADER -->
       <div class="page-header-bar">
@@ -191,7 +190,7 @@ import { RecapCaisse, TransactionCaisse } from '../../core/models/models';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .page-header-bar {
       display: flex;
       align-items: center;

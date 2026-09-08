@@ -5,10 +5,9 @@ import { ApiService } from '../../core/services/api.service';
 import { HistoriqueAction } from '../../core/models/models';
 
 @Component({
-  selector: 'app-audit',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-audit',
+    imports: [CommonModule, FormsModule],
+    template: `
     <div class="audit-page">
       <div class="page-header-bar">
         <div>
@@ -83,7 +82,7 @@ import { HistoriqueAction } from '../../core/models/models';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .page-header-bar {
       margin-bottom: 1.5rem;
     }

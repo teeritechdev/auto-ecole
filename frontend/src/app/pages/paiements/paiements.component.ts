@@ -7,10 +7,9 @@ import { AuthService } from '../../core/services/auth.service';
 import { Candidat, Paiement, Recu } from '../../core/models/models';
 
 @Component({
-  selector: 'app-paiements',
-  standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
-  template: `
+    selector: 'app-paiements',
+    imports: [CommonModule, FormsModule, RouterModule],
+    template: `
     <div class="paiements-page">
       <!-- HEADER -->
       <div class="page-header-bar">
@@ -243,7 +242,7 @@ import { Candidat, Paiement, Recu } from '../../core/models/models';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .page-header-bar {
       display: flex;
       align-items: center;

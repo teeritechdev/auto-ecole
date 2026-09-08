@@ -13,10 +13,9 @@ import {
 } from '../../core/models/models';
 
 @Component({
-  selector: 'app-candidat-detail',
-  standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
-  template: `
+    selector: 'app-candidat-detail',
+    imports: [CommonModule, FormsModule, RouterModule],
+    template: `
     <div class="candidat-detail-page" *ngIf="candidat">
       <!-- TOP NAVIGATION & ACTIONS -->
       <div class="header-action-bar">
@@ -379,7 +378,7 @@ import {
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .header-action-bar {
       display: flex;
       align-items: center;

@@ -5,10 +5,9 @@ import { ApiService } from '../../core/services/api.service';
 import { CategoriePermis, Forfait } from '../../core/models/models';
 
 @Component({
-  selector: 'app-parametrage',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-parametrage',
+    imports: [CommonModule, FormsModule],
+    template: `
     <div class="parametrage-page">
       <div class="page-header-bar">
         <div>
@@ -157,7 +156,7 @@ import { CategoriePermis, Forfait } from '../../core/models/models';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .page-header-bar {
       margin-bottom: 1.5rem;
     }

@@ -8,10 +8,9 @@ import { Candidat, PassageExamen } from '../../core/models/models';
 import { forkJoin } from 'rxjs';
 
 @Component({
-  selector: 'app-examens',
-  standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
-  template: `
+    selector: 'app-examens',
+    imports: [CommonModule, FormsModule, RouterModule],
+    template: `
     <div class="examens-page">
       <!-- HEADER -->
       <div class="page-header-bar">
@@ -251,7 +250,7 @@ import { forkJoin } from 'rxjs';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .page-header-bar {
       display: flex;
       align-items: center;

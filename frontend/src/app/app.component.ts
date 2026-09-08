@@ -7,10 +7,9 @@ import { User } from './core/models/models';
 import { ApiService } from './core/services/api.service';
 
 @Component({
-  selector: 'app-root',
-  standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
-  template: `
+    selector: 'app-root',
+    imports: [CommonModule, RouterModule, FormsModule],
+    template: `
     <!-- IF NOT AUTHENTICATED -> DISPLAY ROUTER OUTLET (LOGIN) -->
     <div *ngIf="!isAuthenticated">
       <router-outlet></router-outlet>
@@ -181,7 +180,7 @@ import { ApiService } from './core/services/api.service';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .nav-item.active {
       background: linear-gradient(90deg, #1e40af, #2563eb);
       color: #ffffff;

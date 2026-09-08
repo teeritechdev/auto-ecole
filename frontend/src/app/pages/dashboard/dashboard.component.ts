@@ -6,10 +6,9 @@ import { AuthService } from '../../core/services/auth.service';
 import { DashboardStats } from '../../core/models/models';
 
 @Component({
-  selector: 'app-dashboard',
-  standalone: true,
-  imports: [CommonModule, RouterModule],
-  template: `
+    selector: 'app-dashboard',
+    imports: [CommonModule, RouterModule],
+    template: `
     <div class="dashboard-page">
       <!-- HEADER BANNER -->
       <div class="welcome-banner">
@@ -182,7 +181,7 @@ import { DashboardStats } from '../../core/models/models';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .welcome-banner {
       background: linear-gradient(135deg, #1e3a8a, #2563eb);
       color: white;

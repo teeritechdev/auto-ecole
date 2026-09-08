@@ -5,10 +5,9 @@ import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 
 @Component({
-  selector: 'app-login',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-login',
+    imports: [CommonModule, FormsModule],
+    template: `
     <div class="login-wrapper">
       <!-- Ambient Glow Orbs -->
       <div class="glow-orb glow-orb-1"></div>
@@ -206,7 +205,7 @@ import { AuthService } from '../../core/services/auth.service';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .login-wrapper {
       min-height: 100vh;
       display: flex;

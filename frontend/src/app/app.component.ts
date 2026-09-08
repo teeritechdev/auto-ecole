@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -100,7 +100,7 @@ import { ApiService } from './core/services/api.service';
             <div class="user-profile-widget">
               <div class="user-avatar">
                 @if (currentUser?.photoProfile) {
-                  <img [src]="currentUser?.photoProfile" alt="Photo de profil" />
+                  <img [src]="$safeNavigationMigration(currentUser?.photoProfile)" alt="Photo de profil" />
                 }
                 @if (!currentUser?.photoProfile) {
                   <span>{{ userInitials }}</span>
@@ -184,7 +184,7 @@ import { ApiService } from './core/services/api.service';
               <div class="modal-body">
                 <div class="profile-preview">
                   @if (currentUser?.photoProfile) {
-                    <img [src]="currentUser?.photoProfile" alt="Photo actuelle" />
+                    <img [src]="$safeNavigationMigration(currentUser?.photoProfile)" alt="Photo actuelle" />
                   }
                   @if (!currentUser?.photoProfile) {
                     <span>{{ userInitials }}</span>
@@ -205,6 +205,7 @@ import { ApiService } from './core/services/api.service';
       </div>
     }
     `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
     .nav-item.active {
       background: linear-gradient(90deg, #1e40af, #2563eb);

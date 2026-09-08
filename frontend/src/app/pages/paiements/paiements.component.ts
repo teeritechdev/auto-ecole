@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -247,7 +247,7 @@ import { Candidat, Paiement, Recu } from '../../core/models/models';
             </div>
             <form (ngSubmit)="confirmCancelPaiement()">
               <div class="modal-body">
-                <p>Êtes-vous certain de vouloir annuler le versement de <strong>{{ targetPaiement?.montant | number }} FCFA</strong> pour <strong>{{ targetPaiement?.candidatNomComplet }}</strong> ?</p>
+                <p>Êtes-vous certain de vouloir annuler le versement de <strong>{{ $safeNavigationMigration(targetPaiement?.montant) | number }} FCFA</strong> pour <strong>{{ targetPaiement?.candidatNomComplet }}</strong> ?</p>
                 <p class="text-danger mt-2"><small>Cette action déduira automatiquement le montant du solde du candidat et créera un mouvement compensatoire de caisse.</small></p>
                 <div class="form-group mt-3">
                   <label class="form-label">Motif d'annulation obligatoire <span class="required">*</span></label>
@@ -266,6 +266,7 @@ import { Candidat, Paiement, Recu } from '../../core/models/models';
       }
     </div>
     `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
     .page-header-bar {
       display: flex;

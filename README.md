@@ -3,8 +3,8 @@
 Application web complète pour la gestion administrative, pédagogique et financière d'une auto-école.
 
 **Stack Technique :**
-- **Backend :** Java 21 • Spring Boot 3.2.5 • Spring Data JPA • Spring Security (JWT) • Springdoc OpenAPI (Swagger UI) • OpenPDF • Apache POI
-- **Frontend :** Angular 18 (Standalone Components) • TypeScript • RxJS • Chart.js • CSS Modern Responsive
+- **Backend :** Java 25 • Spring Boot 3.5.16 • Spring Data JPA • Spring Security (JWT) • Springdoc OpenAPI (Swagger UI) • OpenPDF • Apache POI
+- **Frontend :** Angular 22 (Standalone Components) • TypeScript • RxJS • Chart.js • CSS Modern Responsive
 - **Base de données :** PostgreSQL 16+
 - **Environnement cible :** Ubuntu Linux / Windows / macOS
 - **IDE & Outils recommandés :** IntelliJ IDEA • DBeaver Community Edition (DBeaver CE) • Postman / Swagger UI
@@ -22,7 +22,8 @@ Application web complète pour la gestion administrative, pédagogique et financ
 8. [Documentation API Swagger](#-documentation-api-swagger)
 9. [Règles de Gestion Métier (RG01 - RG14)](#-règles-de-gestion-métier-rg01---rg14)
 10. [Architecture du Projet](#-architecture-du-projet)
-11. [Dépannage & Commandes Utiles](#-dépannage--commandes-utiles)
+11. [Déploiement en Production avec Docker](#-déploiement-en-production-avec-docker)
+12. [Dépannage & Commandes Utiles](#-dépannage--commandes-utiles)
 
 ---
 
@@ -304,11 +305,76 @@ achille/
 │   ├── angular.json
 │   └── package.json
 │
-├── docker-compose.yml               # Service PostgreSQL 16 pour démarrage rapide
+├── docker-compose.yml               # Service PostgreSQL 16 seul, pour développement local
+├── docker-compose.prod.yml          # Stack complète (PostgreSQL + backend + frontend/nginx) pour le déploiement
+├── .env.example                     # Modèle des variables d'environnement pour docker-compose.prod.yml
 ├── run-backend.sh                   # Script de lancement Backend Ubuntu
 ├── run-frontend.sh                  # Script de lancement Frontend Ubuntu
 └── README.md                        # Documentation officielle du projet
 ```
+
+---
+
+## 🚀 Déploiement en Production avec Docker
+
+Le projet est prêt à être déployé sur un serveur/VPS Linux disposant de Docker et du plugin Docker Compose. Trois conteneurs sont construits et orchestrés : `postgres`, `backend` (image Java construite depuis `backend/Dockerfile`) et `frontend` (nginx servant les fichiers Angular compilés et faisant reverse-proxy vers `/api`).
+
+### 1. Prérequis sur le serveur
+
+- Docker Engine + le plugin Docker Compose (`docker compose version` doit fonctionner)
+- Un nom de domaine ou une IP publique pointant vers le serveur (optionnel pour un premier test)
+
+### 2. Configurer les variables d'environnement
+
+```bash
+cp .env.example .env
+```
+
+Éditez `.env` et renseignez au minimum :
+- `DB_PASSWORD` : un mot de passe fort pour PostgreSQL
+- `JWT_SECRET` : une clé forte générée avec `openssl rand -base64 64`
+- `APP_SEED_ENABLED=false` pour ne pas créer les comptes de démonstration en production
+
+**`.env` n'est jamais commité** (il est exclu par `.gitignore`) — chaque environnement (test, production) a le sien.
+
+### 3. Construire et démarrer la stack
+
+```bash
+docker compose --env-file .env -f docker-compose.prod.yml up -d --build
+```
+
+Cette commande construit les images backend/frontend, démarre PostgreSQL, attend qu'il soit prêt (healthcheck), démarre le backend, attend que `/actuator/health` réponde, puis démarre le frontend. L'application est ensuite accessible sur `http://<votre-serveur>` (port défini par `HTTP_PORT`, `80` par défaut).
+
+### 4. Vérifier que tout fonctionne
+
+```bash
+docker compose -f docker-compose.prod.yml ps        # état des 3 conteneurs
+docker compose -f docker-compose.prod.yml logs -f backend   # logs du backend en direct
+curl http://localhost/actuator/health                # doit renvoyer {"status":"UP"}
+```
+
+### 5. Mettre à jour après un nouveau `git pull`
+
+```bash
+git pull
+docker compose --env-file .env -f docker-compose.prod.yml up -d --build
+```
+
+Seuls les conteneurs dont l'image a changé sont reconstruits et redémarrés ; les données PostgreSQL (volume `postgres_data`) sont conservées.
+
+### 6. Arrêter la stack
+
+```bash
+docker compose -f docker-compose.prod.yml down       # conserve les données PostgreSQL
+docker compose -f docker-compose.prod.yml down -v    # supprime aussi les données PostgreSQL (irréversible)
+```
+
+### Notes importantes
+
+- **`docker-compose.yml`** (sans suffixe) reste inchangé et sert uniquement au développement local : il ne lance que PostgreSQL, pour continuer à utiliser `mvn spring-boot:run` / `ng serve` directement sur votre machine.
+- Le premier démarrage avec `APP_SEED_ENABLED=false` crée un unique compte `admin` avec un **mot de passe aléatoire affiché une seule fois** dans les logs (`docker compose logs backend`) — récupérez-le et changez-le immédiatement après la première connexion.
+- Si le frontend doit appeler un backend situé sur un **autre domaine** (pas derrière le même nginx), ajoutez ce domaine à `CORS_ALLOWED_ORIGINS` et adaptez `frontend/src/environments/environment.prod.ts` (`apiUrl`) en conséquence avant de reconstruire l'image frontend.
+- L'endpoint `/actuator/health` est volontairement le seul exposé sans authentification (nécessaire pour les sondes Docker/orchestrateur) ; il ne renvoie aucun détail interne (`show-details: never`).
 
 ---
 

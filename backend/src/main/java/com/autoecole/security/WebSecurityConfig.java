@@ -67,7 +67,8 @@ public class WebSecurityConfig {
             .authorizeHttpRequests(auth -> {
                 auth.requestMatchers(
                         "/api/auth/**",
-                        "/api/public/**"
+                        "/api/public/**",
+                        "/actuator/health"
                 ).permitAll();
 
                 // En production (APP_SWAGGER_PUBLIC=false), la documentation

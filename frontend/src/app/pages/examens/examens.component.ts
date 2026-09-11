@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
-import { Candidat, PassageExamen, SessionExamen } from '../../core/models/models';
+import { Candidat, PassageExamen, SessionExamen, Site } from '../../core/models/models';
 import { forkJoin } from 'rxjs';
 import { extraireMessageErreur } from '../../core/utils/error-utils';
 
@@ -31,6 +31,16 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       <!-- FILTRE -->
       <div class="card filter-card">
         <div class="filter-grid">
+          @if (!isMoniteurRole || sitesAutorises.length > 1) {
+            <div>
+              <select class="form-control" [(ngModel)]="sessionFiltreSite">
+                <option value="">Tous les sites</option>
+                @for (s of sitesAutorises; track s.id) {
+                  <option [value]="s.id">{{ s.nom }}</option>
+                }
+              </select>
+            </div>
+          }
           <div>
             <select class="form-control" [(ngModel)]="sessionFiltreEpreuve">
               @if (epreuvesAutorisees.length > 1) {
@@ -45,7 +55,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
             </select>
           </div>
           <div>
-            <button class="btn btn-secondary" (click)="sessionFiltreEpreuve = ''">Réinitialiser</button>
+            <button class="btn btn-secondary" (click)="reinitialiserFiltres()">Réinitialiser</button>
           </div>
         </div>
       </div>
@@ -102,52 +112,6 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
         </div>
       </div>
 
-      <!-- CANDIDATS RETIRÉS (MONITEUR) -->
-      @if (isMoniteur) {
-        <div class="card retires-card">
-          <div class="avalider-header">
-            <h3>🔁 Candidats retirés — à reprogrammer</h3>
-          </div>
-          <div class="table-responsive">
-            <table class="custom-table">
-              <thead>
-                <tr>
-                  <th>Candidat</th>
-                  <th>Épreuve</th>
-                  <th>Ancienne date</th>
-                  <th>Retiré le</th>
-                  <th class="text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                @if (loadingRetires) {
-                  <tr><td colspan="5" class="text-center py-4">Chargement...</td></tr>
-                }
-                @if (!loadingRetires && candidatsRetires.length === 0) {
-                  <tr><td colspan="5" class="text-center py-4">Aucun candidat retiré en attente de reprogrammation.</td></tr>
-                }
-                @for (p of candidatsRetires; track p.id) {
-                  <tr>
-                    <td>
-                      <a [routerLink]="['/candidats', p.candidatId]" class="candidat-link"><strong>{{ p.candidatNomComplet }}</strong></a>
-                      <div class="sub-text">{{ p.candidatNumeroDossier }}</div>
-                    </td>
-                    <td>{{ epreuveLabel(p.typeEpreuve) }}</td>
-                    <td>{{ p.datePassage | date:'dd/MM/yyyy' }}</td>
-                    <td>{{ p.dateEnregistrement | date:'dd/MM/yyyy HH:mm' }}</td>
-                    <td class="text-right">
-                      <button class="btn btn-secondary btn-sm" [disabled]="processingRetireId === p.id" (click)="reprogrammer(p.id)">
-                        {{ processingRetireId === p.id ? '...' : '↩️ Reprogrammer' }}
-                      </button>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        </div>
-      }
-
       <!-- MODAL DÉTAIL SESSION -->
       @if (showSessionModal && sessionDetail) {
         <div class="modal-backdrop">
@@ -191,13 +155,12 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                     <th>Candidat</th>
                     <th>Résultat</th>
                     <th>Tentatives</th>
-                    <th>Statut</th>
                     <th class="text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   @if (sessionDetail.candidats.length === 0) {
-                    <tr><td colspan="5" class="text-center py-4">Aucun candidat dans cette session.</td></tr>
+                    <tr><td colspan="4" class="text-center py-4">Aucun candidat dans cette session.</td></tr>
                   }
                   @for (p of sessionDetail.candidats; track p.id) {
                     <tr>
@@ -207,15 +170,9 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                       </td>
                       <td><span class="badge" [ngClass]="getBadgeClass(p.resultat)">{{ p.resultat }}</span></td>
                       <td>{{ p.nombreEchecs }}/5</td>
-                      <td>
-                        <span class="badge" [ngClass]="getStatutValidationBadgeClass(p.statutValidation)">{{ statutValidationLabel(p.statutValidation) }}</span>
-                      </td>
                       <td class="text-right">
-                        @if (isAdmin && p.statutValidation === 'EN_ATTENTE') {
-                          <button class="btn btn-success btn-sm" [disabled]="processingValiderId === p.id" (click)="validerCandidat(p.id)">✅ Valider</button>
-                        }
                         @if (peutNoter(sessionDetail)) {
-                          <button class="btn btn-outline btn-sm" style="margin-left: 0.25rem" (click)="openUpdateModal(p)">✏️ Noter</button>
+                          <button class="btn btn-outline btn-sm" (click)="openUpdateModal(p)">✏️ Noter</button>
                         }
                         @if (peutRetirer(sessionDetail)) {
                           <button class="btn btn-danger btn-sm" style="margin-left: 0.25rem" (click)="retirerDeSession(p.id)">🗑️</button>
@@ -275,8 +232,20 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 @if (formError) {
                   <div class="alert alert-danger">⚠️ {{ formError }}</div>
                 }
-                @if (programmerStep === 1) {
-                  <div class="step-indicator">Étape 1 sur 2</div>
+                @if (currentWizardStep === 'site') {
+                  <div class="step-indicator">Étape {{ programmerStepIndex + 1 }} sur {{ wizardSteps.length }}</div>
+                  <div class="form-group">
+                    <label class="form-label">Choisir le site <span class="required">*</span></label>
+                    <select class="form-control" [(ngModel)]="newPassage.siteId" name="siteId" (change)="onSiteChange()" required>
+                      <option [ngValue]="null" disabled>Sélectionner un site</option>
+                      @for (s of sitesAutorises; track s.id) {
+                        <option [ngValue]="s.id">{{ s.nom }}</option>
+                      }
+                    </select>
+                  </div>
+                  <p class="form-help">Le site sera appliqué à tous les candidats sélectionnés (ils doivent y être inscrits).</p>
+                } @else if (currentWizardStep === 'epreuve') {
+                  <div class="step-indicator">Étape {{ programmerStepIndex + 1 }} sur {{ wizardSteps.length }}</div>
                   <div class="form-group">
                     <label class="form-label">Choisir l'épreuve à programmer <span class="required">*</span></label>
                     <select class="form-control" [(ngModel)]="newPassage.typeEpreuve" name="typeEpreuve" (change)="onTypeEpreuveChange()" required>
@@ -288,7 +257,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   <p class="form-help">Le type d'épreuve sera appliqué à tous les candidats sélectionnés à l'étape suivante.</p>
                 } @else {
                   <div class="step-indicator">
-                    {{ epreuvesAutorisees.length > 1 ? 'Étape 2 sur 2 · ' : '' }}{{ epreuveLabel(newPassage.typeEpreuve) }}
+                    {{ wizardSteps.length > 1 ? 'Étape ' + wizardSteps.length + ' sur ' + wizardSteps.length + ' · ' : '' }}{{ epreuveLabel(newPassage.typeEpreuve) }}
                   </div>
                   <div class="form-group">
                     <label class="form-label">Candidats <span class="required">*</span></label>
@@ -309,7 +278,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                     </div>
                     @if (eligibleCandidats.length === 0) {
                       <div class="form-help">
-                        Aucun candidat n'est actuellement éligible pour cette épreuve.
+                        Aucun candidat n'est actuellement éligible pour cette épreuve{{ newPassage.siteId ? ' sur ce site' : '' }}.
                       </div>
                     }
                     <div class="form-help">Cochez les candidats concernés par cette programmation.</div>
@@ -339,13 +308,13 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
               </div>
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" (click)="showProgrammerModal = false">Annuler</button>
-                @if (programmerStep === 2 && epreuvesAutorisees.length > 1) {
-                  <button type="button" class="btn btn-secondary" (click)="programmerStep = 1" [disabled]="saving">Retour</button>
+                @if (programmerStepIndex > 0) {
+                  <button type="button" class="btn btn-secondary" (click)="programmerStepIndex = programmerStepIndex - 1" [disabled]="saving">Retour</button>
                 }
-                @if (programmerStep === 1) {
-                  <button type="button" class="btn btn-primary" (click)="programmerStep = 2">Continuer</button>
+                @if (programmerStepIndex < wizardSteps.length - 1) {
+                  <button type="button" class="btn btn-primary" [disabled]="currentWizardStep === 'site' && !newPassage.siteId" (click)="programmerStepIndex = programmerStepIndex + 1">Continuer</button>
                 }
-                @if (programmerStep === 2) {
+                @if (programmerStepIndex === wizardSteps.length - 1) {
                   <button type="submit" class="btn btn-primary" [disabled]="saving || selectedCandidatIds.length === 0 || !newPassage.datePassage">
                     {{ saving ? 'Enregistrement...' : 'Confirmer la Programmation' }}
                   </button>
@@ -418,11 +387,6 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       padding: 1.25rem;
     }
 
-    .avalider-card, .retires-card {
-      margin-bottom: 1.5rem;
-      padding: 1.25rem;
-    }
-
     .session-info {
       display: flex;
       align-items: flex-start;
@@ -445,24 +409,6 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
 
     .edit-date-row .form-control {
       width: auto;
-    }
-
-    .avalider-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-      margin-bottom: 1rem;
-    }
-
-    .avalider-header h3 {
-      margin: 0;
-    }
-
-    .avalider-actions {
-      display: flex;
-      gap: 0.5rem;
     }
 
     .filter-grid {
@@ -568,6 +514,8 @@ export class ExamensComponent implements OnInit {
   sessions: SessionExamen[] = [];
   loadingSessions = false;
   sessionFiltreEpreuve = '';
+  sessionFiltreSite = '';
+  sites: Site[] = [];
 
   showSessionModal = false;
   sessionDetail: SessionExamen | null = null;
@@ -578,10 +526,11 @@ export class ExamensComponent implements OnInit {
   savingAjout = false;
 
   showProgrammerModal = false;
-  programmerStep = 1;
+  programmerStepIndex = 0;
   selectedCandidatIds: number[] = [];
   newPassage: any = {
     typeEpreuve: 'CODE',
+    siteId: null,
     datePassage: new Date().toISOString().substring(0, 10),
     resultat: 'PROGRAMME',
     observations: ''
@@ -597,28 +546,34 @@ export class ExamensComponent implements OnInit {
 
   formError = '';
 
-  candidatsRetires: PassageExamen[] = [];
-  loadingRetires = false;
-  processingRetireId: number | null = null;
-
   editingSessionDate = false;
   editSessionDateValue = '';
   savingSessionDate = false;
-  processingValiderId: number | null = null;
 
   constructor(private apiService: ApiService, private authService: AuthService) {}
 
   ngOnInit(): void {
     this.loadSessions();
     this.loadCandidats();
-    if (this.isMoniteur) {
-      this.loadRetires();
-    }
+    this.apiService.getSites(true).subscribe({
+      next: (data) => this.sites = data,
+      error: () => this.sites = []
+    });
+  }
+
+  get isMoniteurRole(): boolean {
+    return this.authService.currentUserValue?.role === 'MONITEUR';
   }
 
   get sessionsAffichees(): SessionExamen[] {
-    if (!this.sessionFiltreEpreuve) return this.sessions;
-    return this.sessions.filter(s => s.typeEpreuve === this.sessionFiltreEpreuve);
+    return this.sessions
+      .filter(s => !this.sessionFiltreEpreuve || s.typeEpreuve === this.sessionFiltreEpreuve)
+      .filter(s => !this.sessionFiltreSite || String(s.siteId) === this.sessionFiltreSite);
+  }
+
+  reinitialiserFiltres(): void {
+    this.sessionFiltreEpreuve = '';
+    this.sessionFiltreSite = '';
   }
 
   loadSessions(): void {
@@ -682,7 +637,7 @@ export class ExamensComponent implements OnInit {
     this.ajoutSelectionIds = [];
     const idsExistants = new Set(this.sessionDetail.candidats.map(p => p.candidatId));
     this.candidatsAjoutables = this.allCandidats.filter(c =>
-      !idsExistants.has(c.id) && this.estEligiblePour(c, this.sessionDetail!.typeEpreuve)
+      !idsExistants.has(c.id) && this.estEligiblePour(c, this.sessionDetail!.typeEpreuve, this.sessionDetail!.siteId ?? null)
     );
     this.showAjoutCandidats = true;
   }
@@ -712,24 +667,6 @@ export class ExamensComponent implements OnInit {
       error: (err) => {
         this.savingAjout = false;
         this.sessionError = extraireMessageErreur(err, "Erreur lors de l'ajout.");
-      }
-    });
-  }
-
-  validerCandidat(passageId: number): void {
-    if (!this.sessionDetail) return;
-    const sessionId = this.sessionDetail.id;
-    this.processingValiderId = passageId;
-    this.sessionError = '';
-    this.apiService.validerPassages([passageId]).subscribe({
-      next: () => {
-        this.processingValiderId = null;
-        this.openSessionDetail(sessionId);
-        this.loadSessions();
-      },
-      error: (err) => {
-        this.processingValiderId = null;
-        this.sessionError = extraireMessageErreur(err, 'Erreur lors de la validation.');
       }
     });
   }
@@ -765,53 +702,8 @@ export class ExamensComponent implements OnInit {
     });
   }
 
-  loadRetires(): void {
-    this.loadingRetires = true;
-    this.apiService.listerRetires().subscribe({
-      next: (data) => {
-        this.candidatsRetires = data;
-        this.loadingRetires = false;
-      },
-      error: () => {
-        this.loadingRetires = false;
-      }
-    });
-  }
-
-  reprogrammer(passageId: number): void {
-    this.processingRetireId = passageId;
-    this.apiService.deletePassage(passageId).subscribe({
-      next: () => {
-        this.processingRetireId = null;
-        this.loadRetires();
-        this.loadCandidats();
-      },
-      error: () => {
-        this.processingRetireId = null;
-      }
-    });
-  }
-
   formatSpecialites(specialites?: string[]): string {
     return (specialites || []).map(s => this.epreuveLabel(s)).join(', ');
-  }
-
-  private readonly STATUT_VALIDATION_LABELS: Record<string, string> = {
-    EN_ATTENTE: 'En attente',
-    VALIDE: 'Validé',
-    RETIRE: 'Retiré'
-  };
-
-  statutValidationLabel(s: string): string {
-    return this.STATUT_VALIDATION_LABELS[s] || s;
-  }
-
-  getStatutValidationBadgeClass(s: string): string {
-    switch (s) {
-      case 'VALIDE': return 'badge-reussi';
-      case 'RETIRE': return 'badge-echec';
-      default: return 'badge-programme';
-    }
   }
 
   private readonly EPREUVE_LABELS: Record<string, string> = {
@@ -835,6 +727,16 @@ export class ExamensComponent implements OnInit {
     return ['CODE', 'CRENEAU', 'CIRCULATION'];
   }
 
+  /** Sites sur lesquels l'utilisateur courant peut consulter/programmer : limités à
+   *  ses sites d'affectation pour un moniteur, tous les sites pour les autres rôles. */
+  get sitesAutorises(): Site[] {
+    const user = this.authService.currentUserValue;
+    if (user?.role === 'MONITEUR') {
+      return this.sites.filter(s => user.siteIds?.includes(s.id));
+    }
+    return this.sites;
+  }
+
   /** Seul le moniteur programme des examens : l'administrateur se contente de
    *  valider ou retirer ce que les moniteurs ont proposé (cf. section dédiée). */
   get canAdd(): boolean {
@@ -844,10 +746,6 @@ export class ExamensComponent implements OnInit {
 
   get isAdmin(): boolean {
     return this.authService.hasRole(['ADMIN']);
-  }
-
-  get isMoniteur(): boolean {
-    return this.authService.hasRole(['MONITEUR']);
   }
 
   loadCandidats(): void {
@@ -868,18 +766,32 @@ export class ExamensComponent implements OnInit {
     });
   }
 
+  /** Étapes du magicien de programmation, dans l'ordre : le site n'est demandé que si le
+   *  moniteur en a plusieurs, l'épreuve que s'il a plusieurs spécialités, la dernière étape
+   *  (candidats/date/résultat) est toujours présente. */
+  get wizardSteps(): ('site' | 'epreuve' | 'final')[] {
+    const steps: ('site' | 'epreuve' | 'final')[] = [];
+    if (this.sitesAutorises.length > 1) steps.push('site');
+    if (this.epreuvesAutorisees.length > 1) steps.push('epreuve');
+    steps.push('final');
+    return steps;
+  }
+
+  get currentWizardStep(): 'site' | 'epreuve' | 'final' {
+    return this.wizardSteps[this.programmerStepIndex] ?? 'final';
+  }
+
   openProgrammerModal(): void {
     this.formError = '';
     this.selectedCandidatIds = [];
     this.newPassage = {
       typeEpreuve: this.epreuvesAutorisees[0] || 'CODE',
+      siteId: this.sitesAutorises.length === 1 ? this.sitesAutorises[0].id : null,
       datePassage: new Date().toISOString().substring(0, 10),
       resultat: 'PROGRAMME',
       observations: ''
     };
-    // Une seule spécialité : inutile de demander de la choisir, on va directement
-    // à la sélection des candidats.
-    this.programmerStep = this.epreuvesAutorisees.length === 1 ? 2 : 1;
+    this.programmerStepIndex = 0;
     this.updateEligibleCandidats();
     this.showProgrammerModal = true;
   }
@@ -889,11 +801,20 @@ export class ExamensComponent implements OnInit {
     this.updateEligibleCandidats();
   }
 
+  onSiteChange(): void {
+    this.selectedCandidatIds = [];
+    this.updateEligibleCandidats();
+  }
+
   /** L'étape de parcours (champ stocké, mis à jour par le backend à chaque transition)
    *  fait foi à elle seule : un candidat n'est éligible pour une épreuve que s'il s'y
-   *  trouve exactement (ni pas encore atteinte, ni déjà programmé/réussi/expiré). */
-  private estEligiblePour(candidat: Candidat, typeEpreuve: string): boolean {
+   *  trouve exactement (ni pas encore atteinte, ni déjà programmé/réussi/expiré). Doit en
+   *  outre être inscrit sur le site choisi (une session ne regroupe qu'un seul site). */
+  private estEligiblePour(candidat: Candidat, typeEpreuve: string, siteId: number | null): boolean {
     if (candidat.statutDossier === 'EXPIRE_NON_SOLDE' || candidat.etapeParcours !== typeEpreuve) {
+      return false;
+    }
+    if (siteId != null && candidat.siteId !== siteId) {
       return false;
     }
 
@@ -904,7 +825,7 @@ export class ExamensComponent implements OnInit {
   }
 
   private updateEligibleCandidats(): void {
-    this.eligibleCandidats = this.allCandidats.filter(c => this.estEligiblePour(c, this.newPassage.typeEpreuve));
+    this.eligibleCandidats = this.allCandidats.filter(c => this.estEligiblePour(c, this.newPassage.typeEpreuve, this.newPassage.siteId));
   }
 
   isCandidatSelected(candidatId: number): boolean {
@@ -928,6 +849,7 @@ export class ExamensComponent implements OnInit {
     const payload = {
       candidatIds: this.selectedCandidatIds,
       typeEpreuve: this.newPassage.typeEpreuve,
+      siteId: this.newPassage.siteId,
       datePassage: this.newPassage.datePassage,
       observations: this.newPassage.observations
     };

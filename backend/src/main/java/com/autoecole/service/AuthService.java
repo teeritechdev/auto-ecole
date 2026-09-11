@@ -73,7 +73,7 @@ public class AuthService {
                 .prenom(userDetails.getPrenom())
                 .role(role)
                 .photoProfile(user.getPhotoProfile())
-                .siteId(user.getSite() != null ? user.getSite().getId() : null)
+                .siteIds(user.getSites().stream().map(com.autoecole.entity.Site::getId).collect(java.util.stream.Collectors.toSet()))
                 .specialites(user.getSpecialites())
                 .build();
     }

@@ -63,20 +63,6 @@ public class ExamenController {
         return ResponseEntity.ok(examenService.getProchainsExamens());
     }
 
-    @PostMapping("/valider")
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Valider plusieurs candidats pour leur épreuve")
-    public ResponseEntity<List<PassageExamenDTO>> validerPassages(@Valid @RequestBody ValidationPassagesRequest request) {
-        return ResponseEntity.ok(examenService.validerPassages(request.getPassageIds()));
-    }
-
-    @GetMapping("/retires")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MONITEUR', 'SECRETAIRE')")
-    @Operation(summary = "Lister les candidats retirés d'une session, en attente de reprogrammation")
-    public ResponseEntity<List<PassageExamenDTO>> listerRetires() {
-        return ResponseEntity.ok(examenService.listerRetires());
-    }
-
     @PostMapping
     @PreAuthorize("hasRole('MONITEUR')")
     @Operation(summary = "Programmer ou enregistrer un passage d'examen (limite 5 passages par épreuve)")
@@ -141,8 +127,8 @@ public class ExamenController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MONITEUR')")
-    @Operation(summary = "Supprimer un passage d'examen (admin : tout ; moniteur : uniquement une entrée déjà retirée)")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Supprimer un passage d'examen")
     public ResponseEntity<Void> deletePassage(@PathVariable Long id) {
         examenService.deletePassage(id);
         return ResponseEntity.noContent().build();

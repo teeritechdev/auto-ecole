@@ -46,12 +46,16 @@ public class Utilisateur {
     private Role role;
 
     /**
-     * Site de rattachement, principalement utilisé pour les moniteurs :
-     * détermine les candidats auxquels ils ont accès (cf. RoleEnum.MONITEUR).
+     * Sites de rattachement, principalement utilisés pour les moniteurs :
+     * déterminent les candidats auxquels ils ont accès (cf. RoleEnum.MONITEUR).
+     * Un moniteur peut être affecté à plusieurs sites, comme pour ses spécialités.
      */
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "site_id")
-    private Site site;
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "moniteur_sites",
+            joinColumns = @JoinColumn(name = "utilisateur_id"),
+            inverseJoinColumns = @JoinColumn(name = "site_id"))
+    @Builder.Default
+    private Set<Site> sites = new HashSet<>();
 
     /**
      * Épreuves dans lesquelles le moniteur est spécialisé (Code, Créneau, Circulation).

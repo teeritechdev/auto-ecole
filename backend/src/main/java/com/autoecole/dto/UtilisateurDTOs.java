@@ -30,8 +30,8 @@ public class UtilisateurDTOs {
         private String photoProfile;
         private String role;
         private String roleLibelle;
-        private Long siteId;
-        private String siteNom;
+        private Set<Long> siteIds;
+        private Set<String> siteNoms;
         private Set<TypeEpreuve> specialites;
         private boolean actif;
         private LocalDateTime dateCreation;
@@ -68,7 +68,7 @@ public class UtilisateurDTOs {
         private RoleEnum role;
 
         // Pertinent uniquement pour le rôle MONITEUR
-        private Long siteId;
+        private Set<Long> siteIds;
         private Set<TypeEpreuve> specialites;
     }
 
@@ -101,7 +101,7 @@ public class UtilisateurDTOs {
         private String photoProfile;
 
         // Pertinent uniquement pour le rôle MONITEUR
-        private Long siteId;
+        private Set<Long> siteIds;
         private Set<TypeEpreuve> specialites;
     }
 }

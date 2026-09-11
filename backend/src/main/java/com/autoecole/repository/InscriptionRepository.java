@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,27 +21,27 @@ public interface InscriptionRepository extends JpaRepository<Inscription, Long> 
     List<Inscription> findByCandidatIdOrderByNumeroCycleDesc(Long candidatId);
 
     @Query("SELECT COUNT(i) FROM Inscription i WHERE i.active = true AND i.statutDossier = :statutDossier " +
-           "AND (:siteId IS NULL OR i.site.id = :siteId)")
-    long countByActiveTrueAndStatutDossierAndSite(@Param("statutDossier") StatutDossier statutDossier, @Param("siteId") Long siteId);
+           "AND (:siteIds IS NULL OR i.site.id IN :siteIds)")
+    long countByActiveTrueAndStatutDossierAndSite(@Param("statutDossier") StatutDossier statutDossier, @Param("siteIds") Collection<Long> siteIds);
 
-    @Query("SELECT COUNT(i) FROM Inscription i WHERE i.active = true AND (:siteId IS NULL OR i.site.id = :siteId)")
-    long countByActiveTrueAndSite(@Param("siteId") Long siteId);
+    @Query("SELECT COUNT(i) FROM Inscription i WHERE i.active = true AND (:siteIds IS NULL OR i.site.id IN :siteIds)")
+    long countByActiveTrueAndSite(@Param("siteIds") Collection<Long> siteIds);
 
     @Query("SELECT COALESCE(SUM(i.totalVerse), 0) FROM Inscription i WHERE i.active = true " +
-           "AND (:siteId IS NULL OR i.site.id = :siteId)")
-    BigDecimal sumTotalVerseActif(@Param("siteId") Long siteId);
+           "AND (:siteIds IS NULL OR i.site.id IN :siteIds)")
+    BigDecimal sumTotalVerseActif(@Param("siteIds") Collection<Long> siteIds);
 
     @Query("SELECT COALESCE(SUM(i.soldeRestant), 0) FROM Inscription i WHERE i.active = true " +
-           "AND (:siteId IS NULL OR i.site.id = :siteId)")
-    BigDecimal sumSoldeRestantActif(@Param("siteId") Long siteId);
+           "AND (:siteIds IS NULL OR i.site.id IN :siteIds)")
+    BigDecimal sumSoldeRestantActif(@Param("siteIds") Collection<Long> siteIds);
 
     @Query("SELECT i FROM Inscription i WHERE i.active = true " +
            "AND i.dateEcheance BETWEEN :dateDebut AND :dateFin AND i.statutDossier != 'SOLDE' " +
-           "AND (:siteId IS NULL OR i.site.id = :siteId)")
+           "AND (:siteIds IS NULL OR i.site.id IN :siteIds)")
     List<Inscription> findInscriptionsActivesProchesExpiration(
             @Param("dateDebut") LocalDate dateDebut,
             @Param("dateFin") LocalDate dateFin,
-            @Param("siteId") Long siteId
+            @Param("siteIds") Collection<Long> siteIds
     );
 
     @Query("SELECT i FROM Inscription i WHERE i.active = true " +

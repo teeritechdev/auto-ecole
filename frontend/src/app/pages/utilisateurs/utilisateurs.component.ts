@@ -145,14 +145,15 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 </div>
                 @if (currentUserForm.role === 'MONITEUR') {
                   <div class="form-group">
-                    <label class="form-label">Site de formation <span class="required">*</span></label>
-                    <select class="form-control" [(ngModel)]="currentUserForm.siteId" name="siteId" required>
-                      <option [ngValue]="null" disabled>Sélectionner un site</option>
-                      @for (s of sites; track s) {
-                        <option [ngValue]="s.id">{{ s.nom }}</option>
+                    <label class="form-label">Sites de formation <span class="required">*</span></label>
+                    <div class="specialites-group">
+                      @for (s of sites; track s.id) {
+                        <label class="checkbox-label">
+                          <input type="checkbox" [checked]="hasSite(s.id)" (change)="toggleSite(s.id)" /> {{ s.nom }}
+                        </label>
                       }
-                    </select>
-                    <div class="form-help">Le moniteur ne pourra voir et gérer que les candidats inscrits sur ce site.</div>
+                    </div>
+                    <div class="form-help">Le moniteur ne pourra voir et gérer que les candidats inscrits sur ces sites.</div>
                   </div>
                   <div class="form-group">
                     <label class="form-label">Spécialités</label>
@@ -252,7 +253,7 @@ export class UtilisateursComponent implements OnInit {
     email: '',
     telephone: '',
     role: 'SECRETAIRE',
-    siteId: null,
+    siteIds: [],
     specialites: []
   };
 
@@ -274,6 +275,20 @@ export class UtilisateursComponent implements OnInit {
       this.currentUserForm.specialites.splice(idx, 1);
     } else {
       this.currentUserForm.specialites.push(type);
+    }
+  }
+
+  hasSite(id: number): boolean {
+    return !!this.currentUserForm.siteIds?.includes(id);
+  }
+
+  toggleSite(id: number): void {
+    if (!this.currentUserForm.siteIds) this.currentUserForm.siteIds = [];
+    const idx = this.currentUserForm.siteIds.indexOf(id);
+    if (idx >= 0) {
+      this.currentUserForm.siteIds.splice(idx, 1);
+    } else {
+      this.currentUserForm.siteIds.push(id);
     }
   }
 
@@ -303,7 +318,7 @@ export class UtilisateursComponent implements OnInit {
       email: '',
       telephone: '',
       role: 'SECRETAIRE',
-      siteId: null,
+      siteIds: [],
       specialites: [],
       photoProfile: null
     };
@@ -321,7 +336,7 @@ export class UtilisateursComponent implements OnInit {
       telephone: u.telephone,
       role: u.role,
       password: '',
-      siteId: u.siteId || null,
+      siteIds: u.siteIds ? [...u.siteIds] : [],
       specialites: u.specialites ? [...u.specialites] : [],
       photoProfile: u.photoProfile || null
     };

@@ -1,7 +1,6 @@
 package com.autoecole.dto;
 
 import com.autoecole.entity.enums.ResultatExamen;
-import com.autoecole.entity.enums.StatutValidation;
 import com.autoecole.entity.enums.TypeEpreuve;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -34,7 +33,6 @@ public class ExamenDTOs {
         private Long moniteurId;
         private String moniteurNomComplet;
         private LocalDateTime dateEnregistrement;
-        private StatutValidation statutValidation;
     }
 
     @Data
@@ -60,12 +58,6 @@ public class ExamenDTOs {
         private String observations;
 
         private Long moniteurId;
-    }
-
-    @Data
-    @NoArgsConstructor
-    public static class ValidationPassagesRequest {
-        private java.util.List<Long> passageIds;
     }
 
     @Data

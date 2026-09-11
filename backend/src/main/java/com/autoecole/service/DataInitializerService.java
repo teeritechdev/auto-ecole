@@ -55,10 +55,14 @@ public class DataInitializerService implements CommandLineRunner {
         CategoriePermis catB = initCategorie("B", "Permis B Véhicule Léger", new BigDecimal("100000"), "Véhicules particuliers jusqu'à 3.5T");
         CategoriePermis catC = initCategorie("C", "Permis C Poids Lourd", new BigDecimal("150000"), "Transport de marchandises > 3.5T");
 
-        // 2bis. Sites de formation (données de référence, toujours créés)
-        Site siteCocody = initSite("Site Cocody", "Boulevard de France, Cocody, Abidjan");
-        initSite("Site Yopougon", "Route de Yopougon-Ficgayo, Abidjan");
-        initSite("Site Bouaké", "Avenue de la République, Bouaké");
+        // 2bis. Sites de démonstration : uniquement sur une base totalement vierge
+        //       (sinon la suppression volontaire d'un site de démo serait annulée à chaque redémarrage).
+        Site siteCocody = null;
+        if (siteRepository.count() == 0) {
+            siteCocody = initSite("Site Cocody", "Boulevard de France, Cocody, Abidjan");
+            initSite("Site Yopougon", "Route de Yopougon-Ficgayo, Abidjan");
+            initSite("Site Bouaké", "Avenue de la République, Bouaké");
+        }
 
         if (seedEnabled) {
             // 3. Comptes de démonstration à mots de passe connus + jeu de données
@@ -67,7 +71,7 @@ public class DataInitializerService implements CommandLineRunner {
             initUser("secretaire", "secretaire@autoecole.ci", "secretaire123", "YAO", "Aya Marie", "0702030405", roleSecretaire);
             initUser("caissiere", "caissiere@autoecole.ci", "caissiere123", "KOFFI", "Affoué Esther", "0703040506", roleCaissiere);
             Utilisateur moniteur = initUser("moniteur", "moniteur@autoecole.ci", "moniteur123", "DIABATE", "Ibrahim", "0704050607", roleMoniteur);
-            if (moniteur.getSite() == null) {
+            if (moniteur.getSite() == null && siteCocody != null) {
                 moniteur.setSite(siteCocody);
                 moniteur.setSpecialites(Set.of(TypeEpreuve.CODE, TypeEpreuve.CRENEAU, TypeEpreuve.CIRCULATION));
                 moniteur = utilisateurRepository.save(moniteur);

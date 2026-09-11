@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
-import { Candidat, PassageExamen, SessionExamen } from '../../core/models/models';
+import { Candidat, PassageExamen, SessionExamen, Site } from '../../core/models/models';
 import { forkJoin } from 'rxjs';
 import { extraireMessageErreur } from '../../core/utils/error-utils';
 
@@ -31,6 +31,16 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       <!-- FILTRE -->
       <div class="card filter-card">
         <div class="filter-grid">
+          @if (!isMoniteurRole) {
+            <div>
+              <select class="form-control" [(ngModel)]="sessionFiltreSite">
+                <option value="">Tous les sites</option>
+                @for (s of sites; track s.id) {
+                  <option [value]="s.id">{{ s.nom }}</option>
+                }
+              </select>
+            </div>
+          }
           <div>
             <select class="form-control" [(ngModel)]="sessionFiltreEpreuve">
               @if (epreuvesAutorisees.length > 1) {
@@ -45,7 +55,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
             </select>
           </div>
           <div>
-            <button class="btn btn-secondary" (click)="sessionFiltreEpreuve = ''">Réinitialiser</button>
+            <button class="btn btn-secondary" (click)="reinitialiserFiltres()">Réinitialiser</button>
           </div>
         </div>
       </div>
@@ -145,13 +155,12 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                     <th>Candidat</th>
                     <th>Résultat</th>
                     <th>Tentatives</th>
-                    <th>Statut</th>
                     <th class="text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   @if (sessionDetail.candidats.length === 0) {
-                    <tr><td colspan="5" class="text-center py-4">Aucun candidat dans cette session.</td></tr>
+                    <tr><td colspan="4" class="text-center py-4">Aucun candidat dans cette session.</td></tr>
                   }
                   @for (p of sessionDetail.candidats; track p.id) {
                     <tr>
@@ -161,15 +170,9 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                       </td>
                       <td><span class="badge" [ngClass]="getBadgeClass(p.resultat)">{{ p.resultat }}</span></td>
                       <td>{{ p.nombreEchecs }}/5</td>
-                      <td>
-                        <span class="badge" [ngClass]="getStatutValidationBadgeClass(p.statutValidation)">{{ statutValidationLabel(p.statutValidation) }}</span>
-                      </td>
                       <td class="text-right">
-                        @if (isAdmin && p.statutValidation === 'EN_ATTENTE') {
-                          <button class="btn btn-success btn-sm" [disabled]="processingValiderId === p.id" (click)="validerCandidat(p.id)">✅ Valider</button>
-                        }
                         @if (peutNoter(sessionDetail)) {
-                          <button class="btn btn-outline btn-sm" style="margin-left: 0.25rem" (click)="openUpdateModal(p)">✏️ Noter</button>
+                          <button class="btn btn-outline btn-sm" (click)="openUpdateModal(p)">✏️ Noter</button>
                         }
                         @if (peutRetirer(sessionDetail)) {
                           <button class="btn btn-danger btn-sm" style="margin-left: 0.25rem" (click)="retirerDeSession(p.id)">🗑️</button>
@@ -499,6 +502,8 @@ export class ExamensComponent implements OnInit {
   sessions: SessionExamen[] = [];
   loadingSessions = false;
   sessionFiltreEpreuve = '';
+  sessionFiltreSite = '';
+  sites: Site[] = [];
 
   showSessionModal = false;
   sessionDetail: SessionExamen | null = null;
@@ -531,18 +536,33 @@ export class ExamensComponent implements OnInit {
   editingSessionDate = false;
   editSessionDateValue = '';
   savingSessionDate = false;
-  processingValiderId: number | null = null;
 
   constructor(private apiService: ApiService, private authService: AuthService) {}
 
   ngOnInit(): void {
     this.loadSessions();
     this.loadCandidats();
+    if (!this.isMoniteurRole) {
+      this.apiService.getSites(true).subscribe({
+        next: (data) => this.sites = data,
+        error: () => this.sites = []
+      });
+    }
+  }
+
+  get isMoniteurRole(): boolean {
+    return this.authService.currentUserValue?.role === 'MONITEUR';
   }
 
   get sessionsAffichees(): SessionExamen[] {
-    if (!this.sessionFiltreEpreuve) return this.sessions;
-    return this.sessions.filter(s => s.typeEpreuve === this.sessionFiltreEpreuve);
+    return this.sessions
+      .filter(s => !this.sessionFiltreEpreuve || s.typeEpreuve === this.sessionFiltreEpreuve)
+      .filter(s => !this.sessionFiltreSite || String(s.siteId) === this.sessionFiltreSite);
+  }
+
+  reinitialiserFiltres(): void {
+    this.sessionFiltreEpreuve = '';
+    this.sessionFiltreSite = '';
   }
 
   loadSessions(): void {
@@ -640,24 +660,6 @@ export class ExamensComponent implements OnInit {
     });
   }
 
-  validerCandidat(passageId: number): void {
-    if (!this.sessionDetail) return;
-    const sessionId = this.sessionDetail.id;
-    this.processingValiderId = passageId;
-    this.sessionError = '';
-    this.apiService.validerPassages([passageId]).subscribe({
-      next: () => {
-        this.processingValiderId = null;
-        this.openSessionDetail(sessionId);
-        this.loadSessions();
-      },
-      error: (err) => {
-        this.processingValiderId = null;
-        this.sessionError = extraireMessageErreur(err, 'Erreur lors de la validation.');
-      }
-    });
-  }
-
   /** Modifier la date de la session suit la même règle de gestion que le retrait
    *  (admin sans restriction, moniteur limité à une date non passée). */
   peutGererSession(s: SessionExamen): boolean {
@@ -691,22 +693,6 @@ export class ExamensComponent implements OnInit {
 
   formatSpecialites(specialites?: string[]): string {
     return (specialites || []).map(s => this.epreuveLabel(s)).join(', ');
-  }
-
-  private readonly STATUT_VALIDATION_LABELS: Record<string, string> = {
-    EN_ATTENTE: 'En attente',
-    VALIDE: 'Validé'
-  };
-
-  statutValidationLabel(s: string): string {
-    return this.STATUT_VALIDATION_LABELS[s] || s;
-  }
-
-  getStatutValidationBadgeClass(s: string): string {
-    switch (s) {
-      case 'VALIDE': return 'badge-reussi';
-      default: return 'badge-programme';
-    }
   }
 
   private readonly EPREUVE_LABELS: Record<string, string> = {

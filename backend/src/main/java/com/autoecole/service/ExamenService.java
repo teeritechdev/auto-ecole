@@ -9,7 +9,6 @@ import com.autoecole.entity.Utilisateur;
 import com.autoecole.entity.enums.EtapeParcours;
 import com.autoecole.entity.enums.ResultatExamen;
 import com.autoecole.entity.enums.RoleEnum;
-import com.autoecole.entity.enums.StatutValidation;
 import com.autoecole.entity.enums.TypeEpreuve;
 import com.autoecole.exception.BadRequestException;
 import com.autoecole.exception.ResourceNotFoundException;
@@ -202,7 +201,6 @@ public class ExamenService {
                 .resultat(ResultatExamen.PROGRAMME)
                 .observations(session.getObservations())
                 .moniteur(session.getMoniteur())
-                .statutValidation(StatutValidation.EN_ATTENTE)
                 .dateEnregistrement(LocalDateTime.now())
                 .build();
 
@@ -360,26 +358,6 @@ public class ExamenService {
     }
 
     @Transactional
-    public List<PassageExamenDTO> validerPassages(List<Long> passageIds) {
-        if (passageIds == null || passageIds.isEmpty()) {
-            throw new BadRequestException("Sélectionnez au moins un candidat");
-        }
-
-        List<PassageExamenDTO> result = passageIds.stream()
-                .map(id -> passageRepository.findById(id)
-                        .orElseThrow(() -> new ResourceNotFoundException("Passage d'examen introuvable")))
-                .filter(passage -> passage.getResultat() == ResultatExamen.PROGRAMME && passage.getStatutValidation() == StatutValidation.EN_ATTENTE)
-                .peek(passage -> passage.setStatutValidation(StatutValidation.VALIDE))
-                .map(passageRepository::save)
-                .map(this::mapToDTO)
-                .collect(Collectors.toList());
-
-        auditService.logAction("VALIDATION_EXAMENS", "PassageExamen", passageIds.toString(),
-                result.size() + " candidat(s) validé(s) par l'administrateur", null);
-        return result;
-    }
-
-    @Transactional
     public PassageExamenDTO updateResultatPassage(Long passageId, UpdatePassageRequest request) {
         PassageExamen passage = passageRepository.findById(passageId)
                 .orElseThrow(() -> new ResourceNotFoundException("Passage d'examen introuvable"));
@@ -469,7 +447,6 @@ public class ExamenService {
                 .moniteurId(pe.getMoniteur() != null ? pe.getMoniteur().getId() : null)
                 .moniteurNomComplet(pe.getMoniteur() != null ? pe.getMoniteur().getNom() + " " + pe.getMoniteur().getPrenom() : "")
                 .dateEnregistrement(pe.getDateEnregistrement())
-                .statutValidation(pe.getStatutValidation())
                 .build();
     }
 }

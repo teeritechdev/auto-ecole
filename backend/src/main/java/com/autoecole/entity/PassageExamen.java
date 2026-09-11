@@ -1,7 +1,6 @@
 package com.autoecole.entity;
 
 import com.autoecole.entity.enums.ResultatExamen;
-import com.autoecole.entity.enums.StatutValidation;
 import com.autoecole.entity.enums.TypeEpreuve;
 import jakarta.persistence.*;
 import lombok.*;
@@ -60,13 +59,4 @@ public class PassageExamen {
     @Builder.Default
     @Column(name = "date_enregistrement", nullable = false)
     private LocalDateTime dateEnregistrement = LocalDateTime.now();
-
-    /**
-     * Revue administrative : en attente à la programmation, ou validé (reste visible
-     * partout) — cf. StatutValidation.
-     */
-    @Enumerated(EnumType.STRING)
-    @Column(name = "statut_validation", length = 20, nullable = false)
-    @Builder.Default
-    private StatutValidation statutValidation = StatutValidation.EN_ATTENTE;
 }

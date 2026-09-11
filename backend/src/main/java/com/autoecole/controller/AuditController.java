@@ -1,9 +1,11 @@
 package com.autoecole.controller;
 
 import com.autoecole.dto.AuditDTOs.HistoriqueActionDTO;
+import com.autoecole.dto.AuditDTOs.SuppressionAuditRequest;
 import com.autoecole.service.AuditService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,6 +17,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/audit")
@@ -32,8 +35,23 @@ public class AuditController {
             @RequestParam(required = false) String action,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime debut,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fin,
+            @RequestParam(required = false) Long utilisateurId,
             @PageableDefault(size = 20, sort = "timestamp", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        return ResponseEntity.ok(auditService.getHistorique(entite, action, debut, fin, pageable));
+        return ResponseEntity.ok(auditService.getHistorique(entite, action, debut, fin, utilisateurId, pageable));
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Supprimer une entrée du journal d'audit (motif obligatoire, action elle-même journalisée)")
+    public ResponseEntity<Void> supprimerAction(@PathVariable Long id, @RequestParam String motif) {
+        auditService.supprimerActions(List.of(id), motif);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/supprimer")
+    @Operation(summary = "Supprimer plusieurs entrées du journal d'audit (motif obligatoire, action elle-même journalisée)")
+    public ResponseEntity<Void> supprimerActions(@Valid @RequestBody SuppressionAuditRequest request) {
+        auditService.supprimerActions(request.getIds(), request.getMotif());
+        return ResponseEntity.noContent().build();
     }
 }

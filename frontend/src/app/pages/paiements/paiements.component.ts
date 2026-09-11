@@ -5,6 +5,7 @@ import { RouterModule } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { Candidat, Paiement, Recu } from '../../core/models/models';
+import { extraireMessageErreur } from '../../core/utils/error-utils';
 
 @Component({
     selector: 'app-paiements',
@@ -157,7 +158,7 @@ import { Candidat, Paiement, Recu } from '../../core/models/models';
                 </div>
                 @if (selectedCandidat) {
                   <div class="alert alert-info">
-                    Forfait : <strong>{{ selectedCandidat.forfaitNom }} ({{ selectedCandidat.montantForfait | number }} FCFA)</strong><br>
+                    Catégorie : <strong>{{ selectedCandidat.categoriePermisLibelle }} ({{ selectedCandidat.montantForfait | number }} FCFA)</strong><br>
                     Déjà versé : <strong>{{ selectedCandidat.totalVerse | number }} FCFA</strong><br>
                     Reste à payer : <strong class="text-danger">{{ selectedCandidat.soldeRestant | number }} FCFA</strong>
                   </div>
@@ -439,7 +440,7 @@ export class PaiementsComponent implements OnInit {
       },
       error: (err) => {
         this.saving = false;
-        this.formError = err.error?.message || 'Erreur lors de l’enregistrement.';
+        this.formError = extraireMessageErreur(err, 'Erreur lors de l’enregistrement.');
       }
     });
   }
@@ -471,7 +472,7 @@ export class PaiementsComponent implements OnInit {
       },
       error: (err) => {
         this.saving = false;
-        this.formError = err.error?.message || 'Erreur lors de la modification.';
+        this.formError = extraireMessageErreur(err, 'Erreur lors de la modification.');
       }
     });
   }
@@ -494,7 +495,7 @@ export class PaiementsComponent implements OnInit {
       },
       error: (err) => {
         this.saving = false;
-        alert(err.error?.message || 'Erreur lors de l’annulation.');
+        alert(extraireMessageErreur(err, 'Erreur lors de l’annulation.'));
       }
     });
   }

@@ -15,6 +15,7 @@ import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Base64;
+import java.util.Set;
 
 @Slf4j
 @Component
@@ -24,7 +25,7 @@ public class DataInitializerService implements CommandLineRunner {
     private final RoleRepository roleRepository;
     private final UtilisateurRepository utilisateurRepository;
     private final CategoriePermisRepository categorieRepository;
-    private final ForfaitRepository forfaitRepository;
+    private final SiteRepository siteRepository;
     private final CandidatRepository candidatRepository;
     private final InscriptionRepository inscriptionRepository;
     private final PaiementRepository paiementRepository;
@@ -36,6 +37,9 @@ public class DataInitializerService implements CommandLineRunner {
     @Value("${app.seed.enabled:true}")
     private boolean seedEnabled;
 
+    @Value("${app.inscription.duree-validite-mois:8}")
+    private int dureeValiditeMois;
+
     @Override
     public void run(String... args) {
         log.info("Initialisation des données de base de l'auto-école...");
@@ -46,13 +50,15 @@ public class DataInitializerService implements CommandLineRunner {
         Role roleCaissiere = initRole(RoleEnum.CAISSIERE, "Caissière / Comptable");
         Role roleMoniteur = initRole(RoleEnum.MONITEUR, "Moniteur Pédagogique");
 
-        // 2. Catégories de permis et forfaits (données de référence, toujours créées)
-        CategoriePermis catA1 = initCategorie("A1", "Permis Moto légère (125 cm³)", "Conduite motocyclettes");
-        CategoriePermis catB = initCategorie("B", "Permis B Véhicule Léger", "Véhicules particuliers jusqu'à 3.5T");
-        CategoriePermis catC = initCategorie("C", "Permis C Poids Lourd", "Transport de marchandises > 3.5T");
+        // 2. Catégories de permis, avec leur tarif (données de référence, toujours créées)
+        CategoriePermis catA1 = initCategorie("A1", "Permis Moto légère (125 cm³)", new BigDecimal("75000"), "Conduite motocyclettes");
+        CategoriePermis catB = initCategorie("B", "Permis B Véhicule Léger", new BigDecimal("100000"), "Véhicules particuliers jusqu'à 3.5T");
+        CategoriePermis catC = initCategorie("C", "Permis C Poids Lourd", new BigDecimal("150000"), "Transport de marchandises > 3.5T");
 
-        Forfait f1 = initForfait("Forfait 1", new BigDecimal("100000"), "Formation standard (Code + Conduite 20h)");
-        Forfait f2 = initForfait("Forfait 2", new BigDecimal("125000"), "Formation complète accélérée avec perfectionnement");
+        // 2bis. Sites de formation (données de référence, toujours créés)
+        Site siteCocody = initSite("Site Cocody", "Boulevard de France, Cocody, Abidjan");
+        initSite("Site Yopougon", "Route de Yopougon-Ficgayo, Abidjan");
+        initSite("Site Bouaké", "Avenue de la République, Bouaké");
 
         if (seedEnabled) {
             // 3. Comptes de démonstration à mots de passe connus + jeu de données
@@ -61,9 +67,14 @@ public class DataInitializerService implements CommandLineRunner {
             initUser("secretaire", "secretaire@autoecole.ci", "secretaire123", "YAO", "Aya Marie", "0702030405", roleSecretaire);
             initUser("caissiere", "caissiere@autoecole.ci", "caissiere123", "KOFFI", "Affoué Esther", "0703040506", roleCaissiere);
             Utilisateur moniteur = initUser("moniteur", "moniteur@autoecole.ci", "moniteur123", "DIABATE", "Ibrahim", "0704050607", roleMoniteur);
+            if (moniteur.getSite() == null) {
+                moniteur.setSite(siteCocody);
+                moniteur.setSpecialites(Set.of(TypeEpreuve.CODE, TypeEpreuve.CRENEAU, TypeEpreuve.CIRCULATION));
+                moniteur = utilisateurRepository.save(moniteur);
+            }
 
             if (candidatRepository.count() == 0) {
-                initDemoData(admin, moniteur, catB, catA1, catC, f1, f2);
+                initDemoData(admin, moniteur, catB, siteCocody);
             }
         } else {
             ensureAtLeastOneAdmin(roleAdmin);
@@ -121,21 +132,21 @@ public class DataInitializerService implements CommandLineRunner {
         });
     }
 
-    private CategoriePermis initCategorie(String code, String libelle, String desc) {
+    private CategoriePermis initCategorie(String code, String libelle, BigDecimal montant, String desc) {
         return categorieRepository.findByCode(code).orElseGet(() -> {
-            CategoriePermis c = CategoriePermis.builder().code(code).libelle(libelle).description(desc).actif(true).build();
+            CategoriePermis c = CategoriePermis.builder().code(code).libelle(libelle).montant(montant).description(desc).actif(true).build();
             return categorieRepository.save(c);
         });
     }
 
-    private Forfait initForfait(String nom, BigDecimal montant, String desc) {
-        return forfaitRepository.findByNom(nom).orElseGet(() -> {
-            Forfait f = Forfait.builder().nom(nom).montant(montant).description(desc).actif(true).build();
-            return forfaitRepository.save(f);
+    private Site initSite(String nom, String adresse) {
+        return siteRepository.findByNom(nom).orElseGet(() -> {
+            Site s = Site.builder().nom(nom).adresse(adresse).actif(true).build();
+            return siteRepository.save(s);
         });
     }
 
-    private void initDemoData(Utilisateur admin, Utilisateur moniteur, CategoriePermis catB, CategoriePermis catA1, CategoriePermis catC, Forfait f1, Forfait f2) {
+    private void initDemoData(Utilisateur admin, Utilisateur moniteur, CategoriePermis catB, Site site) {
         log.info("Création des candidats et enregistrements de démonstration...");
 
         // Candidat 1 : En cours (1er versement 40 000 FCFA effectué)
@@ -154,10 +165,10 @@ public class DataInitializerService implements CommandLineRunner {
         Inscription i1 = Inscription.builder()
                 .candidat(c1)
                 .categoriePermis(catB)
-                .forfait(f1)
-                .montantForfait(f1.getMontant())
+                .site(site)
+                .montantForfait(catB.getMontant())
                 .dateInscription(dateInsc1)
-                .dateEcheance(dateInsc1.plusMonths(8))
+                .dateEcheance(dateInsc1.plusMonths(dureeValiditeMois))
                 .totalVerse(new BigDecimal("40000"))
                 .soldeRestant(new BigDecimal("60000"))
                 .statutDossier(StatutDossier.EN_COURS)
@@ -224,10 +235,10 @@ public class DataInitializerService implements CommandLineRunner {
         Inscription i2 = Inscription.builder()
                 .candidat(c2)
                 .categoriePermis(catB)
-                .forfait(f2)
-                .montantForfait(f2.getMontant())
+                .site(site)
+                .montantForfait(new BigDecimal("125000"))
                 .dateInscription(dateInsc2)
-                .dateEcheance(dateInsc2.plusMonths(8))
+                .dateEcheance(dateInsc2.plusMonths(dureeValiditeMois))
                 .totalVerse(new BigDecimal("125000"))
                 .soldeRestant(BigDecimal.ZERO)
                 .statutDossier(StatutDossier.SOLDE)

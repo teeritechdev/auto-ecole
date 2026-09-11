@@ -1,11 +1,14 @@
 package com.autoecole.dto;
 
+import com.autoecole.entity.enums.TypeEpreuve;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.Set;
 
 public class AuthDTOs {
 
@@ -35,6 +38,8 @@ public class AuthDTOs {
         private String prenom;
         private String role;
         private String photoProfile;
+        private Long siteId;
+        private Set<TypeEpreuve> specialites;
     }
 
     @Data

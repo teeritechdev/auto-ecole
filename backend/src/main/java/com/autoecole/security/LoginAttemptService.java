@@ -1,5 +1,6 @@
 package com.autoecole.security;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
@@ -17,8 +18,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Component
 public class LoginAttemptService {
 
-    private static final int MAX_ATTEMPTS = 5;
-    private static final Duration LOCKOUT_DURATION = Duration.ofMinutes(15);
+    @Value("${app.security.login.max-attempts:5}")
+    private int maxAttempts;
+
+    @Value("${app.security.login.lockout-minutes:15}")
+    private long lockoutMinutes;
 
     private record Attempts(AtomicInteger count, Instant lockedUntil) {
     }
@@ -50,8 +54,8 @@ public class LoginAttemptService {
         String key = normalize(username);
         Attempts attempts = attemptsByUsername.computeIfAbsent(key, k -> new Attempts(new AtomicInteger(0), null));
         int failures = attempts.count().incrementAndGet();
-        if (failures >= MAX_ATTEMPTS) {
-            attemptsByUsername.put(key, new Attempts(new AtomicInteger(failures), Instant.now().plus(LOCKOUT_DURATION)));
+        if (failures >= maxAttempts) {
+            attemptsByUsername.put(key, new Attempts(new AtomicInteger(failures), Instant.now().plus(Duration.ofMinutes(lockoutMinutes))));
         }
     }
 

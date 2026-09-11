@@ -47,7 +47,7 @@ public class RecuService {
                 .candidatId(c != null ? c.getId() : null)
                 .candidatNumeroDossier(c != null ? c.getNumeroDossier() : "")
                 .nomClient(r.getNomClient())
-                .forfaitNom(i != null && i.getForfait() != null ? i.getForfait().getNom() : "")
+                .forfaitNom(i != null && i.getCategoriePermis() != null ? i.getCategoriePermis().getLibelle() : "")
                 .montantForfait(i != null ? i.getMontantForfait() : null)
                 .montant(r.getMontant())
                 .totalVerse(i != null ? i.getTotalVerse() : null)

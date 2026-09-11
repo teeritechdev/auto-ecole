@@ -1,6 +1,7 @@
 package com.autoecole.dto;
 
 import com.autoecole.entity.enums.RoleEnum;
+import com.autoecole.entity.enums.TypeEpreuve;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -11,6 +12,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 public class UtilisateurDTOs {
 
@@ -28,6 +30,9 @@ public class UtilisateurDTOs {
         private String photoProfile;
         private String role;
         private String roleLibelle;
+        private Long siteId;
+        private String siteNom;
+        private Set<TypeEpreuve> specialites;
         private boolean actif;
         private LocalDateTime dateCreation;
     }
@@ -61,6 +66,10 @@ public class UtilisateurDTOs {
 
         @NotNull(message = "Le rôle est obligatoire")
         private RoleEnum role;
+
+        // Pertinent uniquement pour le rôle MONITEUR
+        private Long siteId;
+        private Set<TypeEpreuve> specialites;
     }
 
     @Data
@@ -90,5 +99,9 @@ public class UtilisateurDTOs {
 
         @Size(max = 2_800_000, message = "Photo trop volumineuse (2 Mo max)")
         private String photoProfile;
+
+        // Pertinent uniquement pour le rôle MONITEUR
+        private Long siteId;
+        private Set<TypeEpreuve> specialites;
     }
 }

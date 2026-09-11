@@ -19,19 +19,28 @@ public interface InscriptionRepository extends JpaRepository<Inscription, Long> 
 
     List<Inscription> findByCandidatIdOrderByNumeroCycleDesc(Long candidatId);
 
-    long countByActiveTrueAndStatutDossier(StatutDossier statutDossier);
+    @Query("SELECT COUNT(i) FROM Inscription i WHERE i.active = true AND i.statutDossier = :statutDossier " +
+           "AND (:siteId IS NULL OR i.site.id = :siteId)")
+    long countByActiveTrueAndStatutDossierAndSite(@Param("statutDossier") StatutDossier statutDossier, @Param("siteId") Long siteId);
 
-    @Query("SELECT COALESCE(SUM(i.totalVerse), 0) FROM Inscription i WHERE i.active = true")
-    BigDecimal sumTotalVerseActif();
+    @Query("SELECT COUNT(i) FROM Inscription i WHERE i.active = true AND (:siteId IS NULL OR i.site.id = :siteId)")
+    long countByActiveTrueAndSite(@Param("siteId") Long siteId);
 
-    @Query("SELECT COALESCE(SUM(i.soldeRestant), 0) FROM Inscription i WHERE i.active = true")
-    BigDecimal sumSoldeRestantActif();
+    @Query("SELECT COALESCE(SUM(i.totalVerse), 0) FROM Inscription i WHERE i.active = true " +
+           "AND (:siteId IS NULL OR i.site.id = :siteId)")
+    BigDecimal sumTotalVerseActif(@Param("siteId") Long siteId);
+
+    @Query("SELECT COALESCE(SUM(i.soldeRestant), 0) FROM Inscription i WHERE i.active = true " +
+           "AND (:siteId IS NULL OR i.site.id = :siteId)")
+    BigDecimal sumSoldeRestantActif(@Param("siteId") Long siteId);
 
     @Query("SELECT i FROM Inscription i WHERE i.active = true " +
-           "AND i.dateEcheance BETWEEN :dateDebut AND :dateFin AND i.statutDossier != 'SOLDE'")
+           "AND i.dateEcheance BETWEEN :dateDebut AND :dateFin AND i.statutDossier != 'SOLDE' " +
+           "AND (:siteId IS NULL OR i.site.id = :siteId)")
     List<Inscription> findInscriptionsActivesProchesExpiration(
             @Param("dateDebut") LocalDate dateDebut,
-            @Param("dateFin") LocalDate dateFin
+            @Param("dateFin") LocalDate dateFin,
+            @Param("siteId") Long siteId
     );
 
     @Query("SELECT i FROM Inscription i WHERE i.active = true " +

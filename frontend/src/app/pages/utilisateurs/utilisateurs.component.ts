@@ -2,7 +2,8 @@ import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
-import { UtilisateurDTO } from '../../core/models/models';
+import { UtilisateurDTO, Site } from '../../core/models/models';
+import { extraireMessageErreur } from '../../core/utils/error-utils';
 
 @Component({
     selector: 'app-utilisateurs',
@@ -142,6 +143,32 @@ import { UtilisateurDTO } from '../../core/models/models';
                     <option value="MONITEUR">Moniteur (Suivi pédagogique & examens)</option>
                   </select>
                 </div>
+                @if (currentUserForm.role === 'MONITEUR') {
+                  <div class="form-group">
+                    <label class="form-label">Site de formation <span class="required">*</span></label>
+                    <select class="form-control" [(ngModel)]="currentUserForm.siteId" name="siteId" required>
+                      <option [ngValue]="null" disabled>Sélectionner un site</option>
+                      @for (s of sites; track s) {
+                        <option [ngValue]="s.id">{{ s.nom }}</option>
+                      }
+                    </select>
+                    <div class="form-help">Le moniteur ne pourra voir et gérer que les candidats inscrits sur ce site.</div>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Spécialités</label>
+                    <div class="specialites-group">
+                      <label class="checkbox-label">
+                        <input type="checkbox" [checked]="hasSpecialite('CODE')" (change)="toggleSpecialite('CODE')" /> Code
+                      </label>
+                      <label class="checkbox-label">
+                        <input type="checkbox" [checked]="hasSpecialite('CRENEAU')" (change)="toggleSpecialite('CRENEAU')" /> Créneau
+                      </label>
+                      <label class="checkbox-label">
+                        <input type="checkbox" [checked]="hasSpecialite('CIRCULATION')" (change)="toggleSpecialite('CIRCULATION')" /> Circulation
+                      </label>
+                    </div>
+                  </div>
+                }
                 <div class="form-group">
                   <label class="form-label">Photo de profil</label>
                   <input type="file" accept="image/png,image/jpeg,image/webp" (change)="onPhotoSelected($event)" />
@@ -201,10 +228,13 @@ import { UtilisateurDTO } from '../../core/models/models';
 
     .user-photo-small img { width: 100%; height: 100%; object-fit: cover; }
     .form-help { color: var(--text-muted); font-size: 0.8rem; margin-top: 0.35rem; }
+    .specialites-group { display: flex; gap: 1.25rem; flex-wrap: wrap; }
+    .checkbox-label { display: flex; align-items: center; gap: 0.4rem; font-weight: 500; }
   `]
 })
 export class UtilisateursComponent implements OnInit {
   utilisateurs: UtilisateurDTO[] = [];
+  sites: Site[] = [];
   loading = false;
   saving = false;
 
@@ -221,13 +251,30 @@ export class UtilisateursComponent implements OnInit {
     prenom: '',
     email: '',
     telephone: '',
-    role: 'SECRETAIRE'
+    role: 'SECRETAIRE',
+    siteId: null,
+    specialites: []
   };
 
   constructor(private apiService: ApiService) {}
 
   ngOnInit(): void {
     this.loadUsers();
+    this.apiService.getSites(true).subscribe({ next: (res) => this.sites = res });
+  }
+
+  hasSpecialite(type: string): boolean {
+    return !!this.currentUserForm.specialites?.includes(type);
+  }
+
+  toggleSpecialite(type: string): void {
+    if (!this.currentUserForm.specialites) this.currentUserForm.specialites = [];
+    const idx = this.currentUserForm.specialites.indexOf(type);
+    if (idx >= 0) {
+      this.currentUserForm.specialites.splice(idx, 1);
+    } else {
+      this.currentUserForm.specialites.push(type);
+    }
   }
 
   loadUsers(): void {
@@ -255,8 +302,10 @@ export class UtilisateursComponent implements OnInit {
       prenom: '',
       email: '',
       telephone: '',
-      role: 'SECRETAIRE'
-      , photoProfile: null
+      role: 'SECRETAIRE',
+      siteId: null,
+      specialites: [],
+      photoProfile: null
     };
     this.showModal = true;
   }
@@ -272,6 +321,8 @@ export class UtilisateursComponent implements OnInit {
       telephone: u.telephone,
       role: u.role,
       password: '',
+      siteId: u.siteId || null,
+      specialites: u.specialites ? [...u.specialites] : [],
       photoProfile: u.photoProfile || null
     };
     this.showModal = true;
@@ -290,7 +341,7 @@ export class UtilisateursComponent implements OnInit {
         },
         error: (err) => {
           this.saving = false;
-          this.formError = err.error?.message || 'Erreur lors de la mise à jour.';
+          this.formError = extraireMessageErreur(err, 'Erreur lors de la mise à jour.');
         }
       });
     } else {
@@ -302,7 +353,7 @@ export class UtilisateursComponent implements OnInit {
         },
         error: (err) => {
           this.saving = false;
-          this.formError = err.error?.message || 'Erreur lors de la création.';
+          this.formError = extraireMessageErreur(err, 'Erreur lors de la création.');
         }
       });
     }
@@ -328,7 +379,7 @@ export class UtilisateursComponent implements OnInit {
   toggleActif(u: UtilisateurDTO): void {
     this.apiService.toggleActifUtilisateur(u.id).subscribe({
       next: () => this.loadUsers(),
-      error: (err) => alert(err.error?.message || 'Erreur lors du changement de statut.')
+      error: (err) => alert(extraireMessageErreur(err, 'Erreur lors du changement de statut.'))
     });
   }
 }

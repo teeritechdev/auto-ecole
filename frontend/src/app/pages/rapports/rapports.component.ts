@@ -21,7 +21,7 @@ import { ApiService } from '../../core/services/api.service';
           <div class="report-icon">👥</div>
           <div class="report-body">
             <h3>Liste Globale des Candidats</h3>
-            <p>Exportation complète du registre des candidats avec forfaits, montants, total versé, soldes restants et statuts administratifs.</p>
+            <p>Exportation complète du registre des candidats avec catégories, montants, total versé, soldes restants et statuts administratifs.</p>
             <div class="report-buttons">
               <button class="btn btn-primary btn-sm" (click)="telechargerCandidatsPdf()">📄 Télécharger PDF</button>
               <button class="btn btn-success btn-sm" (click)="telechargerCandidatsExcel()">📊 Télécharger Excel</button>
@@ -34,7 +34,17 @@ import { ApiService } from '../../core/services/api.service';
           <div class="report-icon">🏦</div>
           <div class="report-body">
             <h3>Journal des Mouvements de Caisse</h3>
-            <p>Relevé périodique des flux financiers (recettes, encaissements de formation, charges d'exploitation, salaires, carburant).</p>
+            <p>Relevé périodique des flux financiers (recettes, encaissements de formation, charges d'exploitation, salaires, carburant). Laissez les dates vides pour un export complet, ou précisez une période (ex: export comptable mensuel).</p>
+            <div class="periode-row">
+              <div class="form-group">
+                <label class="form-label">Du</label>
+                <input type="date" class="form-control" [(ngModel)]="caisseDebut" name="caisseDebut" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Au</label>
+                <input type="date" class="form-control" [(ngModel)]="caisseFin" name="caisseFin" />
+              </div>
+            </div>
             <div class="report-buttons">
               <button class="btn btn-primary btn-sm" (click)="telechargerCaissePdf()">📄 Relevé Caisse PDF</button>
               <button class="btn btn-success btn-sm" (click)="telechargerCaisseExcel()">📊 Livre Caisse Excel</button>
@@ -96,9 +106,22 @@ import { ApiService } from '../../core/services/api.service';
       gap: 0.5rem;
       flex-wrap: wrap;
     }
+
+    .periode-row {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .periode-row .form-group {
+      flex: 1;
+    }
   `]
 })
 export class RapportsComponent {
+  caisseDebut = '';
+  caisseFin = '';
+
   constructor(private apiService: ApiService) {}
 
   telechargerCandidatsPdf(): void {
@@ -110,10 +133,18 @@ export class RapportsComponent {
   }
 
   telechargerCaissePdf(): void {
-    this.apiService.downloadBlob(this.apiService.getCaissePdfUrl(), 'journal_caisse.pdf');
+    const [debut, fin] = this.buildPeriode();
+    this.apiService.downloadBlob(this.apiService.getCaissePdfUrl(debut, fin), 'journal_caisse.pdf');
   }
 
   telechargerCaisseExcel(): void {
-    this.apiService.downloadBlob(this.apiService.getCaisseExcelUrl(), 'journal_caisse.xlsx');
+    const [debut, fin] = this.buildPeriode();
+    this.apiService.downloadBlob(this.apiService.getCaisseExcelUrl(debut, fin), 'journal_caisse.xlsx');
+  }
+
+  private buildPeriode(): [string | undefined, string | undefined] {
+    const debut = this.caisseDebut ? `${this.caisseDebut}T00:00:00` : undefined;
+    const fin = this.caisseFin ? `${this.caisseFin}T23:59:59` : undefined;
+    return [debut, fin];
   }
 }

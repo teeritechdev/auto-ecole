@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { RecapCaisse, TransactionCaisse } from '../../core/models/models';
+import { extraireMessageErreur } from '../../core/utils/error-utils';
 
 @Component({
     selector: 'app-caisse',
@@ -349,7 +350,7 @@ export class CaisseComponent implements OnInit {
       },
       error: (err) => {
         this.saving = false;
-        this.formError = err.error?.message || 'Erreur lors de l’enregistrement.';
+        this.formError = extraireMessageErreur(err, 'Erreur lors de l’enregistrement.');
       }
     });
   }
@@ -363,7 +364,7 @@ export class CaisseComponent implements OnInit {
         this.loadRecap();
         this.loadTransactions();
       },
-      error: (err) => alert(err.error?.message || 'Erreur lors de la suppression.')
+      error: (err) => alert(extraireMessageErreur(err, 'Erreur lors de la suppression.'))
     });
   }
 

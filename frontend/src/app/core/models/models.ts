@@ -7,6 +7,8 @@ export interface User {
   role: 'ADMIN' | 'SECRETAIRE' | 'CAISSIERE' | 'MONITEUR';
   photoProfile?: string;
   token?: string;
+  siteId?: number;
+  specialites?: ('CODE' | 'CRENEAU' | 'CIRCULATION')[];
 }
 
 export interface UtilisateurDTO {
@@ -19,6 +21,9 @@ export interface UtilisateurDTO {
   photoProfile?: string;
   role: string;
   roleLibelle: string;
+  siteId?: number;
+  siteNom?: string;
+  specialites?: ('CODE' | 'CRENEAU' | 'CIRCULATION')[];
   actif: boolean;
   dateCreation: string;
 }
@@ -27,16 +32,24 @@ export interface CategoriePermis {
   id: number;
   code: string;
   libelle: string;
+  montant: number;
   description?: string;
   actif: boolean;
 }
 
-export interface Forfait {
+export interface Site {
   id: number;
   nom: string;
-  montant: number;
-  description?: string;
+  adresse?: string;
   actif: boolean;
+}
+
+export interface SiteStat {
+  siteId: number;
+  siteNom: string;
+  nombreCandidatsActifs: number;
+  montantEncaisse: number;
+  montantRestantDu: number;
 }
 
 export interface Candidat {
@@ -53,18 +66,23 @@ export interface Candidat {
   dateReceptionDossier?: string;
   dateDepotDossier?: string;
   dateEcheance: string;
-  statutDossier: 'EN_COURS' | 'SOLDE' | 'EXPIRE' | 'EXPIRE_NON_SOLDE';
+  statutDossier: 'EN_COURS' | 'SOLDE' | 'EXPIRE_NON_SOLDE';
+  statutInscription: 'NOUVEAU' | 'REDOUBLANT';
   categoriePermisId: number;
   categoriePermisCode: string;
   categoriePermisLibelle: string;
-  forfaitId: number;
-  forfaitNom: string;
+  siteId?: number;
+  siteNom?: string;
   montantForfait: number;
   totalVerse: number;
   soldeRestant: number;
   dateCreation: string;
   procheExpiration: boolean;
   joursRestants: number;
+  etapeParcours: 'INSCRIPTION' | 'CODE' | 'EXAMEN_CODE' | 'CRENEAU' | 'EXAMEN_CRENEAU' | 'CIRCULATION' | 'EXAMEN_CIRCULATION' | 'PERMIS_OBTENU' | 'EXPIRE';
+  codeReussi: boolean;
+  creneauReussi: boolean;
+  circulationReussi: boolean;
 }
 
 export interface Paiement {
@@ -111,13 +129,29 @@ export interface PassageExamen {
   candidatNomComplet: string;
   typeEpreuve: 'CODE' | 'CRENEAU' | 'CIRCULATION';
   numeroPassage: number;
+  nombreEchecs: number;
   datePassage: string;
-  resultat: 'PROGRAMME' | 'REUSSI' | 'ECHEC' | 'AJOURNE';
+  resultat: 'PROGRAMME' | 'REUSSI' | 'AJOURNE';
   observations?: string;
   moniteurId?: number;
   moniteurNomComplet?: string;
   dateEnregistrement: string;
-  valideParAdmin: boolean;
+  statutValidation: 'EN_ATTENTE' | 'VALIDE' | 'RETIRE';
+}
+
+export interface SessionExamen {
+  id: number;
+  typeEpreuve: 'CODE' | 'CRENEAU' | 'CIRCULATION';
+  datePassage: string;
+  siteId?: number;
+  siteNom?: string;
+  moniteurId?: number;
+  moniteurNomComplet?: string;
+  moniteurSpecialites?: ('CODE' | 'CRENEAU' | 'CIRCULATION')[];
+  observations?: string;
+  datePassee: boolean;
+  terminee: boolean;
+  candidats: PassageExamen[];
 }
 
 export interface BilanExamensCandidat {
@@ -158,7 +192,6 @@ export interface DashboardStats {
   totalCandidats: number;
   candidatsEnCours: number;
   candidatsSoldes: number;
-  candidatsExpires: number;
   candidatsExpiresNonSoldes: number;
   montantTotalEncaisse: number;
   montantGlobalRestantDu: number;

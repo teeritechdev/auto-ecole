@@ -1,7 +1,9 @@
 package com.autoecole.repository;
 
 import com.autoecole.entity.Candidat;
+import com.autoecole.entity.enums.EtapeParcours;
 import com.autoecole.entity.enums.StatutDossier;
+import com.autoecole.entity.enums.StatutInscription;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -9,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,11 +30,17 @@ public interface CandidatRepository extends JpaRepository<Candidat, Long> {
            "OR LOWER(c.numeroDossier) LIKE LOWER(CONCAT('%', CAST(:recherche AS string), '%')) " +
            "OR LOWER(c.telephone) LIKE LOWER(CONCAT('%', CAST(:recherche AS string), '%'))) " +
            "AND (:statut IS NULL OR i.statutDossier = :statut) " +
-           "AND (:categorieId IS NULL OR i.categoriePermis.id = :categorieId)")
+           "AND (:categorieId IS NULL OR i.categoriePermis.id = :categorieId) " +
+           "AND (:siteId IS NULL OR i.site.id = :siteId) " +
+           "AND (:statutInscription IS NULL OR i.statutInscription = :statutInscription) " +
+           "AND (:etapesAutorisees IS NULL OR i.etapeParcours IN :etapesAutorisees)")
     Page<Candidat> rechercherCandidats(
             @Param("recherche") String recherche,
             @Param("statut") StatutDossier statut,
             @Param("categorieId") Long categorieId,
+            @Param("siteId") Long siteId,
+            @Param("statutInscription") StatutInscription statutInscription,
+            @Param("etapesAutorisees") Collection<EtapeParcours> etapesAutorisees,
             Pageable pageable
     );
 

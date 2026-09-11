@@ -353,6 +353,18 @@ npm run build
 # Les fichiers statiques optimisés sont générés dans : dist/auto-ecole-frontend/browser
 ```
 
+### 6. Arrêter le Backend / Frontend
+Si vous avez lancé les serveurs directement dans un terminal (`mvn spring-boot:run`, `./run-backend.sh`, `npm start`, `./run-frontend.sh`), il suffit d'appuyer sur `Ctrl + C` dans ce terminal pour les arrêter proprement.
+
+Si le processus tourne en arrière-plan ou dans un terminal déjà fermé, libérez le port concerné :
+```bash
+# Backend (port 8080)
+sudo fuser -k 8080/tcp
+
+# Frontend (port 4200)
+sudo fuser -k 4200/tcp
+```
+
 ---
 
 ✨ **Projet Auto-École — Conforme au Cahier des Charges Final (Spring Boot 3 + Angular 18 + PostgreSQL).**

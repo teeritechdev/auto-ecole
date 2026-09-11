@@ -62,7 +62,8 @@ import { DashboardStats } from '../../core/models/models';
             <div class="stat-value">{{ stats?.totalCandidats || 0 }}</div>
             <div class="stat-sub">
               <span>{{ stats?.candidatsEnCours || 0 }} en cours</span> •
-              <span class="text-success">{{ stats?.candidatsSoldes || 0 }} soldés</span>
+              <span class="text-success">{{ stats?.candidatsSoldes || 0 }} soldés</span> •
+              <span class="text-danger">{{ stats?.candidatsExpiresNonSoldes || 0 }} expirés non soldés</span>
             </div>
           </div>
         </div>
@@ -102,7 +103,7 @@ import { DashboardStats } from '../../core/models/models';
             <div class="stat-label">Examens Pédagogiques</div>
             <div class="stat-value">{{ stats?.totalExamensReussis || 0 }} <small>réussis</small></div>
             <div class="stat-sub">
-              {{ stats?.totalExamensProgrammes || 0 }} programmés • {{ stats?.totalExamensEchecs || 0 }} échecs
+              {{ stats?.totalExamensProgrammes || 0 }} programmés • {{ stats?.totalExamensEchecs || 0 }} ajournés
             </div>
           </div>
         </div>
@@ -146,7 +147,6 @@ import { DashboardStats } from '../../core/models/models';
                     <span class="badge" [ngClass]="{
                       'badge-programme': ex.resultat === 'PROGRAMME',
                       'badge-reussi': ex.resultat === 'REUSSI',
-                      'badge-echec': ex.resultat === 'ECHEC',
                       'badge-ajourne': ex.resultat === 'AJOURNE'
                     }">{{ ex.resultat }}</span>
                       </td>

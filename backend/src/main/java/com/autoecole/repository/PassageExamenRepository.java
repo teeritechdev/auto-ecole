@@ -2,6 +2,7 @@ package com.autoecole.repository;
 
 import com.autoecole.entity.PassageExamen;
 import com.autoecole.entity.enums.ResultatExamen;
+import com.autoecole.entity.enums.StatutValidation;
 import com.autoecole.entity.enums.TypeEpreuve;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -11,6 +12,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,24 +29,48 @@ public interface PassageExamenRepository extends JpaRepository<PassageExamen, Lo
 
     Optional<PassageExamen> findByInscriptionIdAndTypeEpreuveAndNumeroPassage(Long inscriptionId, TypeEpreuve typeEpreuve, Integer numeroPassage);
 
+    List<PassageExamen> findBySessionIdAndStatutValidationNotOrderByDateEnregistrementAsc(Long sessionId, StatutValidation statutValidation);
+
+    Optional<PassageExamen> findBySessionIdAndId(Long sessionId, Long id);
+
     long countByInscriptionIdAndTypeEpreuve(Long inscriptionId, TypeEpreuve typeEpreuve);
+
+    long countByInscriptionIdAndTypeEpreuveAndResultat(Long inscriptionId, TypeEpreuve typeEpreuve, ResultatExamen resultat);
+
+    boolean existsByInscriptionIdAndTypeEpreuveAndResultat(Long inscriptionId, TypeEpreuve typeEpreuve, ResultatExamen resultat);
+
+    boolean existsByInscriptionIdAndTypeEpreuveAndResultatAndStatutValidationNot(
+            Long inscriptionId, TypeEpreuve typeEpreuve, ResultatExamen resultat, StatutValidation statutValidation);
+
+    @Query("SELECT pe FROM PassageExamen pe WHERE pe.statutValidation = com.autoecole.entity.enums.StatutValidation.RETIRE " +
+           "AND (:siteId IS NULL OR pe.inscription.site.id = :siteId) " +
+           "AND (:typesAutorises IS NULL OR pe.typeEpreuve IN :typesAutorises) " +
+           "ORDER BY pe.dateEnregistrement DESC")
+    List<PassageExamen> findRetires(@Param("siteId") Long siteId, @Param("typesAutorises") Collection<TypeEpreuve> typesAutorises);
 
     @Query("SELECT pe FROM PassageExamen pe WHERE " +
            "(:candidatId IS NULL OR pe.inscription.candidat.id = :candidatId) " +
            "AND (:typeEpreuve IS NULL OR pe.typeEpreuve = :typeEpreuve) " +
            "AND (:resultat IS NULL OR pe.resultat = :resultat) " +
-           "AND (:dateRef IS NULL OR pe.datePassage = :dateRef)")
+           "AND (:dateRef IS NULL OR pe.datePassage = :dateRef) " +
+           "AND (:siteId IS NULL OR pe.inscription.site.id = :siteId) " +
+           "AND (:typesAutorises IS NULL OR pe.typeEpreuve IN :typesAutorises) " +
+           "AND (:masquerReussi = false OR pe.resultat <> com.autoecole.entity.enums.ResultatExamen.REUSSI) " +
+           "AND pe.statutValidation <> com.autoecole.entity.enums.StatutValidation.RETIRE")
     Page<PassageExamen> filtrerPassages(
             @Param("candidatId") Long candidatId,
             @Param("typeEpreuve") TypeEpreuve typeEpreuve,
             @Param("resultat") ResultatExamen resultat,
             @Param("dateRef") LocalDate dateRef,
+            @Param("siteId") Long siteId,
+            @Param("typesAutorises") Collection<TypeEpreuve> typesAutorises,
+            @Param("masquerReussi") boolean masquerReussi,
             Pageable pageable
     );
 
     List<PassageExamen> findTop10ByDatePassageGreaterThanEqualOrderByDatePassageAsc(LocalDate today);
 
-    List<PassageExamen> findByValideParAdminFalseAndResultatOrderByDatePassageAsc(ResultatExamen resultat);
-
-    long countByResultat(ResultatExamen resultat);
+    @Query("SELECT COUNT(pe) FROM PassageExamen pe WHERE pe.resultat = :resultat " +
+           "AND (:siteId IS NULL OR pe.inscription.site.id = :siteId)")
+    long countByResultatAndSite(@Param("resultat") ResultatExamen resultat, @Param("siteId") Long siteId);
 }

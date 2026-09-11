@@ -11,6 +11,7 @@ import {
   BilanExamensCandidat,
   Recu
 } from '../../core/models/models';
+import { extraireMessageErreur } from '../../core/utils/error-utils';
 
 @Component({
     selector: 'app-candidat-detail',
@@ -56,14 +57,14 @@ import {
         }
         <!-- 360° SUMMARY CARDS -->
         <div class="stats-grid">
-          <!-- Forfait -->
+          <!-- Montant -->
           @if (canSeeFinancialData) {
             <div class="stat-card primary">
               <div class="stat-icon primary">📄</div>
               <div class="stat-info">
-                <div class="stat-label">Forfait Souscrit</div>
+                <div class="stat-label">Montant de la Formation</div>
                 <div class="stat-value">{{ candidat.montantForfait | number }} <small>FCFA</small></div>
-                <div class="stat-sub">{{ candidat.forfaitNom }} (Catégorie {{ candidat.categoriePermisCode }})</div>
+                <div class="stat-sub">{{ candidat.categoriePermisLibelle }} (Catégorie {{ candidat.categoriePermisCode }})</div>
               </div>
             </div>
           }
@@ -144,6 +145,16 @@ import {
               <div class="info-group">
                 <span class="info-label">Catégorie de Permis</span>
                 <span class="info-value badge badge-programme">{{ candidat.categoriePermisCode }} — {{ candidat.categoriePermisLibelle }}</span>
+              </div>
+              <div class="info-group">
+                <span class="info-label">Site de Formation</span>
+                <span class="info-value">🏢 {{ candidat.siteNom || 'Non spécifié' }}</span>
+              </div>
+              <div class="info-group">
+                <span class="info-label">Statut du Candidat</span>
+                <span class="info-value badge" [ngClass]="candidat.statutInscription === 'REDOUBLANT' ? 'badge-ajourne' : 'badge-solde'">
+                  {{ candidat.statutInscription === 'REDOUBLANT' ? 'Redoublant' : 'Nouveau' }}
+                </span>
               </div>
               <div class="info-group">
                 <span class="info-label">Date de Dépôt Dossier</span>
@@ -396,7 +407,6 @@ import {
                     <select class="form-control" [(ngModel)]="newPassage.resultat" name="resultat" required>
                       <option value="PROGRAMME">PROGRAMMÉ (En attente)</option>
                       <option value="REUSSI">RÉUSSI (Admis)</option>
-                      <option value="ECHEC">ÉCHEC</option>
                       <option value="AJOURNE">AJOURNÉ</option>
                     </select>
                   </div>
@@ -671,7 +681,7 @@ export class CandidatDetailComponent implements OnInit {
       },
       error: (err) => {
         this.savingPaiement = false;
-        this.paiementError = err.error?.message || 'Erreur lors de l’encaissement.';
+        this.paiementError = extraireMessageErreur(err, 'Erreur lors de l’encaissement.');
       }
     });
   }
@@ -702,7 +712,7 @@ export class CandidatDetailComponent implements OnInit {
       },
       error: (err) => {
         this.savingExamen = false;
-        this.examenError = err.error?.message || 'Erreur lors de l’enregistrement de l’examen.';
+        this.examenError = extraireMessageErreur(err, 'Erreur lors de l’enregistrement de l’examen.');
       }
     });
   }
@@ -724,7 +734,6 @@ export class CandidatDetailComponent implements OnInit {
   getBadgeClass(res: string): string {
     switch (res) {
       case 'REUSSI': return 'badge-reussi';
-      case 'ECHEC': return 'badge-echec';
       case 'AJOURNE': return 'badge-ajourne';
       default: return 'badge-programme';
     }

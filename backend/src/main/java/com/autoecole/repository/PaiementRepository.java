@@ -23,8 +23,8 @@ public interface PaiementRepository extends JpaRepository<Paiement, Long> {
     @Query("SELECT p FROM Paiement p WHERE " +
            "(:candidatId IS NULL OR p.inscription.candidat.id = :candidatId) " +
            "AND (:statut IS NULL OR p.statut = :statut) " +
-           "AND (:debut IS NULL OR p.datePaiement >= :debut) " +
-           "AND (:fin IS NULL OR p.datePaiement <= :fin)")
+           "AND (CAST(:debut AS timestamp) IS NULL OR p.datePaiement >= :debut) " +
+           "AND (CAST(:fin AS timestamp) IS NULL OR p.datePaiement <= :fin)")
     Page<Paiement> filtrerPaiements(
             @Param("candidatId") Long candidatId,
             @Param("statut") StatutPaiement statut,

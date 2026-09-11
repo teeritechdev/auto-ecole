@@ -1,6 +1,8 @@
 package com.autoecole.entity;
 
+import com.autoecole.entity.enums.EtapeParcours;
 import com.autoecole.entity.enums.StatutDossier;
+import com.autoecole.entity.enums.StatutInscription;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
@@ -33,8 +35,8 @@ public class Inscription {
     private CategoriePermis categoriePermis;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "forfait_id", nullable = false)
-    private Forfait forfait;
+    @JoinColumn(name = "site_id")
+    private Site site;
 
     @Column(name = "montant_forfait", precision = 12, scale = 2, nullable = false)
     private BigDecimal montantForfait;
@@ -49,6 +51,15 @@ public class Inscription {
     @Column(name = "statut_dossier", length = 30, nullable = false)
     @Builder.Default
     private StatutDossier statutDossier = StatutDossier.EN_COURS;
+
+    /**
+     * Indique si le candidat est nouveau ou déjà connu de l'auto-école (redoublant),
+     * saisi par le secrétariat à l'inscription.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "statut_inscription", length = 20, nullable = false)
+    @Builder.Default
+    private StatutInscription statutInscription = StatutInscription.NOUVEAU;
 
     @Column(name = "total_verse", precision = 12, scale = 2, nullable = false)
     @Builder.Default
@@ -88,6 +99,17 @@ public class Inscription {
     private LocalDateTime dateCreation = LocalDateTime.now();
 
     /**
+     * Étape du parcours pédagogique (Inscription -> Code -> Examen-Code -> Créneau -> ...).
+     * Avance/recule au fil des versements et des résultats d'examens (cf. ExamenService,
+     * PaiementService) ; sert notamment à déterminer quels candidats un moniteur voit,
+     * selon sa/ses spécialité(s).
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "etape_parcours", length = 30, nullable = false)
+    @Builder.Default
+    private EtapeParcours etapeParcours = EtapeParcours.INSCRIPTION;
+
+    /**
      * Méthode utilitaire de recalcul du statut et du solde de ce cycle d'inscription.
      */
     public void recalculerSoldeEtStatut() {
@@ -111,6 +133,15 @@ public class Inscription {
             this.statutDossier = StatutDossier.EXPIRE_NON_SOLDE;
         } else {
             this.statutDossier = StatutDossier.EN_COURS;
+        }
+
+        // Étape du parcours : l'expiration est prioritaire sur tout le reste ; sinon,
+        // le premier versement fait passer le candidat d'Inscription à Code (les étapes
+        // suivantes sont gérées par ExamenService au fil des examens programmés/notés).
+        if (estExpire) {
+            this.etapeParcours = EtapeParcours.EXPIRE;
+        } else if (this.etapeParcours == EtapeParcours.INSCRIPTION && this.totalVerse.compareTo(BigDecimal.ZERO) > 0) {
+            this.etapeParcours = EtapeParcours.CODE;
         }
     }
 }

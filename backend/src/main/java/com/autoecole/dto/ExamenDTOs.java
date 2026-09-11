@@ -1,6 +1,7 @@
 package com.autoecole.dto;
 
 import com.autoecole.entity.enums.ResultatExamen;
+import com.autoecole.entity.enums.StatutValidation;
 import com.autoecole.entity.enums.TypeEpreuve;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -26,13 +27,14 @@ public class ExamenDTOs {
         private String candidatNomComplet;
         private TypeEpreuve typeEpreuve;
         private Integer numeroPassage;
+        private long nombreEchecs;
         private LocalDate datePassage;
         private ResultatExamen resultat;
         private String observations;
         private Long moniteurId;
         private String moniteurNomComplet;
         private LocalDateTime dateEnregistrement;
-        private boolean valideParAdmin;
+        private StatutValidation statutValidation;
     }
 
     @Data
@@ -70,6 +72,24 @@ public class ExamenDTOs {
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
+    public static class CreatePassageBulkRequest {
+        @NotNull(message = "La liste des candidats est obligatoire")
+        private java.util.List<Long> candidatIds;
+
+        @NotNull(message = "Le type d'épreuve est obligatoire (CODE, CRENEAU, CIRCULATION)")
+        private TypeEpreuve typeEpreuve;
+
+        @NotNull(message = "La date du passage est obligatoire")
+        private LocalDate datePassage;
+
+        private Long moniteurId;
+        private String observations;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
     public static class UpdatePassageRequest {
         @NotNull(message = "La date du passage est obligatoire")
         private LocalDate datePassage;
@@ -78,6 +98,39 @@ public class ExamenDTOs {
         private ResultatExamen resultat;
 
         private String observations;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class SessionExamenDTO {
+        private Long id;
+        private TypeEpreuve typeEpreuve;
+        private LocalDate datePassage;
+        private Long siteId;
+        private String siteNom;
+        private Long moniteurId;
+        private String moniteurNomComplet;
+        private java.util.Set<TypeEpreuve> moniteurSpecialites;
+        private String observations;
+        private boolean datePassee;
+        private boolean terminee;
+        private java.util.List<PassageExamenDTO> candidats;
+    }
+
+    @Data
+    @NoArgsConstructor
+    public static class AjouterCandidatsSessionRequest {
+        @NotNull(message = "La liste des candidats est obligatoire")
+        private java.util.List<Long> candidatIds;
+    }
+
+    @Data
+    @NoArgsConstructor
+    public static class UpdateSessionRequest {
+        @NotNull(message = "La date de l'examen est obligatoire")
+        private LocalDate datePassage;
     }
 
     @Data

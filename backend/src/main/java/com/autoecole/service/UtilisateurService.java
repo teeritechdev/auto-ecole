@@ -4,17 +4,23 @@ import com.autoecole.dto.UtilisateurDTOs.CreateUtilisateurRequest;
 import com.autoecole.dto.UtilisateurDTOs.UpdateUtilisateurRequest;
 import com.autoecole.dto.UtilisateurDTOs.UtilisateurDTO;
 import com.autoecole.entity.Role;
+import com.autoecole.entity.Site;
 import com.autoecole.entity.Utilisateur;
+import com.autoecole.entity.enums.RoleEnum;
+import com.autoecole.entity.enums.TypeEpreuve;
 import com.autoecole.exception.BadRequestException;
 import com.autoecole.exception.ResourceNotFoundException;
 import com.autoecole.repository.RoleRepository;
+import com.autoecole.repository.SiteRepository;
 import com.autoecole.repository.UtilisateurRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -23,6 +29,7 @@ public class UtilisateurService {
 
     private final UtilisateurRepository utilisateurRepository;
     private final RoleRepository roleRepository;
+    private final SiteRepository siteRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuditService auditService;
 
@@ -51,6 +58,8 @@ public class UtilisateurService {
         Role role = roleRepository.findByCode(request.getRole())
                 .orElseThrow(() -> new BadRequestException("Rôle inexistant: " + request.getRole()));
 
+        Site site = resoudreSitePourRole(request.getRole(), request.getSiteId());
+
         Utilisateur user = Utilisateur.builder()
                 .username(request.getUsername().trim())
                 .email(request.getEmail().trim().toLowerCase())
@@ -60,6 +69,8 @@ public class UtilisateurService {
                 .telephone(request.getTelephone())
                 .photoProfile(request.getPhotoProfile())
                 .role(role)
+                .site(site)
+                .specialites(resoudreSpecialites(request.getRole(), request.getSpecialites()))
                 .actif(true)
                 .build();
 
@@ -82,12 +93,16 @@ public class UtilisateurService {
         Role role = roleRepository.findByCode(request.getRole())
                 .orElseThrow(() -> new BadRequestException("Rôle inexistant: " + request.getRole()));
 
+        Site site = resoudreSitePourRole(request.getRole(), request.getSiteId());
+
         user.setEmail(request.getEmail().trim().toLowerCase());
         user.setNom(request.getNom().trim());
         user.setPrenom(request.getPrenom().trim());
         user.setTelephone(request.getTelephone());
         user.setPhotoProfile(request.getPhotoProfile());
         user.setRole(role);
+        user.setSite(site);
+        user.setSpecialites(resoudreSpecialites(request.getRole(), request.getSpecialites()));
 
         if (request.getActif() != null) {
             user.setActif(request.getActif());
@@ -135,6 +150,24 @@ public class UtilisateurService {
         return mapToDTO(utilisateurRepository.save(user));
     }
 
+    private Site resoudreSitePourRole(RoleEnum role, Long siteId) {
+        if (role != RoleEnum.MONITEUR) {
+            return null;
+        }
+        if (siteId == null) {
+            throw new BadRequestException("Le site de formation est obligatoire pour un compte moniteur");
+        }
+        return siteRepository.findById(siteId)
+                .orElseThrow(() -> new ResourceNotFoundException("Site de formation introuvable"));
+    }
+
+    private Set<TypeEpreuve> resoudreSpecialites(RoleEnum role, Set<TypeEpreuve> specialites) {
+        if (role != RoleEnum.MONITEUR || specialites == null) {
+            return Collections.emptySet();
+        }
+        return specialites;
+    }
+
     private void validateImage(String imageData) {
         if (imageData == null || imageData.isBlank()) return;
         if (!imageData.matches("^data:image/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$")) {
@@ -156,6 +189,9 @@ public class UtilisateurService {
                 .photoProfile(u.getPhotoProfile())
                 .role(u.getRole().getCode().name())
                 .roleLibelle(u.getRole().getLibelle())
+                .siteId(u.getSite() != null ? u.getSite().getId() : null)
+                .siteNom(u.getSite() != null ? u.getSite().getNom() : null)
+                .specialites(u.getSpecialites())
                 .actif(u.isActif())
                 .dateCreation(u.getDateCreation())
                 .build();

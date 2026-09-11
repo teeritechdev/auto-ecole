@@ -73,6 +73,8 @@ public class AuthService {
                 .prenom(userDetails.getPrenom())
                 .role(role)
                 .photoProfile(user.getPhotoProfile())
+                .siteId(user.getSite() != null ? user.getSite().getId() : null)
+                .specialites(user.getSpecialites())
                 .build();
     }
 

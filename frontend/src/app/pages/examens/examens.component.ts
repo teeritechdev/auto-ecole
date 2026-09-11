@@ -4,8 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
-import { Candidat, PassageExamen } from '../../core/models/models';
+import { Candidat, PassageExamen, SessionExamen } from '../../core/models/models';
 import { forkJoin } from 'rxjs';
+import { extraireMessageErreur } from '../../core/utils/error-utils';
 
 @Component({
     selector: 'app-examens',
@@ -26,114 +27,241 @@ import { forkJoin } from 'rxjs';
           }
         </div>
       </div>
-    
-      <!-- FILTERS -->
+
+      <!-- FILTRE -->
       <div class="card filter-card">
         <div class="filter-grid">
           <div>
-            <select class="form-control" [(ngModel)]="epreuveFiltre" (change)="loadPassages()">
-              <option value="">Toutes les épreuves</option>
-              <option value="CODE">1. Code de la route</option>
-              <option value="CRENEAU">2. Manœuvre / Créneau</option>
-              <option value="CIRCULATION">3. Conduite en circulation</option>
+            <select class="form-control" [(ngModel)]="sessionFiltreEpreuve">
+              @if (epreuvesAutorisees.length > 1) {
+                <option value="">Toutes les épreuves</option>
+              }
+              @for (t of epreuvesAutorisees; track t) {
+                <option [value]="t">{{ epreuveLabel(t) }}</option>
+              }
+              @if (epreuvesAutorisees.length === 0) {
+                <option value="" disabled>Aucune spécialité assignée</option>
+              }
             </select>
           </div>
-    
           <div>
-            <select class="form-control" [(ngModel)]="resultatFiltre" (change)="loadPassages()">
-              <option value="">Tous les résultats</option>
-              <option value="PROGRAMME">PROGRAMMÉ</option>
-              <option value="REUSSI">RÉUSSI (Admis)</option>
-              <option value="ECHEC">ÉCHEC</option>
-              <option value="AJOURNE">AJOURNÉ</option>
-            </select>
-          </div>
-    
-          <div>
-            <button class="btn btn-secondary" (click)="resetFiltres()">Réinitialiser</button>
+            <button class="btn btn-secondary" (click)="sessionFiltreEpreuve = ''">Réinitialiser</button>
           </div>
         </div>
       </div>
-    
-      <!-- EXAM TABLE -->
+
+      <!-- SESSIONS D'EXAMEN -->
       <div class="card">
         <div class="table-responsive">
           <table class="custom-table">
             <thead>
               <tr>
-                <th>Date Examen</th>
-                <th>Candidat</th>
+                <th>Date</th>
                 <th>Épreuve</th>
-                <th>Tentative</th>
-                <th>Résultat</th>
                 <th>Moniteur</th>
-                <th>Observations</th>
-                @if (canAdd) {
-                  <th class="text-right">Action</th>
-                }
+                <th>Candidats</th>
+                <th>Statut</th>
+                <th class="text-right">Action</th>
               </tr>
             </thead>
             <tbody>
-              @if (loading) {
+              @if (loadingSessions) {
                 <tr>
-                  <td colspan="8" class="text-center py-4">Chargement des sessions d'examens...</td>
+                  <td colspan="6" class="text-center py-4">Chargement des sessions d'examens...</td>
                 </tr>
               }
-              @if (!loading && passages.length === 0) {
+              @if (!loadingSessions && sessionsAffichees.length === 0) {
                 <tr>
-                  <td colspan="8" class="text-center py-4">Aucune session d'examen trouvée.</td>
+                  <td colspan="6" class="text-center py-4">Aucune session d'examen trouvée.</td>
                 </tr>
               }
-              @for (p of passages; track p) {
+              @for (s of sessionsAffichees; track s.id) {
                 <tr>
-                  <td><strong>{{ p.datePassage | date:'dd/MM/yyyy' }}</strong></td>
-                  <td>
-                    <a [routerLink]="['/candidats', p.candidatId]" class="candidat-link">
-                      <strong>{{ p.candidatNomComplet }}</strong>
-                    </a>
-                    <div class="sub-text">{{ p.candidatNumeroDossier }}</div>
-                  </td>
+                  <td><strong>{{ s.datePassage | date:'dd/MM/yyyy' }}</strong></td>
                   <td>
                   <span class="badge" [ngClass]="{
-                    'badge-programme': p.typeEpreuve === 'CODE',
-                    'badge-solde': p.typeEpreuve === 'CRENEAU',
-                    'badge-en-cours': p.typeEpreuve === 'CIRCULATION'
-                  }">{{ p.typeEpreuve }}</span>
+                    'badge-programme': s.typeEpreuve === 'CODE',
+                    'badge-solde': s.typeEpreuve === 'CRENEAU',
+                    'badge-en-cours': s.typeEpreuve === 'CIRCULATION'
+                  }">{{ s.typeEpreuve }}</span>
                   </td>
+                  <td>{{ s.moniteurNomComplet || 'Non affecté' }}</td>
+                  <td>{{ s.candidats.length }}</td>
                   <td>
-                    <strong>Passage {{ p.numeroPassage }}/5</strong>
-                  </td>
-                  <td>
-                    <span class="badge" [ngClass]="getBadgeClass(p.resultat)">
-                      {{ p.resultat }}
+                    <span class="badge" [ngClass]="s.terminee ? 'badge-reussi' : 'badge-programme'">
+                      {{ s.terminee ? 'Terminé' : 'En cours' }}
                     </span>
                   </td>
-                  <td>{{ p.moniteurNomComplet || 'Non affecté' }}</td>
-                  <td>
-                    <span class="obs-text">{{ p.observations || '—' }}</span>
+                  <td class="text-right">
+                    <button class="btn btn-outline btn-sm" (click)="openSessionDetail(s.id)">Voir</button>
                   </td>
-                  @if (canAdd) {
-                    <td class="text-right">
-                      <button class="btn btn-outline btn-sm" (click)="openUpdateModal(p)">
-                        ✏️ Noter
-                      </button>
-                    </td>
-                  }
                 </tr>
               }
             </tbody>
           </table>
         </div>
-    
-        @if (totalPages > 1) {
-          <div class="pagination-bar">
-            <button class="btn btn-outline btn-sm" [disabled]="page === 0" (click)="changePage(page - 1)">◀ Précédent</button>
-            <span>Page {{ page + 1 }} sur {{ totalPages }} ({{ totalElements }} passages)</span>
-            <button class="btn btn-outline btn-sm" [disabled]="page >= totalPages - 1" (click)="changePage(page + 1)">Suivant ▶</button>
-          </div>
-        }
       </div>
-    
+
+      <!-- CANDIDATS RETIRÉS (MONITEUR) -->
+      @if (isMoniteur) {
+        <div class="card retires-card">
+          <div class="avalider-header">
+            <h3>🔁 Candidats retirés — à reprogrammer</h3>
+          </div>
+          <div class="table-responsive">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Candidat</th>
+                  <th>Épreuve</th>
+                  <th>Ancienne date</th>
+                  <th>Retiré le</th>
+                  <th class="text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                @if (loadingRetires) {
+                  <tr><td colspan="5" class="text-center py-4">Chargement...</td></tr>
+                }
+                @if (!loadingRetires && candidatsRetires.length === 0) {
+                  <tr><td colspan="5" class="text-center py-4">Aucun candidat retiré en attente de reprogrammation.</td></tr>
+                }
+                @for (p of candidatsRetires; track p.id) {
+                  <tr>
+                    <td>
+                      <a [routerLink]="['/candidats', p.candidatId]" class="candidat-link"><strong>{{ p.candidatNomComplet }}</strong></a>
+                      <div class="sub-text">{{ p.candidatNumeroDossier }}</div>
+                    </td>
+                    <td>{{ epreuveLabel(p.typeEpreuve) }}</td>
+                    <td>{{ p.datePassage | date:'dd/MM/yyyy' }}</td>
+                    <td>{{ p.dateEnregistrement | date:'dd/MM/yyyy HH:mm' }}</td>
+                    <td class="text-right">
+                      <button class="btn btn-secondary btn-sm" [disabled]="processingRetireId === p.id" (click)="reprogrammer(p.id)">
+                        {{ processingRetireId === p.id ? '...' : '↩️ Reprogrammer' }}
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+
+      <!-- MODAL DÉTAIL SESSION -->
+      @if (showSessionModal && sessionDetail) {
+        <div class="modal-backdrop">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3>Session du {{ sessionDetail.datePassage | date:'dd/MM/yyyy' }} — {{ epreuveLabel(sessionDetail.typeEpreuve) }}</h3>
+              <button class="btn btn-outline btn-sm" (click)="closeSessionModal()">✕</button>
+            </div>
+            <div class="modal-body">
+              @if (sessionError) {
+                <div class="alert alert-danger">⚠️ {{ sessionError }}</div>
+              }
+              <div class="alert alert-info session-info">
+                <div class="session-info-text">
+                  <div>Site : <strong>{{ sessionDetail.siteNom || 'Non défini' }}</strong></div>
+                  <div>
+                    Moniteur : <strong>{{ sessionDetail.moniteurNomComplet || 'Non affecté' }}</strong>
+                    @if (sessionDetail.moniteurSpecialites?.length) {
+                      <span class="sub-text"> ({{ formatSpecialites(sessionDetail.moniteurSpecialites) }})</span>
+                    }
+                  </div>
+                  <div>{{ sessionDetail.datePassee ? 'Date passée' : 'À venir' }}</div>
+                </div>
+                @if (peutGererSession(sessionDetail)) {
+                  @if (!editingSessionDate) {
+                    <button class="btn btn-outline btn-sm" (click)="startEditSessionDate()">✏️ Modifier la date</button>
+                  } @else {
+                    <div class="edit-date-row">
+                      <input type="date" class="form-control" [(ngModel)]="editSessionDateValue" name="editSessionDate" />
+                      <button class="btn btn-secondary btn-sm" [disabled]="savingSessionDate" (click)="editingSessionDate = false">Annuler</button>
+                      <button class="btn btn-primary btn-sm" [disabled]="savingSessionDate" (click)="saveSessionDate()">
+                        {{ savingSessionDate ? '...' : 'Enregistrer' }}
+                      </button>
+                    </div>
+                  }
+                }
+              </div>
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>Candidat</th>
+                    <th>Résultat</th>
+                    <th>Tentatives</th>
+                    <th>Statut</th>
+                    <th class="text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @if (sessionDetail.candidats.length === 0) {
+                    <tr><td colspan="5" class="text-center py-4">Aucun candidat dans cette session.</td></tr>
+                  }
+                  @for (p of sessionDetail.candidats; track p.id) {
+                    <tr>
+                      <td>
+                        <a [routerLink]="['/candidats', p.candidatId]" class="candidat-link"><strong>{{ p.candidatNomComplet }}</strong></a>
+                        <div class="sub-text">{{ p.candidatNumeroDossier }}</div>
+                      </td>
+                      <td><span class="badge" [ngClass]="getBadgeClass(p.resultat)">{{ p.resultat }}</span></td>
+                      <td>{{ p.nombreEchecs }}/5</td>
+                      <td>
+                        <span class="badge" [ngClass]="getStatutValidationBadgeClass(p.statutValidation)">{{ statutValidationLabel(p.statutValidation) }}</span>
+                      </td>
+                      <td class="text-right">
+                        @if (isAdmin && p.statutValidation === 'EN_ATTENTE') {
+                          <button class="btn btn-success btn-sm" [disabled]="processingValiderId === p.id" (click)="validerCandidat(p.id)">✅ Valider</button>
+                        }
+                        @if (peutNoter(sessionDetail)) {
+                          <button class="btn btn-outline btn-sm" style="margin-left: 0.25rem" (click)="openUpdateModal(p)">✏️ Noter</button>
+                        }
+                        @if (peutRetirer(sessionDetail)) {
+                          <button class="btn btn-danger btn-sm" style="margin-left: 0.25rem" (click)="retirerDeSession(p.id)">🗑️</button>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+
+              @if (peutRetirer(sessionDetail)) {
+                <div style="margin-top: 1.25rem;">
+                  @if (!showAjoutCandidats) {
+                    <button class="btn btn-secondary btn-sm" (click)="openAjoutCandidats()">➕ Ajouter des candidats</button>
+                  } @else {
+                    <div class="form-group">
+                      <label class="form-label">Candidats éligibles pour cette épreuve</label>
+                      <div class="candidats-list">
+                        @for (c of candidatsAjoutables; track c.id) {
+                          <label class="candidat-option">
+                            <input type="checkbox" [checked]="isAjoutSelected(c.id)" (change)="toggleAjoutCandidat(c.id)" />
+                            <span class="candidat-option-text">
+                              <strong>{{ c.numeroDossier }}</strong>
+                              <span>{{ c.nom }} {{ c.prenom }} ({{ c.categoriePermisCode }})</span>
+                            </span>
+                          </label>
+                        }
+                        @if (candidatsAjoutables.length === 0) {
+                          <div class="form-help" style="padding: 0.7rem;">Aucun candidat supplémentaire éligible.</div>
+                        }
+                      </div>
+                      <div class="modal-footer" style="padding: 0.75rem 0 0; border-top: none;">
+                        <button type="button" class="btn btn-secondary btn-sm" (click)="showAjoutCandidats = false">Annuler</button>
+                        <button type="button" class="btn btn-primary btn-sm" [disabled]="ajoutSelectionIds.length === 0 || savingAjout" (click)="confirmerAjout()">
+                          {{ savingAjout ? 'Ajout...' : 'Ajouter (' + ajoutSelectionIds.length + ')' }}
+                        </button>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      }
+
       <!-- MODAL PROGRAMMER EXAMEN -->
       @if (showProgrammerModal) {
         <div class="modal-backdrop">
@@ -152,14 +280,16 @@ import { forkJoin } from 'rxjs';
                   <div class="form-group">
                     <label class="form-label">Choisir l'épreuve à programmer <span class="required">*</span></label>
                     <select class="form-control" [(ngModel)]="newPassage.typeEpreuve" name="typeEpreuve" (change)="onTypeEpreuveChange()" required>
-                      <option value="CODE">1. Code de la route</option>
-                      <option value="CRENEAU">2. Manœuvre / Créneau</option>
-                      <option value="CIRCULATION">3. Conduite en circulation</option>
+                      @for (t of epreuvesAutorisees; track t) {
+                        <option [value]="t">{{ epreuveLabel(t) }}</option>
+                      }
                     </select>
                   </div>
                   <p class="form-help">Le type d'épreuve sera appliqué à tous les candidats sélectionnés à l'étape suivante.</p>
                 } @else {
-                  <div class="step-indicator">Étape 2 sur 2 · {{ newPassage.typeEpreuve }}</div>
+                  <div class="step-indicator">
+                    {{ epreuvesAutorisees.length > 1 ? 'Étape 2 sur 2 · ' : '' }}{{ epreuveLabel(newPassage.typeEpreuve) }}
+                  </div>
                   <div class="form-group">
                     <label class="form-label">Candidats <span class="required">*</span></label>
                     <div class="candidats-list">
@@ -198,7 +328,6 @@ import { forkJoin } from 'rxjs';
                     <select class="form-control" [(ngModel)]="newPassage.resultat" name="resultat">
                       <option value="PROGRAMME">PROGRAMMÉ (En attente)</option>
                       <option value="REUSSI">RÉUSSI (Admis)</option>
-                      <option value="ECHEC">ÉCHEC</option>
                       <option value="AJOURNE">AJOURNÉ</option>
                     </select>
                   </div>
@@ -210,7 +339,7 @@ import { forkJoin } from 'rxjs';
               </div>
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" (click)="showProgrammerModal = false">Annuler</button>
-                @if (programmerStep === 2) {
+                @if (programmerStep === 2 && epreuvesAutorisees.length > 1) {
                   <button type="button" class="btn btn-secondary" (click)="programmerStep = 1" [disabled]="saving">Retour</button>
                 }
                 @if (programmerStep === 1) {
@@ -242,7 +371,7 @@ import { forkJoin } from 'rxjs';
                 }
                 <div class="alert alert-info">
                   Candidat : <strong>{{ targetPassage?.candidatNomComplet }}</strong><br>
-                  Épreuve : <strong>{{ targetPassage?.typeEpreuve }}</strong> (Passage {{ targetPassage?.numeroPassage }}/5)
+                  Épreuve : <strong>{{ targetPassage?.typeEpreuve }}</strong> ({{ targetPassage?.nombreEchecs }}/5 tentative(s))
                 </div>
                 <div class="form-group">
                   <label class="form-label">Date de passage réelle <span class="required">*</span></label>
@@ -253,7 +382,6 @@ import { forkJoin } from 'rxjs';
                   <select class="form-control" [(ngModel)]="updateData.resultat" name="resultat" required>
                     <option value="PROGRAMME">PROGRAMMÉ</option>
                     <option value="REUSSI">RÉUSSI (Admis)</option>
-                    <option value="ECHEC">ÉCHEC</option>
                     <option value="AJOURNE">AJOURNÉ</option>
                   </select>
                 </div>
@@ -288,6 +416,53 @@ import { forkJoin } from 'rxjs';
     .filter-card {
       margin-bottom: 1.5rem;
       padding: 1.25rem;
+    }
+
+    .avalider-card, .retires-card {
+      margin-bottom: 1.5rem;
+      padding: 1.25rem;
+    }
+
+    .session-info {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .session-info-text {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .edit-date-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .edit-date-row .form-control {
+      width: auto;
+    }
+
+    .avalider-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .avalider-header h3 {
+      margin: 0;
+    }
+
+    .avalider-actions {
+      display: flex;
+      gap: 0.5rem;
     }
 
     .filter-grid {
@@ -385,18 +560,22 @@ import { forkJoin } from 'rxjs';
   `]
 })
 export class ExamensComponent implements OnInit {
-  passages: PassageExamen[] = [];
   allCandidats: Candidat[] = [];
   eligibleCandidats: Candidat[] = [];
   allExamens: PassageExamen[] = [];
-  loading = false;
   saving = false;
 
-  epreuveFiltre = '';
-  resultatFiltre = '';
-  page = 0;
-  totalPages = 0;
-  totalElements = 0;
+  sessions: SessionExamen[] = [];
+  loadingSessions = false;
+  sessionFiltreEpreuve = '';
+
+  showSessionModal = false;
+  sessionDetail: SessionExamen | null = null;
+  sessionError = '';
+  showAjoutCandidats = false;
+  candidatsAjoutables: Candidat[] = [];
+  ajoutSelectionIds: number[] = [];
+  savingAjout = false;
 
   showProgrammerModal = false;
   programmerStep = 1;
@@ -418,31 +597,257 @@ export class ExamensComponent implements OnInit {
 
   formError = '';
 
+  candidatsRetires: PassageExamen[] = [];
+  loadingRetires = false;
+  processingRetireId: number | null = null;
+
+  editingSessionDate = false;
+  editSessionDateValue = '';
+  savingSessionDate = false;
+  processingValiderId: number | null = null;
+
   constructor(private apiService: ApiService, private authService: AuthService) {}
 
   ngOnInit(): void {
-    this.loadPassages();
+    this.loadSessions();
     this.loadCandidats();
+    if (this.isMoniteur) {
+      this.loadRetires();
+    }
   }
 
-  get canAdd(): boolean {
-    return this.authService.hasRole(['ADMIN', 'MONITEUR']);
+  get sessionsAffichees(): SessionExamen[] {
+    if (!this.sessionFiltreEpreuve) return this.sessions;
+    return this.sessions.filter(s => s.typeEpreuve === this.sessionFiltreEpreuve);
   }
 
-  loadPassages(): void {
-    this.loading = true;
-    this.apiService.getPassages(undefined, this.epreuveFiltre, this.resultatFiltre, this.page).subscribe({
-      next: (res) => {
-        this.passages = res.content || [];
-        this.totalPages = res.totalPages || 0;
-        this.totalElements = res.totalElements || 0;
-        this.loading = false;
+  loadSessions(): void {
+    this.loadingSessions = true;
+    this.apiService.getSessions().subscribe({
+      next: (data) => {
+        this.sessions = data;
+        this.loadingSessions = false;
       },
-      error: (err) => {
-        console.error(err);
-        this.loading = false;
+      error: () => {
+        this.loadingSessions = false;
       }
     });
+  }
+
+  openSessionDetail(id: number): void {
+    this.sessionError = '';
+    this.showAjoutCandidats = false;
+    this.apiService.getSessionDetail(id).subscribe({
+      next: (data) => {
+        this.sessionDetail = data;
+        this.showSessionModal = true;
+      },
+      error: (err) => alert(extraireMessageErreur(err, 'Erreur lors du chargement de la session.'))
+    });
+  }
+
+  closeSessionModal(): void {
+    this.showSessionModal = false;
+    this.sessionDetail = null;
+    this.showAjoutCandidats = false;
+  }
+
+  /** Le retrait n'est possible qu'avant la date pour un moniteur ; sans restriction pour l'admin. */
+  peutRetirer(s: SessionExamen): boolean {
+    return this.isAdmin || !s.datePassee;
+  }
+
+  /** Noter un résultat n'a de sens qu'une fois la date de l'examen arrivée, pour tous les rôles. */
+  peutNoter(s: SessionExamen): boolean {
+    return s.datePassee;
+  }
+
+  retirerDeSession(passageId: number): void {
+    if (!this.sessionDetail) return;
+    if (!confirm('Retirer ce candidat de la session ?')) return;
+    const sessionId = this.sessionDetail.id;
+    this.apiService.retirerCandidatDeSession(sessionId, passageId).subscribe({
+      next: () => {
+        this.openSessionDetail(sessionId);
+        this.loadSessions();
+      },
+      error: (err) => {
+        this.sessionError = extraireMessageErreur(err, 'Erreur lors du retrait.');
+      }
+    });
+  }
+
+  openAjoutCandidats(): void {
+    if (!this.sessionDetail) return;
+    this.ajoutSelectionIds = [];
+    const idsExistants = new Set(this.sessionDetail.candidats.map(p => p.candidatId));
+    this.candidatsAjoutables = this.allCandidats.filter(c =>
+      !idsExistants.has(c.id) && this.estEligiblePour(c, this.sessionDetail!.typeEpreuve)
+    );
+    this.showAjoutCandidats = true;
+  }
+
+  isAjoutSelected(candidatId: number): boolean {
+    return this.ajoutSelectionIds.includes(candidatId);
+  }
+
+  toggleAjoutCandidat(candidatId: number): void {
+    this.ajoutSelectionIds = this.isAjoutSelected(candidatId)
+      ? this.ajoutSelectionIds.filter(id => id !== candidatId)
+      : [...this.ajoutSelectionIds, candidatId];
+  }
+
+  confirmerAjout(): void {
+    if (!this.sessionDetail || this.ajoutSelectionIds.length === 0) return;
+    const sessionId = this.sessionDetail.id;
+    this.savingAjout = true;
+    this.sessionError = '';
+    this.apiService.ajouterCandidatsASession(sessionId, this.ajoutSelectionIds).subscribe({
+      next: () => {
+        this.savingAjout = false;
+        this.showAjoutCandidats = false;
+        this.openSessionDetail(sessionId);
+        this.loadSessions();
+      },
+      error: (err) => {
+        this.savingAjout = false;
+        this.sessionError = extraireMessageErreur(err, "Erreur lors de l'ajout.");
+      }
+    });
+  }
+
+  validerCandidat(passageId: number): void {
+    if (!this.sessionDetail) return;
+    const sessionId = this.sessionDetail.id;
+    this.processingValiderId = passageId;
+    this.sessionError = '';
+    this.apiService.validerPassages([passageId]).subscribe({
+      next: () => {
+        this.processingValiderId = null;
+        this.openSessionDetail(sessionId);
+        this.loadSessions();
+      },
+      error: (err) => {
+        this.processingValiderId = null;
+        this.sessionError = extraireMessageErreur(err, 'Erreur lors de la validation.');
+      }
+    });
+  }
+
+  /** Modifier la date de la session suit la même règle de gestion que le retrait
+   *  (admin sans restriction, moniteur limité à une date non passée). */
+  peutGererSession(s: SessionExamen): boolean {
+    return this.peutRetirer(s);
+  }
+
+  startEditSessionDate(): void {
+    if (!this.sessionDetail) return;
+    this.editSessionDateValue = this.sessionDetail.datePassage;
+    this.editingSessionDate = true;
+  }
+
+  saveSessionDate(): void {
+    if (!this.sessionDetail || !this.editSessionDateValue) return;
+    const sessionId = this.sessionDetail.id;
+    this.savingSessionDate = true;
+    this.sessionError = '';
+    this.apiService.modifierDateSession(sessionId, this.editSessionDateValue).subscribe({
+      next: () => {
+        this.savingSessionDate = false;
+        this.editingSessionDate = false;
+        this.openSessionDetail(sessionId);
+        this.loadSessions();
+      },
+      error: (err) => {
+        this.savingSessionDate = false;
+        this.sessionError = extraireMessageErreur(err, 'Erreur lors de la modification de la date.');
+      }
+    });
+  }
+
+  loadRetires(): void {
+    this.loadingRetires = true;
+    this.apiService.listerRetires().subscribe({
+      next: (data) => {
+        this.candidatsRetires = data;
+        this.loadingRetires = false;
+      },
+      error: () => {
+        this.loadingRetires = false;
+      }
+    });
+  }
+
+  reprogrammer(passageId: number): void {
+    this.processingRetireId = passageId;
+    this.apiService.deletePassage(passageId).subscribe({
+      next: () => {
+        this.processingRetireId = null;
+        this.loadRetires();
+        this.loadCandidats();
+      },
+      error: () => {
+        this.processingRetireId = null;
+      }
+    });
+  }
+
+  formatSpecialites(specialites?: string[]): string {
+    return (specialites || []).map(s => this.epreuveLabel(s)).join(', ');
+  }
+
+  private readonly STATUT_VALIDATION_LABELS: Record<string, string> = {
+    EN_ATTENTE: 'En attente',
+    VALIDE: 'Validé',
+    RETIRE: 'Retiré'
+  };
+
+  statutValidationLabel(s: string): string {
+    return this.STATUT_VALIDATION_LABELS[s] || s;
+  }
+
+  getStatutValidationBadgeClass(s: string): string {
+    switch (s) {
+      case 'VALIDE': return 'badge-reussi';
+      case 'RETIRE': return 'badge-echec';
+      default: return 'badge-programme';
+    }
+  }
+
+  private readonly EPREUVE_LABELS: Record<string, string> = {
+    CODE: '1. Code de la route',
+    CRENEAU: '2. Manœuvre / Créneau',
+    CIRCULATION: '3. Conduite en circulation'
+  };
+
+  epreuveLabel(t: string): string {
+    return this.EPREUVE_LABELS[t] || t;
+  }
+
+  /** Types d'épreuves que l'utilisateur courant peut consulter/programmer :
+   *  non restreint pour ADMIN/SECRETAIRE, limité à sa spécialité pour un MONITEUR
+   *  (aucune spécialité assignée => aucune épreuve accessible). */
+  get epreuvesAutorisees(): string[] {
+    const user = this.authService.currentUserValue;
+    if (user?.role === 'MONITEUR') {
+      return user.specialites || [];
+    }
+    return ['CODE', 'CRENEAU', 'CIRCULATION'];
+  }
+
+  /** Seul le moniteur programme des examens : l'administrateur se contente de
+   *  valider ou retirer ce que les moniteurs ont proposé (cf. section dédiée). */
+  get canAdd(): boolean {
+    const user = this.authService.currentUserValue;
+    return user?.role === 'MONITEUR' && this.epreuvesAutorisees.length > 0;
+  }
+
+  get isAdmin(): boolean {
+    return this.authService.hasRole(['ADMIN']);
+  }
+
+  get isMoniteur(): boolean {
+    return this.authService.hasRole(['MONITEUR']);
   }
 
   loadCandidats(): void {
@@ -463,28 +868,19 @@ export class ExamensComponent implements OnInit {
     });
   }
 
-  changePage(p: number): void {
-    this.page = p;
-    this.loadPassages();
-  }
-
-  resetFiltres(): void {
-    this.epreuveFiltre = '';
-    this.resultatFiltre = '';
-    this.page = 0;
-    this.loadPassages();
-  }
-
   openProgrammerModal(): void {
     this.formError = '';
-    this.programmerStep = 1;
     this.selectedCandidatIds = [];
     this.newPassage = {
-      typeEpreuve: 'CODE',
+      typeEpreuve: this.epreuvesAutorisees[0] || 'CODE',
       datePassage: new Date().toISOString().substring(0, 10),
       resultat: 'PROGRAMME',
       observations: ''
     };
+    // Une seule spécialité : inutile de demander de la choisir, on va directement
+    // à la sélection des candidats.
+    this.programmerStep = this.epreuvesAutorisees.length === 1 ? 2 : 1;
+    this.updateEligibleCandidats();
     this.showProgrammerModal = true;
   }
 
@@ -493,31 +889,22 @@ export class ExamensComponent implements OnInit {
     this.updateEligibleCandidats();
   }
 
+  /** L'étape de parcours (champ stocké, mis à jour par le backend à chaque transition)
+   *  fait foi à elle seule : un candidat n'est éligible pour une épreuve que s'il s'y
+   *  trouve exactement (ni pas encore atteinte, ni déjà programmé/réussi/expiré). */
+  private estEligiblePour(candidat: Candidat, typeEpreuve: string): boolean {
+    if (candidat.statutDossier === 'EXPIRE_NON_SOLDE' || candidat.etapeParcours !== typeEpreuve) {
+      return false;
+    }
+
+    const ajournements = this.allExamens.filter(examen =>
+      examen.candidatId === candidat.id && examen.typeEpreuve === typeEpreuve && examen.resultat === 'AJOURNE'
+    ).length;
+    return ajournements < 5;
+  }
+
   private updateEligibleCandidats(): void {
-    this.eligibleCandidats = this.allCandidats.filter(candidat => {
-      if (candidat.statutDossier === 'EXPIRE' || candidat.statutDossier === 'EXPIRE_NON_SOLDE') {
-        return false;
-      }
-
-      const examensCandidat = this.allExamens.filter(examen => examen.candidatId === candidat.id);
-      const code = examensCandidat.filter(examen => examen.typeEpreuve === 'CODE');
-      const creneau = examensCandidat.filter(examen => examen.typeEpreuve === 'CRENEAU');
-      const circulation = examensCandidat.filter(examen => examen.typeEpreuve === 'CIRCULATION');
-
-      if (this.newPassage.typeEpreuve === 'CODE') {
-        return !code.some(examen => examen.resultat === 'REUSSI' || examen.resultat === 'PROGRAMME') && code.length < 5;
-      }
-
-      if (this.newPassage.typeEpreuve === 'CRENEAU') {
-        return code.some(examen => examen.resultat === 'REUSSI')
-          && !creneau.some(examen => examen.resultat === 'REUSSI' || examen.resultat === 'PROGRAMME')
-          && creneau.length < 5;
-      }
-
-      return creneau.some(examen => examen.resultat === 'REUSSI')
-        && !circulation.some(examen => examen.resultat === 'REUSSI' || examen.resultat === 'PROGRAMME')
-        && circulation.length < 5;
-    });
+    this.eligibleCandidats = this.allCandidats.filter(c => this.estEligiblePour(c, this.newPassage.typeEpreuve));
   }
 
   isCandidatSelected(candidatId: number): boolean {
@@ -538,19 +925,22 @@ export class ExamensComponent implements OnInit {
     this.saving = true;
     this.formError = '';
 
-    const requests = this.selectedCandidatIds.map(candidatId =>
-      this.apiService.programmerPassage({ ...this.newPassage, candidatId })
-    );
+    const payload = {
+      candidatIds: this.selectedCandidatIds,
+      typeEpreuve: this.newPassage.typeEpreuve,
+      datePassage: this.newPassage.datePassage,
+      observations: this.newPassage.observations
+    };
 
-    forkJoin(requests).subscribe({
+    this.apiService.creerSession(payload).subscribe({
       next: () => {
         this.saving = false;
         this.showProgrammerModal = false;
-        this.loadPassages();
+        this.loadSessions();
       },
       error: (err) => {
         this.saving = false;
-        this.formError = err.error?.message || 'Erreur lors de la programmation.';
+        this.formError = extraireMessageErreur(err, 'Erreur lors de la programmation.');
       }
     });
   }
@@ -576,11 +966,14 @@ export class ExamensComponent implements OnInit {
       next: () => {
         this.saving = false;
         this.showUpdateModal = false;
-        this.loadPassages();
+        this.loadSessions();
+        if (this.sessionDetail) {
+          this.openSessionDetail(this.sessionDetail.id);
+        }
       },
       error: (err) => {
         this.saving = false;
-        this.formError = err.error?.message || 'Erreur lors de la mise à jour.';
+        this.formError = extraireMessageErreur(err, 'Erreur lors de la mise à jour.');
       }
     });
   }
@@ -588,7 +981,6 @@ export class ExamensComponent implements OnInit {
   getBadgeClass(res: string): string {
     switch (res) {
       case 'REUSSI': return 'badge-reussi';
-      case 'ECHEC': return 'badge-echec';
       case 'AJOURNE': return 'badge-ajourne';
       default: return 'badge-programme';
     }

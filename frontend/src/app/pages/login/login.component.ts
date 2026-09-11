@@ -3,6 +3,7 @@ import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { extraireMessageErreur } from '../../core/utils/error-utils';
 
 @Component({
     selector: 'app-login',
@@ -914,7 +915,7 @@ export class LoginComponent {
         } else if (err.status === 403) {
           this.errorMessage = 'Votre compte est désactivé ou vous n\'avez pas les autorisations nécessaires.';
         } else {
-          this.errorMessage = err.error?.message || 'Une erreur est survenue lors de la tentative de connexion.';
+          this.errorMessage = extraireMessageErreur(err, 'Une erreur est survenue lors de la tentative de connexion.');
         }
       }
     });

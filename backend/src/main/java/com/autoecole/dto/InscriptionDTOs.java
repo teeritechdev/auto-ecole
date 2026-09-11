@@ -1,6 +1,7 @@
 package com.autoecole.dto;
 
 import com.autoecole.entity.enums.StatutDossier;
+import com.autoecole.entity.enums.StatutInscription;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -23,12 +24,13 @@ public class InscriptionDTOs {
         private Long categoriePermisId;
         private String categoriePermisCode;
         private String categoriePermisLibelle;
-        private Long forfaitId;
-        private String forfaitNom;
+        private Long siteId;
+        private String siteNom;
         private BigDecimal montantForfait;
         private LocalDate dateInscription;
         private LocalDate dateEcheance;
         private StatutDossier statutDossier;
+        private StatutInscription statutInscription;
         private BigDecimal totalVerse;
         private BigDecimal soldeRestant;
         private int numeroCycle;

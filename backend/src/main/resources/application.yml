@@ -45,3 +45,11 @@ app:
     enabled: ${APP_SEED_ENABLED:true} # désactiver en production (APP_SEED_ENABLED=false)
   swagger:
     public: ${APP_SWAGGER_PUBLIC:true} # désactiver en production (APP_SWAGGER_PUBLIC=false)
+  etablissement:
+    nom: ${APP_ETABLISSEMENT_NOM:NERWAYA AUTO-ÉCOLE} # nom affiché sur les documents officiels (reçus, PDF)
+  security:
+    login:
+      max-attempts: ${APP_LOGIN_MAX_ATTEMPTS:5} # tentatives échouées avant verrouillage temporaire
+      lockout-minutes: ${APP_LOGIN_LOCKOUT_MINUTES:15} # durée du verrouillage
+  inscription:
+    duree-validite-mois: ${APP_INSCRIPTION_DUREE_VALIDITE_MOIS:8} # RG07 : durée de validité d'un cycle d'inscription

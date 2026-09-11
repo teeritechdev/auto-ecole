@@ -43,7 +43,7 @@ public interface PassageExamenRepository extends JpaRepository<PassageExamen, Lo
            "AND (:typeEpreuve IS NULL OR pe.typeEpreuve = :typeEpreuve) " +
            "AND (:resultat IS NULL OR pe.resultat = :resultat) " +
            "AND (:dateRef IS NULL OR pe.datePassage = :dateRef) " +
-           "AND (:siteId IS NULL OR pe.inscription.site.id = :siteId) " +
+           "AND (:siteIds IS NULL OR pe.inscription.site.id IN :siteIds) " +
            "AND (:typesAutorises IS NULL OR pe.typeEpreuve IN :typesAutorises) " +
            "AND (:masquerReussi = false OR pe.resultat <> com.autoecole.entity.enums.ResultatExamen.REUSSI)")
     Page<PassageExamen> filtrerPassages(
@@ -51,7 +51,7 @@ public interface PassageExamenRepository extends JpaRepository<PassageExamen, Lo
             @Param("typeEpreuve") TypeEpreuve typeEpreuve,
             @Param("resultat") ResultatExamen resultat,
             @Param("dateRef") LocalDate dateRef,
-            @Param("siteId") Long siteId,
+            @Param("siteIds") Collection<Long> siteIds,
             @Param("typesAutorises") Collection<TypeEpreuve> typesAutorises,
             @Param("masquerReussi") boolean masquerReussi,
             Pageable pageable
@@ -60,6 +60,6 @@ public interface PassageExamenRepository extends JpaRepository<PassageExamen, Lo
     List<PassageExamen> findTop10ByDatePassageGreaterThanEqualOrderByDatePassageAsc(LocalDate today);
 
     @Query("SELECT COUNT(pe) FROM PassageExamen pe WHERE pe.resultat = :resultat " +
-           "AND (:siteId IS NULL OR pe.inscription.site.id = :siteId)")
-    long countByResultatAndSite(@Param("resultat") ResultatExamen resultat, @Param("siteId") Long siteId);
+           "AND (:siteIds IS NULL OR pe.inscription.site.id IN :siteIds)")
+    long countByResultatAndSite(@Param("resultat") ResultatExamen resultat, @Param("siteIds") Collection<Long> siteIds);
 }

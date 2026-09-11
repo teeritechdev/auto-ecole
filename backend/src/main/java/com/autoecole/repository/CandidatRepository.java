@@ -31,14 +31,14 @@ public interface CandidatRepository extends JpaRepository<Candidat, Long> {
            "OR LOWER(c.telephone) LIKE LOWER(CONCAT('%', CAST(:recherche AS string), '%'))) " +
            "AND (:statut IS NULL OR i.statutDossier = :statut) " +
            "AND (:categorieId IS NULL OR i.categoriePermis.id = :categorieId) " +
-           "AND (:siteId IS NULL OR i.site.id = :siteId) " +
+           "AND (:siteIds IS NULL OR i.site.id IN :siteIds) " +
            "AND (:statutInscription IS NULL OR i.statutInscription = :statutInscription) " +
            "AND (:etapesAutorisees IS NULL OR i.etapeParcours IN :etapesAutorisees)")
     Page<Candidat> rechercherCandidats(
             @Param("recherche") String recherche,
             @Param("statut") StatutDossier statut,
             @Param("categorieId") Long categorieId,
-            @Param("siteId") Long siteId,
+            @Param("siteIds") Collection<Long> siteIds,
             @Param("statutInscription") StatutInscription statutInscription,
             @Param("etapesAutorisees") Collection<EtapeParcours> etapesAutorisees,
             Pageable pageable

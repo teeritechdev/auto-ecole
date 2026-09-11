@@ -14,8 +14,8 @@ import java.util.List;
 public interface SessionExamenRepository extends JpaRepository<SessionExamen, Long> {
 
     @Query("SELECT s FROM SessionExamen s WHERE " +
-           "(:siteId IS NULL OR s.site.id = :siteId) " +
+           "(:siteIds IS NULL OR s.site.id IN :siteIds) " +
            "AND (:typesAutorises IS NULL OR s.typeEpreuve IN :typesAutorises) " +
            "ORDER BY s.datePassage DESC, s.id DESC")
-    List<SessionExamen> listerSessions(@Param("siteId") Long siteId, @Param("typesAutorises") Collection<TypeEpreuve> typesAutorises);
+    List<SessionExamen> listerSessions(@Param("siteIds") Collection<Long> siteIds, @Param("typesAutorises") Collection<TypeEpreuve> typesAutorises);
 }

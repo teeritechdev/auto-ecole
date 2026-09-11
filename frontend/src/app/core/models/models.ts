@@ -7,7 +7,7 @@ export interface User {
   role: 'ADMIN' | 'SECRETAIRE' | 'CAISSIERE' | 'MONITEUR';
   photoProfile?: string;
   token?: string;
-  siteId?: number;
+  siteIds?: number[];
   specialites?: ('CODE' | 'CRENEAU' | 'CIRCULATION')[];
 }
 
@@ -21,8 +21,8 @@ export interface UtilisateurDTO {
   photoProfile?: string;
   role: string;
   roleLibelle: string;
-  siteId?: number;
-  siteNom?: string;
+  siteIds?: number[];
+  siteNoms?: string[];
   specialites?: ('CODE' | 'CRENEAU' | 'CIRCULATION')[];
   actif: boolean;
   dateCreation: string;

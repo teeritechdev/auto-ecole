@@ -32,19 +32,22 @@ public class DashboardService {
     private final SiteAccessService siteAccessService;
 
     public DashboardStatsDTO getDashboardStats() {
-        // Un moniteur ne voit que les indicateurs de son propre site (§19 : "accès limité"
+        // Un moniteur ne voit que les indicateurs de ses propres sites (§19 : "accès limité"
         // pour le tableau de bord) ; ADMIN/SECRETAIRE/CAISSIERE gardent la vision globale.
-        Long siteId = siteAccessService.resoudreFiltreSitePourListe();
+        java.util.Set<Long> siteIds = siteAccessService.resoudreFiltreSitesPourListe();
+        // Un moniteur affecté à aucun site ne doit rien voir : on court-circuite avant de
+        // transmettre un ensemble vide à des requêtes IN (comportement non garanti côté JPQL).
+        boolean aucunSiteAssigne = siteIds != null && siteIds.isEmpty();
         // Paiements et Caisse : "Aucun accès" pour le Moniteur (§19.2) — on n'expose donc
         // même pas ces données dans la réponse, plutôt que de compter sur le frontend
         // pour les masquer.
         boolean accesFinancierRestreint = siteAccessService.estMoniteurRestreint();
 
         // Candidats KPIs (calculés sur le cycle d'inscription actif de chaque candidat)
-        long totalCandidats = inscriptionRepository.countByActiveTrueAndSite(siteId);
-        long candidatsEnCours = inscriptionRepository.countByActiveTrueAndStatutDossierAndSite(StatutDossier.EN_COURS, siteId);
-        long candidatsSoldes = inscriptionRepository.countByActiveTrueAndStatutDossierAndSite(StatutDossier.SOLDE, siteId);
-        long candidatsExpiresNonSoldes = inscriptionRepository.countByActiveTrueAndStatutDossierAndSite(StatutDossier.EXPIRE_NON_SOLDE, siteId);
+        long totalCandidats = aucunSiteAssigne ? 0 : inscriptionRepository.countByActiveTrueAndSite(siteIds);
+        long candidatsEnCours = aucunSiteAssigne ? 0 : inscriptionRepository.countByActiveTrueAndStatutDossierAndSite(StatutDossier.EN_COURS, siteIds);
+        long candidatsSoldes = aucunSiteAssigne ? 0 : inscriptionRepository.countByActiveTrueAndStatutDossierAndSite(StatutDossier.SOLDE, siteIds);
+        long candidatsExpiresNonSoldes = aucunSiteAssigne ? 0 : inscriptionRepository.countByActiveTrueAndStatutDossierAndSite(StatutDossier.EXPIRE_NON_SOLDE, siteIds);
 
         // Financier KPIs
         BigDecimal totalVerse = null;
@@ -53,8 +56,8 @@ public class DashboardService {
         List<PaiementDTO> derniersPaiements = List.of();
         List<TransactionCaisseDTO> dernieresTransactionsCaisse = List.of();
         if (!accesFinancierRestreint) {
-            totalVerse = inscriptionRepository.sumTotalVerseActif(siteId);
-            totalRestant = inscriptionRepository.sumSoldeRestantActif(siteId);
+            totalVerse = inscriptionRepository.sumTotalVerseActif(siteIds);
+            totalRestant = inscriptionRepository.sumSoldeRestantActif(siteIds);
             recapCaisse = caisseService.getRecapCaisse();
             derniersPaiements = paiementRepository.findTop10ByOrderByDatePaiementDesc()
                     .stream().map(paiementService::mapToDTO).collect(Collectors.toList());
@@ -62,13 +65,13 @@ public class DashboardService {
         }
 
         // Examens KPIs
-        long examensReussis = passageRepository.countByResultatAndSite(ResultatExamen.REUSSI, siteId);
-        long examensEchecs = passageRepository.countByResultatAndSite(ResultatExamen.AJOURNE, siteId);
-        long examensProgrammes = passageRepository.countByResultatAndSite(ResultatExamen.PROGRAMME, siteId);
+        long examensReussis = aucunSiteAssigne ? 0 : passageRepository.countByResultatAndSite(ResultatExamen.REUSSI, siteIds);
+        long examensEchecs = aucunSiteAssigne ? 0 : passageRepository.countByResultatAndSite(ResultatExamen.AJOURNE, siteIds);
+        long examensProgrammes = aucunSiteAssigne ? 0 : passageRepository.countByResultatAndSite(ResultatExamen.PROGRAMME, siteIds);
 
         // Alertes expiration (dans les 30 prochains jours)
         LocalDate today = LocalDate.now();
-        List<CandidatDTO> alertesExpiration = inscriptionRepository.findInscriptionsActivesProchesExpiration(today, today.plusDays(30), siteId)
+        List<CandidatDTO> alertesExpiration = aucunSiteAssigne ? List.of() : inscriptionRepository.findInscriptionsActivesProchesExpiration(today, today.plusDays(30), siteIds)
                 .stream().map(Inscription::getCandidat).map(candidatService::mapToDTO).collect(Collectors.toList());
 
         // Prochains examens (déjà filtrés par site ET spécialité du moniteur courant)

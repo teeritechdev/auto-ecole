@@ -38,7 +38,7 @@ public class AuthDTOs {
         private String prenom;
         private String role;
         private String photoProfile;
-        private Long siteId;
+        private Set<Long> siteIds;
         private Set<TypeEpreuve> specialites;
     }
 

@@ -71,8 +71,8 @@ public class DataInitializerService implements CommandLineRunner {
             initUser("secretaire", "secretaire@autoecole.ci", "secretaire123", "YAO", "Aya Marie", "0702030405", roleSecretaire);
             initUser("caissiere", "caissiere@autoecole.ci", "caissiere123", "KOFFI", "Affoué Esther", "0703040506", roleCaissiere);
             Utilisateur moniteur = initUser("moniteur", "moniteur@autoecole.ci", "moniteur123", "DIABATE", "Ibrahim", "0704050607", roleMoniteur);
-            if (moniteur.getSite() == null && siteCocody != null) {
-                moniteur.setSite(siteCocody);
+            if (moniteur.getSites().isEmpty() && siteCocody != null) {
+                moniteur.setSites(new java.util.HashSet<>(Set.of(siteCocody)));
                 moniteur.setSpecialites(Set.of(TypeEpreuve.CODE, TypeEpreuve.CRENEAU, TypeEpreuve.CIRCULATION));
                 moniteur = utilisateurRepository.save(moniteur);
             }

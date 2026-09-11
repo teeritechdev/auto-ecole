@@ -58,7 +58,7 @@ public class UtilisateurService {
         Role role = roleRepository.findByCode(request.getRole())
                 .orElseThrow(() -> new BadRequestException("Rôle inexistant: " + request.getRole()));
 
-        Site site = resoudreSitePourRole(request.getRole(), request.getSiteId());
+        Set<Site> sites = resoudreSitesPourRole(request.getRole(), request.getSiteIds());
 
         Utilisateur user = Utilisateur.builder()
                 .username(request.getUsername().trim())
@@ -69,7 +69,7 @@ public class UtilisateurService {
                 .telephone(request.getTelephone())
                 .photoProfile(request.getPhotoProfile())
                 .role(role)
-                .site(site)
+                .sites(sites)
                 .specialites(resoudreSpecialites(request.getRole(), request.getSpecialites()))
                 .actif(true)
                 .build();
@@ -93,7 +93,7 @@ public class UtilisateurService {
         Role role = roleRepository.findByCode(request.getRole())
                 .orElseThrow(() -> new BadRequestException("Rôle inexistant: " + request.getRole()));
 
-        Site site = resoudreSitePourRole(request.getRole(), request.getSiteId());
+        Set<Site> sites = resoudreSitesPourRole(request.getRole(), request.getSiteIds());
 
         user.setEmail(request.getEmail().trim().toLowerCase());
         user.setNom(request.getNom().trim());
@@ -101,7 +101,7 @@ public class UtilisateurService {
         user.setTelephone(request.getTelephone());
         user.setPhotoProfile(request.getPhotoProfile());
         user.setRole(role);
-        user.setSite(site);
+        user.setSites(sites);
         user.setSpecialites(resoudreSpecialites(request.getRole(), request.getSpecialites()));
 
         if (request.getActif() != null) {
@@ -150,15 +150,18 @@ public class UtilisateurService {
         return mapToDTO(utilisateurRepository.save(user));
     }
 
-    private Site resoudreSitePourRole(RoleEnum role, Long siteId) {
+    private Set<Site> resoudreSitesPourRole(RoleEnum role, Set<Long> siteIds) {
         if (role != RoleEnum.MONITEUR) {
-            return null;
+            return Collections.emptySet();
         }
-        if (siteId == null) {
-            throw new BadRequestException("Le site de formation est obligatoire pour un compte moniteur");
+        if (siteIds == null || siteIds.isEmpty()) {
+            throw new BadRequestException("Au moins un site de formation est obligatoire pour un compte moniteur");
         }
-        return siteRepository.findById(siteId)
-                .orElseThrow(() -> new ResourceNotFoundException("Site de formation introuvable"));
+        Set<Site> sites = new java.util.HashSet<>(siteRepository.findAllById(siteIds));
+        if (sites.size() != siteIds.size()) {
+            throw new ResourceNotFoundException("Un ou plusieurs sites de formation sont introuvables");
+        }
+        return sites;
     }
 
     private Set<TypeEpreuve> resoudreSpecialites(RoleEnum role, Set<TypeEpreuve> specialites) {
@@ -189,8 +192,8 @@ public class UtilisateurService {
                 .photoProfile(u.getPhotoProfile())
                 .role(u.getRole().getCode().name())
                 .roleLibelle(u.getRole().getLibelle())
-                .siteId(u.getSite() != null ? u.getSite().getId() : null)
-                .siteNom(u.getSite() != null ? u.getSite().getNom() : null)
+                .siteIds(u.getSites().stream().map(Site::getId).collect(Collectors.toSet()))
+                .siteNoms(u.getSites().stream().map(Site::getNom).collect(Collectors.toSet()))
                 .specialites(u.getSpecialites())
                 .actif(u.isActif())
                 .dateCreation(u.getDateCreation())

@@ -42,12 +42,12 @@ public class CandidatService {
     private final SiteAccessService siteAccessService;
 
     public Page<CandidatDTO> rechercherCandidats(String recherche, StatutDossier statut, Long categorieId, StatutInscription statutInscription, Pageable pageable) {
-        Long siteId = siteAccessService.resoudreFiltreSitePourListe();
+        java.util.Set<Long> siteIds = siteAccessService.resoudreFiltreSitesPourListe();
         java.util.Set<com.autoecole.entity.enums.EtapeParcours> etapesAutorisees = siteAccessService.resoudreFiltreEtapesPourListe();
-        if (etapesAutorisees != null && etapesAutorisees.isEmpty()) {
+        if ((siteIds != null && siteIds.isEmpty()) || (etapesAutorisees != null && etapesAutorisees.isEmpty())) {
             return Page.empty(pageable);
         }
-        return candidatRepository.rechercherCandidats(recherche, statut, categorieId, siteId, statutInscription, etapesAutorisees, pageable)
+        return candidatRepository.rechercherCandidats(recherche, statut, categorieId, siteIds, statutInscription, etapesAutorisees, pageable)
                 .map(this::mapToDTO);
     }
 

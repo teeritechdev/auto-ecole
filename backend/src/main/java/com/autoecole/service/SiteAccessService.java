@@ -1,5 +1,6 @@
 package com.autoecole.service;
 
+import com.autoecole.entity.Site;
 import com.autoecole.entity.Utilisateur;
 import com.autoecole.entity.enums.EtapeParcours;
 import com.autoecole.entity.enums.RoleEnum;
@@ -28,31 +29,39 @@ public class SiteAccessService {
         return u != null && u.getRole() != null && u.getRole().getCode() == RoleEnum.MONITEUR;
     }
 
-    public Long getSiteIdMoniteurCourant() {
+    /**
+     * Renvoie une copie détachée des ids de sites du moniteur courant (même raison que
+     * getSpecialitesMoniteurCourant() : la collection Hibernate liée à l'entité n'est pas
+     * utilisable telle quelle en paramètre de requête JPQL).
+     */
+    public Set<Long> getSiteIdsMoniteurCourant() {
         Utilisateur u = auditService.getCurrentUser();
-        return (u != null && u.getSite() != null) ? u.getSite().getId() : null;
+        if (u == null || u.getSites() == null) return Collections.emptySet();
+        Set<Long> ids = new HashSet<>();
+        for (Site s : u.getSites()) {
+            ids.add(s.getId());
+        }
+        return ids;
     }
 
     /**
-     * Ne filtre que si l'utilisateur courant est un moniteur : renvoie son site (ou -1L
-     * s'il n'a aucun site de rattachement, pour garantir qu'aucun résultat ne remonte),
-     * sinon null pour signifier "pas de restriction".
+     * Ne filtre que si l'utilisateur courant est un moniteur : renvoie l'ensemble de ses
+     * sites (potentiellement vide, ce qui exclut alors tout résultat), sinon null pour
+     * signifier "pas de restriction" (ADMIN, SECRETAIRE).
      */
-    public Long resoudreFiltreSitePourListe() {
+    public Set<Long> resoudreFiltreSitesPourListe() {
         if (!estMoniteurRestreint()) return null;
-        Long siteId = getSiteIdMoniteurCourant();
-        return siteId != null ? siteId : -1L;
+        return getSiteIdsMoniteurCourant();
     }
 
     /**
      * Vérifie l'accès à un candidat/dossier donné : lève une exception "introuvable"
      * (plutôt qu'un 403 explicite) si un moniteur tente d'accéder à un candidat
-     * hors de son site, pour ne pas révéler l'existence du dossier.
+     * hors de ses sites, pour ne pas révéler l'existence du dossier.
      */
     public void verifierAccesSite(Long siteIdCible) {
         if (!estMoniteurRestreint()) return;
-        Long siteIdMoniteur = getSiteIdMoniteurCourant();
-        if (siteIdMoniteur == null || siteIdCible == null || !siteIdMoniteur.equals(siteIdCible)) {
+        if (siteIdCible == null || !getSiteIdsMoniteurCourant().contains(siteIdCible)) {
             throw new ResourceNotFoundException("Candidat introuvable");
         }
     }

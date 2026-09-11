@@ -58,6 +58,10 @@ public class ExamenDTOs {
         private String observations;
 
         private Long moniteurId;
+
+        // Obligatoire seulement si le moniteur est affecté à plusieurs sites (sinon déduit
+        // automatiquement de son unique site de rattachement).
+        private Long siteId;
     }
 
     @Data
@@ -76,6 +80,10 @@ public class ExamenDTOs {
 
         private Long moniteurId;
         private String observations;
+
+        // Obligatoire seulement si le moniteur est affecté à plusieurs sites (sinon déduit
+        // automatiquement de son unique site de rattachement).
+        private Long siteId;
     }
 
     @Data

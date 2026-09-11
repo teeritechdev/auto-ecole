@@ -504,6 +504,19 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   }
                 </div>
                 <div class="form-group">
+                  <label class="form-label">Site <span class="required">*</span></label>
+                  @if (sitesAutorises.length > 1) {
+                    <select class="form-control" [(ngModel)]="programData.siteId" name="siteId" required>
+                      <option [ngValue]="null" disabled>Sélectionner un site</option>
+                      @for (s of sitesAutorises; track s.id) {
+                        <option [ngValue]="s.id">{{ s.nom }}</option>
+                      }
+                    </select>
+                  } @else {
+                    <input class="form-control" type="text" [value]="sitesAutorises[0]?.nom || ''" disabled />
+                  }
+                </div>
+                <div class="form-group">
                   <label class="form-label">Date prévue <span class="required">*</span></label>
                   <input type="date" class="form-control" [(ngModel)]="programData.datePassage" name="datePassage" required />
                 </div>
@@ -514,7 +527,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
               </div>
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" (click)="showProgramModal = false">Annuler</button>
-                <button type="submit" class="btn btn-primary" [disabled]="savingProgram">
+                <button type="submit" class="btn btn-primary" [disabled]="savingProgram || !programData.siteId">
                   {{ savingProgram ? 'Enregistrement...' : 'Confirmer' }}
                 </button>
               </div>
@@ -698,13 +711,24 @@ export class CandidatsComponent implements OnInit {
     return user?.role === 'MONITEUR' && this.epreuvesAutorisees.length > 0;
   }
 
+  /** Sites sur lesquels l'utilisateur courant peut programmer un examen : limités à ses
+   *  sites d'affectation pour un moniteur, tous les sites pour les autres rôles. */
+  get sitesAutorises(): Site[] {
+    const user = this.authService.currentUserValue;
+    if (user?.role === 'MONITEUR') {
+      return this.sites.filter(s => user.siteIds?.includes(s.id));
+    }
+    return this.sites;
+  }
+
   // --- Exam Programming logic ---
   selectedCandidats = new Set<number>();
   showProgramModal = false;
   savingProgram = false;
   programError = '';
-  programData = {
+  programData: any = {
     typeEpreuve: 'CODE',
+    siteId: null,
     datePassage: '',
     observations: ''
   };
@@ -741,7 +765,12 @@ export class CandidatsComponent implements OnInit {
 
   openProgramModal(): void {
     this.programError = '';
-    this.programData = { typeEpreuve: this.epreuvesAutorisees[0] || 'CODE', datePassage: '', observations: '' };
+    this.programData = {
+      typeEpreuve: this.epreuvesAutorisees[0] || 'CODE',
+      siteId: this.sitesAutorises.length === 1 ? this.sitesAutorises[0].id : null,
+      datePassage: '',
+      observations: ''
+    };
     this.showProgramModal = true;
   }
 
@@ -751,6 +780,7 @@ export class CandidatsComponent implements OnInit {
     const payload = {
       candidatIds: Array.from(this.selectedCandidats),
       typeEpreuve: this.programData.typeEpreuve,
+      siteId: this.programData.siteId,
       datePassage: this.programData.datePassage,
       observations: this.programData.observations
     };

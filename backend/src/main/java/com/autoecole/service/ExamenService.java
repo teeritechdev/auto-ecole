@@ -4,6 +4,7 @@ import com.autoecole.dto.ExamenDTOs.*;
 import com.autoecole.entity.Candidat;
 import com.autoecole.entity.Inscription;
 import com.autoecole.entity.PassageExamen;
+import com.autoecole.entity.Site;
 import com.autoecole.entity.SessionExamen;
 import com.autoecole.entity.Utilisateur;
 import com.autoecole.entity.enums.EtapeParcours;
@@ -16,6 +17,7 @@ import com.autoecole.repository.CandidatRepository;
 import com.autoecole.repository.InscriptionRepository;
 import com.autoecole.repository.PassageExamenRepository;
 import com.autoecole.repository.SessionExamenRepository;
+import com.autoecole.repository.SiteRepository;
 import com.autoecole.repository.UtilisateurRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -39,6 +41,7 @@ public class ExamenService {
     private final InscriptionRepository inscriptionRepository;
     private final InscriptionService inscriptionService;
     private final UtilisateurRepository utilisateurRepository;
+    private final SiteRepository siteRepository;
     private final AuditService auditService;
     private final SiteAccessService siteAccessService;
 
@@ -46,16 +49,16 @@ public class ExamenService {
         if (candidatId != null) {
             inscriptionService.verifierAccesCandidat(candidatId);
         }
-        Long siteId = siteAccessService.resoudreFiltreSitePourListe();
+        Set<Long> siteIds = siteAccessService.resoudreFiltreSitesPourListe();
         Set<TypeEpreuve> typesAutorises = siteAccessService.resoudreFiltreEpreuvesPourListe();
-        if (typesAutorises != null && typesAutorises.isEmpty()) {
+        if ((siteIds != null && siteIds.isEmpty()) || (typesAutorises != null && typesAutorises.isEmpty())) {
             return Page.empty(pageable);
         }
         // Un candidat déjà reçu à son épreuve n'a plus rien à faire chez ce moniteur : il est
         // masqué de sa liste de travail (mais reste visible pour ADMIN/SECRETAIRE, ainsi que
         // sur la fiche du candidat via son bilan).
         boolean masquerReussi = siteAccessService.estMoniteurRestreint();
-        return passageRepository.filtrerPassages(candidatId, typeEpreuve, resultat, dateRef, siteId, typesAutorises, masquerReussi, pageable)
+        return passageRepository.filtrerPassages(candidatId, typeEpreuve, resultat, dateRef, siteIds, typesAutorises, masquerReussi, pageable)
                 .map(this::mapToDTO);
     }
 
@@ -165,15 +168,40 @@ public class ExamenService {
     }
 
     /**
+     * Résout le site de la session à créer : si le moniteur n'est affecté qu'à un seul
+     * site, celui-ci est utilisé automatiquement (aucun choix à faire, comme pour la
+     * spécialité) ; s'il en a plusieurs, le site est obligatoire et doit être l'un des
+     * siens.
+     */
+    private Site resoudreSiteSession(Long siteIdFourni) {
+        Set<Long> sitesAutorises = siteAccessService.getSiteIdsMoniteurCourant();
+        Long siteId = siteIdFourni;
+        if (siteId == null) {
+            if (sitesAutorises.size() == 1) {
+                siteId = sitesAutorises.iterator().next();
+            } else if (sitesAutorises.isEmpty()) {
+                throw new BadRequestException("Aucun site de formation n'est assigné à votre profil moniteur");
+            } else {
+                throw new BadRequestException("Le site est obligatoire (vous êtes affecté à plusieurs sites)");
+            }
+        } else if (!sitesAutorises.contains(siteId)) {
+            throw new BadRequestException("Vous n'êtes pas affecté à ce site");
+        }
+        return siteRepository.findById(siteId)
+                .orElseThrow(() -> new ResourceNotFoundException("Site de formation introuvable"));
+    }
+
+    /**
      * Crée l'entité session (le moniteur courant en est propriétaire) sans encore y
      * attacher de candidat.
      */
-    private SessionExamen creerSessionEntite(TypeEpreuve typeEpreuve, LocalDate datePassage, String observations) {
+    private SessionExamen creerSessionEntite(TypeEpreuve typeEpreuve, LocalDate datePassage, String observations, Long siteId) {
         Utilisateur currentUser = auditService.getCurrentUser();
+        Site site = resoudreSiteSession(siteId);
         SessionExamen session = SessionExamen.builder()
                 .typeEpreuve(typeEpreuve)
                 .datePassage(datePassage)
-                .site(currentUser != null ? currentUser.getSite() : null)
+                .site(site)
                 .moniteur(currentUser)
                 .observations(observations)
                 .build();
@@ -187,6 +215,16 @@ public class ExamenService {
     private PassageExamen creerPassagePourCandidat(SessionExamen session, Long candidatId) {
         inscriptionService.verifierAccesCandidat(candidatId);
         Inscription inscription = inscriptionService.getInscriptionActive(candidatId);
+
+        // Un moniteur affecté à plusieurs sites pourrait sinon regrouper dans une même
+        // session des candidats de sites différents : la session est déclarée sur un site
+        // précis, tous ses candidats doivent y être inscrits.
+        Long siteSession = session.getSite() != null ? session.getSite().getId() : null;
+        Long siteCandidat = inscription.getSite() != null ? inscription.getSite().getId() : null;
+        if (siteSession != null && !siteSession.equals(siteCandidat)) {
+            throw new BadRequestException("Ce candidat n'est pas inscrit sur le site de cette session");
+        }
+
         verifierPrerequisEtEligibilite(inscription, session.getTypeEpreuve());
 
         long count = passageRepository.countByInscriptionIdAndTypeEpreuve(inscription.getId(), session.getTypeEpreuve());
@@ -229,7 +267,7 @@ public class ExamenService {
 
     @Transactional
     public PassageExamenDTO programmerOuEnregistrerPassage(CreatePassageRequest request) {
-        SessionExamen session = creerSessionEntite(request.getTypeEpreuve(), request.getDatePassage(), request.getObservations());
+        SessionExamen session = creerSessionEntite(request.getTypeEpreuve(), request.getDatePassage(), request.getObservations(), request.getSiteId());
         PassageExamen saved = creerPassagePourCandidat(session, request.getCandidatId());
         return mapToDTO(saved);
     }
@@ -239,7 +277,7 @@ public class ExamenService {
         if (request.getCandidatIds() == null || request.getCandidatIds().isEmpty()) {
             throw new BadRequestException("Aucun candidat sélectionné");
         }
-        SessionExamen session = creerSessionEntite(request.getTypeEpreuve(), request.getDatePassage(), request.getObservations());
+        SessionExamen session = creerSessionEntite(request.getTypeEpreuve(), request.getDatePassage(), request.getObservations(), request.getSiteId());
         request.getCandidatIds().forEach(candidatId -> creerPassagePourCandidat(session, candidatId));
         return mapSessionToDTO(session);
     }
@@ -316,12 +354,12 @@ public class ExamenService {
     }
 
     public List<SessionExamenDTO> listerSessions() {
-        Long siteId = siteAccessService.resoudreFiltreSitePourListe();
+        Set<Long> siteIds = siteAccessService.resoudreFiltreSitesPourListe();
         Set<TypeEpreuve> typesAutorises = siteAccessService.resoudreFiltreEpreuvesPourListe();
-        if (typesAutorises != null && typesAutorises.isEmpty()) {
+        if ((siteIds != null && siteIds.isEmpty()) || (typesAutorises != null && typesAutorises.isEmpty())) {
             return List.of();
         }
-        return sessionRepository.listerSessions(siteId, typesAutorises).stream()
+        return sessionRepository.listerSessions(siteIds, typesAutorises).stream()
                 .map(this::mapSessionToDTO)
                 .collect(Collectors.toList());
     }
@@ -414,14 +452,14 @@ public class ExamenService {
     }
 
     public List<PassageExamenDTO> getProchainsExamens() {
-        Long siteId = siteAccessService.resoudreFiltreSitePourListe();
+        Set<Long> siteIds = siteAccessService.resoudreFiltreSitesPourListe();
         Set<TypeEpreuve> typesAutorises = siteAccessService.resoudreFiltreEpreuvesPourListe();
-        if (typesAutorises != null && typesAutorises.isEmpty()) {
+        if ((siteIds != null && siteIds.isEmpty()) || (typesAutorises != null && typesAutorises.isEmpty())) {
             return List.of();
         }
         boolean masquerReussi = siteAccessService.estMoniteurRestreint();
         return passageRepository.findTop10ByDatePassageGreaterThanEqualOrderByDatePassageAsc(LocalDate.now()).stream()
-                .filter(pe -> siteId == null || (pe.getInscription().getSite() != null && siteId.equals(pe.getInscription().getSite().getId())))
+                .filter(pe -> siteIds == null || (pe.getInscription().getSite() != null && siteIds.contains(pe.getInscription().getSite().getId())))
                 .filter(pe -> typesAutorises == null || typesAutorises.contains(pe.getTypeEpreuve()))
                 .filter(pe -> !masquerReussi || pe.getResultat() != ResultatExamen.REUSSI)
                 .map(this::mapToDTO)

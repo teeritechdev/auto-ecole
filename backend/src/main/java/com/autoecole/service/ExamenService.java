@@ -155,10 +155,7 @@ public class ExamenService {
             throw new BadRequestException("Le candidat a déjà réussi l'épreuve " + typeEpreuve.name());
         }
 
-        // Un passage PROGRAMME retiré (RETIRE) ne bloque plus une nouvelle programmation :
-        // c'est précisément le but du retrait, permettre de reprogrammer autrement.
-        if (passageRepository.existsByInscriptionIdAndTypeEpreuveAndResultatAndStatutValidationNot(
-                inscription.getId(), typeEpreuve, ResultatExamen.PROGRAMME, StatutValidation.RETIRE)) {
+        if (passageRepository.existsByInscriptionIdAndTypeEpreuveAndResultat(inscription.getId(), typeEpreuve, ResultatExamen.PROGRAMME)) {
             throw new BadRequestException("Une session est déjà programmée pour ce candidat sur l'épreuve " + typeEpreuve.name());
         }
 
@@ -265,9 +262,9 @@ public class ExamenService {
     }
 
     /**
-     * Retire un candidat de sa session : le passage n'est PAS supprimé mais marqué
-     * RETIRE, afin de rester visible (et reprogrammable) côté moniteur, même s'il
-     * disparaît de la session pour tout le monde (cf. carte dédiée "à reprogrammer").
+     * Retire un candidat de sa session : le passage est supprimé et l'étape du candidat
+     * revient immédiatement à l'état précédant l'examen, ce qui le rend à nouveau
+     * disponible pour une programmation (visible dans l'onglet Candidats).
      */
     @Transactional
     public void retirerCandidatDeSession(Long sessionId, Long passageId) {
@@ -282,8 +279,7 @@ public class ExamenService {
         Inscription inscription = passage.getInscription();
         String numDossier = inscription.getCandidat().getNumeroDossier();
 
-        passage.setStatutValidation(StatutValidation.RETIRE);
-        passageRepository.save(passage);
+        passageRepository.delete(passage);
 
         inscription.setEtapeParcours(etapeAvantExamen(session.getTypeEpreuve()));
         inscriptionRepository.save(inscription);
@@ -293,8 +289,8 @@ public class ExamenService {
     }
 
     /**
-     * Modifie la date d'une session : répercutée sur tous ses candidats encore actifs
-     * (en attente), pas sur ceux déjà notés ou retirés.
+     * Modifie la date d'une session : répercutée sur tous ses candidats encore en
+     * attente de résultat, pas sur ceux déjà notés.
      */
     @Transactional
     public SessionExamenDTO modifierDateSession(Long sessionId, UpdateSessionRequest request) {
@@ -307,7 +303,7 @@ public class ExamenService {
         session.setDatePassage(request.getDatePassage());
         sessionRepository.save(session);
 
-        List<PassageExamen> candidatsActifs = passageRepository.findBySessionIdAndStatutValidationNotOrderByDateEnregistrementAsc(sessionId, StatutValidation.RETIRE);
+        List<PassageExamen> candidatsActifs = passageRepository.findBySessionIdOrderByDateEnregistrementAsc(sessionId);
         for (PassageExamen passage : candidatsActifs) {
             if (passage.getResultat() == ResultatExamen.PROGRAMME) {
                 passage.setDatePassage(request.getDatePassage());
@@ -341,7 +337,7 @@ public class ExamenService {
     }
 
     private SessionExamenDTO mapSessionToDTO(SessionExamen session) {
-        List<PassageExamenDTO> candidats = passageRepository.findBySessionIdAndStatutValidationNotOrderByDateEnregistrementAsc(session.getId(), StatutValidation.RETIRE)
+        List<PassageExamenDTO> candidats = passageRepository.findBySessionIdOrderByDateEnregistrementAsc(session.getId())
                 .stream().map(this::mapToDTO).collect(Collectors.toList());
         // Terminée dès que tous les candidats actifs de la session ont reçu un résultat
         // définitif (plus aucun en attente) ; en cours tant qu'il en reste au moins un,
@@ -361,19 +357,6 @@ public class ExamenService {
                 .terminee(terminee)
                 .candidats(candidats)
                 .build();
-    }
-
-    /** Candidats retirés d'une session (par l'admin ou le moniteur), à reprogrammer —
-     *  visible côté moniteur, filtré par son site et sa/ses spécialité(s) comme le reste. */
-    public List<PassageExamenDTO> listerRetires() {
-        Long siteId = siteAccessService.resoudreFiltreSitePourListe();
-        Set<TypeEpreuve> typesAutorises = siteAccessService.resoudreFiltreEpreuvesPourListe();
-        if (typesAutorises != null && typesAutorises.isEmpty()) {
-            return List.of();
-        }
-        return passageRepository.findRetires(siteId, typesAutorises).stream()
-                .map(this::mapToDTO)
-                .collect(Collectors.toList());
     }
 
     @Transactional
@@ -438,15 +421,6 @@ public class ExamenService {
                 .orElseThrow(() -> new ResourceNotFoundException("Passage d'examen introuvable"));
         siteAccessService.verifierAccesEpreuve(passage.getTypeEpreuve());
 
-        Utilisateur currentUser = auditService.getCurrentUser();
-        if (currentUser != null && currentUser.getRole() != null && currentUser.getRole().getCode() == RoleEnum.MONITEUR) {
-            // Un moniteur ne peut supprimer définitivement qu'une entrée déjà retirée
-            // (celles de sa carte "à reprogrammer") ; pour le reste, seul l'admin peut.
-            if (passage.getStatutValidation() != StatutValidation.RETIRE) {
-                throw new BadRequestException("Un moniteur ne peut supprimer qu'un candidat déjà retiré, en attente de reprogrammation");
-            }
-        }
-
         Inscription inscription = passage.getInscription();
         String numDossier = inscription.getCandidat().getNumeroDossier();
         boolean etaitEnAttente = passage.getResultat() == ResultatExamen.PROGRAMME;
@@ -472,7 +446,6 @@ public class ExamenService {
                 .filter(pe -> siteId == null || (pe.getInscription().getSite() != null && siteId.equals(pe.getInscription().getSite().getId())))
                 .filter(pe -> typesAutorises == null || typesAutorises.contains(pe.getTypeEpreuve()))
                 .filter(pe -> !masquerReussi || pe.getResultat() != ResultatExamen.REUSSI)
-                .filter(pe -> pe.getStatutValidation() != StatutValidation.RETIRE)
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }

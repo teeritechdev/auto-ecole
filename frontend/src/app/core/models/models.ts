@@ -136,7 +136,7 @@ export interface PassageExamen {
   moniteurId?: number;
   moniteurNomComplet?: string;
   dateEnregistrement: string;
-  statutValidation: 'EN_ATTENTE' | 'VALIDE' | 'RETIRE';
+  statutValidation: 'EN_ATTENTE' | 'VALIDE';
 }
 
 export interface SessionExamen {

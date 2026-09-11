@@ -62,9 +62,8 @@ public class PassageExamen {
     private LocalDateTime dateEnregistrement = LocalDateTime.now();
 
     /**
-     * Revue administrative : en attente à la programmation, validé (reste visible
-     * partout), ou retiré (masqué de la session mais tracé côté moniteur pour
-     * reprogrammation - cf. StatutValidation).
+     * Revue administrative : en attente à la programmation, ou validé (reste visible
+     * partout) — cf. StatutValidation.
      */
     @Enumerated(EnumType.STRING)
     @Column(name = "statut_validation", length = 20, nullable = false)

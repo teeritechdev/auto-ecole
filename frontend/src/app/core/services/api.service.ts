@@ -127,10 +127,6 @@ export class ApiService {
     return this.http.post<PassageExamen[]>(`${this.base}/examens/valider`, { passageIds });
   }
 
-  public listerRetires(): Observable<PassageExamen[]> {
-    return this.http.get<PassageExamen[]>(`${this.base}/examens/retires`);
-  }
-
   public programmerPassage(data: any): Observable<PassageExamen> {
     return this.http.post<PassageExamen>(`${this.base}/examens`, data);
   }

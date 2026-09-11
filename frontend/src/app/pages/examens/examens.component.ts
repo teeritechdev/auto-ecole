@@ -102,52 +102,6 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
         </div>
       </div>
 
-      <!-- CANDIDATS RETIRÉS (MONITEUR) -->
-      @if (isMoniteur) {
-        <div class="card retires-card">
-          <div class="avalider-header">
-            <h3>🔁 Candidats retirés — à reprogrammer</h3>
-          </div>
-          <div class="table-responsive">
-            <table class="custom-table">
-              <thead>
-                <tr>
-                  <th>Candidat</th>
-                  <th>Épreuve</th>
-                  <th>Ancienne date</th>
-                  <th>Retiré le</th>
-                  <th class="text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                @if (loadingRetires) {
-                  <tr><td colspan="5" class="text-center py-4">Chargement...</td></tr>
-                }
-                @if (!loadingRetires && candidatsRetires.length === 0) {
-                  <tr><td colspan="5" class="text-center py-4">Aucun candidat retiré en attente de reprogrammation.</td></tr>
-                }
-                @for (p of candidatsRetires; track p.id) {
-                  <tr>
-                    <td>
-                      <a [routerLink]="['/candidats', p.candidatId]" class="candidat-link"><strong>{{ p.candidatNomComplet }}</strong></a>
-                      <div class="sub-text">{{ p.candidatNumeroDossier }}</div>
-                    </td>
-                    <td>{{ epreuveLabel(p.typeEpreuve) }}</td>
-                    <td>{{ p.datePassage | date:'dd/MM/yyyy' }}</td>
-                    <td>{{ p.dateEnregistrement | date:'dd/MM/yyyy HH:mm' }}</td>
-                    <td class="text-right">
-                      <button class="btn btn-secondary btn-sm" [disabled]="processingRetireId === p.id" (click)="reprogrammer(p.id)">
-                        {{ processingRetireId === p.id ? '...' : '↩️ Reprogrammer' }}
-                      </button>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        </div>
-      }
-
       <!-- MODAL DÉTAIL SESSION -->
       @if (showSessionModal && sessionDetail) {
         <div class="modal-backdrop">
@@ -418,11 +372,6 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       padding: 1.25rem;
     }
 
-    .avalider-card, .retires-card {
-      margin-bottom: 1.5rem;
-      padding: 1.25rem;
-    }
-
     .session-info {
       display: flex;
       align-items: flex-start;
@@ -445,24 +394,6 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
 
     .edit-date-row .form-control {
       width: auto;
-    }
-
-    .avalider-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-      margin-bottom: 1rem;
-    }
-
-    .avalider-header h3 {
-      margin: 0;
-    }
-
-    .avalider-actions {
-      display: flex;
-      gap: 0.5rem;
     }
 
     .filter-grid {
@@ -597,10 +528,6 @@ export class ExamensComponent implements OnInit {
 
   formError = '';
 
-  candidatsRetires: PassageExamen[] = [];
-  loadingRetires = false;
-  processingRetireId: number | null = null;
-
   editingSessionDate = false;
   editSessionDateValue = '';
   savingSessionDate = false;
@@ -611,9 +538,6 @@ export class ExamensComponent implements OnInit {
   ngOnInit(): void {
     this.loadSessions();
     this.loadCandidats();
-    if (this.isMoniteur) {
-      this.loadRetires();
-    }
   }
 
   get sessionsAffichees(): SessionExamen[] {
@@ -765,41 +689,13 @@ export class ExamensComponent implements OnInit {
     });
   }
 
-  loadRetires(): void {
-    this.loadingRetires = true;
-    this.apiService.listerRetires().subscribe({
-      next: (data) => {
-        this.candidatsRetires = data;
-        this.loadingRetires = false;
-      },
-      error: () => {
-        this.loadingRetires = false;
-      }
-    });
-  }
-
-  reprogrammer(passageId: number): void {
-    this.processingRetireId = passageId;
-    this.apiService.deletePassage(passageId).subscribe({
-      next: () => {
-        this.processingRetireId = null;
-        this.loadRetires();
-        this.loadCandidats();
-      },
-      error: () => {
-        this.processingRetireId = null;
-      }
-    });
-  }
-
   formatSpecialites(specialites?: string[]): string {
     return (specialites || []).map(s => this.epreuveLabel(s)).join(', ');
   }
 
   private readonly STATUT_VALIDATION_LABELS: Record<string, string> = {
     EN_ATTENTE: 'En attente',
-    VALIDE: 'Validé',
-    RETIRE: 'Retiré'
+    VALIDE: 'Validé'
   };
 
   statutValidationLabel(s: string): string {
@@ -809,7 +705,6 @@ export class ExamensComponent implements OnInit {
   getStatutValidationBadgeClass(s: string): string {
     switch (s) {
       case 'VALIDE': return 'badge-reussi';
-      case 'RETIRE': return 'badge-echec';
       default: return 'badge-programme';
     }
   }
@@ -844,10 +739,6 @@ export class ExamensComponent implements OnInit {
 
   get isAdmin(): boolean {
     return this.authService.hasRole(['ADMIN']);
-  }
-
-  get isMoniteur(): boolean {
-    return this.authService.hasRole(['MONITEUR']);
   }
 
   loadCandidats(): void {

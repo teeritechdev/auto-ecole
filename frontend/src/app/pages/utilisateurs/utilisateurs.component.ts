@@ -1,14 +1,14 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
-import { UtilisateurDTO } from '../../core/models/models';
+import { UtilisateurDTO, Site } from '../../core/models/models';
+import { extraireMessageErreur } from '../../core/utils/error-utils';
 
 @Component({
-  selector: 'app-utilisateurs',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-utilisateurs',
+    imports: [CommonModule, FormsModule],
+    template: `
     <div class="utilisateurs-page">
       <div class="page-header-bar">
         <div>
@@ -21,7 +21,7 @@ import { UtilisateurDTO } from '../../core/models/models';
           </button>
         </div>
       </div>
-
+    
       <div class="card">
         <div class="table-responsive">
           <table class="custom-table">
@@ -39,125 +39,162 @@ import { UtilisateurDTO } from '../../core/models/models';
               </tr>
             </thead>
             <tbody>
-              <tr *ngIf="loading">
-                <td colspan="9" class="text-center py-4">Chargement des utilisateurs...</td>
-              </tr>
-              <tr *ngFor="let u of utilisateurs">
-                <td>
-                  <div class="user-photo-small">
-                    <img *ngIf="u.photoProfile" [src]="u.photoProfile" alt="Photo utilisateur" />
-                    <span *ngIf="!u.photoProfile">{{ getInitials(u) }}</span>
-                  </div>
-                </td>
-                <td><strong>{{ u.username }}</strong></td>
-                <td>{{ u.nom }} {{ u.prenom }}</td>
-                <td>{{ u.email }}</td>
-                <td>{{ u.telephone || '—' }}</td>
-                <td>
+              @if (loading) {
+                <tr>
+                  <td colspan="9" class="text-center py-4">Chargement des utilisateurs...</td>
+                </tr>
+              }
+              @for (u of utilisateurs; track u) {
+                <tr>
+                  <td>
+                    <div class="user-photo-small">
+                      @if (u.photoProfile) {
+                        <img [src]="u.photoProfile" alt="Photo utilisateur" />
+                      }
+                      @if (!u.photoProfile) {
+                        <span>{{ getInitials(u) }}</span>
+                      }
+                    </div>
+                  </td>
+                  <td><strong>{{ u.username }}</strong></td>
+                  <td>{{ u.nom }} {{ u.prenom }}</td>
+                  <td>{{ u.email }}</td>
+                  <td>{{ u.telephone || '—' }}</td>
+                  <td>
                   <span class="badge" [ngClass]="{
                     'badge-expire': u.role === 'ADMIN',
                     'badge-programme': u.role === 'SECRETAIRE',
                     'badge-solde': u.role === 'CAISSIERE',
                     'badge-ajourne': u.role === 'MONITEUR'
                   }">{{ u.roleLibelle }}</span>
-                </td>
-                <td>
-                  <span class="badge" [ngClass]="u.actif ? 'badge-solde' : 'badge-expire'">
-                    {{ u.actif ? 'ACTIF' : 'DÉSACTIVÉ' }}
-                  </span>
-                </td>
-                <td>{{ u.dateCreation | date:'dd/MM/yyyy' }}</td>
-                <td class="text-right">
-                  <div class="table-actions">
-                    <button class="btn btn-outline btn-sm" (click)="openEditModal(u)" title="Modifier">✏️</button>
-                    <button class="btn btn-sm" [ngClass]="u.actif ? 'btn-danger' : 'btn-success'" (click)="toggleActif(u)">
-                      {{ u.actif ? 'Désactiver' : 'Activer' }}
-                    </button>
-                  </div>
-                </td>
-              </tr>
+                  </td>
+                  <td>
+                    <span class="badge" [ngClass]="u.actif ? 'badge-solde' : 'badge-expire'">
+                      {{ u.actif ? 'ACTIF' : 'DÉSACTIVÉ' }}
+                    </span>
+                  </td>
+                  <td>{{ u.dateCreation | date:'dd/MM/yyyy' }}</td>
+                  <td class="text-right">
+                    <div class="table-actions">
+                      <button class="btn btn-outline btn-sm" (click)="openEditModal(u)" title="Modifier">✏️</button>
+                      <button class="btn btn-sm" [ngClass]="u.actif ? 'btn-danger' : 'btn-success'" (click)="toggleActif(u)">
+                        {{ u.actif ? 'Désactiver' : 'Activer' }}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
             </tbody>
           </table>
         </div>
       </div>
-
+    
       <!-- MODAL CRÉATION / MODIFICATION -->
-      <div class="modal-backdrop" *ngIf="showModal">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h3>{{ isEdit ? '✏️ Modifier l’utilisateur' : '👤 Créer un compte utilisateur' }}</h3>
-            <button class="btn btn-outline btn-sm" (click)="showModal = false">✕</button>
+      @if (showModal) {
+        <div class="modal-backdrop">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3>{{ isEdit ? '✏️ Modifier l’utilisateur' : '👤 Créer un compte utilisateur' }}</h3>
+              <button class="btn btn-outline btn-sm" (click)="showModal = false">✕</button>
+            </div>
+            <form (ngSubmit)="saveUtilisateur()">
+              <div class="modal-body">
+                @if (formError) {
+                  <div class="alert alert-danger">⚠️ {{ formError }}</div>
+                }
+                @if (!isEdit) {
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="form-label">Identifiant de connexion <span class="required">*</span></label>
+                      <input type="text" class="form-control" [(ngModel)]="currentUserForm.username" name="username" required placeholder="Ex: amadou" />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Mot de passe <span class="required">*</span></label>
+                      <input type="password" class="form-control" [(ngModel)]="currentUserForm.password" name="password" required placeholder="••••••••" />
+                    </div>
+                  </div>
+                }
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Nom <span class="required">*</span></label>
+                    <input type="text" class="form-control" [(ngModel)]="currentUserForm.nom" name="nom" required placeholder="Ex: KOUASSI" />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Prénom <span class="required">*</span></label>
+                    <input type="text" class="form-control" [(ngModel)]="currentUserForm.prenom" name="prenom" required placeholder="Ex: Jean" />
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Email <span class="required">*</span></label>
+                    <input type="email" class="form-control" [(ngModel)]="currentUserForm.email" name="email" required placeholder="user@autoecole.ci" />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Téléphone</label>
+                    <input type="tel" class="form-control" [(ngModel)]="currentUserForm.telephone" name="telephone" placeholder="0701020304" />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Rôle attribué <span class="required">*</span></label>
+                  <select class="form-control" [(ngModel)]="currentUserForm.role" name="role" required>
+                    <option value="ADMIN">Administrateur (Tous les droits)</option>
+                    <option value="SECRETAIRE">Secrétaire (Gestion candidats & inscriptions)</option>
+                    <option value="CAISSIERE">Caissière (Encaissements, reçus, caisse)</option>
+                    <option value="MONITEUR">Moniteur (Suivi pédagogique & examens)</option>
+                  </select>
+                </div>
+                @if (currentUserForm.role === 'MONITEUR') {
+                  <div class="form-group">
+                    <label class="form-label">Site de formation <span class="required">*</span></label>
+                    <select class="form-control" [(ngModel)]="currentUserForm.siteId" name="siteId" required>
+                      <option [ngValue]="null" disabled>Sélectionner un site</option>
+                      @for (s of sites; track s) {
+                        <option [ngValue]="s.id">{{ s.nom }}</option>
+                      }
+                    </select>
+                    <div class="form-help">Le moniteur ne pourra voir et gérer que les candidats inscrits sur ce site.</div>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Spécialités</label>
+                    <div class="specialites-group">
+                      <label class="checkbox-label">
+                        <input type="checkbox" [checked]="hasSpecialite('CODE')" (change)="toggleSpecialite('CODE')" /> Code
+                      </label>
+                      <label class="checkbox-label">
+                        <input type="checkbox" [checked]="hasSpecialite('CRENEAU')" (change)="toggleSpecialite('CRENEAU')" /> Créneau
+                      </label>
+                      <label class="checkbox-label">
+                        <input type="checkbox" [checked]="hasSpecialite('CIRCULATION')" (change)="toggleSpecialite('CIRCULATION')" /> Circulation
+                      </label>
+                    </div>
+                  </div>
+                }
+                <div class="form-group">
+                  <label class="form-label">Photo de profil</label>
+                  <input type="file" accept="image/png,image/jpeg,image/webp" (change)="onPhotoSelected($event)" />
+                  <div class="form-help">JPG, PNG ou WebP, maximum 2 Mo.</div>
+                </div>
+                @if (isEdit) {
+                  <div class="form-group">
+                    <label class="form-label">Nouveau mot de passe (laisser vide pour ne pas changer)</label>
+                    <input type="password" class="form-control" [(ngModel)]="currentUserForm.password" name="password" placeholder="••••••••" />
+                  </div>
+                }
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" (click)="showModal = false">Annuler</button>
+                <button type="submit" class="btn btn-primary" [disabled]="saving">
+                  {{ saving ? 'Enregistrement...' : 'Enregistrer' }}
+                </button>
+              </div>
+            </form>
           </div>
-          <form (ngSubmit)="saveUtilisateur()">
-            <div class="modal-body">
-              <div *ngIf="formError" class="alert alert-danger">⚠️ {{ formError }}</div>
-
-              <div class="form-row" *ngIf="!isEdit">
-                <div class="form-group">
-                  <label class="form-label">Identifiant de connexion <span class="required">*</span></label>
-                  <input type="text" class="form-control" [(ngModel)]="currentUserForm.username" name="username" required placeholder="Ex: amadou" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Mot de passe <span class="required">*</span></label>
-                  <input type="password" class="form-control" [(ngModel)]="currentUserForm.password" name="password" required placeholder="••••••••" />
-                </div>
-              </div>
-
-              <div class="form-row">
-                <div class="form-group">
-                  <label class="form-label">Nom <span class="required">*</span></label>
-                  <input type="text" class="form-control" [(ngModel)]="currentUserForm.nom" name="nom" required placeholder="Ex: KOUASSI" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Prénom <span class="required">*</span></label>
-                  <input type="text" class="form-control" [(ngModel)]="currentUserForm.prenom" name="prenom" required placeholder="Ex: Jean" />
-                </div>
-              </div>
-
-              <div class="form-row">
-                <div class="form-group">
-                  <label class="form-label">Email <span class="required">*</span></label>
-                  <input type="email" class="form-control" [(ngModel)]="currentUserForm.email" name="email" required placeholder="user@autoecole.ci" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Téléphone</label>
-                  <input type="tel" class="form-control" [(ngModel)]="currentUserForm.telephone" name="telephone" placeholder="0701020304" />
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label class="form-label">Rôle attribué <span class="required">*</span></label>
-                <select class="form-control" [(ngModel)]="currentUserForm.role" name="role" required>
-                  <option value="ADMIN">Administrateur (Tous les droits)</option>
-                  <option value="SECRETAIRE">Secrétaire (Gestion candidats & inscriptions)</option>
-                  <option value="CAISSIERE">Caissière (Encaissements, reçus, caisse)</option>
-                  <option value="MONITEUR">Moniteur (Suivi pédagogique & examens)</option>
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label class="form-label">Photo de profil</label>
-                <input type="file" accept="image/png,image/jpeg,image/webp" (change)="onPhotoSelected($event)" />
-                <div class="form-help">JPG, PNG ou WebP, maximum 2 Mo.</div>
-              </div>
-
-              <div class="form-group" *ngIf="isEdit">
-                <label class="form-label">Nouveau mot de passe (laisser vide pour ne pas changer)</label>
-                <input type="password" class="form-control" [(ngModel)]="currentUserForm.password" name="password" placeholder="••••••••" />
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" (click)="showModal = false">Annuler</button>
-              <button type="submit" class="btn btn-primary" [disabled]="saving">
-                {{ saving ? 'Enregistrement...' : 'Enregistrer' }}
-              </button>
-            </div>
-          </form>
         </div>
-      </div>
+      }
     </div>
-  `,
-  styles: [`
+    `,
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styles: [`
     .page-header-bar {
       display: flex;
       align-items: center;
@@ -191,10 +228,13 @@ import { UtilisateurDTO } from '../../core/models/models';
 
     .user-photo-small img { width: 100%; height: 100%; object-fit: cover; }
     .form-help { color: var(--text-muted); font-size: 0.8rem; margin-top: 0.35rem; }
+    .specialites-group { display: flex; gap: 1.25rem; flex-wrap: wrap; }
+    .checkbox-label { display: flex; align-items: center; gap: 0.4rem; font-weight: 500; }
   `]
 })
 export class UtilisateursComponent implements OnInit {
   utilisateurs: UtilisateurDTO[] = [];
+  sites: Site[] = [];
   loading = false;
   saving = false;
 
@@ -211,13 +251,30 @@ export class UtilisateursComponent implements OnInit {
     prenom: '',
     email: '',
     telephone: '',
-    role: 'SECRETAIRE'
+    role: 'SECRETAIRE',
+    siteId: null,
+    specialites: []
   };
 
   constructor(private apiService: ApiService) {}
 
   ngOnInit(): void {
     this.loadUsers();
+    this.apiService.getSites(true).subscribe({ next: (res) => this.sites = res });
+  }
+
+  hasSpecialite(type: string): boolean {
+    return !!this.currentUserForm.specialites?.includes(type);
+  }
+
+  toggleSpecialite(type: string): void {
+    if (!this.currentUserForm.specialites) this.currentUserForm.specialites = [];
+    const idx = this.currentUserForm.specialites.indexOf(type);
+    if (idx >= 0) {
+      this.currentUserForm.specialites.splice(idx, 1);
+    } else {
+      this.currentUserForm.specialites.push(type);
+    }
   }
 
   loadUsers(): void {
@@ -245,8 +302,10 @@ export class UtilisateursComponent implements OnInit {
       prenom: '',
       email: '',
       telephone: '',
-      role: 'SECRETAIRE'
-      , photoProfile: null
+      role: 'SECRETAIRE',
+      siteId: null,
+      specialites: [],
+      photoProfile: null
     };
     this.showModal = true;
   }
@@ -262,6 +321,8 @@ export class UtilisateursComponent implements OnInit {
       telephone: u.telephone,
       role: u.role,
       password: '',
+      siteId: u.siteId || null,
+      specialites: u.specialites ? [...u.specialites] : [],
       photoProfile: u.photoProfile || null
     };
     this.showModal = true;
@@ -280,7 +341,7 @@ export class UtilisateursComponent implements OnInit {
         },
         error: (err) => {
           this.saving = false;
-          this.formError = err.error?.message || 'Erreur lors de la mise à jour.';
+          this.formError = extraireMessageErreur(err, 'Erreur lors de la mise à jour.');
         }
       });
     } else {
@@ -292,7 +353,7 @@ export class UtilisateursComponent implements OnInit {
         },
         error: (err) => {
           this.saving = false;
-          this.formError = err.error?.message || 'Erreur lors de la création.';
+          this.formError = extraireMessageErreur(err, 'Erreur lors de la création.');
         }
       });
     }
@@ -318,7 +379,7 @@ export class UtilisateursComponent implements OnInit {
   toggleActif(u: UtilisateurDTO): void {
     this.apiService.toggleActifUtilisateur(u.id).subscribe({
       next: () => this.loadUsers(),
-      error: (err) => alert(err.error?.message || 'Erreur lors du changement de statut.')
+      error: (err) => alert(extraireMessageErreur(err, 'Erreur lors du changement de statut.'))
     });
   }
 }

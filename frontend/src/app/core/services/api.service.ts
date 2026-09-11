@@ -1,17 +1,20 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../../environments/environment';
 import {
   Candidat,
   Paiement,
   Recu,
   PassageExamen,
   BilanExamensCandidat,
+  SessionExamen,
   TransactionCaisse,
   RecapCaisse,
   DashboardStats,
   CategoriePermis,
-  Forfait,
+  Site,
+  SiteStat,
   UtilisateurDTO,
   HistoriqueAction
 } from '../models/models';
@@ -20,16 +23,17 @@ import {
   providedIn: 'root'
 })
 export class ApiService {
-  private base = 'http://localhost:8080/api';
+  private base = environment.apiUrl;
 
   constructor(private http: HttpClient) {}
 
   // ================= CANDIDATS =================
-  public getCandidats(recherche?: string, statut?: string, categorieId?: number, page: number = 0, size: number = 15): Observable<any> {
+  public getCandidats(recherche?: string, statut?: string, categorieId?: number, page: number = 0, size: number = 15, statutInscription?: string): Observable<any> {
     let params = new HttpParams().set('page', page).set('size', size);
     if (recherche) params = params.set('recherche', recherche);
     if (statut) params = params.set('statut', statut);
     if (categorieId) params = params.set('categorieId', categorieId);
+    if (statutInscription) params = params.set('statutInscription', statutInscription);
 
     return this.http.get<any>(`${this.base}/candidats`, { params });
   }
@@ -54,6 +58,10 @@ export class ApiService {
     let params = new HttpParams();
     if (motif) params = params.set('motif', motif);
     return this.http.delete<void>(`${this.base}/candidats/${id}`, { params });
+  }
+
+  public reinscrireCandidat(id: number, data: any): Observable<Candidat> {
+    return this.http.post<Candidat>(`${this.base}/candidats/${id}/reinscrire`, data);
   }
 
   // ================= PAIEMENTS & REÇUS =================
@@ -115,16 +123,40 @@ export class ApiService {
     return this.http.get<PassageExamen[]>(`${this.base}/examens/prochains`);
   }
 
-  public getPassagesAValider(): Observable<PassageExamen[]> {
-    return this.http.get<PassageExamen[]>(`${this.base}/examens/a-valider`);
-  }
-
   public validerPassages(passageIds: number[]): Observable<PassageExamen[]> {
     return this.http.post<PassageExamen[]>(`${this.base}/examens/valider`, { passageIds });
   }
 
+  public listerRetires(): Observable<PassageExamen[]> {
+    return this.http.get<PassageExamen[]>(`${this.base}/examens/retires`);
+  }
+
   public programmerPassage(data: any): Observable<PassageExamen> {
     return this.http.post<PassageExamen>(`${this.base}/examens`, data);
+  }
+
+  public creerSession(data: any): Observable<SessionExamen> {
+    return this.http.post<SessionExamen>(`${this.base}/examens/sessions`, data);
+  }
+
+  public getSessions(): Observable<SessionExamen[]> {
+    return this.http.get<SessionExamen[]>(`${this.base}/examens/sessions`);
+  }
+
+  public getSessionDetail(id: number): Observable<SessionExamen> {
+    return this.http.get<SessionExamen>(`${this.base}/examens/sessions/${id}`);
+  }
+
+  public ajouterCandidatsASession(sessionId: number, candidatIds: number[]): Observable<SessionExamen> {
+    return this.http.post<SessionExamen>(`${this.base}/examens/sessions/${sessionId}/candidats`, { candidatIds });
+  }
+
+  public retirerCandidatDeSession(sessionId: number, passageId: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/examens/sessions/${sessionId}/candidats/${passageId}`);
+  }
+
+  public modifierDateSession(sessionId: number, datePassage: string): Observable<SessionExamen> {
+    return this.http.put<SessionExamen>(`${this.base}/examens/sessions/${sessionId}`, { datePassage });
   }
 
   public updateResultatPassage(id: number, data: { datePassage: string; resultat: string; observations?: string }): Observable<PassageExamen> {
@@ -176,16 +208,20 @@ export class ApiService {
     return this.http.put<CategoriePermis>(`${this.base}/parametrage/categories/${id}`, data);
   }
 
-  public getForfaits(onlyActive: boolean = false): Observable<Forfait[]> {
-    return this.http.get<Forfait[]>(`${this.base}/parametrage/forfaits?onlyActive=${onlyActive}`);
+  public getSites(onlyActive: boolean = false): Observable<Site[]> {
+    return this.http.get<Site[]>(`${this.base}/parametrage/sites?onlyActive=${onlyActive}`);
   }
 
-  public createForfait(data: any): Observable<Forfait> {
-    return this.http.post<Forfait>(`${this.base}/parametrage/forfaits`, data);
+  public createSite(data: any): Observable<Site> {
+    return this.http.post<Site>(`${this.base}/parametrage/sites`, data);
   }
 
-  public updateForfait(id: number, data: any): Observable<Forfait> {
-    return this.http.put<Forfait>(`${this.base}/parametrage/forfaits/${id}`, data);
+  public updateSite(id: number, data: any): Observable<Site> {
+    return this.http.put<Site>(`${this.base}/parametrage/sites/${id}`, data);
+  }
+
+  public getStatistiquesSites(): Observable<SiteStat[]> {
+    return this.http.get<SiteStat[]>(`${this.base}/parametrage/sites/statistiques`);
   }
 
   // ================= UTILISATEURS =================
@@ -226,12 +262,24 @@ export class ApiService {
   }
 
   // ================= AUDIT =================
-  public getAuditLogs(entite?: string, action?: string, page: number = 0, size: number = 20): Observable<any> {
+  public getAuditLogs(entite?: string, action?: string, page: number = 0, size: number = 20, debut?: string, fin?: string, utilisateurId?: number): Observable<any> {
     let params = new HttpParams().set('page', page).set('size', size);
     if (entite) params = params.set('entite', entite);
     if (action) params = params.set('action', action);
+    if (debut) params = params.set('debut', debut);
+    if (fin) params = params.set('fin', fin);
+    if (utilisateurId) params = params.set('utilisateurId', utilisateurId);
 
     return this.http.get<any>(`${this.base}/audit`, { params });
+  }
+
+  public deleteAuditLog(id: number, motif: string): Observable<void> {
+    const params = new HttpParams().set('motif', motif);
+    return this.http.delete<void>(`${this.base}/audit/${id}`, { params });
+  }
+
+  public deleteAuditLogs(ids: number[], motif: string): Observable<void> {
+    return this.http.post<void>(`${this.base}/audit/supprimer`, { ids, motif });
   }
 
   // ================= RAPPORTS & TÉLÉCHARGEMENTS =================
@@ -253,6 +301,13 @@ export class ApiService {
   public getCandidatsExcelUrl(): string { return `${this.base}/rapports/candidats/excel`; }
   public getRelevePaiementPdfUrl(candidatId: number): string { return `${this.base}/rapports/releve-paiement/${candidatId}/pdf`; }
   public getRecuPdfUrl(recuId: number): string { return `${this.base}/rapports/recu/${recuId}/pdf`; }
-  public getCaissePdfUrl(): string { return `${this.base}/rapports/caisse/pdf`; }
-  public getCaisseExcelUrl(): string { return `${this.base}/rapports/caisse/excel`; }
+  public getCaissePdfUrl(debut?: string, fin?: string): string { return `${this.base}/rapports/caisse/pdf${this.buildPeriodeQuery(debut, fin)}`; }
+  public getCaisseExcelUrl(debut?: string, fin?: string): string { return `${this.base}/rapports/caisse/excel${this.buildPeriodeQuery(debut, fin)}`; }
+
+  private buildPeriodeQuery(debut?: string, fin?: string): string {
+    const parts: string[] = [];
+    if (debut) parts.push(`debut=${encodeURIComponent(debut)}`);
+    if (fin) parts.push(`fin=${encodeURIComponent(fin)}`);
+    return parts.length > 0 ? `?${parts.join('&')}` : '';
+  }
 }

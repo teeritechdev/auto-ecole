@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "paiements", indexes = {
-    @Index(name = "idx_paiement_candidat", columnList = "candidat_id"),
+    @Index(name = "idx_paiement_inscription", columnList = "inscription_id"),
     @Index(name = "idx_paiement_date", columnList = "date_paiement"),
     @Index(name = "idx_paiement_statut", columnList = "statut")
 })
@@ -26,8 +26,8 @@ public class Paiement {
     private Long id;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "candidat_id", nullable = false)
-    private Candidat candidat;
+    @JoinColumn(name = "inscription_id", nullable = false)
+    private Inscription inscription;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "utilisateur_id", nullable = false)

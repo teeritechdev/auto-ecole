@@ -1,17 +1,19 @@
 package com.autoecole.service;
 
 import com.autoecole.dto.ParametrageDTOs.CategoriePermisDTO;
-import com.autoecole.dto.ParametrageDTOs.ForfaitDTO;
+import com.autoecole.dto.ParametrageDTOs.SiteDTO;
+import com.autoecole.dto.ParametrageDTOs.SiteStatDTO;
 import com.autoecole.entity.CategoriePermis;
-import com.autoecole.entity.Forfait;
+import com.autoecole.entity.Site;
 import com.autoecole.exception.BadRequestException;
 import com.autoecole.exception.ResourceNotFoundException;
 import com.autoecole.repository.CategoriePermisRepository;
-import com.autoecole.repository.ForfaitRepository;
+import com.autoecole.repository.SiteRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -20,7 +22,7 @@ import java.util.stream.Collectors;
 public class ParametrageService {
 
     private final CategoriePermisRepository categorieRepository;
-    private final ForfaitRepository forfaitRepository;
+    private final SiteRepository siteRepository;
     private final AuditService auditService;
 
     // --- Catégories de permis ---
@@ -44,6 +46,7 @@ public class ParametrageService {
         CategoriePermis c = CategoriePermis.builder()
                 .code(dto.getCode().trim().toUpperCase())
                 .libelle(dto.getLibelle().trim())
+                .montant(dto.getMontant())
                 .description(dto.getDescription())
                 .actif(true)
                 .build();
@@ -59,6 +62,7 @@ public class ParametrageService {
                 .orElseThrow(() -> new ResourceNotFoundException("Catégorie de permis non trouvée avec l'id: " + id));
 
         c.setLibelle(dto.getLibelle().trim());
+        c.setMontant(dto.getMontant());
         c.setDescription(dto.getDescription());
         c.setActif(dto.isActif());
 
@@ -67,68 +71,78 @@ public class ParametrageService {
         return mapToCategorieDTO(updated);
     }
 
-    // --- Forfaits ---
-    public List<ForfaitDTO> getAllForfaits(boolean onlyActive) {
-        List<Forfait> list = onlyActive ? forfaitRepository.findByActifTrue() : forfaitRepository.findAll();
-        return list.stream().map(this::mapToForfaitDTO).collect(Collectors.toList());
-    }
-
-    public ForfaitDTO getForfaitById(Long id) {
-        Forfait f = forfaitRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Forfait non trouvé avec l'id: " + id));
-        return mapToForfaitDTO(f);
-    }
-
-    @Transactional
-    public ForfaitDTO createForfait(ForfaitDTO dto) {
-        if (forfaitRepository.existsByNom(dto.getNom())) {
-            throw new BadRequestException("Un forfait avec le nom " + dto.getNom() + " existe déjà");
-        }
-
-        Forfait f = Forfait.builder()
-                .nom(dto.getNom().trim())
-                .montant(dto.getMontant())
-                .description(dto.getDescription())
-                .actif(true)
-                .build();
-
-        Forfait saved = forfaitRepository.save(f);
-        auditService.logAction("CREATION_FORFAIT", "Forfait", saved.getNom(), "Création forfait " + saved.getNom() + " - Montant: " + saved.getMontant(), null);
-        return mapToForfaitDTO(saved);
-    }
-
-    @Transactional
-    public ForfaitDTO updateForfait(Long id, ForfaitDTO dto) {
-        Forfait f = forfaitRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Forfait non trouvé avec l'id: " + id));
-
-        f.setNom(dto.getNom().trim());
-        f.setMontant(dto.getMontant());
-        f.setDescription(dto.getDescription());
-        f.setActif(dto.isActif());
-
-        Forfait updated = forfaitRepository.save(f);
-        auditService.logAction("MODIFICATION_FORFAIT", "Forfait", updated.getNom(), "Mise à jour forfait " + updated.getNom() + " - Montant: " + updated.getMontant(), null);
-        return mapToForfaitDTO(updated);
-    }
-
     private CategoriePermisDTO mapToCategorieDTO(CategoriePermis c) {
         return CategoriePermisDTO.builder()
                 .id(c.getId())
                 .code(c.getCode())
                 .libelle(c.getLibelle())
+                .montant(c.getMontant())
                 .description(c.getDescription())
                 .actif(c.isActif())
                 .build();
     }
 
-    private ForfaitDTO mapToForfaitDTO(Forfait f) {
-        return ForfaitDTO.builder()
-                .id(f.getId())
-                .nom(f.getNom())
-                .montant(f.getMontant())
-                .description(f.getDescription())
-                .actif(f.isActif())
+    // --- Sites de formation ---
+    public List<SiteDTO> getAllSites(boolean onlyActive) {
+        List<Site> list = onlyActive ? siteRepository.findByActifTrueOrderByNomAsc() : siteRepository.findAllByOrderByNomAsc();
+        return list.stream().map(this::mapToSiteDTO).collect(Collectors.toList());
+    }
+
+    public SiteDTO getSiteById(Long id) {
+        Site s = siteRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Site de formation non trouvé avec l'id: " + id));
+        return mapToSiteDTO(s);
+    }
+
+    @Transactional
+    public SiteDTO createSite(SiteDTO dto) {
+        if (siteRepository.existsByNom(dto.getNom())) {
+            throw new BadRequestException("Un site avec le nom " + dto.getNom() + " existe déjà");
+        }
+
+        Site s = Site.builder()
+                .nom(dto.getNom().trim())
+                .adresse(dto.getAdresse())
+                .actif(true)
+                .build();
+
+        Site saved = siteRepository.save(s);
+        auditService.logAction("CREATION_SITE", "Site", saved.getNom(), "Création site de formation " + saved.getNom(), null);
+        return mapToSiteDTO(saved);
+    }
+
+    @Transactional
+    public SiteDTO updateSite(Long id, SiteDTO dto) {
+        Site s = siteRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Site de formation non trouvé avec l'id: " + id));
+
+        s.setNom(dto.getNom().trim());
+        s.setAdresse(dto.getAdresse());
+        s.setActif(dto.isActif());
+
+        Site updated = siteRepository.save(s);
+        auditService.logAction("MODIFICATION_SITE", "Site", updated.getNom(), "Mise à jour site de formation " + updated.getNom(), null);
+        return mapToSiteDTO(updated);
+    }
+
+    public List<SiteStatDTO> getStatistiquesSites() {
+        return siteRepository.statistiquesParSite().stream()
+                .map(row -> SiteStatDTO.builder()
+                        .siteId((Long) row[0])
+                        .siteNom((String) row[1])
+                        .nombreCandidatsActifs((Long) row[2])
+                        .montantEncaisse((BigDecimal) row[3])
+                        .montantRestantDu((BigDecimal) row[4])
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    private SiteDTO mapToSiteDTO(Site s) {
+        return SiteDTO.builder()
+                .id(s.getId())
+                .nom(s.getNom())
+                .adresse(s.getAdresse())
+                .actif(s.isActif())
                 .build();
     }
 }

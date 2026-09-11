@@ -2,6 +2,7 @@ package com.autoecole.service;
 
 import com.autoecole.dto.CandidatDTOs.CandidatDTO;
 import com.autoecole.dto.CandidatDTOs.CreateCandidatRequest;
+import com.autoecole.dto.CandidatDTOs.ReinscrireCandidatRequest;
 import com.autoecole.dto.CandidatDTOs.UpdateCandidatRequest;
 import com.autoecole.entity.*;
 import com.autoecole.entity.enums.*;
@@ -29,15 +30,24 @@ import java.util.stream.Collectors;
 public class CandidatService {
 
     private final CandidatRepository candidatRepository;
+    private final InscriptionRepository inscriptionRepository;
+    private final InscriptionService inscriptionService;
     private final CategoriePermisRepository categorieRepository;
-    private final ForfaitRepository forfaitRepository;
+    private final SiteRepository siteRepository;
     private final PaiementRepository paiementRepository;
     private final RecuRepository recuRepository;
     private final TransactionCaisseRepository transactionCaisseRepository;
+    private final PassageExamenRepository passageRepository;
     private final AuditService auditService;
+    private final SiteAccessService siteAccessService;
 
-    public Page<CandidatDTO> rechercherCandidats(String recherche, StatutDossier statut, Long categorieId, Pageable pageable) {
-        return candidatRepository.rechercherCandidats(recherche, statut, categorieId, pageable)
+    public Page<CandidatDTO> rechercherCandidats(String recherche, StatutDossier statut, Long categorieId, StatutInscription statutInscription, Pageable pageable) {
+        Long siteId = siteAccessService.resoudreFiltreSitePourListe();
+        java.util.Set<com.autoecole.entity.enums.EtapeParcours> etapesAutorisees = siteAccessService.resoudreFiltreEtapesPourListe();
+        if (etapesAutorisees != null && etapesAutorisees.isEmpty()) {
+            return Page.empty(pageable);
+        }
+        return candidatRepository.rechercherCandidats(recherche, statut, categorieId, siteId, statutInscription, etapesAutorisees, pageable)
                 .map(this::mapToDTO);
     }
 
@@ -50,14 +60,14 @@ public class CandidatService {
     public CandidatDTO getCandidatById(Long id) {
         Candidat c = candidatRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Candidat non trouvé avec l'id: " + id));
-        c.recalculerSoldeEtStatut();
+        inscriptionService.verifierAccesCandidat(c.getId());
         return mapToDTO(c);
     }
 
     public CandidatDTO getCandidatByNumeroDossier(String numeroDossier) {
         Candidat c = candidatRepository.findByNumeroDossier(numeroDossier)
                 .orElseThrow(() -> new ResourceNotFoundException("Candidat non trouvé avec le numéro de dossier: " + numeroDossier));
-        c.recalculerSoldeEtStatut();
+        inscriptionService.verifierAccesCandidat(c.getId());
         return mapToDTO(c);
     }
 
@@ -66,26 +76,15 @@ public class CandidatService {
         CategoriePermis categorie = categorieRepository.findById(request.getCategoriePermisId())
                 .orElseThrow(() -> new ResourceNotFoundException("Catégorie de permis introuvable"));
 
-        Forfait forfait = forfaitRepository.findById(request.getForfaitId())
-                .orElseThrow(() -> new ResourceNotFoundException("Forfait introuvable"));
+        Site site = siteRepository.findById(request.getSiteId())
+                .orElseThrow(() -> new ResourceNotFoundException("Site de formation introuvable"));
 
         // Validation 1er versement si fourni à l'inscription (RG02)
         BigDecimal premierVersement = request.getMontantPremierVersement();
-        if (premierVersement != null && premierVersement.compareTo(BigDecimal.ZERO) > 0) {
-            BigDecimal min1er = new BigDecimal("35000");
-            BigDecimal max1er = new BigDecimal("50000");
-            if (premierVersement.compareTo(min1er) < 0 || premierVersement.compareTo(max1er) > 0) {
-                throw new BadRequestException("Le premier versement doit obligatoirement être compris entre 35 000 et 50 000 FCFA (RG02). Valeur fournie: " + premierVersement + " FCFA");
-            }
-        }
+        validerPremierVersement(premierVersement);
 
         LocalDate dateInsc = request.getDateInscription() != null ? request.getDateInscription() : LocalDate.now();
-        LocalDate dateEcheance = dateInsc.plusMonths(8); // RG05: 8 mois de validité
-
         String numeroDossier = genererNumeroDossierUnique(dateInsc.getYear());
-
-        BigDecimal totalVerse = (premierVersement != null) ? premierVersement : BigDecimal.ZERO;
-        BigDecimal soldeRestant = forfait.getMontant().subtract(totalVerse);
 
         Candidat candidat = Candidat.builder()
                 .numeroDossier(numeroDossier)
@@ -96,66 +95,104 @@ public class CandidatService {
                 .telephone(request.getTelephone().trim())
                 .email(request.getEmail() != null ? request.getEmail().trim().toLowerCase() : null)
                 .contactsUrgence(request.getContactsUrgence())
-                .dateInscription(dateInsc)
                 .dateReceptionDossier(request.getDateReceptionDossier())
                 .dateDepotDossier(request.getDateDepotDossier())
-                .dateEcheance(dateEcheance)
-                .statutDossier(StatutDossier.EN_COURS)
-                .categoriePermis(categorie)
-                .forfait(forfait)
-                .montantForfait(forfait.getMontant())
-                .totalVerse(totalVerse)
-                .soldeRestant(soldeRestant)
                 .build();
 
-        candidat.recalculerSoldeEtStatut();
         Candidat savedCandidat = candidatRepository.save(candidat);
+
+        BigDecimal totalVerse = (premierVersement != null) ? premierVersement : BigDecimal.ZERO;
+        Inscription inscription = inscriptionService.creerInscriptionInitiale(savedCandidat, categorie, site, dateInsc, request.getMontant(), totalVerse, request.getStatutInscription());
+
+        enregistrerPremierVersementSiFourni(savedCandidat, inscription, premierVersement, request.getModeReglementPremierVersement());
+
+        auditService.logAction("CREATION_CANDIDAT", "Candidat", savedCandidat.getNumeroDossier(),
+                "Inscription du candidat " + savedCandidat.getNom() + " " + savedCandidat.getPrenom() + " pour la catégorie " + categorie.getLibelle(), null);
+
+        return mapToDTO(savedCandidat, inscription);
+    }
+
+    /**
+     * Rattache une nouvelle inscription à un candidat déjà connu de l'auto-école (détecté en
+     * amont par la secrétaire via une recherche par téléphone/email) plutôt que de créer un
+     * dossier candidat en doublon. Le cycle précédent est archivé et la nouvelle inscription
+     * est automatiquement marquée REDOUBLANT.
+     */
+    @Transactional
+    public CandidatDTO reinscrireCandidat(Long candidatId, ReinscrireCandidatRequest request) {
+        Candidat candidat = candidatRepository.findById(candidatId)
+                .orElseThrow(() -> new ResourceNotFoundException("Candidat introuvable"));
+
+        CategoriePermis categorie = categorieRepository.findById(request.getCategoriePermisId())
+                .orElseThrow(() -> new ResourceNotFoundException("Catégorie de permis introuvable"));
+
+        Site site = siteRepository.findById(request.getSiteId())
+                .orElseThrow(() -> new ResourceNotFoundException("Site de formation introuvable"));
+
+        BigDecimal premierVersement = request.getMontantPremierVersement();
+        validerPremierVersement(premierVersement);
+
+        BigDecimal totalVerse = (premierVersement != null) ? premierVersement : BigDecimal.ZERO;
+        Inscription inscription = inscriptionService.creerNouveauCycle(candidat, categorie, site, request.getDateInscription(), request.getMontant(), totalVerse);
+
+        enregistrerPremierVersementSiFourni(candidat, inscription, premierVersement, request.getModeReglementPremierVersement());
+
+        auditService.logAction("REINSCRIPTION_CANDIDAT", "Candidat", candidat.getNumeroDossier(),
+                "Nouvelle inscription (cycle " + inscription.getNumeroCycle() + ", redoublant) pour la catégorie " + categorie.getLibelle(), null);
+
+        return mapToDTO(candidat, inscription);
+    }
+
+    private void validerPremierVersement(BigDecimal premierVersement) {
+        if (premierVersement != null && premierVersement.compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal min1er = new BigDecimal("35000");
+            BigDecimal max1er = new BigDecimal("50000");
+            if (premierVersement.compareTo(min1er) < 0 || premierVersement.compareTo(max1er) > 0) {
+                throw new BadRequestException("Le premier versement doit obligatoirement être compris entre 35 000 et 50 000 FCFA (RG02). Valeur fournie: " + premierVersement + " FCFA");
+            }
+        }
+    }
+
+    private void enregistrerPremierVersementSiFourni(Candidat candidat, Inscription inscription, BigDecimal premierVersement, ModeReglement modeReglement) {
+        if (premierVersement == null || premierVersement.compareTo(BigDecimal.ZERO) <= 0) {
+            return;
+        }
 
         Utilisateur currentUser = auditService.getCurrentUser();
 
-        // Si premier versement fourni lors de l'enregistrement
-        if (premierVersement != null && premierVersement.compareTo(BigDecimal.ZERO) > 0) {
-            Paiement paiement = Paiement.builder()
-                    .candidat(savedCandidat)
-                    .utilisateur(currentUser)
-                    .typeVersement(TypeVersement.PREMIER_VERSEMENT)
-                    .montant(premierVersement)
-                    .datePaiement(LocalDateTime.now())
-                    .modeReglement(request.getModeReglementPremierVersement() != null ? request.getModeReglementPremierVersement() : ModeReglement.ESPECES)
-                    .statut(StatutPaiement.VALIDE)
-                    .build();
+        Paiement paiement = Paiement.builder()
+                .inscription(inscription)
+                .utilisateur(currentUser)
+                .typeVersement(TypeVersement.PREMIER_VERSEMENT)
+                .montant(premierVersement)
+                .datePaiement(LocalDateTime.now())
+                .modeReglement(modeReglement != null ? modeReglement : ModeReglement.ESPECES)
+                .statut(StatutPaiement.VALIDE)
+                .build();
 
-            Paiement savedPaiement = paiementRepository.save(paiement);
+        Paiement savedPaiement = paiementRepository.save(paiement);
 
-            // Reçu unique séquentiel
-            String numRecu = genererNumeroRecuUnique(LocalDate.now().getYear());
-            Recu recu = Recu.builder()
-                    .paiement(savedPaiement)
-                    .numeroRecu(numRecu)
-                    .nomClient(savedCandidat.getNom() + " " + savedCandidat.getPrenom())
-                    .montant(premierVersement)
-                    .soldeRestant(savedCandidat.getSoldeRestant())
-                    .imprimePar(currentUser != null ? currentUser.getNom() + " " + currentUser.getPrenom() : "Secrétariat")
-                    .build();
-            recuRepository.save(recu);
+        String numRecu = genererNumeroRecuUnique(LocalDate.now().getYear());
+        Recu recu = Recu.builder()
+                .paiement(savedPaiement)
+                .numeroRecu(numRecu)
+                .nomClient(candidat.getNom() + " " + candidat.getPrenom())
+                .montant(premierVersement)
+                .soldeRestant(inscription.getSoldeRestant())
+                .imprimePar(currentUser != null ? currentUser.getNom() + " " + currentUser.getPrenom() : "Secrétariat")
+                .build();
+        recuRepository.save(recu);
 
-            // Transaction de caisse automatique
-            TransactionCaisse tx = TransactionCaisse.builder()
-                    .typeMouvement(TypeMouvementCaisse.ENTREE)
-                    .montant(premierVersement)
-                    .libelle("1er Versement Inscription " + savedCandidat.getNumeroDossier() + " (" + savedCandidat.getNom() + " " + savedCandidat.getPrenom() + ")")
-                    .categorie("RECETTE_FORMATION")
-                    .referencePiece(numRecu)
-                    .utilisateur(currentUser)
-                    .paiement(savedPaiement)
-                    .build();
-            transactionCaisseRepository.save(tx);
-        }
-
-        auditService.logAction("CREATION_CANDIDAT", "Candidat", savedCandidat.getNumeroDossier(), 
-                "Inscription du candidat " + savedCandidat.getNom() + " " + savedCandidat.getPrenom() + " pour le forfait " + forfait.getNom(), null);
-
-        return mapToDTO(savedCandidat);
+        TransactionCaisse tx = TransactionCaisse.builder()
+                .typeMouvement(TypeMouvementCaisse.ENTREE)
+                .montant(premierVersement)
+                .libelle("1er Versement Inscription " + candidat.getNumeroDossier() + " (" + candidat.getNom() + " " + candidat.getPrenom() + ")")
+                .categorie("RECETTE_FORMATION")
+                .referencePiece(numRecu)
+                .utilisateur(currentUser)
+                .paiement(savedPaiement)
+                .build();
+        transactionCaisseRepository.save(tx);
     }
 
     @Transactional
@@ -165,9 +202,8 @@ public class CandidatService {
 
         CategoriePermis categorie = categorieRepository.findById(request.getCategoriePermisId())
                 .orElseThrow(() -> new ResourceNotFoundException("Catégorie introuvable"));
-
-        Forfait forfait = forfaitRepository.findById(request.getForfaitId())
-                .orElseThrow(() -> new ResourceNotFoundException("Forfait introuvable"));
+        Site site = siteRepository.findById(request.getSiteId())
+                .orElseThrow(() -> new ResourceNotFoundException("Site de formation introuvable"));
 
         candidat.setNom(request.getNom().trim().toUpperCase());
         candidat.setPrenom(request.getPrenom().trim());
@@ -178,19 +214,13 @@ public class CandidatService {
         candidat.setContactsUrgence(request.getContactsUrgence());
         candidat.setDateReceptionDossier(request.getDateReceptionDossier());
         candidat.setDateDepotDossier(request.getDateDepotDossier());
-        candidat.setCategoriePermis(categorie);
-
-        // Si le forfait a changé
-        if (!candidat.getForfait().getId().equals(forfait.getId())) {
-            candidat.setForfait(forfait);
-            candidat.setMontantForfait(forfait.getMontant());
-            candidat.recalculerSoldeEtStatut();
-        }
 
         Candidat updated = candidatRepository.save(candidat);
+        Inscription active = inscriptionService.mettreAJourCategorieEtMontant(id, categorie, request.getMontant(), site);
+
         auditService.logAction("MODIFICATION_CANDIDAT", "Candidat", updated.getNumeroDossier(), "Mise à jour fiche candidat", null);
 
-        return mapToDTO(updated);
+        return mapToDTO(updated, active);
     }
 
     @Transactional
@@ -210,10 +240,10 @@ public class CandidatService {
     @Transactional
     public void verifierExpirationsDossiers() {
         log.info("Vérification automatique des dossiers expirés...");
-        List<Candidat> aExpirer = candidatRepository.findCandidatsAExpirer(LocalDate.now());
-        for (Candidat c : aExpirer) {
-            c.recalculerSoldeEtStatut();
-            candidatRepository.save(c);
+        List<Inscription> aExpirer = inscriptionRepository.findInscriptionsActivesAExpirer(LocalDate.now());
+        for (Inscription i : aExpirer) {
+            i.recalculerSoldeEtStatut();
+            inscriptionRepository.save(i);
         }
     }
 
@@ -242,13 +272,19 @@ public class CandidatService {
     }
 
     public CandidatDTO mapToDTO(Candidat c) {
+        Inscription active = inscriptionService.getInscriptionActive(c.getId());
+        active.recalculerSoldeEtStatut();
+        return mapToDTO(c, active);
+    }
+
+    public CandidatDTO mapToDTO(Candidat c, Inscription i) {
         LocalDate now = LocalDate.now();
         long joursRestants = 0;
         boolean procheExpiration = false;
 
-        if (c.getDateEcheance() != null) {
-            joursRestants = ChronoUnit.DAYS.between(now, c.getDateEcheance());
-            procheExpiration = (joursRestants >= 0 && joursRestants <= 30 && c.getStatutDossier() != StatutDossier.SOLDE);
+        if (i.getDateEcheance() != null) {
+            joursRestants = ChronoUnit.DAYS.between(now, i.getDateEcheance());
+            procheExpiration = (joursRestants >= 0 && joursRestants <= 30 && i.getStatutDossier() != StatutDossier.SOLDE);
         }
 
         return CandidatDTO.builder()
@@ -261,22 +297,29 @@ public class CandidatService {
                 .telephone(c.getTelephone())
                 .email(c.getEmail())
                 .contactsUrgence(c.getContactsUrgence())
-                .dateInscription(c.getDateInscription())
+                .dateInscription(i.getDateInscription())
                 .dateReceptionDossier(c.getDateReceptionDossier())
                 .dateDepotDossier(c.getDateDepotDossier())
-                .dateEcheance(c.getDateEcheance())
-                .statutDossier(c.getStatutDossier())
-                .categoriePermisId(c.getCategoriePermis() != null ? c.getCategoriePermis().getId() : null)
-                .categoriePermisCode(c.getCategoriePermis() != null ? c.getCategoriePermis().getCode() : null)
-                .categoriePermisLibelle(c.getCategoriePermis() != null ? c.getCategoriePermis().getLibelle() : null)
-                .forfaitId(c.getForfait() != null ? c.getForfait().getId() : null)
-                .forfaitNom(c.getForfait() != null ? c.getForfait().getNom() : null)
-                .montantForfait(c.getMontantForfait())
-                .totalVerse(c.getTotalVerse())
-                .soldeRestant(c.getSoldeRestant())
+                .dateEcheance(i.getDateEcheance())
+                .statutDossier(i.getStatutDossier())
+                .statutInscription(i.getStatutInscription())
+                .inscriptionActiveId(i.getId())
+                .numeroCycle(i.getNumeroCycle())
+                .categoriePermisId(i.getCategoriePermis() != null ? i.getCategoriePermis().getId() : null)
+                .categoriePermisCode(i.getCategoriePermis() != null ? i.getCategoriePermis().getCode() : null)
+                .categoriePermisLibelle(i.getCategoriePermis() != null ? i.getCategoriePermis().getLibelle() : null)
+                .siteId(i.getSite() != null ? i.getSite().getId() : null)
+                .siteNom(i.getSite() != null ? i.getSite().getNom() : null)
+                .montantForfait(i.getMontantForfait())
+                .totalVerse(i.getTotalVerse())
+                .soldeRestant(i.getSoldeRestant())
                 .dateCreation(c.getDateCreation())
                 .procheExpiration(procheExpiration)
                 .joursRestants(joursRestants)
+                .etapeParcours(i.getEtapeParcours())
+                .codeReussi(passageRepository.existsByInscriptionIdAndTypeEpreuveAndResultat(i.getId(), TypeEpreuve.CODE, ResultatExamen.REUSSI))
+                .creneauReussi(passageRepository.existsByInscriptionIdAndTypeEpreuveAndResultat(i.getId(), TypeEpreuve.CRENEAU, ResultatExamen.REUSSI))
+                .circulationReussi(passageRepository.existsByInscriptionIdAndTypeEpreuveAndResultat(i.getId(), TypeEpreuve.CIRCULATION, ResultatExamen.REUSSI))
                 .build();
     }
 }

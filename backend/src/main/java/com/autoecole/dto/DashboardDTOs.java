@@ -19,7 +19,6 @@ public class DashboardDTOs {
         private long totalCandidats;
         private long candidatsEnCours;
         private long candidatsSoldes;
-        private long candidatsExpires;
         private long candidatsExpiresNonSoldes;
 
         // Financier KPIs

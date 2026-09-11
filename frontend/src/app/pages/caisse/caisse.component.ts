@@ -1,15 +1,15 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { RecapCaisse, TransactionCaisse } from '../../core/models/models';
+import { extraireMessageErreur } from '../../core/utils/error-utils';
 
 @Component({
-  selector: 'app-caisse',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-caisse',
+    imports: [CommonModule, FormsModule],
+    template: `
     <div class="caisse-page">
       <!-- HEADER -->
       <div class="page-header-bar">
@@ -20,12 +20,14 @@ import { RecapCaisse, TransactionCaisse } from '../../core/models/models';
         <div class="header-buttons">
           <button class="btn btn-outline btn-sm" (click)="exportPdf()">📄 Journal PDF</button>
           <button class="btn btn-outline btn-sm" (click)="exportExcel()">📊 Journal Excel</button>
-          <button class="btn btn-primary" *ngIf="canAdd" (click)="openNewTxModal()">
-            ➕ Nouveau Mouvement
-          </button>
+          @if (canAdd) {
+            <button class="btn btn-primary" (click)="openNewTxModal()">
+              ➕ Nouveau Mouvement
+            </button>
+          }
         </div>
       </div>
-
+    
       <!-- RECAP STATS -->
       <div class="stats-grid">
         <div class="stat-card primary">
@@ -36,7 +38,7 @@ import { RecapCaisse, TransactionCaisse } from '../../core/models/models';
             <div class="stat-sub">Total Entrées − Sorties</div>
           </div>
         </div>
-
+    
         <div class="stat-card success">
           <div class="stat-icon success">📥</div>
           <div class="stat-info">
@@ -45,7 +47,7 @@ import { RecapCaisse, TransactionCaisse } from '../../core/models/models';
             <div class="stat-sub text-success">Aujourd'hui : +{{ (recap?.totalEntreesJour || 0) | number }} FCFA</div>
           </div>
         </div>
-
+    
         <div class="stat-card danger">
           <div class="stat-icon danger">📤</div>
           <div class="stat-info">
@@ -54,7 +56,7 @@ import { RecapCaisse, TransactionCaisse } from '../../core/models/models';
             <div class="stat-sub text-danger">Aujourd'hui : -{{ (recap?.totalSortiesJour || 0) | number }} FCFA</div>
           </div>
         </div>
-
+    
         <div class="stat-card info">
           <div class="stat-icon info">📊</div>
           <div class="stat-info">
@@ -66,7 +68,7 @@ import { RecapCaisse, TransactionCaisse } from '../../core/models/models';
           </div>
         </div>
       </div>
-
+    
       <!-- FILTERS -->
       <div class="card filter-card">
         <div class="filter-grid">
@@ -85,7 +87,7 @@ import { RecapCaisse, TransactionCaisse } from '../../core/models/models';
           </div>
         </div>
       </div>
-
+    
       <!-- TABLE TRANSACTIONS -->
       <div class="card">
         <div class="table-responsive">
@@ -99,99 +101,112 @@ import { RecapCaisse, TransactionCaisse } from '../../core/models/models';
                 <th>Réf. Pièce</th>
                 <th>Montant</th>
                 <th>Opérateur</th>
-                <th class="text-right" *ngIf="isAdmin">Action</th>
+                @if (isAdmin) {
+                  <th class="text-right">Action</th>
+                }
               </tr>
             </thead>
             <tbody>
-              <tr *ngIf="loading">
-                <td colspan="8" class="text-center py-4">Chargement du journal de caisse...</td>
-              </tr>
-              <tr *ngIf="!loading && transactions.length === 0">
-                <td colspan="8" class="text-center py-4">Aucune transaction de caisse trouvée.</td>
-              </tr>
-              <tr *ngFor="let tx of transactions">
-                <td>{{ tx.dateTransaction | date:'dd/MM/yyyy HH:mm' }}</td>
-                <td>
-                  <span class="badge" [ngClass]="tx.typeMouvement === 'ENTREE' ? 'badge-entree' : 'badge-sortie'">
-                    {{ tx.typeMouvement === 'ENTREE' ? '📥 ENTRÉE' : '📤 SORTIE' }}
-                  </span>
-                </td>
-                <td><strong>{{ tx.libelle }}</strong></td>
-                <td><span class="cat-pill">{{ tx.categorie || 'Général' }}</span></td>
-                <td><code>{{ tx.referencePiece || '—' }}</code></td>
-                <td>
-                  <strong [ngClass]="tx.typeMouvement === 'ENTREE' ? 'text-success' : 'text-danger'">
-                    {{ tx.typeMouvement === 'ENTREE' ? '+' : '-' }}{{ tx.montant | number }} FCFA
-                  </strong>
-                </td>
-                <td>{{ tx.utilisateurNomComplet }}</td>
-                <td class="text-right" *ngIf="isAdmin">
-                  <button class="btn btn-danger btn-sm" (click)="openDeleteModal(tx)">🗑️</button>
-                </td>
-              </tr>
+              @if (loading) {
+                <tr>
+                  <td colspan="8" class="text-center py-4">Chargement du journal de caisse...</td>
+                </tr>
+              }
+              @if (!loading && transactions.length === 0) {
+                <tr>
+                  <td colspan="8" class="text-center py-4">Aucune transaction de caisse trouvée.</td>
+                </tr>
+              }
+              @for (tx of transactions; track tx) {
+                <tr>
+                  <td>{{ tx.dateTransaction | date:'dd/MM/yyyy HH:mm' }}</td>
+                  <td>
+                    <span class="badge" [ngClass]="tx.typeMouvement === 'ENTREE' ? 'badge-entree' : 'badge-sortie'">
+                      {{ tx.typeMouvement === 'ENTREE' ? '📥 ENTRÉE' : '📤 SORTIE' }}
+                    </span>
+                  </td>
+                  <td><strong>{{ tx.libelle }}</strong></td>
+                  <td><span class="cat-pill">{{ tx.categorie || 'Général' }}</span></td>
+                  <td><code>{{ tx.referencePiece || '—' }}</code></td>
+                  <td>
+                    <strong [ngClass]="tx.typeMouvement === 'ENTREE' ? 'text-success' : 'text-danger'">
+                      {{ tx.typeMouvement === 'ENTREE' ? '+' : '-' }}{{ tx.montant | number }} FCFA
+                    </strong>
+                  </td>
+                  <td>{{ tx.utilisateurNomComplet }}</td>
+                  @if (isAdmin) {
+                    <td class="text-right">
+                      <button class="btn btn-danger btn-sm" (click)="openDeleteModal(tx)">🗑️</button>
+                    </td>
+                  }
+                </tr>
+              }
             </tbody>
           </table>
         </div>
-
-        <div class="pagination-bar" *ngIf="totalPages > 1">
-          <button class="btn btn-outline btn-sm" [disabled]="page === 0" (click)="changePage(page - 1)">◀ Précédent</button>
-          <span>Page {{ page + 1 }} sur {{ totalPages }} ({{ totalElements }} mouvements)</span>
-          <button class="btn btn-outline btn-sm" [disabled]="page >= totalPages - 1" (click)="changePage(page + 1)">Suivant ▶</button>
-        </div>
-      </div>
-
-      <!-- MODAL NOUVEAU MOUVEMENT -->
-      <div class="modal-backdrop" *ngIf="showNewTxModal">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h3>🏦 Enregistrer un Mouvement de Caisse</h3>
-            <button class="btn btn-outline btn-sm" (click)="showNewTxModal = false">✕</button>
+    
+        @if (totalPages > 1) {
+          <div class="pagination-bar">
+            <button class="btn btn-outline btn-sm" [disabled]="page === 0" (click)="changePage(page - 1)">◀ Précédent</button>
+            <span>Page {{ page + 1 }} sur {{ totalPages }} ({{ totalElements }} mouvements)</span>
+            <button class="btn btn-outline btn-sm" [disabled]="page >= totalPages - 1" (click)="changePage(page + 1)">Suivant ▶</button>
           </div>
-          <form (ngSubmit)="saveTransaction()">
-            <div class="modal-body">
-              <div *ngIf="formError" class="alert alert-danger">⚠️ {{ formError }}</div>
-
-              <div class="form-group">
-                <label class="form-label">Type de mouvement <span class="required">*</span></label>
-                <select class="form-control" [(ngModel)]="newTx.typeMouvement" name="typeMouvement" required>
-                  <option value="ENTREE">📥 ENTRÉE (Recette / Encaissement)</option>
-                  <option value="SORTIE">📤 SORTIE (Dépense / Charge / Achat)</option>
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label class="form-label">Montant (FCFA) <span class="required">*</span></label>
-                <input type="number" class="form-control" [(ngModel)]="newTx.montant" name="montant" required placeholder="Ex: 15000" />
-              </div>
-
-              <div class="form-group">
-                <label class="form-label">Libellé descriptif <span class="required">*</span></label>
-                <input type="text" class="form-control" [(ngModel)]="newTx.libelle" name="libelle" required placeholder="Ex: Achat carburant véhicule permis B" />
-              </div>
-
-              <div class="form-row">
-                <div class="form-group">
-                  <label class="form-label">Catégorie</label>
-                  <input type="text" class="form-control" [(ngModel)]="newTx.categorie" name="categorie" placeholder="Ex: CARBURANT, CHARGES, ENTRETIEN..." />
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Référence Pièce / Facture</label>
-                  <input type="text" class="form-control" [(ngModel)]="newTx.referencePiece" name="referencePiece" placeholder="Ex: FACT-2026-089" />
-                </div>
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" (click)="showNewTxModal = false">Annuler</button>
-              <button type="submit" class="btn btn-primary" [disabled]="saving || !newTx.montant || !newTx.libelle">
-                {{ saving ? 'Enregistrement...' : 'Valider le Mouvement' }}
-              </button>
-            </div>
-          </form>
-        </div>
+        }
       </div>
+    
+      <!-- MODAL NOUVEAU MOUVEMENT -->
+      @if (showNewTxModal) {
+        <div class="modal-backdrop">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3>🏦 Enregistrer un Mouvement de Caisse</h3>
+              <button class="btn btn-outline btn-sm" (click)="showNewTxModal = false">✕</button>
+            </div>
+            <form (ngSubmit)="saveTransaction()">
+              <div class="modal-body">
+                @if (formError) {
+                  <div class="alert alert-danger">⚠️ {{ formError }}</div>
+                }
+                <div class="form-group">
+                  <label class="form-label">Type de mouvement <span class="required">*</span></label>
+                  <select class="form-control" [(ngModel)]="newTx.typeMouvement" name="typeMouvement" required>
+                    <option value="ENTREE">📥 ENTRÉE (Recette / Encaissement)</option>
+                    <option value="SORTIE">📤 SORTIE (Dépense / Charge / Achat)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Montant (FCFA) <span class="required">*</span></label>
+                  <input type="number" class="form-control" [(ngModel)]="newTx.montant" name="montant" required placeholder="Ex: 15000" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Libellé descriptif <span class="required">*</span></label>
+                  <input type="text" class="form-control" [(ngModel)]="newTx.libelle" name="libelle" required placeholder="Ex: Achat carburant véhicule permis B" />
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Catégorie</label>
+                    <input type="text" class="form-control" [(ngModel)]="newTx.categorie" name="categorie" placeholder="Ex: CARBURANT, CHARGES, ENTRETIEN..." />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Référence Pièce / Facture</label>
+                    <input type="text" class="form-control" [(ngModel)]="newTx.referencePiece" name="referencePiece" placeholder="Ex: FACT-2026-089" />
+                  </div>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" (click)="showNewTxModal = false">Annuler</button>
+                <button type="submit" class="btn btn-primary" [disabled]="saving || !newTx.montant || !newTx.libelle">
+                  {{ saving ? 'Enregistrement...' : 'Valider le Mouvement' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      }
     </div>
-  `,
-  styles: [`
+    `,
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styles: [`
     .page-header-bar {
       display: flex;
       align-items: center;
@@ -335,7 +350,7 @@ export class CaisseComponent implements OnInit {
       },
       error: (err) => {
         this.saving = false;
-        this.formError = err.error?.message || 'Erreur lors de l’enregistrement.';
+        this.formError = extraireMessageErreur(err, 'Erreur lors de l’enregistrement.');
       }
     });
   }
@@ -349,7 +364,7 @@ export class CaisseComponent implements OnInit {
         this.loadRecap();
         this.loadTransactions();
       },
-      error: (err) => alert(err.error?.message || 'Erreur lors de la suppression.')
+      error: (err) => alert(extraireMessageErreur(err, 'Erreur lors de la suppression.'))
     });
   }
 

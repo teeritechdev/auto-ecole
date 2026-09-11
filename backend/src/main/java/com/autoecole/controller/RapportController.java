@@ -31,7 +31,7 @@ public class RapportController {
     private final CaisseService caisseService;
 
     @GetMapping("/candidats/excel")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETAIRE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETAIRE', 'CAISSIERE')")
     @Operation(summary = "Exporter la liste des candidats en Excel (.xlsx)")
     public ResponseEntity<byte[]> exportCandidatsExcel(
             @RequestParam(required = false) StatutDossier statut,
@@ -47,7 +47,7 @@ public class RapportController {
     }
 
     @GetMapping("/candidats/pdf")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETAIRE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETAIRE', 'CAISSIERE')")
     @Operation(summary = "Exporter la liste des candidats en PDF")
     public ResponseEntity<byte[]> exportCandidatsPdf(
             @RequestParam(required = false) StatutDossier statut,

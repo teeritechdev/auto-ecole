@@ -1,16 +1,16 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { Candidat, Paiement, Recu } from '../../core/models/models';
+import { extraireMessageErreur } from '../../core/utils/error-utils';
 
 @Component({
-  selector: 'app-paiements',
-  standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
-  template: `
+    selector: 'app-paiements',
+    imports: [CommonModule, FormsModule, RouterModule],
+    template: `
     <div class="paiements-page">
       <!-- HEADER -->
       <div class="page-header-bar">
@@ -19,12 +19,14 @@ import { Candidat, Paiement, Recu } from '../../core/models/models';
           <p>Enregistrez les versements, imprimez les reçus officiels et contrôlez les soldes</p>
         </div>
         <div class="header-buttons">
-          <button class="btn btn-primary" *ngIf="canAdd" (click)="openNewPaiementModal()">
-            💵 Nouvel Encaissement
-          </button>
+          @if (canAdd) {
+            <button class="btn btn-primary" (click)="openNewPaiementModal()">
+              💵 Nouvel Encaissement
+            </button>
+          }
         </div>
       </div>
-
+    
       <!-- FILTERS -->
       <div class="card filter-card">
         <div class="filter-grid">
@@ -41,7 +43,7 @@ import { Candidat, Paiement, Recu } from '../../core/models/models';
           </div>
         </div>
       </div>
-
+    
       <!-- TABLE PAIEMENTS -->
       <div class="card">
         <div class="table-responsive">
@@ -60,190 +62,213 @@ import { Candidat, Paiement, Recu } from '../../core/models/models';
               </tr>
             </thead>
             <tbody>
-              <tr *ngIf="loading">
-                <td colspan="9" class="text-center py-4">Chargement des versements...</td>
-              </tr>
-              <tr *ngIf="!loading && paiements.length === 0">
-                <td colspan="9" class="text-center py-4">Aucun versement trouvé.</td>
-              </tr>
-              <tr *ngFor="let p of paiements">
-                <td><strong class="dossier-code">{{ p.numeroRecu || '-' }}</strong></td>
-                <td>{{ p.datePaiement | date:'dd/MM/yyyy HH:mm' }}</td>
-                <td>
-                  <strong>{{ p.candidatNomComplet }}</strong>
-                  <div class="sub-text">{{ p.candidatNumeroDossier }}</div>
-                </td>
-                <td>
-                  <span class="badge" [ngClass]="p.typeVersement === 'PREMIER_VERSEMENT' ? 'badge-programme' : 'badge-solde'">
-                    {{ p.typeVersement === 'PREMIER_VERSEMENT' ? '1er Versement' : 'Versement Suivant' }}
-                  </span>
-                </td>
-                <td><strong class="text-success">{{ p.montant | number }} FCFA</strong></td>
-                <td>{{ p.modeReglement }}</td>
-                <td>{{ p.utilisateurNomComplet }}</td>
-                <td>
+              @if (loading) {
+                <tr>
+                  <td colspan="9" class="text-center py-4">Chargement des versements...</td>
+                </tr>
+              }
+              @if (!loading && paiements.length === 0) {
+                <tr>
+                  <td colspan="9" class="text-center py-4">Aucun versement trouvé.</td>
+                </tr>
+              }
+              @for (p of paiements; track p) {
+                <tr>
+                  <td><strong class="dossier-code">{{ p.numeroRecu || '-' }}</strong></td>
+                  <td>{{ p.datePaiement | date:'dd/MM/yyyy HH:mm' }}</td>
+                  <td>
+                    <strong>{{ p.candidatNomComplet }}</strong>
+                    <div class="sub-text">{{ p.candidatNumeroDossier }}</div>
+                  </td>
+                  <td>
+                    <span class="badge" [ngClass]="p.typeVersement === 'PREMIER_VERSEMENT' ? 'badge-programme' : 'badge-solde'">
+                      {{ p.typeVersement === 'PREMIER_VERSEMENT' ? '1er Versement' : 'Versement Suivant' }}
+                    </span>
+                  </td>
+                  <td><strong class="text-success">{{ p.montant | number }} FCFA</strong></td>
+                  <td>{{ p.modeReglement }}</td>
+                  <td>{{ p.utilisateurNomComplet }}</td>
+                  <td>
                   <span class="badge" [ngClass]="{
                     'badge-solde': p.statut === 'VALIDE',
                     'badge-expire': p.statut === 'ANNULE',
                     'badge-ajourne': p.statut === 'MODIFIE'
                   }">{{ p.statut }}</span>
-                  <div *ngIf="p.motifModification" class="motif-text">Motif : {{ p.motifModification }}</div>
-                </td>
-                <td class="text-right">
-                  <div class="action-flex">
-                    <button class="btn btn-outline btn-sm" *ngIf="p.recuId" (click)="imprimerRecu(p.recuId)" title="Télécharger Reçu PDF">
-                      🖨️ Reçu PDF
-                    </button>
-                    <button class="btn btn-outline btn-sm" *ngIf="canAdd && p.statut !== 'ANNULE'" (click)="openEditModal(p)" title="Modifier">
-                      ✏️
-                    </button>
-                    <button class="btn btn-danger btn-sm" *ngIf="canAdd && p.statut !== 'ANNULE'" (click)="openCancelModal(p)" title="Annuler">
-                      ✕
-                    </button>
-                  </div>
-                </td>
-              </tr>
+                    @if (p.motifModification) {
+                      <div class="motif-text">Motif : {{ p.motifModification }}</div>
+                    }
+                  </td>
+                  <td class="text-right">
+                    <div class="action-flex">
+                      @if (p.recuId) {
+                        <button class="btn btn-outline btn-sm" (click)="imprimerRecu(p.recuId)" title="Télécharger Reçu PDF">
+                          🖨️ Reçu PDF
+                        </button>
+                      }
+                      @if (canAdd && p.statut !== 'ANNULE') {
+                        <button class="btn btn-outline btn-sm" (click)="openEditModal(p)" title="Modifier">
+                          ✏️
+                        </button>
+                      }
+                      @if (canAdd && p.statut !== 'ANNULE') {
+                        <button class="btn btn-danger btn-sm" (click)="openCancelModal(p)" title="Annuler">
+                          ✕
+                        </button>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
             </tbody>
           </table>
         </div>
-
-        <div class="pagination-bar" *ngIf="totalPages > 1">
-          <button class="btn btn-outline btn-sm" [disabled]="page === 0" (click)="changePage(page - 1)">◀ Précédent</button>
-          <span>Page {{ page + 1 }} sur {{ totalPages }} ({{ totalElements }} versements)</span>
-          <button class="btn btn-outline btn-sm" [disabled]="page >= totalPages - 1" (click)="changePage(page + 1)">Suivant ▶</button>
-        </div>
+    
+        @if (totalPages > 1) {
+          <div class="pagination-bar">
+            <button class="btn btn-outline btn-sm" [disabled]="page === 0" (click)="changePage(page - 1)">◀ Précédent</button>
+            <span>Page {{ page + 1 }} sur {{ totalPages }} ({{ totalElements }} versements)</span>
+            <button class="btn btn-outline btn-sm" [disabled]="page >= totalPages - 1" (click)="changePage(page + 1)">Suivant ▶</button>
+          </div>
+        }
       </div>
-
+    
       <!-- MODAL NOUVEL ENCAISSEMENT -->
-      <div class="modal-backdrop" *ngIf="showNewModal">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h3>💵 Nouvel Encaissement</h3>
-            <button class="btn btn-outline btn-sm" (click)="showNewModal = false">✕</button>
+      @if (showNewModal) {
+        <div class="modal-backdrop">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3>💵 Nouvel Encaissement</h3>
+              <button class="btn btn-outline btn-sm" (click)="showNewModal = false">✕</button>
+            </div>
+            <form (ngSubmit)="saveNewPaiement()">
+              <div class="modal-body">
+                @if (formError) {
+                  <div class="alert alert-danger">⚠️ {{ formError }}</div>
+                }
+                <div class="form-group">
+                  <label class="form-label">Sélectionner le candidat <span class="required">*</span></label>
+                  <select class="form-control" [(ngModel)]="selectedCandidatId" name="candidatId" (change)="onCandidatSelect()" required>
+                    <option [ngValue]="null">-- Sélectionner un candidat --</option>
+                    @for (c of nonSoldesCandidats; track c) {
+                      <option [value]="c.id">
+                        {{ c.numeroDossier }} — {{ c.nom }} {{ c.prenom }} (Reste : {{ c.soldeRestant | number }} FCFA)
+                      </option>
+                    }
+                  </select>
+                </div>
+                @if (selectedCandidat) {
+                  <div class="alert alert-info">
+                    Catégorie : <strong>{{ selectedCandidat.categoriePermisLibelle }} ({{ selectedCandidat.montantForfait | number }} FCFA)</strong><br>
+                    Déjà versé : <strong>{{ selectedCandidat.totalVerse | number }} FCFA</strong><br>
+                    Reste à payer : <strong class="text-danger">{{ selectedCandidat.soldeRestant | number }} FCFA</strong>
+                  </div>
+                }
+                <div class="form-group">
+                  <label class="form-label">Montant à encaisser (FCFA) <span class="required">*</span></label>
+                  <input
+                    type="number"
+                    class="form-control"
+                    [(ngModel)]="newMontant"
+                    name="montant"
+                    [max]="selectedCandidat?.soldeRestant || 999999"
+                    required
+                    placeholder="Ex: 35000"
+                    />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Mode de règlement <span class="required">*</span></label>
+                  <select class="form-control" [(ngModel)]="newMode" name="mode" required>
+                    <option value="ESPECES">Espèces</option>
+                    <option value="MOBILE_MONEY">Mobile Money (Wave / Orange / MTN / Moov)</option>
+                    <option value="VIREMENT">Virement bancaire</option>
+                    <option value="CHEQUE">Chèque</option>
+                  </select>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" (click)="showNewModal = false">Annuler</button>
+                <button type="submit" class="btn btn-success" [disabled]="saving || !selectedCandidatId || !newMontant">
+                  {{ saving ? 'Validation...' : 'Valider & Générer Reçu' }}
+                </button>
+              </div>
+            </form>
           </div>
-          <form (ngSubmit)="saveNewPaiement()">
-            <div class="modal-body">
-              <div *ngIf="formError" class="alert alert-danger">⚠️ {{ formError }}</div>
-
-              <div class="form-group">
-                <label class="form-label">Sélectionner le candidat <span class="required">*</span></label>
-                <select class="form-control" [(ngModel)]="selectedCandidatId" name="candidatId" (change)="onCandidatSelect()" required>
-                  <option [ngValue]="null">-- Sélectionner un candidat --</option>
-                  <option *ngFor="let c of nonSoldesCandidats" [value]="c.id">
-                    {{ c.numeroDossier }} — {{ c.nom }} {{ c.prenom }} (Reste : {{ c.soldeRestant | number }} FCFA)
-                  </option>
-                </select>
-              </div>
-
-              <div *ngIf="selectedCandidat" class="alert alert-info">
-                Forfait : <strong>{{ selectedCandidat.forfaitNom }} ({{ selectedCandidat.montantForfait | number }} FCFA)</strong><br>
-                Déjà versé : <strong>{{ selectedCandidat.totalVerse | number }} FCFA</strong><br>
-                Reste à payer : <strong class="text-danger">{{ selectedCandidat.soldeRestant | number }} FCFA</strong>
-              </div>
-
-              <div class="form-group">
-                <label class="form-label">Montant à encaisser (FCFA) <span class="required">*</span></label>
-                <input 
-                  type="number" 
-                  class="form-control" 
-                  [(ngModel)]="newMontant" 
-                  name="montant" 
-                  [max]="selectedCandidat?.soldeRestant || 999999" 
-                  required 
-                  placeholder="Ex: 35000"
-                />
-              </div>
-
-              <div class="form-group">
-                <label class="form-label">Mode de règlement <span class="required">*</span></label>
-                <select class="form-control" [(ngModel)]="newMode" name="mode" required>
-                  <option value="ESPECES">Espèces</option>
-                  <option value="MOBILE_MONEY">Mobile Money (Wave / Orange / MTN / Moov)</option>
-                  <option value="VIREMENT">Virement bancaire</option>
-                  <option value="CHEQUE">Chèque</option>
-                </select>
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" (click)="showNewModal = false">Annuler</button>
-              <button type="submit" class="btn btn-success" [disabled]="saving || !selectedCandidatId || !newMontant">
-                {{ saving ? 'Validation...' : 'Valider & Générer Reçu' }}
-              </button>
-            </div>
-          </form>
         </div>
-      </div>
-
+      }
+    
       <!-- MODAL MODIFICATION PAIEMENT (avec motif RG10) -->
-      <div class="modal-backdrop" *ngIf="showEditModal">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h3>✏️ Modifier un Versement (Traçabilité RG10)</h3>
-            <button class="btn btn-outline btn-sm" (click)="showEditModal = false">✕</button>
+      @if (showEditModal) {
+        <div class="modal-backdrop">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3>✏️ Modifier un Versement (Traçabilité RG10)</h3>
+              <button class="btn btn-outline btn-sm" (click)="showEditModal = false">✕</button>
+            </div>
+            <form (ngSubmit)="saveEditPaiement()">
+              <div class="modal-body">
+                @if (formError) {
+                  <div class="alert alert-danger">⚠️ {{ formError }}</div>
+                }
+                <div class="form-group">
+                  <label class="form-label">Nouveau Montant (FCFA) <span class="required">*</span></label>
+                  <input type="number" class="form-control" [(ngModel)]="editMontant" name="editMontant" required />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Mode de règlement <span class="required">*</span></label>
+                  <select class="form-control" [(ngModel)]="editMode" name="editMode" required>
+                    <option value="ESPECES">Espèces</option>
+                    <option value="MOBILE_MONEY">Mobile Money</option>
+                    <option value="VIREMENT">Virement bancaire</option>
+                    <option value="CHEQUE">Chèque</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Motif de la modification (obligatoire) <span class="required">*</span></label>
+                  <textarea class="form-control" rows="2" [(ngModel)]="editMotif" name="editMotif" placeholder="Justification de la modification" required></textarea>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" (click)="showEditModal = false">Annuler</button>
+                <button type="submit" class="btn btn-primary" [disabled]="saving || !editMotif || !editMontant">
+                  {{ saving ? 'Mise à jour...' : 'Confirmer la modification' }}
+                </button>
+              </div>
+            </form>
           </div>
-          <form (ngSubmit)="saveEditPaiement()">
-            <div class="modal-body">
-              <div *ngIf="formError" class="alert alert-danger">⚠️ {{ formError }}</div>
-
-              <div class="form-group">
-                <label class="form-label">Nouveau Montant (FCFA) <span class="required">*</span></label>
-                <input type="number" class="form-control" [(ngModel)]="editMontant" name="editMontant" required />
-              </div>
-
-              <div class="form-group">
-                <label class="form-label">Mode de règlement <span class="required">*</span></label>
-                <select class="form-control" [(ngModel)]="editMode" name="editMode" required>
-                  <option value="ESPECES">Espèces</option>
-                  <option value="MOBILE_MONEY">Mobile Money</option>
-                  <option value="VIREMENT">Virement bancaire</option>
-                  <option value="CHEQUE">Chèque</option>
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label class="form-label">Motif de la modification (obligatoire) <span class="required">*</span></label>
-                <textarea class="form-control" rows="2" [(ngModel)]="editMotif" name="editMotif" placeholder="Justification de la modification" required></textarea>
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" (click)="showEditModal = false">Annuler</button>
-              <button type="submit" class="btn btn-primary" [disabled]="saving || !editMotif || !editMontant">
-                {{ saving ? 'Mise à jour...' : 'Confirmer la modification' }}
-              </button>
-            </div>
-          </form>
         </div>
-      </div>
-
+      }
+    
       <!-- MODAL ANNULATION PAIEMENT -->
-      <div class="modal-backdrop" *ngIf="showCancelModal">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h3>✕ Annuler un Versement</h3>
-            <button class="btn btn-outline btn-sm" (click)="showCancelModal = false">✕</button>
-          </div>
-          <form (ngSubmit)="confirmCancelPaiement()">
-            <div class="modal-body">
-              <p>Êtes-vous certain de vouloir annuler le versement de <strong>{{ targetPaiement?.montant | number }} FCFA</strong> pour <strong>{{ targetPaiement?.candidatNomComplet }}</strong> ?</p>
-              <p class="text-danger mt-2"><small>Cette action déduira automatiquement le montant du solde du candidat et créera un mouvement compensatoire de caisse.</small></p>
-
-              <div class="form-group mt-3">
-                <label class="form-label">Motif d'annulation obligatoire <span class="required">*</span></label>
-                <input type="text" class="form-control" [(ngModel)]="cancelMotif" name="cancelMotif" placeholder="Ex: Chèque sans provision, Erreur caisse..." required />
+      @if (showCancelModal) {
+        <div class="modal-backdrop">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3>✕ Annuler un Versement</h3>
+              <button class="btn btn-outline btn-sm" (click)="showCancelModal = false">✕</button>
+            </div>
+            <form (ngSubmit)="confirmCancelPaiement()">
+              <div class="modal-body">
+                <p>Êtes-vous certain de vouloir annuler le versement de <strong>{{ $safeNavigationMigration(targetPaiement?.montant) | number }} FCFA</strong> pour <strong>{{ targetPaiement?.candidatNomComplet }}</strong> ?</p>
+                <p class="text-danger mt-2"><small>Cette action déduira automatiquement le montant du solde du candidat et créera un mouvement compensatoire de caisse.</small></p>
+                <div class="form-group mt-3">
+                  <label class="form-label">Motif d'annulation obligatoire <span class="required">*</span></label>
+                  <input type="text" class="form-control" [(ngModel)]="cancelMotif" name="cancelMotif" placeholder="Ex: Chèque sans provision, Erreur caisse..." required />
+                </div>
               </div>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" (click)="showCancelModal = false">Fermer</button>
-              <button type="submit" class="btn btn-danger" [disabled]="!cancelMotif || saving">
-                {{ saving ? 'Annulation...' : 'Confirmer l’Annulation' }}
-              </button>
-            </div>
-          </form>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" (click)="showCancelModal = false">Fermer</button>
+                <button type="submit" class="btn btn-danger" [disabled]="!cancelMotif || saving">
+                  {{ saving ? 'Annulation...' : 'Confirmer l’Annulation' }}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
-      </div>
+      }
     </div>
-  `,
-  styles: [`
+    `,
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styles: [`
     .page-header-bar {
       display: flex;
       align-items: center;
@@ -415,7 +440,7 @@ export class PaiementsComponent implements OnInit {
       },
       error: (err) => {
         this.saving = false;
-        this.formError = err.error?.message || 'Erreur lors de l’enregistrement.';
+        this.formError = extraireMessageErreur(err, 'Erreur lors de l’enregistrement.');
       }
     });
   }
@@ -447,7 +472,7 @@ export class PaiementsComponent implements OnInit {
       },
       error: (err) => {
         this.saving = false;
-        this.formError = err.error?.message || 'Erreur lors de la modification.';
+        this.formError = extraireMessageErreur(err, 'Erreur lors de la modification.');
       }
     });
   }
@@ -470,7 +495,7 @@ export class PaiementsComponent implements OnInit {
       },
       error: (err) => {
         this.saving = false;
-        alert(err.error?.message || 'Erreur lors de l’annulation.');
+        alert(extraireMessageErreur(err, 'Erreur lors de l’annulation.'));
       }
     });
   }

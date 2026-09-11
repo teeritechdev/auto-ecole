@@ -19,8 +19,8 @@ public interface TransactionCaisseRepository extends JpaRepository<TransactionCa
     @Query("SELECT tc FROM TransactionCaisse tc WHERE " +
            "(:type IS NULL OR tc.typeMouvement = :type) " +
            "AND (:categorie IS NULL OR tc.categorie = :categorie) " +
-           "AND (:debut IS NULL OR tc.dateTransaction >= :debut) " +
-           "AND (:fin IS NULL OR tc.dateTransaction <= :fin)")
+           "AND (CAST(:debut AS timestamp) IS NULL OR tc.dateTransaction >= :debut) " +
+           "AND (CAST(:fin AS timestamp) IS NULL OR tc.dateTransaction <= :fin)")
     Page<TransactionCaisse> filtrerTransactions(
             @Param("type") TypeMouvementCaisse type,
             @Param("categorie") String categorie,
@@ -30,8 +30,8 @@ public interface TransactionCaisseRepository extends JpaRepository<TransactionCa
     );
 
     @Query("SELECT tc FROM TransactionCaisse tc WHERE " +
-           "(:debut IS NULL OR tc.dateTransaction >= :debut) " +
-           "AND (:fin IS NULL OR tc.dateTransaction <= :fin) " +
+           "(CAST(:debut AS timestamp) IS NULL OR tc.dateTransaction >= :debut) " +
+           "AND (CAST(:fin AS timestamp) IS NULL OR tc.dateTransaction <= :fin) " +
            "ORDER BY tc.dateTransaction ASC")
     List<TransactionCaisse> findPourRapport(
             @Param("debut") LocalDateTime debut,

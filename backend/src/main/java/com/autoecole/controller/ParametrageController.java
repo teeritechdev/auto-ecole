@@ -1,7 +1,8 @@
 package com.autoecole.controller;
 
 import com.autoecole.dto.ParametrageDTOs.CategoriePermisDTO;
-import com.autoecole.dto.ParametrageDTOs.ForfaitDTO;
+import com.autoecole.dto.ParametrageDTOs.SiteDTO;
+import com.autoecole.dto.ParametrageDTOs.SiteStatDTO;
 import com.autoecole.service.ParametrageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -17,7 +18,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/parametrage")
 @RequiredArgsConstructor
-@Tag(name = "Paramétrage", description = "Gestion des forfaits et catégories de permis")
+@Tag(name = "Paramétrage", description = "Gestion des catégories de permis (avec tarif) et sites de formation")
 public class ParametrageController {
 
     private final ParametrageService parametrageService;
@@ -43,24 +44,31 @@ public class ParametrageController {
         return ResponseEntity.ok(parametrageService.updateCategorie(id, dto));
     }
 
-    // --- Forfaits ---
-    @GetMapping("/forfaits")
-    @Operation(summary = "Lister les forfaits disponibles")
-    public ResponseEntity<List<ForfaitDTO>> getAllForfaits(@RequestParam(defaultValue = "false") boolean onlyActive) {
-        return ResponseEntity.ok(parametrageService.getAllForfaits(onlyActive));
+    // --- Sites de formation ---
+    @GetMapping("/sites")
+    @Operation(summary = "Lister les sites de formation")
+    public ResponseEntity<List<SiteDTO>> getAllSites(@RequestParam(defaultValue = "false") boolean onlyActive) {
+        return ResponseEntity.ok(parametrageService.getAllSites(onlyActive));
     }
 
-    @PostMapping("/forfaits")
+    @PostMapping("/sites")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Créer un nouveau forfait")
-    public ResponseEntity<ForfaitDTO> createForfait(@Valid @RequestBody ForfaitDTO dto) {
-        return new ResponseEntity<>(parametrageService.createForfait(dto), HttpStatus.CREATED);
+    @Operation(summary = "Créer un nouveau site de formation")
+    public ResponseEntity<SiteDTO> createSite(@Valid @RequestBody SiteDTO dto) {
+        return new ResponseEntity<>(parametrageService.createSite(dto), HttpStatus.CREATED);
     }
 
-    @PutMapping("/forfaits/{id}")
+    @PutMapping("/sites/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Modifier un forfait")
-    public ResponseEntity<ForfaitDTO> updateForfait(@PathVariable Long id, @Valid @RequestBody ForfaitDTO dto) {
-        return ResponseEntity.ok(parametrageService.updateForfait(id, dto));
+    @Operation(summary = "Modifier un site de formation")
+    public ResponseEntity<SiteDTO> updateSite(@PathVariable Long id, @Valid @RequestBody SiteDTO dto) {
+        return ResponseEntity.ok(parametrageService.updateSite(id, dto));
+    }
+
+    @GetMapping("/sites/statistiques")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Statistiques par site (candidats actifs, montants encaissés et restants dus)")
+    public ResponseEntity<List<SiteStatDTO>> getStatistiquesSites() {
+        return ResponseEntity.ok(parametrageService.getStatistiquesSites());
     }
 }

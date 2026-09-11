@@ -16,6 +16,7 @@ import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.springframework.beans.factory.annotation.Value;
 import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.IndexedColors;
@@ -39,6 +40,9 @@ public class ExportService {
     private final RecuService recuService;
     private final CaisseService caisseService;
 
+    @Value("${app.etablissement.nom}")
+    private String nomEtablissement;
+
     private static final Color PRIMARY_COLOR = new Color(24, 76, 120);
 
     // ==========================================
@@ -59,7 +63,7 @@ public class ExportService {
             headerCellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
             headerCellStyle.setAlignment(HorizontalAlignment.CENTER);
 
-            String[] columns = {"N° Dossier", "Nom", "Prénom", "Téléphone", "Catégorie", "Forfait", "Montant Forfait (FCFA)", "Total Versé (FCFA)", "Solde Restant (FCFA)", "Statut", "Date Échéance"};
+            String[] columns = {"N° Dossier", "Nom", "Prénom", "Téléphone", "Catégorie", "Libellé Catégorie", "Montant (FCFA)", "Total Versé (FCFA)", "Solde Restant (FCFA)", "Statut", "Date Échéance"};
             org.apache.poi.ss.usermodel.Row headerRow = sheet.createRow(0);
             for (int i = 0; i < columns.length; i++) {
                 org.apache.poi.ss.usermodel.Cell cell = headerRow.createCell(i);
@@ -70,12 +74,12 @@ public class ExportService {
             int rowIdx = 1;
             for (CandidatDTO c : candidats) {
                 org.apache.poi.ss.usermodel.Row row = sheet.createRow(rowIdx++);
-                row.createCell(0).setCellValue(c.getNumeroDossier());
-                row.createCell(1).setCellValue(c.getNom());
-                row.createCell(2).setCellValue(c.getPrenom());
-                row.createCell(3).setCellValue(c.getTelephone());
-                row.createCell(4).setCellValue(c.getCategoriePermisCode() != null ? c.getCategoriePermisCode() : "");
-                row.createCell(5).setCellValue(c.getForfaitNom() != null ? c.getForfaitNom() : "");
+                row.createCell(0).setCellValue(sanitizeForExcel(c.getNumeroDossier()));
+                row.createCell(1).setCellValue(sanitizeForExcel(c.getNom()));
+                row.createCell(2).setCellValue(sanitizeForExcel(c.getPrenom()));
+                row.createCell(3).setCellValue(sanitizeForExcel(c.getTelephone()));
+                row.createCell(4).setCellValue(sanitizeForExcel(c.getCategoriePermisCode() != null ? c.getCategoriePermisCode() : ""));
+                row.createCell(5).setCellValue(sanitizeForExcel(c.getCategoriePermisLibelle() != null ? c.getCategoriePermisLibelle() : ""));
                 row.createCell(6).setCellValue(c.getMontantForfait() != null ? c.getMontantForfait().doubleValue() : 0);
                 row.createCell(7).setCellValue(c.getTotalVerse() != null ? c.getTotalVerse().doubleValue() : 0);
                 row.createCell(8).setCellValue(c.getSoldeRestant() != null ? c.getSoldeRestant().doubleValue() : 0);
@@ -105,7 +109,7 @@ public class ExportService {
 
             // Titre
             com.lowagie.text.Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16, PRIMARY_COLOR);
-            Paragraph title = new Paragraph("AUTO-ÉCOLE - LISTE OFFICIELLE DES CANDIDATS", titleFont);
+            Paragraph title = new Paragraph(nomEtablissement + " - LISTE OFFICIELLE DES CANDIDATS", titleFont);
             title.setAlignment(Element.ALIGN_CENTER);
             title.setSpacingAfter(15);
             document.add(title);
@@ -114,7 +118,7 @@ public class ExportService {
             table.setWidthPercentage(100);
             table.setWidths(new float[]{3f, 4f, 4f, 2.5f, 3f, 3f, 3f, 3f});
 
-            String[] headers = {"N° Dossier", "Nom", "Prénom", "Permis", "Forfait", "Total Versé", "Reste Dû", "Statut"};
+            String[] headers = {"N° Dossier", "Nom", "Prénom", "Permis", "Montant", "Total Versé", "Reste Dû", "Statut"};
             com.lowagie.text.Font headFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, Color.WHITE);
 
             for (String h : headers) {
@@ -160,7 +164,7 @@ public class ExportService {
 
             // En-tête auto-école
             com.lowagie.text.Font headerFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, PRIMARY_COLOR);
-            Paragraph entete = new Paragraph("NERWAYA AUTO-ÉCOLE\nREÇU OFFICIEL DE PAIEMENT", headerFont);
+            Paragraph entete = new Paragraph(nomEtablissement + "\nREÇU OFFICIEL DE PAIEMENT", headerFont);
             entete.setAlignment(Element.ALIGN_CENTER);
             entete.setSpacingAfter(10);
             document.add(entete);
@@ -185,7 +189,7 @@ public class ExportService {
             addTableRow(table, "Date d'émission :", dateFormatted, labelFont, valFont);
             addTableRow(table, "N° Dossier Candidat :", recu.getCandidatNumeroDossier(), labelFont, valFont);
             addTableRow(table, "Nom & Prénom :", recu.getNomClient(), labelFont, valFont);
-            addTableRow(table, "Forfait choisi :", recu.getForfaitNom() + " (" + recu.getMontantForfait() + " FCFA)", labelFont, valFont);
+            addTableRow(table, "Formation :", recu.getForfaitNom() + " (" + recu.getMontantForfait() + " FCFA)", labelFont, valFont);
             addTableRow(table, "Type de versement :", recu.getTypeVersement(), labelFont, valFont);
             addTableRow(table, "Mode de règlement :", recu.getModeReglement(), labelFont, valFont);
             addTableRow(table, "MONTANT VERSÉ :", recu.getMontant() + " FCFA", labelFont, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, PRIMARY_COLOR));
@@ -236,7 +240,7 @@ public class ExportService {
             addTableRow(synthese, "Candidat :", candidat.getNom() + " " + candidat.getPrenom(), boldFont, regFont);
             addTableRow(synthese, "N° Dossier :", candidat.getNumeroDossier(), boldFont, regFont);
             addTableRow(synthese, "Téléphone :", candidat.getTelephone(), boldFont, regFont);
-            addTableRow(synthese, "Forfait souscrit :", candidat.getForfaitNom() + " (" + candidat.getMontantForfait() + " FCFA)", boldFont, regFont);
+            addTableRow(synthese, "Formation souscrite :", candidat.getCategoriePermisLibelle() + " (" + candidat.getMontantForfait() + " FCFA)", boldFont, regFont);
             addTableRow(synthese, "Statut du dossier :", candidat.getStatutDossier().name(), boldFont, regFont);
             addTableRow(synthese, "Total déjà versé :", candidat.getTotalVerse() + " FCFA", boldFont, regFont);
             addTableRow(synthese, "Reste à payer :", candidat.getSoldeRestant() + " FCFA", boldFont, boldFont);
@@ -341,11 +345,11 @@ public class ExportService {
                 org.apache.poi.ss.usermodel.Row row = sheet.createRow(r++);
                 row.createCell(0).setCellValue(tx.getDateTransaction() != null ? tx.getDateTransaction().toString() : "");
                 row.createCell(1).setCellValue(tx.getTypeMouvement().name());
-                row.createCell(2).setCellValue(tx.getLibelle());
-                row.createCell(3).setCellValue(tx.getCategorie() != null ? tx.getCategorie() : "");
-                row.createCell(4).setCellValue(tx.getReferencePiece() != null ? tx.getReferencePiece() : "");
+                row.createCell(2).setCellValue(sanitizeForExcel(tx.getLibelle()));
+                row.createCell(3).setCellValue(sanitizeForExcel(tx.getCategorie() != null ? tx.getCategorie() : ""));
+                row.createCell(4).setCellValue(sanitizeForExcel(tx.getReferencePiece() != null ? tx.getReferencePiece() : ""));
                 row.createCell(5).setCellValue(tx.getMontant().doubleValue());
-                row.createCell(6).setCellValue(tx.getUtilisateurNomComplet());
+                row.createCell(6).setCellValue(sanitizeForExcel(tx.getUtilisateurNomComplet()));
             }
 
             for (int i = 0; i < cols.length; i++) {
@@ -355,6 +359,24 @@ public class ExportService {
             workbook.write(out);
             return out.toByteArray();
         }
+    }
+
+    /**
+     * Neutralise l'injection de formules Excel (CSV/Excel Formula Injection) :
+     * préfixe d'une apostrophe toute valeur commençant par un caractère
+     * interprété comme un déclencheur de formule par Excel/LibreOffice
+     * ( = + - @ tab retour-chariot ), pour qu'elle soit toujours traitée
+     * comme du texte brut à l'ouverture du fichier.
+     */
+    private String sanitizeForExcel(String value) {
+        if (value == null || value.isEmpty()) {
+            return value;
+        }
+        char first = value.charAt(0);
+        if (first == '=' || first == '+' || first == '-' || first == '@' || first == '\t' || first == '\r') {
+            return "'" + value;
+        }
+        return value;
     }
 
     private void addTableRow(PdfPTable table, String label, String value, com.lowagie.text.Font f1, com.lowagie.text.Font f2) {

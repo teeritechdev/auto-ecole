@@ -2,6 +2,7 @@ package com.autoecole.service;
 
 import com.autoecole.dto.PaiementDTOs.RecuDTO;
 import com.autoecole.entity.Candidat;
+import com.autoecole.entity.Inscription;
 import com.autoecole.entity.Paiement;
 import com.autoecole.entity.Recu;
 import com.autoecole.exception.ResourceNotFoundException;
@@ -35,7 +36,8 @@ public class RecuService {
 
     public RecuDTO mapToDTO(Recu r) {
         Paiement p = r.getPaiement();
-        Candidat c = (p != null) ? p.getCandidat() : null;
+        Inscription i = (p != null) ? p.getInscription() : null;
+        Candidat c = (i != null) ? i.getCandidat() : null;
 
         return RecuDTO.builder()
                 .id(r.getId())
@@ -45,10 +47,10 @@ public class RecuService {
                 .candidatId(c != null ? c.getId() : null)
                 .candidatNumeroDossier(c != null ? c.getNumeroDossier() : "")
                 .nomClient(r.getNomClient())
-                .forfaitNom(c != null && c.getForfait() != null ? c.getForfait().getNom() : "")
-                .montantForfait(c != null ? c.getMontantForfait() : null)
+                .forfaitNom(i != null && i.getCategoriePermis() != null ? i.getCategoriePermis().getLibelle() : "")
+                .montantForfait(i != null ? i.getMontantForfait() : null)
                 .montant(r.getMontant())
-                .totalVerse(c != null ? c.getTotalVerse() : null)
+                .totalVerse(i != null ? i.getTotalVerse() : null)
                 .soldeRestant(r.getSoldeRestant())
                 .modeReglement(p != null ? p.getModeReglement().name() : "")
                 .typeVersement(p != null ? p.getTypeVersement().name() : "")

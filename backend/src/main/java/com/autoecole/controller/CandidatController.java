@@ -2,6 +2,7 @@ package com.autoecole.controller;
 
 import com.autoecole.dto.CandidatDTOs.*;
 import com.autoecole.entity.enums.StatutDossier;
+import com.autoecole.entity.enums.StatutInscription;
 import com.autoecole.service.CandidatService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -31,9 +32,10 @@ public class CandidatController {
             @RequestParam(required = false) String recherche,
             @RequestParam(required = false) StatutDossier statut,
             @RequestParam(required = false) Long categorieId,
-            @PageableDefault(size = 15, sort = "dateInscription", direction = Sort.Direction.DESC) Pageable pageable
+            @RequestParam(required = false) StatutInscription statutInscription,
+            @PageableDefault(size = 15, sort = "dateCreation", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        return ResponseEntity.ok(candidatService.rechercherCandidats(recherche, statut, categorieId, pageable));
+        return ResponseEntity.ok(candidatService.rechercherCandidats(recherche, statut, categorieId, statutInscription, pageable));
     }
 
     @GetMapping("/{id}")
@@ -62,6 +64,13 @@ public class CandidatController {
     @Operation(summary = "Modifier les informations d'un candidat")
     public ResponseEntity<CandidatDTO> updateCandidat(@PathVariable Long id, @Valid @RequestBody UpdateCandidatRequest request) {
         return ResponseEntity.ok(candidatService.updateCandidat(id, request));
+    }
+
+    @PostMapping("/{id}/reinscrire")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETAIRE')")
+    @Operation(summary = "Rattacher une nouvelle inscription (redoublant) à un candidat déjà connu, au lieu de créer un dossier en doublon")
+    public ResponseEntity<CandidatDTO> reinscrireCandidat(@PathVariable Long id, @Valid @RequestBody ReinscrireCandidatRequest request) {
+        return ResponseEntity.ok(candidatService.reinscrireCandidat(id, request));
     }
 
     @DeleteMapping("/{id}")

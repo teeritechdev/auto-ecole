@@ -7,10 +7,10 @@ spring:
   application:
     name: auto-ecole-backend
   datasource:
-    url: jdbc:mysql://localhost:3306/auto_ecole_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
-    username: root
-    password: ""
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/auto_ecole_db}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: update
@@ -18,7 +18,7 @@ spring:
     properties:
       hibernate:
         format_sql: true
-        dialect: org.hibernate.dialect.MySQLDialect
+        dialect: org.hibernate.dialect.PostgreSQLDialect
     open-in-view: false
 
 # OpenAPI Documentation
@@ -33,7 +33,23 @@ springdoc:
 # Application Custom Properties
 app:
   jwt:
-    secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B597036733979244226452948404D635166546A576E5A72347537
-    expiration-ms: 86400000 # 24 heures en millisecondes
+    # IMPORTANT : en production, définissez la variable d'environnement JWT_SECRET
+    # avec une clé forte générée aléatoirement (ex: openssl rand -base64 64).
+    # La valeur ci-dessous est un placeholder de développement, volontairement
+    # identifiable et non sécurisé — ne jamais la garder telle quelle en prod.
+    secret: ${JWT_SECRET:SU5TRUNVUkUtREVWLU9OTFktREVGQVVMVC1KV1QtU0VDUkVULUNIQU5HRS1NRS1JTi1QUk9EVUNUSU9OLTAwMDAwMDAwMDA=}
+    expiration-ms: ${JWT_EXPIRATION_MS:7200000} # 2 heures (réduit depuis 24h)
   cors:
-    allowed-origins: "http://localhost:4200,http://127.0.0.1:4200"
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200,http://127.0.0.1:4200}
+  seed:
+    enabled: ${APP_SEED_ENABLED:true} # désactiver en production (APP_SEED_ENABLED=false)
+  swagger:
+    public: ${APP_SWAGGER_PUBLIC:true} # désactiver en production (APP_SWAGGER_PUBLIC=false)
+  etablissement:
+    nom: ${APP_ETABLISSEMENT_NOM:NERWAYA AUTO-ÉCOLE} # nom affiché sur les documents officiels (reçus, PDF)
+  security:
+    login:
+      max-attempts: ${APP_LOGIN_MAX_ATTEMPTS:5} # tentatives échouées avant verrouillage temporaire
+      lockout-minutes: ${APP_LOGIN_LOCKOUT_MINUTES:15} # durée du verrouillage
+  inscription:
+    duree-validite-mois: ${APP_INSCRIPTION_DUREE_VALIDITE_MOIS:8} # RG07 : durée de validité d'un cycle d'inscription

@@ -1,21 +1,19 @@
 version: '3.8'
 
 services:
-  mysql:
-    image: mysql:8.0
-    container_name: autoecole-mysql
+  postgres:
+    image: postgres:16
+    container_name: autoecole-postgres
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: auto_ecole_db
-      MYSQL_USER: autoecole_user
-      MYSQL_PASSWORD: autoecole_password
+      POSTGRES_DB: auto_ecole_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     ports:
-      - "3306:3306"
+      - "5432:5432"
     volumes:
-      - mysql_data:/var/lib/mysql
-    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+      - postgres_data:/var/lib/postgresql/data
 
 volumes:
-  mysql_data:
+  postgres_data:
     driver: local

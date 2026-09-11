@@ -22,6 +22,9 @@ public class ParametrageDTOs {
         private String code;
         @NotBlank(message = "Le libellé est obligatoire")
         private String libelle;
+        @NotNull(message = "Le montant est obligatoire")
+        @DecimalMin(value = "0.0", inclusive = false, message = "Le montant doit être supérieur à 0")
+        private BigDecimal montant;
         private String description;
         private boolean actif;
     }
@@ -30,14 +33,23 @@ public class ParametrageDTOs {
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
-    public static class ForfaitDTO {
+    public static class SiteDTO {
         private Long id;
-        @NotBlank(message = "Le nom du forfait est obligatoire")
+        @NotBlank(message = "Le nom du site est obligatoire")
         private String nom;
-        @NotNull(message = "Le montant est obligatoire")
-        @DecimalMin(value = "0.0", inclusive = false, message = "Le montant doit être supérieur à 0")
-        private BigDecimal montant;
-        private String description;
+        private String adresse;
         private boolean actif;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class SiteStatDTO {
+        private Long siteId;
+        private String siteNom;
+        private long nombreCandidatsActifs;
+        private BigDecimal montantEncaisse;
+        private BigDecimal montantRestantDu;
     }
 }

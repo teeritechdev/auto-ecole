@@ -5,13 +5,17 @@ import com.autoecole.entity.enums.*;
 import com.autoecole.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Base64;
+import java.util.Set;
 
 @Slf4j
 @Component
@@ -21,45 +25,88 @@ public class DataInitializerService implements CommandLineRunner {
     private final RoleRepository roleRepository;
     private final UtilisateurRepository utilisateurRepository;
     private final CategoriePermisRepository categorieRepository;
-    private final ForfaitRepository forfaitRepository;
+    private final SiteRepository siteRepository;
     private final CandidatRepository candidatRepository;
+    private final InscriptionRepository inscriptionRepository;
     private final PaiementRepository paiementRepository;
     private final RecuRepository recuRepository;
     private final PassageExamenRepository passageRepository;
     private final TransactionCaisseRepository transactionCaisseRepository;
     private final PasswordEncoder passwordEncoder;
 
+    @Value("${app.seed.enabled:true}")
+    private boolean seedEnabled;
+
+    @Value("${app.inscription.duree-validite-mois:8}")
+    private int dureeValiditeMois;
+
     @Override
     public void run(String... args) {
         log.info("Initialisation des données de base de l'auto-école...");
 
-        // 1. Rôles
+        // 1. Rôles (toujours nécessaires au fonctionnement du contrôle d'accès)
         Role roleAdmin = initRole(RoleEnum.ADMIN, "Administrateur Général");
         Role roleSecretaire = initRole(RoleEnum.SECRETAIRE, "Secrétaire Administrative");
         Role roleCaissiere = initRole(RoleEnum.CAISSIERE, "Caissière / Comptable");
         Role roleMoniteur = initRole(RoleEnum.MONITEUR, "Moniteur Pédagogique");
 
-        // 2. Utilisateurs initiaux
-        Utilisateur admin = initUser("admin", "admin@autoecole.ci", "admin123", "KOUASSI", "Jean-Marc", "0701020304", roleAdmin);
-        Utilisateur secr = initUser("secretaire", "secretaire@autoecole.ci", "secretaire123", "YAO", "Aya Marie", "0702030405", roleSecretaire);
-        Utilisateur caisse = initUser("caissiere", "caissiere@autoecole.ci", "caissiere123", "KOFFI", "Affoué Esther", "0703040506", roleCaissiere);
-        Utilisateur moniteur = initUser("moniteur", "moniteur@autoecole.ci", "moniteur123", "DIABATE", "Ibrahim", "0704050607", roleMoniteur);
+        // 2. Catégories de permis, avec leur tarif (données de référence, toujours créées)
+        CategoriePermis catA1 = initCategorie("A1", "Permis Moto légère (125 cm³)", new BigDecimal("75000"), "Conduite motocyclettes");
+        CategoriePermis catB = initCategorie("B", "Permis B Véhicule Léger", new BigDecimal("100000"), "Véhicules particuliers jusqu'à 3.5T");
+        CategoriePermis catC = initCategorie("C", "Permis C Poids Lourd", new BigDecimal("150000"), "Transport de marchandises > 3.5T");
 
-        // 3. Catégories de permis
-        CategoriePermis catA1 = initCategorie("A1", "Permis Moto légère (125 cm³)", "Conduite motocyclettes");
-        CategoriePermis catB = initCategorie("B", "Permis B Véhicule Léger", "Véhicules particuliers jusqu'à 3.5T");
-        CategoriePermis catC = initCategorie("C", "Permis C Poids Lourd", "Transport de marchandises > 3.5T");
+        // 2bis. Sites de formation (données de référence, toujours créés)
+        Site siteCocody = initSite("Site Cocody", "Boulevard de France, Cocody, Abidjan");
+        initSite("Site Yopougon", "Route de Yopougon-Ficgayo, Abidjan");
+        initSite("Site Bouaké", "Avenue de la République, Bouaké");
 
-        // 4. Forfaits initiaux (RG01)
-        Forfait f1 = initForfait("Forfait 1", new BigDecimal("100000"), "Formation standard (Code + Conduite 20h)");
-        Forfait f2 = initForfait("Forfait 2", new BigDecimal("125000"), "Formation complète accélérée avec perfectionnement");
+        if (seedEnabled) {
+            // 3. Comptes de démonstration à mots de passe connus + jeu de données
+            //    (uniquement en développement/démo : APP_SEED_ENABLED=false en production)
+            Utilisateur admin = initUser("admin", "admin@autoecole.ci", "admin123", "KOUASSI", "Jean-Marc", "0701020304", roleAdmin);
+            initUser("secretaire", "secretaire@autoecole.ci", "secretaire123", "YAO", "Aya Marie", "0702030405", roleSecretaire);
+            initUser("caissiere", "caissiere@autoecole.ci", "caissiere123", "KOFFI", "Affoué Esther", "0703040506", roleCaissiere);
+            Utilisateur moniteur = initUser("moniteur", "moniteur@autoecole.ci", "moniteur123", "DIABATE", "Ibrahim", "0704050607", roleMoniteur);
+            if (moniteur.getSite() == null) {
+                moniteur.setSite(siteCocody);
+                moniteur.setSpecialites(Set.of(TypeEpreuve.CODE, TypeEpreuve.CRENEAU, TypeEpreuve.CIRCULATION));
+                moniteur = utilisateurRepository.save(moniteur);
+            }
 
-        // 5. Données de démonstration (si la base est neuve)
-        if (candidatRepository.count() == 0) {
-            initDemoData(admin, moniteur, catB, catA1, catC, f1, f2);
+            if (candidatRepository.count() == 0) {
+                initDemoData(admin, moniteur, catB, siteCocody);
+            }
+        } else {
+            ensureAtLeastOneAdmin(roleAdmin);
         }
 
         log.info("Initialisation des données terminée avec succès.");
+    }
+
+    /**
+     * En production (APP_SEED_ENABLED=false), aucun compte à mot de passe
+     * connu n'est créé. Si la base est totalement vierge, un unique compte
+     * admin est provisionné avec un mot de passe aléatoire affiché UNE SEULE
+     * FOIS dans les logs du serveur — à récupérer et changer immédiatement.
+     */
+    private void ensureAtLeastOneAdmin(Role roleAdmin) {
+        if (utilisateurRepository.count() > 0) {
+            return;
+        }
+        String tempPassword = generateSecureRandomPassword();
+        initUser("admin", "admin@autoecole.local", tempPassword, "Administrateur", "Système", null, roleAdmin);
+
+        log.warn("=====================================================================");
+        log.warn(" Aucun utilisateur en base : compte admin initial créé.");
+        log.warn(" Identifiant : admin");
+        log.warn(" Mot de passe temporaire (à changer immédiatement, non ré-affiché) : {}", tempPassword);
+        log.warn("=====================================================================");
+    }
+
+    private String generateSecureRandomPassword() {
+        byte[] randomBytes = new byte[18];
+        new SecureRandom().nextBytes(randomBytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
     }
 
     private Role initRole(RoleEnum code, String libelle) {
@@ -85,21 +132,21 @@ public class DataInitializerService implements CommandLineRunner {
         });
     }
 
-    private CategoriePermis initCategorie(String code, String libelle, String desc) {
+    private CategoriePermis initCategorie(String code, String libelle, BigDecimal montant, String desc) {
         return categorieRepository.findByCode(code).orElseGet(() -> {
-            CategoriePermis c = CategoriePermis.builder().code(code).libelle(libelle).description(desc).actif(true).build();
+            CategoriePermis c = CategoriePermis.builder().code(code).libelle(libelle).montant(montant).description(desc).actif(true).build();
             return categorieRepository.save(c);
         });
     }
 
-    private Forfait initForfait(String nom, BigDecimal montant, String desc) {
-        return forfaitRepository.findByNom(nom).orElseGet(() -> {
-            Forfait f = Forfait.builder().nom(nom).montant(montant).description(desc).actif(true).build();
-            return forfaitRepository.save(f);
+    private Site initSite(String nom, String adresse) {
+        return siteRepository.findByNom(nom).orElseGet(() -> {
+            Site s = Site.builder().nom(nom).adresse(adresse).actif(true).build();
+            return siteRepository.save(s);
         });
     }
 
-    private void initDemoData(Utilisateur admin, Utilisateur moniteur, CategoriePermis catB, CategoriePermis catA1, CategoriePermis catC, Forfait f1, Forfait f2) {
+    private void initDemoData(Utilisateur admin, Utilisateur moniteur, CategoriePermis catB, Site site) {
         log.info("Création des candidats et enregistrements de démonstration...");
 
         // Candidat 1 : En cours (1er versement 40 000 FCFA effectué)
@@ -112,19 +159,26 @@ public class DataInitializerService implements CommandLineRunner {
                 .lieuNaissance("Abidjan")
                 .telephone("0708091011")
                 .email("bakary.traore@email.ci")
-                .dateInscription(dateInsc1)
-                .dateEcheance(dateInsc1.plusMonths(8))
-                .categoriePermis(catB)
-                .forfait(f1)
-                .montantForfait(f1.getMontant())
-                .totalVerse(new BigDecimal("40000"))
-                .soldeRestant(new BigDecimal("60000"))
-                .statutDossier(StatutDossier.EN_COURS)
                 .build();
         c1 = candidatRepository.save(c1);
 
-        Paiement p1 = Paiement.builder()
+        Inscription i1 = Inscription.builder()
                 .candidat(c1)
+                .categoriePermis(catB)
+                .site(site)
+                .montantForfait(catB.getMontant())
+                .dateInscription(dateInsc1)
+                .dateEcheance(dateInsc1.plusMonths(dureeValiditeMois))
+                .totalVerse(new BigDecimal("40000"))
+                .soldeRestant(new BigDecimal("60000"))
+                .statutDossier(StatutDossier.EN_COURS)
+                .numeroCycle(1)
+                .active(true)
+                .build();
+        i1 = inscriptionRepository.save(i1);
+
+        Paiement p1 = Paiement.builder()
+                .inscription(i1)
                 .utilisateur(admin)
                 .typeVersement(TypeVersement.PREMIER_VERSEMENT)
                 .montant(new BigDecimal("40000"))
@@ -156,7 +210,7 @@ public class DataInitializerService implements CommandLineRunner {
 
         // Passage examen Code pour C1 (Réussi)
         passageRepository.save(PassageExamen.builder()
-                .candidat(c1)
+                .inscription(i1)
                 .typeEpreuve(TypeEpreuve.CODE)
                 .numeroPassage(1)
                 .datePassage(LocalDate.now().minusDays(5))
@@ -175,19 +229,26 @@ public class DataInitializerService implements CommandLineRunner {
                 .lieuNaissance("Bouaké")
                 .telephone("0506070809")
                 .email("fatou.kone@email.ci")
-                .dateInscription(dateInsc2)
-                .dateEcheance(dateInsc2.plusMonths(8))
-                .categoriePermis(catB)
-                .forfait(f2)
-                .montantForfait(f2.getMontant())
-                .totalVerse(new BigDecimal("125000"))
-                .soldeRestant(BigDecimal.ZERO)
-                .statutDossier(StatutDossier.SOLDE)
                 .build();
         c2 = candidatRepository.save(c2);
 
-        Paiement p2_1 = paiementRepository.save(Paiement.builder()
+        Inscription i2 = Inscription.builder()
                 .candidat(c2)
+                .categoriePermis(catB)
+                .site(site)
+                .montantForfait(new BigDecimal("125000"))
+                .dateInscription(dateInsc2)
+                .dateEcheance(dateInsc2.plusMonths(dureeValiditeMois))
+                .totalVerse(new BigDecimal("125000"))
+                .soldeRestant(BigDecimal.ZERO)
+                .statutDossier(StatutDossier.SOLDE)
+                .numeroCycle(1)
+                .active(true)
+                .build();
+        i2 = inscriptionRepository.save(i2);
+
+        Paiement p2_1 = paiementRepository.save(Paiement.builder()
+                .inscription(i2)
                 .utilisateur(admin)
                 .typeVersement(TypeVersement.PREMIER_VERSEMENT)
                 .montant(new BigDecimal("50000"))
@@ -205,7 +266,7 @@ public class DataInitializerService implements CommandLineRunner {
                 .build());
 
         Paiement p2_2 = paiementRepository.save(Paiement.builder()
-                .candidat(c2)
+                .inscription(i2)
                 .utilisateur(admin)
                 .typeVersement(TypeVersement.VERSEMENT_SUIVANT)
                 .montant(new BigDecimal("75000"))
@@ -244,7 +305,7 @@ public class DataInitializerService implements CommandLineRunner {
 
         // Passages d'examens pour C2 (Code réussi, Créneau réussi, Circulation programmée)
         passageRepository.save(PassageExamen.builder()
-                .candidat(c2)
+                .inscription(i2)
                 .typeEpreuve(TypeEpreuve.CODE)
                 .numeroPassage(1)
                 .datePassage(LocalDate.now().minusMonths(1))
@@ -254,7 +315,7 @@ public class DataInitializerService implements CommandLineRunner {
                 .build());
 
         passageRepository.save(PassageExamen.builder()
-                .candidat(c2)
+                .inscription(i2)
                 .typeEpreuve(TypeEpreuve.CRENEAU)
                 .numeroPassage(1)
                 .datePassage(LocalDate.now().minusDays(12))
@@ -264,7 +325,7 @@ public class DataInitializerService implements CommandLineRunner {
                 .build());
 
         passageRepository.save(PassageExamen.builder()
-                .candidat(c2)
+                .inscription(i2)
                 .typeEpreuve(TypeEpreuve.CIRCULATION)
                 .numeroPassage(1)
                 .datePassage(LocalDate.now().plusDays(4))

@@ -3,6 +3,8 @@ package com.autoecole.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
+
 @Entity
 @Table(name = "categories_permis")
 @Getter
@@ -21,6 +23,9 @@ public class CategoriePermis {
 
     @Column(length = 100, nullable = false)
     private String libelle;
+
+    @Column(name = "montant", precision = 12, scale = 2, nullable = false)
+    private BigDecimal montant;
 
     @Column(length = 255)
     private String description;

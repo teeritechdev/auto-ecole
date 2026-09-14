@@ -46,12 +46,27 @@ import { extraireMessageErreur } from './core/utils/error-utils';
             </div>
           </div>
           <nav class="sidebar-nav" (click)="sidebarOpen = false">
-            <div class="nav-section-title">Principal</div>
-            <a routerLink="/dashboard" routerLinkActive="active" class="nav-item">
-              <svg class="nav-icon icon-blue" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
-              <span>Tableau de bord</span>
-            </a>
-            <div class="nav-section-title">Gestion Métier</div>
+            @if (!hasRole(['CANDIDAT'])) {
+              <div class="nav-section-title">Principal</div>
+              <a routerLink="/dashboard" routerLinkActive="active" class="nav-item">
+                <svg class="nav-icon icon-blue" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
+                <span>Tableau de bord</span>
+              </a>
+            }
+            @if (hasRole(['CANDIDAT'])) {
+              <div class="nav-section-title">Mon espace</div>
+              <a routerLink="/espace-candidat" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item">
+                <svg class="nav-icon icon-blue" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
+                <span>Ma progression</span>
+              </a>
+              <a routerLink="/espace-candidat/historique" routerLinkActive="active" class="nav-item">
+                <svg class="nav-icon icon-indigo" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>
+                <span>Historique Code</span>
+              </a>
+            }
+            @if (!hasRole(['CANDIDAT'])) {
+              <div class="nav-section-title">Gestion Métier</div>
+            }
             @if (hasRole(['ADMIN', 'SECRETAIRE', 'CAISSIERE', 'MONITEUR'])) {
               <a routerLink="/candidats" routerLinkActive="active" class="nav-item">
                 <svg class="nav-icon icon-violet" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -68,6 +83,18 @@ import { extraireMessageErreur } from './core/utils/error-utils';
               <a routerLink="/examens" routerLinkActive="active" class="nav-item">
                 <svg class="nav-icon icon-amber" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 9 12 4 2 9l10 5 10-5Z"/><path d="M6 11.5V16c0 1.4 2.7 2.8 6 2.8s6-1.4 6-2.8v-4.5"/><path d="M2 9v5"/></svg>
                 <span>Examens & Épreuves</span>
+              </a>
+            }
+            @if (hasRole(['ADMIN', 'MONITEUR'])) {
+              <a routerLink="/code/resultats" routerLinkActive="active" class="nav-item">
+                <svg class="nav-icon icon-amber" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 9 12 4 2 9l10 5 10-5Z"/><path d="M6 11.5V16c0 1.4 2.7 2.8 6 2.8s6-1.4 6-2.8v-4.5"/><path d="M2 9v5"/></svg>
+                <span>Résultats Code</span>
+              </a>
+            }
+            @if (hasRole(['ADMIN', 'MONITEUR'])) {
+              <a routerLink="/parametrage-code" routerLinkActive="active" class="nav-item">
+                <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82A1.65 1.65 0 0 0 3 13.09H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+                <span>Configuration Code</span>
               </a>
             }
             @if (hasRole(['ADMIN', 'CAISSIERE'])) {
@@ -95,6 +122,12 @@ import { extraireMessageErreur } from './core/utils/error-utils';
               <a routerLink="/parametrage" routerLinkActive="active" class="nav-item">
                 <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82A1.65 1.65 0 0 0 3 13.09H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
                 <span>Paramétrage</span>
+              </a>
+            }
+            @if (hasRole(['ADMIN'])) {
+              <a routerLink="/code/questions" routerLinkActive="active" class="nav-item">
+                <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>
+                <span>Banque de questions Code</span>
               </a>
             }
             @if (hasRole(['ADMIN'])) {
@@ -142,12 +175,13 @@ import { extraireMessageErreur } from './core/utils/error-utils';
               </div>
             </div>
             <div class="topbar-actions">
-              <button class="btn btn-outline btn-sm" (click)="showPasswordModal = true">
+              <button class="btn btn-outline btn-sm" (click)="showPasswordModal = true" title="Mot de passe">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                Mot de passe
+                <span class="btn-label">Mot de passe</span>
               </button>
-              <button class="btn btn-danger btn-sm" (click)="logout()">
-                Déconnexion
+              <button class="btn btn-danger btn-sm" (click)="logout()" title="Déconnexion">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                <span class="btn-label">Déconnexion</span>
               </button>
             </div>
           </header>
@@ -310,6 +344,28 @@ import { extraireMessageErreur } from './core/utils/error-utils';
       }
     }
 
+    /* Petits/grands téléphones : la barre supérieure garde le titre lisible et les
+       actions accessibles sans jamais déborder horizontalement. */
+    @media (max-width: 640px) {
+      .page-title p {
+        display: none;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .page-title h1 {
+        font-size: 1.05rem;
+      }
+
+      .btn-label {
+        display: none;
+      }
+
+      .topbar-actions .btn {
+        padding: 0.5rem;
+      }
+    }
+
     .nav-item.active {
       background: linear-gradient(90deg, #1e40af, #2563eb);
       color: #ffffff;
@@ -350,7 +406,9 @@ import { extraireMessageErreur } from './core/utils/error-utils';
   `]
 })
 export class AppComponent {
-  sidebarOpen = true;
+  // Repliée par défaut sur petit écran (sinon elle recouvre tout le contenu dès le premier
+  // chargement, en superposition avec fond assombri) ; ouverte par défaut sur desktop/tablette.
+  sidebarOpen = typeof window === 'undefined' || window.innerWidth > 960;
   showPasswordModal = false;
   showProfileModal = false;
   ancienPwd = '';

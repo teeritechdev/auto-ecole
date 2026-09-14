@@ -780,6 +780,83 @@ button, input, select, textarea {
   to { transform: translateY(0); opacity: 1; }
 }
 
+/* =========================================================
+   RESPONSIVE / PETITS & GRANDS TÉLÉPHONES
+   Un !important est nécessaire sur les grid-template-columns : ces classes sont
+   redéfinies dans le style local de chaque page (grand/petit téléphone, tablette),
+   ce qui les rend plus spécifiques (encapsulation Angular) que ces règles globales.
+   ========================================================= */
+@media (max-width: 768px) {
+  .content-area {
+    padding: 1.1rem;
+  }
+
+  .topbar {
+    padding: 0 1rem;
+  }
+
+  /* Grilles à colonnes fixes trop larges pour tenir sur un téléphone (portrait ou
+     paysage) : chaque champ/carte repasse sur sa propre ligne. */
+  .filter-grid,
+  .dashboard-grid,
+  .grid-2-col,
+  .reports-grid,
+  .periode-grid,
+  .info-grid,
+  .exam-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .modal-content {
+    max-width: 100% !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .content-area {
+    padding: 0.85rem;
+  }
+
+  .topbar {
+    padding: 0 0.75rem;
+  }
+
+  .stat-card {
+    padding: 1rem 1.1rem;
+    gap: 1rem;
+  }
+
+  .stat-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+  }
+
+  .stat-info .stat-value {
+    font-size: 1.3rem;
+  }
+
+  .modal-backdrop {
+    padding: 0.75rem;
+  }
+
+  .modal-header,
+  .modal-body,
+  .modal-footer {
+    padding: 1rem;
+  }
+
+  .custom-table th,
+  .custom-table td {
+    padding: 0.6rem 0.7rem;
+    font-size: 0.82rem;
+  }
+
+  .card {
+    padding: 1.1rem;
+  }
+}
+
 /* Print Styles */
 @media print {
   .sidebar, .topbar, .btn, .no-print {

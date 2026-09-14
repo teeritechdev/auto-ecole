@@ -177,16 +177,19 @@ export class ApiService {
   }
 
   // ================= CAISSE =================
-  public getTransactionsCaisse(type?: string, natureOperationId?: number, page: number = 0, size: number = 15): Observable<any> {
+  public getTransactionsCaisse(type?: string, natureOperationId?: number, page: number = 0, size: number = 15, siteId?: number): Observable<any> {
     let params = new HttpParams().set('page', page).set('size', size);
     if (type) params = params.set('type', type);
     if (natureOperationId) params = params.set('natureOperationId', natureOperationId);
+    if (siteId) params = params.set('siteId', siteId);
 
     return this.http.get<any>(`${this.base}/caisse/transactions`, { params });
   }
 
-  public getRecapCaisse(): Observable<RecapCaisse> {
-    return this.http.get<RecapCaisse>(`${this.base}/caisse/recap`);
+  public getRecapCaisse(siteId?: number): Observable<RecapCaisse> {
+    let params = new HttpParams();
+    if (siteId) params = params.set('siteId', siteId);
+    return this.http.get<RecapCaisse>(`${this.base}/caisse/recap`, { params });
   }
 
   public enregistrerTransactionCaisse(data: CreateTransactionCaisse): Observable<TransactionCaisse> {

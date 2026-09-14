@@ -52,5 +52,7 @@ public interface PaiementRepository extends JpaRepository<Paiement, Long> {
     @Query("SELECT COALESCE(SUM(p.montant), 0) FROM Paiement p WHERE p.statut = 'VALIDE' AND p.datePaiement BETWEEN :debut AND :fin")
     BigDecimal sumTotalValideBetween(@Param("debut") LocalDateTime debut, @Param("fin") LocalDateTime fin);
 
-    List<Paiement> findTop10ByOrderByDatePaiementDesc();
+    @Query("SELECT p FROM Paiement p WHERE (:siteIds IS NULL OR p.inscription.site.id IN :siteIds) " +
+           "ORDER BY p.datePaiement DESC")
+    List<Paiement> findDerniersPaiements(@Param("siteIds") Collection<Long> siteIds, Pageable pageable);
 }

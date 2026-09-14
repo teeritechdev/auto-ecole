@@ -56,6 +56,7 @@ export interface SiteStat {
   nombreInscriptions: number;
   nombrePaiements: number;
   montantPaiements: number;
+  soldeCaisse: number;
 }
 
 export interface Candidat {
@@ -215,6 +216,8 @@ export interface TransactionCaisse {
   dateTransaction: string;
   utilisateurId: number;
   utilisateurNomComplet: string;
+  siteId?: number;
+  siteNom?: string;
 }
 
 export interface CreateTransactionCaisse {
@@ -222,6 +225,7 @@ export interface CreateTransactionCaisse {
   montant: number;
   libelle: string;
   numeroFacture?: string;
+  siteId?: number;
 }
 
 export interface RecapCaisse {

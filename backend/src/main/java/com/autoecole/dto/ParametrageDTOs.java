@@ -55,5 +55,6 @@ public class ParametrageDTOs {
         private long nombreInscriptions;
         private long nombrePaiements;
         private BigDecimal montantPaiements;
+        private BigDecimal soldeCaisse;
     }
 }

@@ -12,6 +12,7 @@ import com.autoecole.repository.CategoriePermisRepository;
 import com.autoecole.repository.InscriptionRepository;
 import com.autoecole.repository.PaiementRepository;
 import com.autoecole.repository.SiteRepository;
+import com.autoecole.repository.TransactionCaisseRepository;
 import com.autoecole.repository.UtilisateurRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,7 @@ public class ParametrageService {
     private final UtilisateurRepository utilisateurRepository;
     private final PaiementRepository paiementRepository;
     private final InscriptionRepository inscriptionRepository;
+    private final TransactionCaisseRepository transactionCaisseRepository;
     private final AuditService auditService;
 
     private static final Set<RoleEnum> ROLES_PERSONNEL_TERRAIN = Set.of(RoleEnum.MONITEUR, RoleEnum.SECRETAIRE, RoleEnum.CAISSIERE);
@@ -153,6 +155,13 @@ public class ParametrageService {
             nombrePaiementsParSite.put(siteId, (Long) row[1]);
             montantPaiementsParSite.put(siteId, (BigDecimal) row[2]);
         }
+        Map<Long, BigDecimal> soldeCaisseParSite = new HashMap<>();
+        for (Object[] row : transactionCaisseRepository.statistiquesCaisseParSite()) {
+            Long siteId = (Long) row[0];
+            BigDecimal entrees = (BigDecimal) row[1];
+            BigDecimal sorties = (BigDecimal) row[2];
+            soldeCaisseParSite.put(siteId, entrees.subtract(sorties));
+        }
 
         return siteRepository.statistiquesParSite().stream()
                 .map(row -> {
@@ -167,6 +176,7 @@ public class ParametrageService {
                             .nombreInscriptions(inscriptionsParSite.getOrDefault(siteId, 0L))
                             .nombrePaiements(nombrePaiementsParSite.getOrDefault(siteId, 0L))
                             .montantPaiements(montantPaiementsParSite.getOrDefault(siteId, BigDecimal.ZERO))
+                            .soldeCaisse(soldeCaisseParSite.getOrDefault(siteId, BigDecimal.ZERO))
                             .build();
                 })
                 .collect(Collectors.toList());

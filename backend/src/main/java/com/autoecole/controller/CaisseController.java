@@ -35,15 +35,16 @@ public class CaisseController {
             @RequestParam(required = false) Long natureOperationId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime debut,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fin,
+            @RequestParam(required = false) Long siteId,
             @PageableDefault(size = 15, sort = "dateTransaction", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        return ResponseEntity.ok(caisseService.filtrerTransactions(type, natureOperationId, debut, fin, pageable));
+        return ResponseEntity.ok(caisseService.filtrerTransactions(type, natureOperationId, debut, fin, siteId, pageable));
     }
 
     @GetMapping("/recap")
-    @Operation(summary = "Obtenir le récapitulatif du solde de caisse (total et journalier)")
-    public ResponseEntity<RecapCaisseDTO> getRecapCaisse() {
-        return ResponseEntity.ok(caisseService.getRecapCaisse());
+    @Operation(summary = "Obtenir le récapitulatif du solde de caisse (total et journalier), pour un site donné ou tous sites confondus (ADMIN)")
+    public ResponseEntity<RecapCaisseDTO> getRecapCaisse(@RequestParam(required = false) Long siteId) {
+        return ResponseEntity.ok(caisseService.getRecapCaisse(siteId));
     }
 
     @PostMapping("/transactions")

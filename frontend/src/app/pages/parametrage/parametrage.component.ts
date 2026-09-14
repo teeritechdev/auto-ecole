@@ -191,12 +191,13 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 <th class="text-right">Paiements Encaissés</th>
                 <th class="text-right">Montant Encaissé</th>
                 <th class="text-right">Solde Restant Dû</th>
+                <th class="text-right">Solde Caisse</th>
               </tr>
             </thead>
             <tbody>
               @if (statsSites.length === 0) {
                 <tr>
-                  <td colspan="7" class="text-center py-4 text-muted">Aucune donnée pour l'instant.</td>
+                  <td colspan="8" class="text-center py-4 text-muted">Aucune donnée pour l'instant.</td>
                 </tr>
               }
               @for (stat of statsSites; track stat) {
@@ -208,6 +209,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   <td class="text-right">{{ stat.nombrePaiements }} <small class="text-muted">({{ stat.montantPaiements | number }} FCFA)</small></td>
                   <td class="text-right text-success">{{ stat.montantEncaisse | number }} FCFA</td>
                   <td class="text-right">{{ stat.montantRestantDu | number }} FCFA</td>
+                  <td class="text-right" [ngClass]="stat.soldeCaisse >= 0 ? 'text-success' : 'text-danger'">{{ stat.soldeCaisse | number }} FCFA</td>
                 </tr>
               }
             </tbody>
@@ -339,6 +341,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
 
     .text-right { text-align: right; }
     .text-success { color: #15803d; }
+    .text-danger { color: #b91c1c; }
     .logo-settings { display: flex; flex-direction: column; align-items: flex-start; gap: 0.75rem; }
     .logo-preview { width: 7rem; height: 7rem; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 0.75rem; background: #eff6ff; color: #2563eb; font-size: 2.5rem; }
     .logo-preview img { width: 100%; height: 100%; object-fit: contain; }

@@ -55,4 +55,12 @@ public class TransactionCaisse {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "utilisateur_id", nullable = false)
     private Utilisateur utilisateur;
+
+    /** Site dont c'est la caisse physique (chaque site a sa propre caisse, indépendante des
+     *  autres). Nullable en base pour ne pas casser les opérations historiques enregistrées
+     *  avant l'introduction du cloisonnement par site ; obligatoire pour toute nouvelle
+     *  opération (cf. CaisseService.resoudreSiteTransaction). */
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "site_id")
+    private Site site;
 }

@@ -76,6 +76,8 @@ public class CaisseDTOs {
         private LocalDateTime dateTransaction;
         private Long utilisateurId;
         private String utilisateurNomComplet;
+        private Long siteId;
+        private String siteNom;
     }
 
     @Data
@@ -94,6 +96,10 @@ public class CaisseDTOs {
         private String libelle;
 
         private String numeroFacture;
+
+        /** Optionnel si l'utilisateur courant n'est affecté qu'à un seul site (résolu
+         *  automatiquement, comme pour la programmation d'un examen) ; obligatoire sinon. */
+        private Long siteId;
     }
 
     @Data

@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
-import { NatureOperation, RecapCaisse, TransactionCaisse } from '../../core/models/models';
+import { NatureOperation, RecapCaisse, Site, TransactionCaisse } from '../../core/models/models';
 import { extraireMessageErreur } from '../../core/utils/error-utils';
 
 @Component({
@@ -48,6 +48,12 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       </div>
 
       <!-- RECAP STATS -->
+      @if (sitesAutorises.length > 1) {
+        <div class="site-indicator">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/></svg>
+          {{ siteFiltre ? ('Caisse du site : ' + siteNomFiltre) : 'Toutes les caisses (consolidé, tous sites)' }}
+        </div>
+      }
       <div class="stats-grid">
         <div class="stat-card primary">
           <div class="stat-icon primary">
@@ -112,6 +118,16 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       @if (activeTab === 'operations') {
         <div class="card filter-card">
           <div class="filter-grid">
+            @if (sitesAutorises.length > 1) {
+              <div>
+                <select class="form-control" [(ngModel)]="siteFiltre" (change)="onSiteFiltreChange()">
+                  <option [ngValue]="null">Tous les sites (consolidé)</option>
+                  @for (s of sitesAutorises; track s.id) {
+                    <option [ngValue]="s.id">{{ s.nom }}</option>
+                  }
+                </select>
+              </div>
+            }
             <div>
               <select class="form-control" [(ngModel)]="typeFiltre" (change)="loadTransactions()">
                 <option value="">Tous les sens</option>
@@ -140,6 +156,9 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 <tr>
                   <th>Date & Heure</th>
                   <th>Nature d'opération</th>
+                  @if (sitesAutorises.length > 1) {
+                    <th>Site</th>
+                  }
                   <th>Sens</th>
                   <th>Libellé de l'opération</th>
                   <th>N° Facture</th>
@@ -153,12 +172,12 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
               <tbody>
                 @if (loading) {
                   <tr>
-                    <td colspan="8" class="text-center py-4">Chargement du journal de caisse...</td>
+                    <td colspan="9" class="text-center py-4">Chargement du journal de caisse...</td>
                   </tr>
                 }
                 @if (!loading && transactions.length === 0) {
                   <tr>
-                    <td colspan="8" class="text-center py-4">Aucune opération de caisse trouvée.</td>
+                    <td colspan="9" class="text-center py-4">Aucune opération de caisse trouvée.</td>
                   </tr>
                 }
                 @for (tx of transactions; track tx) {
@@ -170,6 +189,9 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                         <div class="sub-text">Plan comptable : {{ tx.natureOperation.planComptable }}</div>
                       }
                     </td>
+                    @if (sitesAutorises.length > 1) {
+                      <td>{{ tx.siteNom || '—' }}</td>
+                    }
                     <td>
                       <span class="badge" [ngClass]="tx.typeMouvement === 'ENTREE' ? 'badge-entree' : 'badge-sortie'">
                         @if (tx.typeMouvement === 'ENTREE') {
@@ -302,6 +324,18 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   <div class="alert alert-warning">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                     Aucune nature d'opération active. Créez-en une dans l'onglet "Natures d'opération" avant d'enregistrer une opération.
+                  </div>
+                }
+                @if (sitesAutorises.length > 1) {
+                  <div class="form-group">
+                    <label class="form-label">Site (caisse concernée) <span class="required">*</span></label>
+                    <select class="form-control" [(ngModel)]="newTx.siteId" name="siteId" required>
+                      <option [ngValue]="null" disabled>-- Sélectionner --</option>
+                      @for (s of sitesAutorises; track s.id) {
+                        <option [ngValue]="s.id">{{ s.nom }}</option>
+                      }
+                    </select>
+                    <div class="form-help">Chaque site a sa propre caisse : cette opération n'affectera que le solde de ce site.</div>
                   </div>
                 }
                 <div class="form-group">
@@ -461,6 +495,16 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       margin-bottom: 1.5rem;
     }
 
+    .site-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+
     .filter-card {
       margin-bottom: 1.5rem;
       padding: 1.25rem;
@@ -468,7 +512,9 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
 
     .filter-grid {
       display: grid;
-      grid-template-columns: 1.5fr 1.5fr 0.5fr;
+      /* Le filtre de site n'apparaît que pour un compte multi-site : nombre de colonnes
+         variable, d'où un gabarit souple plutôt que des largeurs fixes par position. */
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 1rem;
     }
 
@@ -557,20 +603,23 @@ export class CaisseComponent implements OnInit {
 
   typeFiltre = '';
   natureFiltreId: number | null = null;
+  siteFiltre: number | null = null;
   page = 0;
   totalPages = 0;
   totalElements = 0;
 
+  sites: Site[] = [];
   naturesActives: NatureOperation[] = [];
   naturesToutes: NatureOperation[] = [];
   loadingNatures = false;
 
   showNewTxModal = false;
-  newTx: { natureOperationId: number | null; montant: number | null; libelle: string; numeroFacture: string } = {
+  newTx: { natureOperationId: number | null; montant: number | null; libelle: string; numeroFacture: string; siteId: number | null } = {
     natureOperationId: null,
     montant: null,
     libelle: '',
-    numeroFacture: ''
+    numeroFacture: '',
+    siteId: null
   };
   formError = '';
 
@@ -590,6 +639,7 @@ export class CaisseComponent implements OnInit {
   constructor(private apiService: ApiService, private authService: AuthService) {}
 
   ngOnInit(): void {
+    this.loadSites();
     this.loadRecap();
     this.loadTransactions();
     this.loadNaturesActives();
@@ -608,6 +658,33 @@ export class CaisseComponent implements OnInit {
     return this.naturesActives.find(n => n.id === this.newTx.natureOperationId) || null;
   }
 
+  /** Sites dont l'utilisateur courant peut consulter/gérer la caisse : limités à ses sites
+   *  d'affectation pour une caissière, tous les sites (vision consolidée) pour ADMIN. */
+  get sitesAutorises(): Site[] {
+    const user = this.authService.currentUserValue;
+    if (user?.role === 'CAISSIERE') {
+      return this.sites.filter(s => user.siteIds?.includes(s.id));
+    }
+    return this.sites;
+  }
+
+  get siteNomFiltre(): string {
+    return this.sites.find(s => s.id === this.siteFiltre)?.nom || '';
+  }
+
+  loadSites(): void {
+    this.apiService.getSites(true).subscribe({
+      next: (res) => this.sites = res,
+      error: (err) => console.error(err)
+    });
+  }
+
+  onSiteFiltreChange(): void {
+    this.page = 0;
+    this.loadRecap();
+    this.loadTransactions();
+  }
+
   switchTab(tab: 'operations' | 'natures'): void {
     this.activeTab = tab;
   }
@@ -617,11 +694,11 @@ export class CaisseComponent implements OnInit {
     this.refreshing = true;
     let restants = 3;
     const termine = () => { if (--restants <= 0) this.refreshing = false; };
-    this.apiService.getRecapCaisse().subscribe({
+    this.apiService.getRecapCaisse(this.siteFiltre || undefined).subscribe({
       next: (r) => { this.recap = r; termine(); },
       error: (err) => { console.error(err); termine(); }
     });
-    this.apiService.getTransactionsCaisse(this.typeFiltre, this.natureFiltreId || undefined, this.page).subscribe({
+    this.apiService.getTransactionsCaisse(this.typeFiltre, this.natureFiltreId || undefined, this.page, 15, this.siteFiltre || undefined).subscribe({
       next: (res) => {
         this.transactions = res.content || [];
         this.totalPages = res.totalPages || 0;
@@ -637,7 +714,7 @@ export class CaisseComponent implements OnInit {
   }
 
   loadRecap(): void {
-    this.apiService.getRecapCaisse().subscribe({
+    this.apiService.getRecapCaisse(this.siteFiltre || undefined).subscribe({
       next: (r) => this.recap = r,
       error: (err) => console.error(err)
     });
@@ -645,7 +722,7 @@ export class CaisseComponent implements OnInit {
 
   loadTransactions(): void {
     this.loading = true;
-    this.apiService.getTransactionsCaisse(this.typeFiltre, this.natureFiltreId || undefined, this.page).subscribe({
+    this.apiService.getTransactionsCaisse(this.typeFiltre, this.natureFiltreId || undefined, this.page, 15, this.siteFiltre || undefined).subscribe({
       next: (res) => {
         this.transactions = res.content || [];
         this.totalPages = res.totalPages || 0;
@@ -682,7 +759,9 @@ export class CaisseComponent implements OnInit {
   resetFiltres(): void {
     this.typeFiltre = '';
     this.natureFiltreId = null;
+    this.siteFiltre = null;
     this.page = 0;
+    this.loadRecap();
     this.loadTransactions();
   }
 
@@ -690,7 +769,14 @@ export class CaisseComponent implements OnInit {
 
   openNewTxModal(): void {
     this.formError = '';
-    this.newTx = { natureOperationId: null, montant: null, libelle: '', numeroFacture: '' };
+    const sitesAutorises = this.sitesAutorises;
+    this.newTx = {
+      natureOperationId: null,
+      montant: null,
+      libelle: '',
+      numeroFacture: '',
+      siteId: sitesAutorises.length === 1 ? sitesAutorises[0].id : this.siteFiltre
+    };
     this.showNewTxModal = true;
   }
 
@@ -699,7 +785,8 @@ export class CaisseComponent implements OnInit {
   }
 
   isFormValide(): boolean {
-    return !!this.newTx.natureOperationId && !!this.newTx.montant && this.newTx.montant > 0 && !!this.newTx.libelle;
+    const siteRequis = this.sitesAutorises.length <= 1 || !!this.newTx.siteId;
+    return !!this.newTx.natureOperationId && !!this.newTx.montant && this.newTx.montant > 0 && !!this.newTx.libelle && siteRequis;
   }
 
   saveTransaction(): void {
@@ -711,6 +798,7 @@ export class CaisseComponent implements OnInit {
     this.apiService.enregistrerTransactionCaisse({
       natureOperationId: this.newTx.natureOperationId!,
       montant: this.newTx.montant!,
+      siteId: this.newTx.siteId || undefined,
       libelle: this.newTx.libelle,
       numeroFacture: this.newTx.numeroFacture || undefined
     }).subscribe({

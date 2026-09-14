@@ -65,8 +65,8 @@ public class DashboardService {
         if (!accesFinancierRestreint) {
             totalVerse = inscriptionRepository.sumTotalVerseActif(siteIds);
             totalRestant = inscriptionRepository.sumSoldeRestantActif(siteIds);
-            recapCaisse = caisseService.getRecapCaisse();
-            derniersPaiements = paiementRepository.findTop10ByOrderByDatePaiementDesc()
+            recapCaisse = caisseService.getRecapCaisse(null);
+            derniersPaiements = paiementRepository.findDerniersPaiements(siteIds, org.springframework.data.domain.PageRequest.of(0, 10))
                     .stream().map(paiementService::mapToDTO).collect(Collectors.toList());
             dernieresTransactionsCaisse = caisseService.getDernieresTransactions();
         }

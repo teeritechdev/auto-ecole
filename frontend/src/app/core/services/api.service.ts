@@ -10,6 +10,10 @@ import {
   BilanExamensCandidat,
   SessionExamen,
   TransactionCaisse,
+  CreateTransactionCaisse,
+  NatureOperation,
+  CreateNatureOperation,
+  UpdateNatureOperation,
   RecapCaisse,
   DashboardStats,
   CategoriePermis,
@@ -17,7 +21,6 @@ import {
   SiteStat,
   UtilisateurDTO,
   HistoriqueAction,
-  CandidatConcerne,
   ResumePaiements,
   TarifsExamens,
   CodeConfiguration,
@@ -174,10 +177,10 @@ export class ApiService {
   }
 
   // ================= CAISSE =================
-  public getTransactionsCaisse(type?: string, categorie?: string, page: number = 0, size: number = 15): Observable<any> {
+  public getTransactionsCaisse(type?: string, natureOperationId?: number, page: number = 0, size: number = 15): Observable<any> {
     let params = new HttpParams().set('page', page).set('size', size);
     if (type) params = params.set('type', type);
-    if (categorie) params = params.set('categorie', categorie);
+    if (natureOperationId) params = params.set('natureOperationId', natureOperationId);
 
     return this.http.get<any>(`${this.base}/caisse/transactions`, { params });
   }
@@ -186,13 +189,24 @@ export class ApiService {
     return this.http.get<RecapCaisse>(`${this.base}/caisse/recap`);
   }
 
-  public enregistrerTransactionCaisse(data: any): Observable<TransactionCaisse> {
+  public enregistrerTransactionCaisse(data: CreateTransactionCaisse): Observable<TransactionCaisse> {
     return this.http.post<TransactionCaisse>(`${this.base}/caisse/transactions`, data);
   }
 
-  public getCandidatsEligiblesFraisExamen(typeEpreuve: string, dateExamen: string): Observable<CandidatConcerne[]> {
-    const params = new HttpParams().set('typeEpreuve', typeEpreuve).set('dateExamen', dateExamen);
-    return this.http.get<CandidatConcerne[]>(`${this.base}/caisse/candidats-frais-examen`, { params });
+  public getNaturesOperation(): Observable<NatureOperation[]> {
+    return this.http.get<NatureOperation[]>(`${this.base}/caisse/natures`);
+  }
+
+  public getToutesNaturesOperation(): Observable<NatureOperation[]> {
+    return this.http.get<NatureOperation[]>(`${this.base}/caisse/natures/toutes`);
+  }
+
+  public createNatureOperation(data: CreateNatureOperation): Observable<NatureOperation> {
+    return this.http.post<NatureOperation>(`${this.base}/caisse/natures`, data);
+  }
+
+  public updateNatureOperation(id: number, data: UpdateNatureOperation): Observable<NatureOperation> {
+    return this.http.put<NatureOperation>(`${this.base}/caisse/natures/${id}`, data);
   }
 
   public deleteTransactionCaisse(id: number, motif?: string): Observable<void> {

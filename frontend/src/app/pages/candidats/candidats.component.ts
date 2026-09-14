@@ -20,29 +20,39 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
         </div>
         <div class="header-buttons">
           @if (canSeeFinancialData) {
-            <button class="btn btn-outline btn-sm" (click)="exporterPdf()">📄 Export PDF</button>
+            <button class="btn btn-outline btn-sm" (click)="exporterPdf()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              Export PDF
+            </button>
           }
           @if (canSeeFinancialData) {
-            <button class="btn btn-outline btn-sm" (click)="exporterExcel()">📊 Export Excel</button>
+            <button class="btn btn-outline btn-sm" (click)="exporterExcel()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+              Export Excel
+            </button>
           }
           @if (canProgramExams && selectedCandidats.size > 0) {
             <button class="btn btn-warning" (click)="openProgramModal()">
-              📅 Programmer ({{ selectedCandidats.size }})
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              Programmer ({{ selectedCandidats.size }})
             </button>
           }
           @if (canEdit) {
             <button class="btn btn-primary" (click)="openCreateModal()">
-              ➕ Inscrire un Candidat
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="16" y1="11" x2="22" y2="11"/></svg>
+              Inscrire un Candidat
             </button>
           }
         </div>
       </div>
-    
+
       <!-- FILTER BAR -->
       <div class="card filter-card">
         <div class="filter-grid">
           <div class="search-box">
-            <span class="search-icon">🔍</span>
+            <span class="search-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </span>
             <input
               type="text"
               class="form-control"
@@ -143,9 +153,15 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                     <small class="text-muted">Inscrit le {{ c.dateInscription | date:'dd/MM/yyyy' }}</small>
                   </td>
                   <td>
-                    <div>📞 {{ c.telephone }}</div>
+                    <div class="contact-line">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                      {{ c.telephone }}
+                    </div>
                     @if (c.email) {
-                      <small class="text-muted">✉️ {{ c.email }}</small>
+                      <small class="text-muted contact-line">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                        {{ c.email }}
+                      </small>
                     }
                   </td>
                   <td>
@@ -193,16 +209,17 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   <td class="text-right">
                     <div class="table-actions">
                       <a [routerLink]="['/candidats', c.id]" class="btn btn-outline btn-sm" title="Fiche complète">
-                        👁️ Détails
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>
+                        Détails
                       </a>
                       @if (canEdit) {
                         <button class="btn btn-outline btn-sm" (click)="openEditModal(c)" title="Modifier">
-                          ✏️
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
                         </button>
                       }
                       @if (isAdmin) {
                         <button class="btn btn-danger btn-sm" (click)="openDeleteModal(c)" title="Supprimer">
-                          🗑️
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                         </button>
                       }
                     </div>
@@ -217,11 +234,13 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
         @if (totalPages > 1) {
           <div class="pagination-bar">
             <button class="btn btn-outline btn-sm" [disabled]="page === 0" (click)="changePage(page - 1)">
-              ◀ Précédent
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              Précédent
             </button>
             <span>Page {{ page + 1 }} sur {{ totalPages }} ({{ totalElements }} candidats)</span>
             <button class="btn btn-outline btn-sm" [disabled]="page >= totalPages - 1" (click)="changePage(page + 1)">
-              Suivant ▶
+              Suivant
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
             </button>
           </div>
         }
@@ -232,17 +251,26 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
         <div class="modal-backdrop">
           <div class="modal-content modal-lg">
             <div class="modal-header">
-              <h3>📝 Inscription d'un Nouveau Candidat</h3>
+              <h3 style="display:flex; align-items:center; gap:0.5rem;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                Inscription d'un Nouveau Candidat
+              </h3>
               <button class="btn btn-outline btn-sm" (click)="showCreateModal = false">✕</button>
             </div>
             <form (ngSubmit)="saveCreateCandidat()">
               <div class="modal-body">
                 @if (modalError) {
-                  <div class="alert alert-danger">⚠️ {{ modalError }}</div>
+                  <div class="alert alert-danger">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    {{ modalError }}
+                  </div>
                 }
                 @if (doublonDetecte && !modeReinscription) {
                   <div class="alert alert-warning doublon-alert">
-                    <div>⚠️ Un candidat existe déjà avec ce numéro : <strong>{{ doublonDetecte.numeroDossier }}</strong> — {{ doublonDetecte.nom }} {{ doublonDetecte.prenom }} (statut : {{ doublonDetecte.statutDossier }})</div>
+                    <div style="display:flex; align-items:flex-start; gap:0.5rem;">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; margin-top:0.15rem;"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                      <span>Un candidat existe déjà avec ce numéro : <strong>{{ doublonDetecte.numeroDossier }}</strong> — {{ doublonDetecte.nom }} {{ doublonDetecte.prenom }} (statut : {{ doublonDetecte.statutDossier }})</span>
+                    </div>
                     <div class="doublon-actions">
                       <button type="button" class="btn btn-primary btn-sm" (click)="rattacherDoublon()">Rattacher à ce dossier (nouvelle inscription)</button>
                       <button type="button" class="btn btn-secondary btn-sm" (click)="ignorerDoublon()">Continuer avec un dossier séparé</button>
@@ -251,7 +279,10 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 }
                 @if (modeReinscription) {
                   <div class="alert alert-info doublon-alert">
-                    <div>🔁 Réinscription de <strong>{{ doublonDetecte?.nom }} {{ doublonDetecte?.prenom }}</strong> ({{ doublonDetecte?.numeroDossier }}) — nouveau cycle marqué « Redoublant ».</div>
+                    <div style="display:flex; align-items:flex-start; gap:0.5rem;">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; margin-top:0.15rem;"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+                      <span>Réinscription de <strong>{{ doublonDetecte?.nom }} {{ doublonDetecte?.prenom }}</strong> ({{ doublonDetecte?.numeroDossier }}) — nouveau cycle marqué « Redoublant ».</span>
+                    </div>
                     <div class="doublon-actions">
                       <button type="button" class="btn btn-outline btn-sm" (click)="annulerReinscription()">Annuler / choisir un autre candidat</button>
                     </div>
@@ -377,13 +408,19 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
         <div class="modal-backdrop">
           <div class="modal-content modal-lg">
             <div class="modal-header">
-              <h3>✏️ Modifier le Candidat — {{ selectedCandidat?.numeroDossier }}</h3>
+              <h3 style="display:flex; align-items:center; gap:0.5rem;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+                Modifier le Candidat — {{ selectedCandidat?.numeroDossier }}
+              </h3>
               <button class="btn btn-outline btn-sm" (click)="showEditModal = false">✕</button>
             </div>
             <form (ngSubmit)="saveEditCandidat()">
               <div class="modal-body">
                 @if (editError) {
-                  <div class="alert alert-danger">⚠️ {{ editError }}</div>
+                  <div class="alert alert-danger">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    {{ editError }}
+                  </div>
                 }
                 <h4 class="section-title">Informations Personnelles</h4>
                 <div class="form-row">
@@ -472,7 +509,10 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
         <div class="modal-backdrop">
           <div class="modal-content">
             <div class="modal-header">
-              <h3>⚠️ Confirmation de Suppression</h3>
+              <h3 style="display:flex; align-items:center; gap:0.5rem;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                Confirmation de Suppression
+              </h3>
               <button class="btn btn-outline btn-sm" (click)="showDeleteModal = false">✕</button>
             </div>
             <div class="modal-body">
@@ -495,7 +535,10 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
         <div class="modal-backdrop">
           <div class="modal-content">
             <div class="modal-header">
-              <h3>🔑 Compte candidat créé</h3>
+              <h3 style="display:flex; align-items:center; gap:0.5rem;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg>
+                Compte candidat créé
+              </h3>
               <button class="btn btn-outline btn-sm" (click)="identifiantsCompteAAfficher = null">✕</button>
             </div>
             <div class="modal-body">
@@ -522,13 +565,19 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
         <div class="modal-backdrop">
           <div class="modal-content">
             <div class="modal-header">
-              <h3>📅 Programmer un Examen ({{ selectedCandidats.size }} candidat(s))</h3>
+              <h3 style="display:flex; align-items:center; gap:0.5rem;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                Programmer un Examen ({{ selectedCandidats.size }} candidat(s))
+              </h3>
               <button class="btn btn-outline btn-sm" (click)="showProgramModal = false">✕</button>
             </div>
             <form (ngSubmit)="submitProgrammation()">
               <div class="modal-body">
                 @if (programError) {
-                  <div class="alert alert-danger">⚠️ {{ programError }}</div>
+                  <div class="alert alert-danger">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    {{ programError }}
+                  </div>
                 }
                 <div class="form-group">
                   <label class="form-label">Type d'Épreuve <span class="required">*</span></label>
@@ -626,6 +675,12 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       font-size: 0.75rem;
       color: var(--text-muted);
       margin-top: 0.15rem;
+    }
+
+    .contact-line {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
     }
 
     .table-actions {

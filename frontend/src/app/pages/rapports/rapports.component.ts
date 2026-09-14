@@ -18,20 +18,30 @@ import { ApiService } from '../../core/services/api.service';
       <div class="reports-grid">
         <!-- 1. Liste des Candidats -->
         <div class="card report-card">
-          <div class="report-icon">👥</div>
+          <div class="report-icon">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
           <div class="report-body">
             <h3>Liste Globale des Candidats</h3>
             <p>Exportation complète du registre des candidats avec catégories, montants, total versé, soldes restants et statuts administratifs.</p>
             <div class="report-buttons">
-              <button class="btn btn-primary btn-sm" (click)="telechargerCandidatsPdf()">📄 Télécharger PDF</button>
-              <button class="btn btn-success btn-sm" (click)="telechargerCandidatsExcel()">📊 Télécharger Excel</button>
+              <button class="btn btn-primary btn-sm" (click)="telechargerCandidatsPdf()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                Télécharger PDF
+              </button>
+              <button class="btn btn-success btn-sm" (click)="telechargerCandidatsExcel()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                Télécharger Excel
+              </button>
             </div>
           </div>
         </div>
 
         <!-- 2. Journal de Caisse -->
         <div class="card report-card">
-          <div class="report-icon">🏦</div>
+          <div class="report-icon">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 21 8 3 8"/><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/></svg>
+          </div>
           <div class="report-body">
             <h3>Journal des Mouvements de Caisse</h3>
             <p>Relevé périodique des flux financiers (recettes, encaissements de formation, charges d'exploitation, salaires, carburant). Laissez les dates vides pour un export complet, ou précisez une période (ex: export comptable mensuel).</p>
@@ -46,15 +56,23 @@ import { ApiService } from '../../core/services/api.service';
               </div>
             </div>
             <div class="report-buttons">
-              <button class="btn btn-primary btn-sm" (click)="telechargerCaissePdf()">📄 Relevé Caisse PDF</button>
-              <button class="btn btn-success btn-sm" (click)="telechargerCaisseExcel()">📊 Livre Caisse Excel</button>
+              <button class="btn btn-primary btn-sm" (click)="telechargerCaissePdf()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                Relevé Caisse PDF
+              </button>
+              <button class="btn btn-success btn-sm" (click)="telechargerCaisseExcel()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                Livre Caisse Excel
+              </button>
             </div>
           </div>
         </div>
 
         <!-- 3. Reçu ou Relevé Individuel -->
         <div class="card report-card">
-          <div class="report-icon">📑</div>
+          <div class="report-icon">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="15" y2="16"/></svg>
+          </div>
           <div class="report-body">
             <h3>Relevé de Compte Individuel Candidat</h3>
             <p>Génération de la fiche récapitulative financière individuelle d'un candidat avec détail de chaque versement et reste à payer.</p>

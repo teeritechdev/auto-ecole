@@ -32,7 +32,6 @@ public class DataInitializerService implements CommandLineRunner {
     private final PaiementRepository paiementRepository;
     private final RecuRepository recuRepository;
     private final PassageExamenRepository passageRepository;
-    private final TransactionCaisseRepository transactionCaisseRepository;
     private final PasswordEncoder passwordEncoder;
     private final CandidatAccountService candidatAccountService;
 
@@ -216,16 +215,6 @@ public class DataInitializerService implements CommandLineRunner {
                 .build();
         recuRepository.save(r1);
 
-        transactionCaisseRepository.save(TransactionCaisse.builder()
-                .typeMouvement(TypeMouvementCaisse.ENTREE)
-                .montant(new BigDecimal("40000"))
-                .libelle("1er Versement Inscription DOS-2026-0001 (TRAORE Bakary)")
-                .categorie("RECETTE_FORMATION")
-                .referencePiece("REC-2026-0001")
-                .utilisateur(admin)
-                .paiement(p1)
-                .build());
-
         // Passage examen Code pour C1 (Réussi)
         passageRepository.save(PassageExamen.builder()
                 .inscription(i1)
@@ -302,26 +291,6 @@ public class DataInitializerService implements CommandLineRunner {
                 .imprimePar("KOUASSI Jean-Marc")
                 .build());
 
-        transactionCaisseRepository.save(TransactionCaisse.builder()
-                .typeMouvement(TypeMouvementCaisse.ENTREE)
-                .montant(new BigDecimal("50000"))
-                .libelle("1er Versement Inscription DOS-2026-0002 (KONE Fatoumata)")
-                .categorie("RECETTE_FORMATION")
-                .referencePiece("REC-2026-0002")
-                .utilisateur(admin)
-                .paiement(p2_1)
-                .build());
-
-        transactionCaisseRepository.save(TransactionCaisse.builder()
-                .typeMouvement(TypeMouvementCaisse.ENTREE)
-                .montant(new BigDecimal("75000"))
-                .libelle("Solde de formation DOS-2026-0002 (KONE Fatoumata)")
-                .categorie("RECETTE_FORMATION")
-                .referencePiece("REC-2026-0003")
-                .utilisateur(admin)
-                .paiement(p2_2)
-                .build());
-
         // Passages d'examens pour C2 (Code réussi, Créneau réussi, Circulation programmée)
         passageRepository.save(PassageExamen.builder()
                 .inscription(i2)
@@ -353,23 +322,8 @@ public class DataInitializerService implements CommandLineRunner {
                 .moniteur(moniteur)
                 .build());
 
-        // Quelques dépenses de caisse pour la démonstration
-        transactionCaisseRepository.save(TransactionCaisse.builder()
-                .typeMouvement(TypeMouvementCaisse.SORTIE)
-                .montant(new BigDecimal("25000"))
-                .libelle("Achat carburant véhicule auto-école Toyota Yaris")
-                .categorie("CARBURANT")
-                .referencePiece("FACT-TOTAL-889")
-                .utilisateur(admin)
-                .build());
-
-        transactionCaisseRepository.save(TransactionCaisse.builder()
-                .typeMouvement(TypeMouvementCaisse.SORTIE)
-                .montant(new BigDecimal("15000"))
-                .libelle("Achat fournitures de bureau et livrets de code")
-                .categorie("FOURNITURES")
-                .referencePiece("TICKET-LIB-44")
-                .utilisateur(admin)
-                .build());
+        // Note : aucune donnée de démonstration n'est semée pour la Caisse & Trésorerie —
+        // c'est une caisse de dépenses/recettes diverses totalement autonome (cf. CaisseService),
+        // dont les Natures d'opération sont définies par l'ADMIN lui-même (aucun contenu imposé).
     }
 }

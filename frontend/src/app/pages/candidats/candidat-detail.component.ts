@@ -22,24 +22,30 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
         <!-- TOP NAVIGATION & ACTIONS -->
         <div class="header-action-bar">
           <div>
-            <a routerLink="/candidats" class="btn btn-outline btn-sm">◀ Retour aux candidats</a>
+            <a routerLink="/candidats" class="btn btn-outline btn-sm">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              Retour aux candidats
+            </a>
             <h2>Fiche Candidat : {{ candidat.nom }} {{ candidat.prenom }}</h2>
             <span class="dossier-pill">N° Dossier : {{ candidat.numeroDossier }}</span>
           </div>
           <div class="action-buttons">
             @if (canSeeFinancialData) {
               <button class="btn btn-outline btn-sm" (click)="imprimerReleve()">
-                📑 Télécharger Relevé Financier PDF
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                Télécharger Relevé Financier PDF
               </button>
             }
             @if (canAddPayment && candidat.soldeRestant > 0) {
               <button class="btn btn-success" (click)="openPaiementModal()">
-                💵 Encaisser un Versement
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                Encaisser un Versement
               </button>
             }
             @if (canAddExam) {
               <button class="btn btn-primary" (click)="openExamenModal()">
-                🎓 Enregistrer un Examen
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg>
+                Enregistrer un Examen
               </button>
             }
           </div>
@@ -47,12 +53,14 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
         <!-- ALERTE EXPIRATION SI APPLICABLE -->
         @if (candidat.procheExpiration) {
           <div class="alert alert-warning">
-            ⚠️ <strong>Attention :</strong> Ce dossier expire dans <strong>{{ candidat.joursRestants }} jours</strong> (le {{ candidat.dateEcheance | date:'dd/MM/yyyy' }}).
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <strong>Attention :</strong> Ce dossier expire dans <strong>{{ candidat.joursRestants }} jours</strong> (le {{ candidat.dateEcheance | date:'dd/MM/yyyy' }}).
           </div>
         }
         @if (canSeeFinancialData && candidat.statutDossier === 'EXPIRE_NON_SOLDE') {
           <div class="alert alert-danger">
-            ⛔ <strong>Dossier Expiré non soldé :</strong> La période de validité de 8 mois est échue avec un solde restant de {{ candidat.soldeRestant | number }} FCFA.
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+            <strong>Dossier Expiré non soldé :</strong> La période de validité de 8 mois est échue avec un solde restant de {{ candidat.soldeRestant | number }} FCFA.
           </div>
         }
         <!-- 360° SUMMARY CARDS -->
@@ -60,7 +68,9 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
           <!-- Montant -->
           @if (canSeeFinancialData) {
             <div class="stat-card primary">
-              <div class="stat-icon primary">📄</div>
+              <div class="stat-icon primary">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              </div>
               <div class="stat-info">
                 <div class="stat-label">Montant de la Formation</div>
                 <div class="stat-value">{{ candidat.montantForfait | number }} <small>FCFA</small></div>
@@ -71,7 +81,9 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
           <!-- Versé -->
           @if (canSeeFinancialData) {
             <div class="stat-card success">
-              <div class="stat-icon success">💳</div>
+              <div class="stat-icon success">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
+              </div>
               <div class="stat-info">
                 <div class="stat-label">Total Déjà Versé</div>
                 <div class="stat-value">{{ candidat.totalVerse | number }} <small>FCFA</small></div>
@@ -82,7 +94,9 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
           <!-- Reste dû -->
           @if (canSeeFinancialData) {
             <div class="stat-card" [ngClass]="candidat.soldeRestant > 0 ? 'danger' : 'success'">
-              <div class="stat-icon" [ngClass]="candidat.soldeRestant > 0 ? 'danger' : 'success'">⚖️</div>
+              <div class="stat-icon" [ngClass]="candidat.soldeRestant > 0 ? 'danger' : 'success'">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="3" x2="12" y2="21"/><path d="M5 7h5"/><path d="M17 7h-5"/><path d="M2 12l3-5 3 5a3 3 0 0 1-6 0Z"/><path d="M16 12l3-5 3 5a3 3 0 0 1-6 0Z"/></svg>
+              </div>
               <div class="stat-info">
                 <div class="stat-label">Solde Restant Dû</div>
                 <div class="stat-value">{{ candidat.soldeRestant | number }} <small>FCFA</small></div>
@@ -96,7 +110,9 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
           }
           <!-- Échéance -->
           <div class="stat-card info">
-            <div class="stat-icon info">⏳</div>
+            <div class="stat-icon info">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
             <div class="stat-info">
               <div class="stat-label">Validité Inscription</div>
               <div class="stat-value">{{ candidat.dateEcheance | date:'dd/MM/yyyy' }}</div>
@@ -107,15 +123,18 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
         <!-- TABS SECTION -->
         <div class="tabs-header">
           <button class="tab-btn" [class.active]="activeTab === 'dossier'" (click)="activeTab = 'dossier'">
-            📋 Dossier Administratif
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+            Dossier Administratif
           </button>
           @if (canSeeFinancialData) {
             <button class="tab-btn" [class.active]="activeTab === 'paiements'" (click)="activeTab = 'paiements'">
-              💰 Historique des Versements ({{ paiements.length }})
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
+              Historique des Versements ({{ paiements.length }})
             </button>
           }
           <button class="tab-btn" [class.active]="activeTab === 'examens'" (click)="activeTab = 'examens'">
-            🎓 Suivi des Examens (Code, Créneau, Conduite)
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg>
+            Suivi des Examens (Code, Créneau, Conduite)
           </button>
         </div>
         <!-- TAB 1 : DOSSIER ADMINISTRATIF -->
@@ -132,7 +151,10 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
               </div>
               <div class="info-group">
                 <span class="info-label">Téléphone</span>
-                <span class="info-value">📞 {{ candidat.telephone }}</span>
+                <span class="info-value" style="display:flex; align-items:center; gap:0.4rem;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                  {{ candidat.telephone }}
+                </span>
               </div>
               <div class="info-group">
                 <span class="info-label">Adresse Email</span>
@@ -148,7 +170,10 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
               </div>
               <div class="info-group">
                 <span class="info-label">Site de Formation</span>
-                <span class="info-value">🏢 {{ candidat.siteNom || 'Non spécifié' }}</span>
+                <span class="info-value" style="display:flex; align-items:center; gap:0.4rem;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><line x1="9" y1="9" x2="9" y2="9.01"/><line x1="9" y1="12" x2="9" y2="12.01"/><line x1="9" y1="15" x2="9" y2="15.01"/><line x1="9" y1="18" x2="9" y2="18.01"/></svg>
+                  {{ candidat.siteNom || 'Non spécifié' }}
+                </span>
               </div>
               <div class="info-group">
                 <span class="info-label">Statut du Candidat</span>
@@ -174,7 +199,8 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
               <div class="card-title">Détail des Versements Enregistrés</div>
               @if (canAddPayment && candidat.soldeRestant > 0) {
                 <button class="btn btn-success btn-sm" (click)="openPaiementModal()">
-                  ➕ Nouveau Versement
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                  Nouveau Versement
                 </button>
               }
             </div>
@@ -221,7 +247,8 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                         <td class="text-right">
                           @if (p.recuId) {
                             <button class="btn btn-outline btn-sm" (click)="imprimerRecu(p.recuId)" title="Imprimer reçu PDF">
-                              🖨️ Reçu PDF
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                              Reçu PDF
                             </button>
                           }
                         </td>
@@ -240,7 +267,8 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
               <div class="card-title">Épreuves Pédagogiques (Jusqu'à 5 passages autorisés par épreuve)</div>
               @if (canAddExam) {
                 <button class="btn btn-primary btn-sm" (click)="openExamenModal()">
-                  ➕ Nouveau Passage
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                  Nouveau Passage
                 </button>
               }
             </div>
@@ -248,9 +276,12 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
               <!-- 1. CODE -->
               <div class="exam-card">
                 <div class="exam-card-header">
-                  <h4>📖 1. Épreuve de CODE</h4>
+                  <h4 style="display:flex; align-items:center; gap:0.45rem;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                    1. Épreuve de CODE
+                  </h4>
                   <span class="badge" [ngClass]="bilan?.codeReussi ? 'badge-reussi' : 'badge-programme'">
-                    {{ bilan?.codeReussi ? 'VALIDÉ ✅' : 'EN COURS' }}
+                    {{ bilan?.codeReussi ? 'VALIDÉ' : 'EN COURS' }}
                   </span>
                 </div>
                 <div class="passage-list">
@@ -275,9 +306,12 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
               <!-- 2. CRÉNEAU -->
               <div class="exam-card">
                 <div class="exam-card-header">
-                  <h4>🅿️ 2. Épreuve de CRÉNEAU</h4>
+                  <h4 style="display:flex; align-items:center; gap:0.45rem;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9 16V8h4a3 3 0 0 1 0 6H9"/></svg>
+                    2. Épreuve de CRÉNEAU
+                  </h4>
                   <span class="badge" [ngClass]="bilan?.creneauReussi ? 'badge-reussi' : 'badge-programme'">
-                    {{ bilan?.creneauReussi ? 'VALIDÉ ✅' : 'EN COURS' }}
+                    {{ bilan?.creneauReussi ? 'VALIDÉ' : 'EN COURS' }}
                   </span>
                 </div>
                 <div class="passage-list">
@@ -302,9 +336,12 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
               <!-- 3. CIRCULATION -->
               <div class="exam-card">
                 <div class="exam-card-header">
-                  <h4>🚗 3. Épreuve de CIRCULATION</h4>
+                  <h4 style="display:flex; align-items:center; gap:0.45rem;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L19 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2"/><circle cx="6.5" cy="16.5" r="2.5"/><circle cx="16.5" cy="16.5" r="2.5"/></svg>
+                    3. Épreuve de CIRCULATION
+                  </h4>
                   <span class="badge" [ngClass]="bilan?.circulationReussi ? 'badge-reussi' : 'badge-programme'">
-                    {{ bilan?.circulationReussi ? 'VALIDÉ ✅' : 'EN COURS' }}
+                    {{ bilan?.circulationReussi ? 'VALIDÉ' : 'EN COURS' }}
                   </span>
                 </div>
                 <div class="passage-list">
@@ -334,13 +371,19 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
           <div class="modal-backdrop">
             <div class="modal-content">
               <div class="modal-header">
-                <h3>💵 Enregistrer un Versement</h3>
+                <h3 style="display:flex; align-items:center; gap:0.5rem;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                  Enregistrer un Versement
+                </h3>
                 <button class="btn btn-outline btn-sm" (click)="showPaiementModal = false">✕</button>
               </div>
               <form (ngSubmit)="savePaiement()">
                 <div class="modal-body">
                   @if (paiementError) {
-                    <div class="alert alert-danger">⚠️ {{ paiementError }}</div>
+                    <div class="alert alert-danger">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                      {{ paiementError }}
+                    </div>
                   }
                   <div class="alert alert-info">
                     Solde actuel restant dû : <strong>{{ candidat.soldeRestant | number }} FCFA</strong>
@@ -382,13 +425,19 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
           <div class="modal-backdrop">
             <div class="modal-content">
               <div class="modal-header">
-                <h3>🎓 Programmer / Enregistrer un Examen</h3>
+                <h3 style="display:flex; align-items:center; gap:0.5rem;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg>
+                  Programmer / Enregistrer un Examen
+                </h3>
                 <button class="btn btn-outline btn-sm" (click)="showExamenModal = false">✕</button>
               </div>
               <form (ngSubmit)="saveExamen()">
                 <div class="modal-body">
                   @if (examenError) {
-                    <div class="alert alert-danger">⚠️ {{ examenError }}</div>
+                    <div class="alert alert-danger">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                      {{ examenError }}
+                    </div>
                   }
                   <div class="form-group">
                     <label class="form-label">Type d'épreuve <span class="required">*</span></label>
@@ -466,6 +515,9 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     }
 
     .tab-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
       background: transparent;
       border: none;
       padding: 0.65rem 1.25rem;

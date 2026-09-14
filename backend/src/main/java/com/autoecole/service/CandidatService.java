@@ -37,7 +37,6 @@ public class CandidatService {
     private final SiteRepository siteRepository;
     private final PaiementRepository paiementRepository;
     private final RecuRepository recuRepository;
-    private final TransactionCaisseRepository transactionCaisseRepository;
     private final PassageExamenRepository passageRepository;
     private final AuditService auditService;
     private final SiteAccessService siteAccessService;
@@ -205,20 +204,9 @@ public class CandidatService {
                 .build();
         recuRepository.save(recu);
 
-        // Mouvement de caisse automatique (ENTREE), même logique de visibilité que
-        // PaiementService.enregistrerPaiement : visible dans le Journal Caisse pour l'ADMIN,
-        // mais exclu du calcul du Solde de Caisse (cf. TransactionCaisseRepository).
-        TransactionCaisse tx = TransactionCaisse.builder()
-                .typeMouvement(TypeMouvementCaisse.ENTREE)
-                .montant(premierVersement)
-                .libelle("Premier versement (inscription) - Dossier " + candidat.getNumeroDossier() + " (" + candidat.getNom() + " " + candidat.getPrenom() + ")")
-                .categorie("RECETTE_FORMATION")
-                .referencePiece(numRecu)
-                .utilisateur(currentUser)
-                .typeOperation(TypeOperationCaisse.PAIEMENT_FORMATION)
-                .paiement(savedPaiement)
-                .build();
-        transactionCaisseRepository.save(tx);
+        // Note : les paiements de formation n'alimentent jamais la Caisse & Trésorerie —
+        // c'est une caisse de dépenses/recettes diverses totalement autonome (cf. CaisseService),
+        // sans aucun lien avec les candidats, les inscriptions ou les paiements.
     }
 
     @Transactional

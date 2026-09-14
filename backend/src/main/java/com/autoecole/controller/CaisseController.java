@@ -1,7 +1,6 @@
 package com.autoecole.controller;
 
 import com.autoecole.dto.CaisseDTOs.*;
-import com.autoecole.entity.enums.TypeEpreuve;
 import com.autoecole.entity.enums.TypeMouvementCaisse;
 import com.autoecole.service.CaisseService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -18,29 +17,27 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/caisse")
 @RequiredArgsConstructor
 @PreAuthorize("hasAnyRole('ADMIN', 'CAISSIERE')")
-@Tag(name = "Caisse", description = "Gestion des entrées, sorties et du solde de caisse de l'auto-école")
+@Tag(name = "Caisse", description = "Caisse & Trésorerie interne : opérations diverses (recettes/dépenses), indépendante des paiements de formation")
 public class CaisseController {
 
     private final CaisseService caisseService;
 
     @GetMapping("/transactions")
-    @Operation(summary = "Lister et filtrer les mouvements de caisse avec pagination")
+    @Operation(summary = "Lister et filtrer les opérations de caisse avec pagination")
     public ResponseEntity<Page<TransactionCaisseDTO>> filtrerTransactions(
             @RequestParam(required = false) TypeMouvementCaisse type,
-            @RequestParam(required = false) String categorie,
+            @RequestParam(required = false) Long natureOperationId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime debut,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fin,
             @PageableDefault(size = 15, sort = "dateTransaction", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        return ResponseEntity.ok(caisseService.filtrerTransactions(type, categorie, debut, fin, pageable));
+        return ResponseEntity.ok(caisseService.filtrerTransactions(type, natureOperationId, debut, fin, pageable));
     }
 
     @GetMapping("/recap")
@@ -50,25 +47,16 @@ public class CaisseController {
     }
 
     @PostMapping("/transactions")
-    @Operation(summary = "Enregistrer une transaction de caisse manuelle (Entrée / Sortie)")
+    @Operation(summary = "Enregistrer une opération de caisse (le sens est hérité de la nature d'opération choisie)")
     public ResponseEntity<TransactionCaisseDTO> enregistrerTransaction(
             @Valid @RequestBody CreateTransactionCaisseRequest request
     ) {
         return new ResponseEntity<>(caisseService.enregistrerTransaction(request), HttpStatus.CREATED);
     }
 
-    @GetMapping("/candidats-frais-examen")
-    @Operation(summary = "Lister les candidats pris en charge, programmés pour cette épreuve à cette date")
-    public ResponseEntity<List<CandidatConcerneDTO>> getCandidatsEligiblesFraisExamen(
-            @RequestParam TypeEpreuve typeEpreuve,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateExamen
-    ) {
-        return ResponseEntity.ok(caisseService.getCandidatsEligiblesFraisExamen(typeEpreuve, dateExamen));
-    }
-
     @DeleteMapping("/transactions/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Supprimer une transaction de caisse (réservé ADMIN)")
+    @Operation(summary = "Supprimer une opération de caisse (réservé ADMIN)")
     public ResponseEntity<Void> deleteTransaction(
             @PathVariable Long id,
             @RequestParam(required = false, defaultValue = "Correction d'écriture") String motif

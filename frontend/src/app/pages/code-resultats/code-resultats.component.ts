@@ -20,14 +20,19 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
   imports: [CommonModule, FormsModule],
   template: `
     <div class="page-header">
-      <h2>🎓 Résultats — Code de la route</h2>
+      <h2 style="display:flex; align-items:center; gap:0.5rem;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg>
+        Résultats — Code de la route
+      </h2>
       <p>Consultez la progression, les Cycles et l'historique des tentatives des candidats autorisés.</p>
     </div>
 
     <!-- RECHERCHE / LISTE DES CANDIDATS AUTORISÉS -->
     <div class="card filter-card">
       <div class="search-box">
-        <span class="search-icon">🔍</span>
+        <span class="search-icon">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </span>
         <input
           type="text"
           class="form-control"
@@ -77,9 +82,15 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
 
       @if (totalPages > 1) {
         <div class="pagination-bar">
-          <button class="btn btn-outline btn-sm" [disabled]="page === 0" (click)="changerPage(page - 1)">← Précédent</button>
+          <button class="btn btn-outline btn-sm" [disabled]="page === 0" (click)="changerPage(page - 1)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Précédent
+          </button>
           <span>Page {{ page + 1 }} sur {{ totalPages }} ({{ totalElements }} candidats)</span>
-          <button class="btn btn-outline btn-sm" [disabled]="page >= totalPages - 1" (click)="changerPage(page + 1)">Suivant →</button>
+          <button class="btn btn-outline btn-sm" [disabled]="page >= totalPages - 1" (click)="changerPage(page + 1)">
+            Suivant
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
         </div>
       }
     </div>
@@ -105,19 +116,26 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
 
         @if (progression) {
           @if (progression.accesExpire) {
-            <div class="alert alert-warning">⚠️ L'accès au module Code de la route a expiré pour ce candidat.</div>
+            <div class="alert alert-warning">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              L'accès au module Code de la route a expiré pour ce candidat.
+            </div>
           }
 
           <div class="stats-grid">
             <div class="stat-card primary">
-              <div class="stat-icon primary">🔄</div>
+              <div class="stat-icon primary">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+              </div>
               <div class="stat-info">
                 <div class="stat-label">Cycles réussis</div>
                 <div class="stat-value">{{ progression.cyclesReussis }} / {{ progression.totalCycles }}</div>
               </div>
             </div>
             <div class="stat-card success">
-              <div class="stat-icon success">📈</div>
+              <div class="stat-icon success">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+              </div>
               <div class="stat-info">
                 <div class="stat-label">Progression</div>
                 <div class="stat-value">{{ progression.pourcentageProgression | number:'1.0-1' }} %</div>

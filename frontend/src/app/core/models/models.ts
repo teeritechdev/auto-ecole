@@ -176,27 +176,48 @@ export interface BilanExamensCandidat {
   circulationReussi: boolean;
 }
 
-export interface CandidatConcerne {
+export interface NatureOperation {
   id: number;
-  numeroDossier: string;
-  nomComplet: string;
+  code: string;
+  libelle: string;
+  sens: 'ENTREE' | 'SORTIE';
+  planComptable?: string;
+  description?: string;
+  actif: boolean;
+}
+
+export interface CreateNatureOperation {
+  code: string;
+  libelle: string;
+  sens: 'ENTREE' | 'SORTIE';
+  planComptable?: string;
+  description?: string;
+}
+
+export interface UpdateNatureOperation {
+  libelle: string;
+  planComptable?: string;
+  description?: string;
+  actif: boolean;
 }
 
 export interface TransactionCaisse {
   id: number;
+  natureOperation: NatureOperation;
   typeMouvement: 'ENTREE' | 'SORTIE';
   montant: number;
   libelle: string;
-  categorie?: string;
-  referencePiece?: string;
+  numeroFacture?: string;
   dateTransaction: string;
   utilisateurId: number;
   utilisateurNomComplet: string;
-  paiementId?: number;
-  typeOperation: 'FRAIS_EXAMEN' | 'PRELEVEMENT_FORMATION' | 'PAIEMENT_FORMATION' | 'AUTRE';
-  dateExamen?: string;
-  typeEpreuveExamen?: 'CODE' | 'CRENEAU' | 'CIRCULATION';
-  candidatsConcernes?: CandidatConcerne[];
+}
+
+export interface CreateTransactionCaisse {
+  natureOperationId: number;
+  montant: number;
+  libelle: string;
+  numeroFacture?: string;
 }
 
 export interface RecapCaisse {
@@ -206,9 +227,6 @@ export interface RecapCaisse {
   totalEntreesJour: number;
   totalSortiesJour: number;
   soldeJour: number;
-  totalFormationEncaisse: number;
-  totalPreleveFormation: number;
-  disponiblePourPrelevement: number;
 }
 
 export interface ResumePaiements {

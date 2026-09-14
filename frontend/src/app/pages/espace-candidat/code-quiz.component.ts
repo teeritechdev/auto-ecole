@@ -21,7 +21,10 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       <div class="quiz-card">
         <div class="quiz-header">
           <span>Cycle {{ enCours.numeroCycle }} — Question {{ enCours.indexQuestionCourante + 1 }} / {{ enCours.totalQuestionsDuCycle }}</span>
-          <span class="chrono" [class.chrono-warning]="tempsRestantQuestion <= 5">⏱ {{ tempsRestantQuestion }}s</span>
+          <span class="chrono" [class.chrono-warning]="tempsRestantQuestion <= 5">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            {{ tempsRestantQuestion }}s
+          </span>
         </div>
 
         <div class="progress-bar">
@@ -77,7 +80,14 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
 
         @if (verrouille && derniereCorrection) {
           <div class="correction-panel" [class.correction-ok]="derniereCorrection.correcte" [class.correction-ko]="!derniereCorrection.correcte">
-            <div class="correction-header">{{ derniereCorrection.correcte ? '✓ Bonne réponse' : '✗ Réponse incorrecte' }}</div>
+            <div class="correction-header">
+              @if (derniereCorrection.correcte) {
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              } @else {
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+              }
+              {{ derniereCorrection.correcte ? 'Bonne réponse' : 'Réponse incorrecte' }}
+            </div>
             @if (derniereCorrection.explication) {
               <p class="correction-explication">{{ derniereCorrection.explication }}</p>
             }
@@ -90,11 +100,13 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
             class="btn btn-secondary"
             [disabled]="!enCours.peutRevenirEnArriere || envoi || verrouille"
             (click)="precedente()">
-            ← Précédent
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Précédent
           </button>
           @if (verrouille) {
             <button type="button" class="btn btn-primary" (click)="continuer()">
-              {{ estDerniereQuestion ? 'Voir le résultat →' : 'Suivant →' }}
+              {{ estDerniereQuestion ? 'Voir le résultat' : 'Suivant' }}
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
             </button>
           }
         </div>
@@ -107,13 +119,22 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
         <div class="score">{{ resultat.score }} / {{ resultat.totalQuestions }}</div>
         <p>Seuil de réussite : {{ resultat.seuilReussite }} / {{ resultat.totalQuestions }}</p>
         @if (resultat.statut === 'REUSSI') {
-          <div class="alert alert-success">✓ Cycle réussi ! Le Cycle suivant est débloqué.</div>
+          <div class="alert alert-success">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Cycle réussi ! Le Cycle suivant est débloqué.
+          </div>
         }
         @if (resultat.statut === 'EXPIREE') {
-          <div class="alert alert-warning">⏱ Le temps imparti pour ce Cycle est écoulé.</div>
+          <div class="alert alert-warning">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Le temps imparti pour ce Cycle est écoulé.
+          </div>
         }
         @if (resultat.statut === 'ECHEC') {
-          <div class="alert alert-danger">✗ Cycle non réussi. {{ resultat.peutReprendre ? 'Il faut reprendre ce Cycle.' : '' }}</div>
+          <div class="alert alert-danger">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            Cycle non réussi. {{ resultat.peutReprendre ? 'Il faut reprendre ce Cycle.' : '' }}
+          </div>
           @if (resultat.peutReprendre) {
             <button class="btn btn-warning" (click)="reprendreCycle()" [disabled]="loading" style="margin-bottom: 1rem; margin-right: 1rem;">
               Reprendre le Cycle
@@ -134,7 +155,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       margin: 0 auto;
     }
     .quiz-header { display: flex; justify-content: space-between; align-items: center; font-weight: 600; margin-bottom: 0.75rem; }
-    .chrono { color: var(--primary); }
+    .chrono { display:inline-flex; align-items:center; gap:0.3rem; color: var(--primary); }
     .chrono-warning { color: var(--danger); font-weight: 700; }
     .progress-bar { height: 6px; border-radius: 3px; background: var(--border-color); overflow: hidden; margin-bottom: 1.25rem; }
     .progress-fill { height: 100%; background: var(--primary); transition: width 0.2s; }
@@ -173,7 +194,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     }
     .correction-ok { background: var(--success-light); border-color: var(--success); }
     .correction-ko { background: var(--danger-light); border-color: var(--danger); }
-    .correction-header { font-weight: 700; }
+    .correction-header { display:flex; align-items:center; gap:0.4rem; font-weight: 700; }
     .correction-explication { margin-top: 0.35rem; font-size: 0.9rem; }
   `],
   changeDetection: ChangeDetectionStrategy.Eager

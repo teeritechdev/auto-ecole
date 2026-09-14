@@ -14,7 +14,10 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
         <h2>Banque de questions — Code de la route</h2>
         <p>{{ questions.length }} question(s). L'ordre est fixe et jamais mélangé : il détermine le découpage en Cycles.</p>
       </div>
-      <button class="btn btn-primary" (click)="ouvrirCreation()">➕ Nouvelle question</button>
+      <button class="btn btn-primary" (click)="ouvrirCreation()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        Nouvelle question
+      </button>
     </div>
 
     @if (error) {

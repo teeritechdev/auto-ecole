@@ -20,7 +20,10 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       <div class="grid-2-col">
         <div class="card brand-settings-card">
           <div class="card-header">
-            <div class="card-title">🏷️ Logo de l'entreprise</div>
+            <div class="card-title" style="display:flex; align-items:center; gap:0.5rem;">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 13.42 20.6a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82Z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+              Logo de l'entreprise
+            </div>
           </div>
           <div class="logo-settings">
             <div class="logo-preview">
@@ -28,7 +31,9 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 <img [src]="logoData" alt="Logo actuel" />
               }
               @if (!logoData) {
-                <span>🚗</span>
+                <span>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L19 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2"/><circle cx="6.5" cy="16.5" r="2.5"/><circle cx="16.5" cy="16.5" r="2.5"/></svg>
+                </span>
               }
             </div>
             <input type="file" accept="image/png,image/jpeg,image/webp" (change)="onLogoSelected($event)" />
@@ -42,7 +47,10 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
         <!-- TARIFS DES EXAMENS -->
         <div class="card">
           <div class="card-header">
-            <div class="card-title">🎓 Tarifs des examens</div>
+            <div class="card-title" style="display:flex; align-items:center; gap:0.5rem;">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg>
+              Tarifs des examens
+            </div>
           </div>
           <form (ngSubmit)="saveTarifsExamens()">
             <div class="tarifs-examens-form">
@@ -75,8 +83,14 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
         <!-- 1. CATÉGORIES DE PERMIS -->
         <div class="card">
           <div class="card-header">
-            <div class="card-title">🚗 Catégories de Permis (A1, B, C...)</div>
-            <button class="btn btn-primary btn-sm" (click)="openCatModal()">➕ Nouvelle Catégorie</button>
+            <div class="card-title" style="display:flex; align-items:center; gap:0.5rem;">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L19 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2"/><circle cx="6.5" cy="16.5" r="2.5"/><circle cx="16.5" cy="16.5" r="2.5"/></svg>
+              Catégories de Permis (A1, B, C...)
+            </div>
+            <button class="btn btn-primary btn-sm" (click)="openCatModal()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+              Nouvelle Catégorie
+            </button>
           </div>
 
           <div class="table-responsive">
@@ -98,7 +112,9 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                     <td><strong class="text-success">{{ cat.montant | number }} FCFA</strong></td>
                     <td><small class="text-muted">{{ cat.description || '—' }}</small></td>
                     <td class="text-right">
-                      <button class="btn btn-outline btn-sm" (click)="editCat(cat)">✏️</button>
+                      <button class="btn btn-outline btn-sm" (click)="editCat(cat)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+                      </button>
                     </td>
                   </tr>
                 }
@@ -110,8 +126,14 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
         <!-- 2. SITES DE FORMATION -->
         <div class="card">
           <div class="card-header">
-            <div class="card-title">🏢 Sites de Formation</div>
-            <button class="btn btn-primary btn-sm" (click)="openSiteModal()">➕ Nouveau Site</button>
+            <div class="card-title" style="display:flex; align-items:center; gap:0.5rem;">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><line x1="9" y1="9" x2="9" y2="9.01"/><line x1="9" y1="12" x2="9" y2="12.01"/><line x1="9" y1="15" x2="9" y2="15.01"/><line x1="9" y1="18" x2="9" y2="18.01"/></svg>
+              Sites de Formation
+            </div>
+            <button class="btn btn-primary btn-sm" (click)="openSiteModal()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+              Nouveau Site
+            </button>
           </div>
 
           <div class="table-responsive">
@@ -137,7 +159,9 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                       }
                     </td>
                     <td class="text-right">
-                      <button class="btn btn-outline btn-sm" (click)="editSite(s)">✏️</button>
+                      <button class="btn btn-outline btn-sm" (click)="editSite(s)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+                      </button>
                     </td>
                   </tr>
                 }
@@ -150,7 +174,10 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       <!-- 3. STATISTIQUES PAR SITE -->
       <div class="card stats-sites-card">
         <div class="card-header">
-          <div class="card-title">📊 Statistiques par Site</div>
+          <div class="card-title" style="display:flex; align-items:center; gap:0.5rem;">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            Statistiques par Site
+          </div>
         </div>
 
         <div class="table-responsive">
@@ -187,13 +214,23 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
         <div class="modal-backdrop">
           <div class="modal-content">
             <div class="modal-header">
-              <h3>{{ isEditCat ? '✏️ Modifier la Catégorie' : '➕ Nouvelle Catégorie de Permis' }}</h3>
+              <h3 style="display:flex; align-items:center; gap:0.5rem;">
+                @if (isEditCat) {
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+                } @else {
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                }
+                {{ isEditCat ? 'Modifier la Catégorie' : 'Nouvelle Catégorie de Permis' }}
+              </h3>
               <button class="btn btn-outline btn-sm" (click)="showCatModal = false">✕</button>
             </div>
             <form (ngSubmit)="saveCat()">
               <div class="modal-body">
                 @if (catError) {
-                  <div class="alert alert-danger">⚠️ {{ catError }}</div>
+                  <div class="alert alert-danger">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    {{ catError }}
+                  </div>
                 }
                 <div class="form-group">
                   <label class="form-label">Code Catégorie <span class="required">*</span></label>
@@ -226,13 +263,23 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
         <div class="modal-backdrop">
           <div class="modal-content">
             <div class="modal-header">
-              <h3>{{ isEditSite ? '✏️ Modifier le Site' : '➕ Nouveau Site de Formation' }}</h3>
+              <h3 style="display:flex; align-items:center; gap:0.5rem;">
+                @if (isEditSite) {
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+                } @else {
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                }
+                {{ isEditSite ? 'Modifier le Site' : 'Nouveau Site de Formation' }}
+              </h3>
               <button class="btn btn-outline btn-sm" (click)="showSiteModal = false">✕</button>
             </div>
             <form (ngSubmit)="saveSite()">
               <div class="modal-body">
                 @if (siteError) {
-                  <div class="alert alert-danger">⚠️ {{ siteError }}</div>
+                  <div class="alert alert-danger">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    {{ siteError }}
+                  </div>
                 }
                 <div class="form-group">
                   <label class="form-label">Nom du site <span class="required">*</span></label>

@@ -22,7 +22,8 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
         <div class="header-buttons">
           @if (canAdd) {
             <button class="btn btn-primary" (click)="openProgrammerModal()">
-              ➕ Programmer un Examen
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+              Programmer un Examen
             </button>
           }
         </div>
@@ -122,7 +123,10 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
             </div>
             <div class="modal-body">
               @if (sessionError) {
-                <div class="alert alert-danger">⚠️ {{ sessionError }}</div>
+                <div class="alert alert-danger">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                  {{ sessionError }}
+                </div>
               }
               <div class="alert alert-info session-info">
                 <div class="session-info-text">
@@ -137,7 +141,10 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 </div>
                 @if (peutGererSession(sessionDetail)) {
                   @if (!editingSessionDate) {
-                    <button class="btn btn-outline btn-sm" (click)="startEditSessionDate()">✏️ Modifier la date</button>
+                    <button class="btn btn-outline btn-sm" (click)="startEditSessionDate()">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+                      Modifier la date
+                    </button>
                   } @else {
                     <div class="edit-date-row">
                       <input type="date" class="form-control" [(ngModel)]="editSessionDateValue" name="editSessionDate" />
@@ -172,10 +179,15 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                       <td>{{ p.nombreEchecs }}/5</td>
                       <td class="text-right">
                         @if (peutNoter(sessionDetail)) {
-                          <button class="btn btn-outline btn-sm" (click)="openUpdateModal(p)">✏️ Noter</button>
+                          <button class="btn btn-outline btn-sm" (click)="openUpdateModal(p)">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+                            Noter
+                          </button>
                         }
                         @if (peutRetirer(sessionDetail)) {
-                          <button class="btn btn-danger btn-sm" style="margin-left: 0.25rem" (click)="retirerDeSession(p.id)">🗑️</button>
+                          <button class="btn btn-danger btn-sm" style="margin-left: 0.25rem" (click)="retirerDeSession(p.id)">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                          </button>
                         }
                       </td>
                     </tr>
@@ -186,7 +198,10 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
               @if (peutRetirer(sessionDetail)) {
                 <div style="margin-top: 1.25rem;">
                   @if (!showAjoutCandidats) {
-                    <button class="btn btn-secondary btn-sm" (click)="openAjoutCandidats()">➕ Ajouter des candidats</button>
+                    <button class="btn btn-secondary btn-sm" (click)="openAjoutCandidats()">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                      Ajouter des candidats
+                    </button>
                   } @else {
                     <div class="form-group">
                       <label class="form-label">Candidats éligibles pour cette épreuve</label>
@@ -224,13 +239,19 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
         <div class="modal-backdrop">
           <div class="modal-content">
             <div class="modal-header">
-              <h3>🎓 Programmer une Session d'Examen</h3>
+              <h3 style="display:flex; align-items:center; gap:0.5rem;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg>
+                Programmer une Session d'Examen
+              </h3>
               <button class="btn btn-outline btn-sm" (click)="showProgrammerModal = false">✕</button>
             </div>
             <form (ngSubmit)="saveProgrammer()">
               <div class="modal-body">
                 @if (formError) {
-                  <div class="alert alert-danger">⚠️ {{ formError }}</div>
+                  <div class="alert alert-danger">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    {{ formError }}
+                  </div>
                 }
                 @if (currentWizardStep === 'site') {
                   <div class="step-indicator">Étape {{ programmerStepIndex + 1 }} sur {{ wizardSteps.length }}</div>
@@ -330,13 +351,19 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
         <div class="modal-backdrop">
           <div class="modal-content">
             <div class="modal-header">
-              <h3>✏️ Saisir / Mettre à jour le Résultat</h3>
+              <h3 style="display:flex; align-items:center; gap:0.5rem;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+                Saisir / Mettre à jour le Résultat
+              </h3>
               <button class="btn btn-outline btn-sm" (click)="showUpdateModal = false">✕</button>
             </div>
             <form (ngSubmit)="saveUpdateResultat()">
               <div class="modal-body">
                 @if (formError) {
-                  <div class="alert alert-danger">⚠️ {{ formError }}</div>
+                  <div class="alert alert-danger">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    {{ formError }}
+                  </div>
                 }
                 <div class="alert alert-info">
                   Candidat : <strong>{{ targetPassage?.candidatNomComplet }}</strong><br>

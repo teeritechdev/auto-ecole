@@ -68,6 +68,12 @@
   padding: 0;
 }
 
+html, body {
+  /* Filet de sécurité : sans ça, un contenu trop large (tableau, grille) sur petit écran
+     élargit tout le document au lieu de défiler dans son propre conteneur. */
+  overflow-x: hidden;
+}
+
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   color: var(--text-main);
@@ -256,6 +262,10 @@ button, input, select, textarea {
 
 .main-wrapper {
   flex: 1;
+  /* Sans min-width:0, un flex item ne rétrécit jamais sous la largeur intrinsèque de son
+     contenu (ex: un tableau large) : sur petit écran, c'est toute la page qui s'élargit
+     et défile horizontalement au lieu du seul tableau, dans son .table-responsive. */
+  min-width: 0;
   margin-left: 260px;
   display: flex;
   flex-direction: column;
@@ -310,6 +320,11 @@ button, input, select, textarea {
   box-shadow: var(--shadow-sm);
   padding: 1.5rem;
   transition: box-shadow var(--transition-normal);
+  /* Comme un flex/grid item, une .card placée dans une grille (dashboard-grid,
+     grid-2-col, reports-grid...) refuse par défaut de rétrécir sous la largeur
+     intrinsèque de son contenu (ex: un card-header non coupé) : sur petit téléphone,
+     c'est alors la colonne "1fr" elle-même qui déborde de l'écran. */
+  min-width: 0;
 }
 
 .card:hover {
@@ -320,6 +335,8 @@ button, input, select, textarea {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   margin-bottom: 1.25rem;
   padding-bottom: 0.75rem;
   border-bottom: 1px solid var(--border-color);

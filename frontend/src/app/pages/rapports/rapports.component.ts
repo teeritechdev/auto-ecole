@@ -96,6 +96,12 @@ import { ApiService } from '../../core/services/api.service';
       gap: 1.5rem;
     }
 
+    .reports-grid > .card {
+      /* Un item de grille refuse par défaut de rétrécir sous la largeur intrinsèque de
+         son contenu : sans ça, la colonne "1fr" déborde quand même sur petit téléphone. */
+      min-width: 0;
+    }
+
     .report-card {
       display: flex;
       flex-direction: column;
@@ -127,12 +133,14 @@ import { ApiService } from '../../core/services/api.service';
 
     .periode-row {
       display: flex;
+      flex-wrap: wrap;
       gap: 0.75rem;
       margin-bottom: 1rem;
     }
 
     .periode-row .form-group {
       flex: 1;
+      min-width: 140px;
     }
   `]
 })

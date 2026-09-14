@@ -481,12 +481,18 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       border-radius: var(--radius-md);
       border: 1px solid var(--border-color);
       width: fit-content;
+      max-width: 100%;
+      /* Filet de sécurité si les libellés d'onglets ne tiennent pas sur un petit téléphone :
+         on défile horizontalement plutôt que de déborder de la page. */
+      overflow-x: auto;
     }
 
     .tab-btn {
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
+      flex-shrink: 0;
+      white-space: nowrap;
       background: transparent;
       border: none;
       padding: 0.55rem 1.1rem;

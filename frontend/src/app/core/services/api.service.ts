@@ -330,6 +330,26 @@ export class ApiService {
     });
   }
 
+  /** Ouvre un PDF dans un nouvel onglet et déclenche directement la boîte de dialogue
+   *  d'impression du navigateur, sans passer par un téléchargement de fichier. */
+  public printBlob(url: string): void {
+    this.http.get(url, { responseType: 'blob' }).subscribe({
+      next: (blob) => {
+        const blobUrl = window.URL.createObjectURL(blob);
+        const printWindow = window.open(blobUrl, '_blank');
+        if (!printWindow) {
+          console.error('Impossible d’ouvrir la fenêtre d’impression (bloqueur de pop-up ?).');
+          return;
+        }
+        printWindow.onload = () => {
+          printWindow.focus();
+          printWindow.print();
+        };
+      },
+      error: (err) => console.error('Erreur lors de l’impression:', err)
+    });
+  }
+
   public getCandidatsPdfUrl(): string { return `${this.base}/rapports/candidats/pdf`; }
   public getCandidatsExcelUrl(): string { return `${this.base}/rapports/candidats/excel`; }
   public getRelevePaiementPdfUrl(candidatId: number): string { return `${this.base}/rapports/releve-paiement/${candidatId}/pdf`; }

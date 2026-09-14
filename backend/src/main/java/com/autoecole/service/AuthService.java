@@ -75,6 +75,8 @@ public class AuthService {
                 .photoProfile(user.getPhotoProfile())
                 .siteIds(user.getSites().stream().map(com.autoecole.entity.Site::getId).collect(java.util.stream.Collectors.toSet()))
                 .specialites(user.getSpecialites())
+                .candidatId(user.getCandidat() != null ? user.getCandidat().getId() : null)
+                .doitChangerMotDePasse(user.isDoitChangerMotDePasse())
                 .build();
     }
 
@@ -102,6 +104,7 @@ public class AuthService {
         }
 
         currentUser.setPassword(passwordEncoder.encode(request.getNouveauPassword()));
+        currentUser.setDoitChangerMotDePasse(false);
         utilisateurRepository.save(currentUser);
 
         auditService.logAction("MODIFICATION_MDP", "Utilisateur", currentUser.getUsername(), "Modification du mot de passe", null);

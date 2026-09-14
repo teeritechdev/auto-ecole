@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
-import { Candidat, CategoriePermis, Site } from '../../core/models/models';
+import { Candidat, CategoriePermis, Site, IdentifiantsCompte } from '../../core/models/models';
 import { extraireMessageErreur } from '../../core/utils/error-utils';
 
 @Component({
@@ -337,6 +337,12 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                     <input type="date" class="form-control" [(ngModel)]="newCandidat.dateReceptionDossier" name="dateReceptionDossier" />
                   </div>
                 </div>
+                <div class="form-group form-check">
+                  <label class="checkbox-label">
+                    <input type="checkbox" [(ngModel)]="newCandidat.priseEnChargeExamens" name="priseEnChargeExamens" />
+                    Les frais de formation englobent la prise en charge totale des frais d'examen
+                  </label>
+                </div>
                 <h4 class="section-title">3. Premier Versement (Optionnel à l'inscription — Règle RG02 : 35 000 à 50 000 FCFA)</h4>
                 <div class="form-row">
                   <div class="form-group">
@@ -443,6 +449,12 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                     <input type="date" class="form-control" [(ngModel)]="editCandidat.dateReceptionDossier" name="editDateReceptionDossier" />
                   </div>
                 </div>
+                <div class="form-group form-check">
+                  <label class="checkbox-label">
+                    <input type="checkbox" [(ngModel)]="editCandidat.priseEnChargeExamens" name="editPriseEnChargeExamens" />
+                    Les frais de formation englobent la prise en charge totale des frais d'examen
+                  </label>
+                </div>
               </div>
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" (click)="showEditModal = false">Annuler</button>
@@ -473,6 +485,33 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
             <div class="modal-footer">
               <button type="button" class="btn btn-secondary" (click)="showDeleteModal = false">Annuler</button>
               <button type="button" class="btn btn-danger" [disabled]="!deleteMotif" (click)="confirmDelete()">Confirmer la Suppression</button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- MODAL IDENTIFIANTS COMPTE CANDIDAT (affichage unique) -->
+      @if (identifiantsCompteAAfficher) {
+        <div class="modal-backdrop">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3>🔑 Compte candidat créé</h3>
+              <button class="btn btn-outline btn-sm" (click)="identifiantsCompteAAfficher = null">✕</button>
+            </div>
+            <div class="modal-body">
+              <p>Un compte de connexion a été créé automatiquement pour ce candidat. Communiquez-lui ces identifiants dès maintenant : ils ne seront plus jamais affichés.</p>
+              <div class="form-group mt-3">
+                <label class="form-label">Identifiant</label>
+                <input type="text" class="form-control" [value]="identifiantsCompteAAfficher.username" readonly />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Mot de passe temporaire</label>
+                <input type="text" class="form-control" [value]="identifiantsCompteAAfficher.motDePasseTemporaire" readonly />
+              </div>
+              <p class="form-help">Le candidat devra changer ce mot de passe lors de sa première connexion.</p>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary" (click)="identifiantsCompteAAfficher = null">J'ai noté les identifiants</button>
             </div>
           </div>
         </div>
@@ -551,6 +590,14 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     .header-buttons {
       display: flex;
       gap: 0.5rem;
+    }
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+      cursor: pointer;
     }
 
     .filter-card {
@@ -648,6 +695,7 @@ export class CandidatsComponent implements OnInit {
   showCreateModal = false;
   showEditModal = false;
   showDeleteModal = false;
+  identifiantsCompteAAfficher: IdentifiantsCompte | null = null;
   selectedCandidat: Candidat | null = null;
   editCandidat: any = {};
   deleteMotif = '';
@@ -867,7 +915,8 @@ export class CandidatsComponent implements OnInit {
       siteId: this.sites.length > 0 ? this.sites[0].id : null,
       statutInscription: 'NOUVEAU',
       montantPremierVersement: null,
-      modeReglementPremierVersement: 'ESPECES'
+      modeReglementPremierVersement: 'ESPECES',
+      priseEnChargeExamens: false
     };
     this.showCreateModal = true;
   }
@@ -886,7 +935,8 @@ export class CandidatsComponent implements OnInit {
       dateReceptionDossier: c.dateReceptionDossier ? c.dateReceptionDossier.substring(0, 10) : '',
       categoriePermisId: c.categoriePermisId,
       montant: c.montantForfait,
-      siteId: c.siteId ?? (this.sites.length > 0 ? this.sites[0].id : null)
+      siteId: c.siteId ?? (this.sites.length > 0 ? this.sites[0].id : null),
+      priseEnChargeExamens: c.priseEnChargeExamens
     };
     this.showEditModal = true;
   }
@@ -966,7 +1016,8 @@ export class CandidatsComponent implements OnInit {
         siteId: this.newCandidat.siteId,
         dateInscription: this.newCandidat.dateInscription,
         montantPremierVersement: this.newCandidat.montantPremierVersement,
-        modeReglementPremierVersement: this.newCandidat.modeReglementPremierVersement
+        modeReglementPremierVersement: this.newCandidat.modeReglementPremierVersement,
+        priseEnChargeExamens: this.newCandidat.priseEnChargeExamens
       };
       this.apiService.reinscrireCandidat(this.doublonDetecte.id, payload).subscribe({
         next: () => {
@@ -983,9 +1034,12 @@ export class CandidatsComponent implements OnInit {
     }
 
     this.apiService.createCandidat(this.newCandidat).subscribe({
-      next: () => {
+      next: (res) => {
         this.saving = false;
         this.showCreateModal = false;
+        if (res.identifiantsCompte) {
+          this.identifiantsCompteAAfficher = res.identifiantsCompte;
+        }
         this.loadCandidats();
       },
       error: (err) => {

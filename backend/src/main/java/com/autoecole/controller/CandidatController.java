@@ -33,9 +33,10 @@ public class CandidatController {
             @RequestParam(required = false) StatutDossier statut,
             @RequestParam(required = false) Long categorieId,
             @RequestParam(required = false) StatutInscription statutInscription,
+            @RequestParam(required = false, defaultValue = "false") boolean ignoreEtapeFilter,
             @PageableDefault(size = 15, sort = "dateCreation", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        return ResponseEntity.ok(candidatService.rechercherCandidats(recherche, statut, categorieId, statutInscription, pageable));
+        return ResponseEntity.ok(candidatService.rechercherCandidats(recherche, statut, categorieId, statutInscription, ignoreEtapeFilter, pageable));
     }
 
     @GetMapping("/{id}")

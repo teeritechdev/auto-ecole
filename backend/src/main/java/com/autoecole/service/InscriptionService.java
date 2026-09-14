@@ -34,7 +34,8 @@ public class InscriptionService {
      */
     @Transactional
     public Inscription creerInscriptionInitiale(Candidat candidat, CategoriePermis categorie, Site site,
-                                                 LocalDate dateInscription, BigDecimal montant, BigDecimal totalVerse, StatutInscription statutInscription) {
+                                                 LocalDate dateInscription, BigDecimal montant, BigDecimal totalVerse, StatutInscription statutInscription,
+                                                 boolean priseEnChargeExamens) {
         LocalDate dateInsc = dateInscription != null ? dateInscription : LocalDate.now();
         LocalDate dateEcheance = dateInsc.plusMonths(dureeValiditeMois); // RG07 : durée de validité configurable
 
@@ -53,6 +54,7 @@ public class InscriptionService {
                 .soldeRestant(montant.subtract(verse))
                 .numeroCycle(1)
                 .active(true)
+                .priseEnChargeExamens(priseEnChargeExamens)
                 .build();
 
         inscription.recalculerSoldeEtStatut();
@@ -66,7 +68,7 @@ public class InscriptionService {
      */
     @Transactional
     public Inscription creerNouveauCycle(Candidat candidat, CategoriePermis categorie, Site site,
-                                          LocalDate dateInscription, BigDecimal montant, BigDecimal totalVerse) {
+                                          LocalDate dateInscription, BigDecimal montant, BigDecimal totalVerse, boolean priseEnChargeExamens) {
         Inscription ancienneActive = inscriptionRepository.findByCandidatIdAndActiveTrue(candidat.getId()).orElse(null);
         if (ancienneActive != null) {
             ancienneActive.setActive(false);
@@ -92,6 +94,7 @@ public class InscriptionService {
                 .numeroCycle(nouveauCycle)
                 .active(true)
                 .inscriptionPrecedente(ancienneActive)
+                .priseEnChargeExamens(priseEnChargeExamens)
                 .build();
 
         inscription.recalculerSoldeEtStatut();
@@ -120,10 +123,11 @@ public class InscriptionService {
     }
 
     @Transactional
-    public Inscription mettreAJourCategorieEtMontant(Long candidatId, CategoriePermis categorie, BigDecimal montant, Site site) {
+    public Inscription mettreAJourCategorieEtMontant(Long candidatId, CategoriePermis categorie, BigDecimal montant, Site site, boolean priseEnChargeExamens) {
         Inscription active = getInscriptionActive(candidatId);
         active.setCategoriePermis(categorie);
         active.setSite(site);
+        active.setPriseEnChargeExamens(priseEnChargeExamens);
         if (active.getMontantForfait().compareTo(montant) != 0) {
             active.setMontantForfait(montant);
             active.recalculerSoldeEtStatut();
@@ -152,6 +156,7 @@ public class InscriptionService {
                 .active(i.isActive())
                 .inscriptionPrecedenteId(i.getInscriptionPrecedente() != null ? i.getInscriptionPrecedente().getId() : null)
                 .dateCreation(i.getDateCreation())
+                .priseEnChargeExamens(i.isPriseEnChargeExamens())
                 .build();
     }
 }

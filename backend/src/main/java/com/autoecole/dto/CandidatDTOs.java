@@ -61,6 +61,26 @@ public class CandidatDTOs {
         private boolean codeReussi;
         private boolean creneauReussi;
         private boolean circulationReussi;
+
+        // Indique si les frais de formation englobent la prise en charge totale
+        // des frais d'examen par l'auto-école.
+        private boolean priseEnChargeExamens;
+
+        // Renseigné UNE SEULE FOIS, uniquement dans la réponse de création d'un candidat
+        // dont le compte de connexion vient d'être généré automatiquement (jamais
+        // re-transmis ni stocké ensuite) : à communiquer immédiatement au candidat.
+        private IdentifiantsCompteDTO identifiantsCompte;
+    }
+
+    /** Identifiants affichés une seule fois à la Secrétaire/l'Admin qui valide l'inscription
+     *  initiale d'un candidat, faute de mécanisme d'envoi d'email/SMS dans l'application. */
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class IdentifiantsCompteDTO {
+        private String username;
+        private String motDePasseTemporaire;
     }
 
     @Data
@@ -107,6 +127,9 @@ public class CandidatDTOs {
         // Premier versement optionnel/intégré
         private BigDecimal montantPremierVersement;
         private ModeReglement modeReglementPremierVersement;
+
+        // Les frais de formation englobent-ils la prise en charge totale des frais d'examen ?
+        private boolean priseEnChargeExamens;
     }
 
     @Data
@@ -129,6 +152,9 @@ public class CandidatDTOs {
 
         private BigDecimal montantPremierVersement;
         private ModeReglement modeReglementPremierVersement;
+
+        // Les frais de formation englobent-ils la prise en charge totale des frais d'examen ?
+        private boolean priseEnChargeExamens;
     }
 
     @Data
@@ -164,5 +190,8 @@ public class CandidatDTOs {
 
         @NotNull(message = "Le site de formation est obligatoire")
         private Long siteId;
+
+        // Les frais de formation englobent-ils la prise en charge totale des frais d'examen ?
+        private boolean priseEnChargeExamens;
     }
 }

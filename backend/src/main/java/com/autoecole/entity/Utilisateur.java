@@ -23,7 +23,11 @@ public class Utilisateur {
     @Column(length = 50, unique = true, nullable = false)
     private String username;
 
-    @Column(length = 100, unique = true, nullable = false)
+    /**
+     * Nullable : un compte CANDIDAT auto-créé (cf. CandidatAccountService) n'a pas
+     * nécessairement d'email connu — l'authentification se fait alors par username.
+     */
+    @Column(length = 100, unique = true)
     private String email;
 
     @Column(nullable = false)
@@ -75,4 +79,21 @@ public class Utilisateur {
     @Builder.Default
     @Column(name = "date_creation", nullable = false)
     private LocalDateTime dateCreation = LocalDateTime.now();
+
+    /**
+     * Dossier candidat associé, pour un compte de rôle CANDIDAT auto-créé à la première
+     * inscription (cf. CandidatAccountService). Nul pour tous les autres rôles.
+     */
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "candidat_id", unique = true)
+    private Candidat candidat;
+
+    /**
+     * Force le changement de mot de passe à la prochaine connexion : utilisé pour le mot
+     * de passe temporaire généré automatiquement lors de la création d'un compte CANDIDAT.
+     */
+    @Builder.Default
+    @org.hibernate.annotations.ColumnDefault("false")
+    @Column(name = "doit_changer_mot_de_passe", nullable = false)
+    private boolean doitChangerMotDePasse = false;
 }

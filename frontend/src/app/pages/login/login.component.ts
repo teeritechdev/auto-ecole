@@ -891,7 +891,7 @@ export class LoginComponent {
 
   constructor(private authService: AuthService, private router: Router) {
     if (this.authService.isAuthenticated()) {
-      this.router.navigate(['/dashboard']);
+      this.router.navigate([this.authService.hasRole(['CANDIDAT']) ? '/espace-candidat' : '/dashboard']);
     }
   }
 
@@ -902,9 +902,15 @@ export class LoginComponent {
     this.errorMessage = '';
 
     this.authService.login({ username: this.username.trim(), password: this.password }).subscribe({
-      next: () => {
+      next: (user) => {
         this.loading = false;
-        this.router.navigate(['/dashboard']);
+        if (user.doitChangerMotDePasse) {
+          this.router.navigate(['/premiere-connexion']);
+        } else if (user.role === 'CANDIDAT') {
+          this.router.navigate(['/espace-candidat']);
+        } else {
+          this.router.navigate(['/dashboard']);
+        }
       },
       error: (err) => {
         this.loading = false;

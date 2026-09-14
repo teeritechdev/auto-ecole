@@ -37,5 +37,6 @@ public class InscriptionDTOs {
         private boolean active;
         private Long inscriptionPrecedenteId;
         private LocalDateTime dateCreation;
+        private boolean priseEnChargeExamens;
     }
 }

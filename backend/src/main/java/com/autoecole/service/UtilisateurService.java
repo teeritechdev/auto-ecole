@@ -33,8 +33,11 @@ public class UtilisateurService {
     private final PasswordEncoder passwordEncoder;
     private final AuditService auditService;
 
+    /** Ne renvoie que les comptes du personnel (ADMIN/SECRETAIRE/CAISSIERE/MONITEUR) : les
+     *  comptes CANDIDAT sont auto-créés, n'ont pas nécessairement d'email et n'ont pas leur
+     *  place dans cet écran de gestion des droits du personnel (cf. audit ÉTAPE 5). */
     public List<UtilisateurDTO> getAllUtilisateurs() {
-        return utilisateurRepository.findAll().stream()
+        return utilisateurRepository.findByRoleCodeNot(RoleEnum.CANDIDAT).stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
@@ -86,7 +89,7 @@ public class UtilisateurService {
         Utilisateur user = utilisateurRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Utilisateur non trouvé avec l'id: " + id));
 
-        if (!user.getEmail().equalsIgnoreCase(request.getEmail()) && utilisateurRepository.existsByEmail(request.getEmail())) {
+        if (!request.getEmail().equalsIgnoreCase(user.getEmail()) && utilisateurRepository.existsByEmail(request.getEmail())) {
             throw new BadRequestException("Un compte avec cet email existe déjà: " + request.getEmail());
         }
 

@@ -5,16 +5,23 @@ import com.autoecole.dto.ParametrageDTOs.SiteDTO;
 import com.autoecole.dto.ParametrageDTOs.SiteStatDTO;
 import com.autoecole.entity.CategoriePermis;
 import com.autoecole.entity.Site;
+import com.autoecole.entity.enums.RoleEnum;
 import com.autoecole.exception.BadRequestException;
 import com.autoecole.exception.ResourceNotFoundException;
 import com.autoecole.repository.CategoriePermisRepository;
+import com.autoecole.repository.InscriptionRepository;
+import com.autoecole.repository.PaiementRepository;
 import com.autoecole.repository.SiteRepository;
+import com.autoecole.repository.UtilisateurRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -23,7 +30,12 @@ public class ParametrageService {
 
     private final CategoriePermisRepository categorieRepository;
     private final SiteRepository siteRepository;
+    private final UtilisateurRepository utilisateurRepository;
+    private final PaiementRepository paiementRepository;
+    private final InscriptionRepository inscriptionRepository;
     private final AuditService auditService;
+
+    private static final Set<RoleEnum> ROLES_PERSONNEL_TERRAIN = Set.of(RoleEnum.MONITEUR, RoleEnum.SECRETAIRE, RoleEnum.CAISSIERE);
 
     // --- Catégories de permis ---
     public List<CategoriePermisDTO> getAllCategories(boolean onlyActive) {
@@ -126,14 +138,37 @@ public class ParametrageService {
     }
 
     public List<SiteStatDTO> getStatistiquesSites() {
+        Map<Long, Long> personnelParSite = new HashMap<>();
+        for (Object[] row : utilisateurRepository.compterPersonnelActifParSite(ROLES_PERSONNEL_TERRAIN)) {
+            personnelParSite.put((Long) row[0], (Long) row[1]);
+        }
+        Map<Long, Long> inscriptionsParSite = new HashMap<>();
+        for (Object[] row : inscriptionRepository.compterInscriptionsParSite()) {
+            inscriptionsParSite.put((Long) row[0], (Long) row[1]);
+        }
+        Map<Long, Long> nombrePaiementsParSite = new HashMap<>();
+        Map<Long, BigDecimal> montantPaiementsParSite = new HashMap<>();
+        for (Object[] row : paiementRepository.statistiquesPaiementsParSite()) {
+            Long siteId = (Long) row[0];
+            nombrePaiementsParSite.put(siteId, (Long) row[1]);
+            montantPaiementsParSite.put(siteId, (BigDecimal) row[2]);
+        }
+
         return siteRepository.statistiquesParSite().stream()
-                .map(row -> SiteStatDTO.builder()
-                        .siteId((Long) row[0])
-                        .siteNom((String) row[1])
-                        .nombreCandidatsActifs((Long) row[2])
-                        .montantEncaisse((BigDecimal) row[3])
-                        .montantRestantDu((BigDecimal) row[4])
-                        .build())
+                .map(row -> {
+                    Long siteId = (Long) row[0];
+                    return SiteStatDTO.builder()
+                            .siteId(siteId)
+                            .siteNom((String) row[1])
+                            .nombreCandidatsActifs((Long) row[2])
+                            .montantEncaisse((BigDecimal) row[3])
+                            .montantRestantDu((BigDecimal) row[4])
+                            .nombrePersonnel(personnelParSite.getOrDefault(siteId, 0L))
+                            .nombreInscriptions(inscriptionsParSite.getOrDefault(siteId, 0L))
+                            .nombrePaiements(nombrePaiementsParSite.getOrDefault(siteId, 0L))
+                            .montantPaiements(montantPaiementsParSite.getOrDefault(siteId, BigDecimal.ZERO))
+                            .build();
+                })
                 .collect(Collectors.toList());
     }
 

@@ -52,6 +52,10 @@ export interface SiteStat {
   nombreCandidatsActifs: number;
   montantEncaisse: number;
   montantRestantDu: number;
+  nombrePersonnel: number;
+  nombreInscriptions: number;
+  nombrePaiements: number;
+  montantPaiements: number;
 }
 
 export interface Candidat {

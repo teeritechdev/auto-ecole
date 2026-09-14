@@ -51,5 +51,9 @@ public class ParametrageDTOs {
         private long nombreCandidatsActifs;
         private BigDecimal montantEncaisse;
         private BigDecimal montantRestantDu;
+        private long nombrePersonnel;
+        private long nombreInscriptions;
+        private long nombrePaiements;
+        private BigDecimal montantPaiements;
     }
 }

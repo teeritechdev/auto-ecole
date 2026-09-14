@@ -93,6 +93,7 @@ public class CandidatService {
 
         Site site = siteRepository.findById(request.getSiteId())
                 .orElseThrow(() -> new ResourceNotFoundException("Site de formation introuvable"));
+        siteAccessService.verifierSiteAutorise(site.getId());
 
         // Validation 1er versement si fourni à l'inscription (RG02)
         BigDecimal premierVersement = request.getMontantPremierVersement();
@@ -149,6 +150,7 @@ public class CandidatService {
 
         Site site = siteRepository.findById(request.getSiteId())
                 .orElseThrow(() -> new ResourceNotFoundException("Site de formation introuvable"));
+        siteAccessService.verifierSiteAutorise(site.getId());
 
         BigDecimal premierVersement = request.getMontantPremierVersement();
         validerPremierVersement(premierVersement);

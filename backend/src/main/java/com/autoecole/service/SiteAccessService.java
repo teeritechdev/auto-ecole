@@ -15,8 +15,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Centralise la restriction d'accès des moniteurs aux candidats/examens de leur propre site
- * (RG : un moniteur ne gère que les candidats inscrits sur son site de rattachement).
+ * Centralise la restriction d'accès par site : un moniteur, une secrétaire ou une caissière
+ * rattaché(e) à un ou plusieurs sites ne gère que les candidats/examens/paiements de ces
+ * sites (RG : le personnel de terrain ne voit que l'activité de son propre site).
  */
 @Service
 @RequiredArgsConstructor
@@ -30,7 +31,18 @@ public class SiteAccessService {
     }
 
     /**
-     * Renvoie une copie détachée des ids de sites du moniteur courant (même raison que
+     * Vrai pour tout rôle rattachable à un ou plusieurs sites (MONITEUR, SECRETAIRE,
+     * CAISSIERE) : ADMIN garde seul la vision globale, tous sites confondus.
+     */
+    public boolean estRestreintParSite() {
+        Utilisateur u = auditService.getCurrentUser();
+        if (u == null || u.getRole() == null) return false;
+        RoleEnum role = u.getRole().getCode();
+        return role == RoleEnum.MONITEUR || role == RoleEnum.SECRETAIRE || role == RoleEnum.CAISSIERE;
+    }
+
+    /**
+     * Renvoie une copie détachée des ids de sites de l'utilisateur courant (même raison que
      * getSpecialitesMoniteurCourant() : la collection Hibernate liée à l'entité n'est pas
      * utilisable telle quelle en paramètre de requête JPQL).
      */
@@ -45,24 +57,36 @@ public class SiteAccessService {
     }
 
     /**
-     * Ne filtre que si l'utilisateur courant est un moniteur : renvoie l'ensemble de ses
-     * sites (potentiellement vide, ce qui exclut alors tout résultat), sinon null pour
-     * signifier "pas de restriction" (ADMIN, SECRETAIRE).
+     * Ne filtre que si l'utilisateur courant est restreint par site (MONITEUR, SECRETAIRE,
+     * CAISSIERE) : renvoie l'ensemble de ses sites (potentiellement vide, ce qui exclut alors
+     * tout résultat), sinon null pour signifier "pas de restriction" (ADMIN).
      */
     public Set<Long> resoudreFiltreSitesPourListe() {
-        if (!estMoniteurRestreint()) return null;
+        if (!estRestreintParSite()) return null;
         return getSiteIdsMoniteurCourant();
     }
 
     /**
-     * Vérifie l'accès à un candidat/dossier donné : lève une exception "introuvable"
-     * (plutôt qu'un 403 explicite) si un moniteur tente d'accéder à un candidat
-     * hors de ses sites, pour ne pas révéler l'existence du dossier.
+     * Vérifie l'accès à un candidat/dossier/session donné : lève une exception "introuvable"
+     * (plutôt qu'un 403 explicite) si un utilisateur restreint par site tente d'accéder à
+     * une ressource hors de ses sites, pour ne pas révéler son existence.
      */
     public void verifierAccesSite(Long siteIdCible) {
-        if (!estMoniteurRestreint()) return;
+        if (!estRestreintParSite()) return;
         if (siteIdCible == null || !getSiteIdsMoniteurCourant().contains(siteIdCible)) {
             throw new ResourceNotFoundException("Candidat introuvable");
+        }
+    }
+
+    /**
+     * Vérifie qu'une action de création (nouveau candidat, réinscription...) porte bien sur
+     * un site autorisé pour l'utilisateur courant restreint par site : message explicite,
+     * contrairement à verifierAccesSite() pensé pour dissimuler l'existence d'une ressource.
+     */
+    public void verifierSiteAutorise(Long siteIdCible) {
+        if (!estRestreintParSite()) return;
+        if (siteIdCible == null || !getSiteIdsMoniteurCourant().contains(siteIdCible)) {
+            throw new BadRequestException("Vous n'êtes pas autorisé à agir sur ce site de formation");
         }
     }
 

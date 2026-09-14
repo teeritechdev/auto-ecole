@@ -352,7 +352,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   <div class="form-group">
                     <label class="form-label">Site de formation <span class="required">*</span></label>
                     <select class="form-control" [(ngModel)]="newCandidat.siteId" name="siteId" required>
-                      @for (s of sites; track s) {
+                      @for (s of sitesAutorises; track s) {
                         <option [value]="s.id">{{ s.nom }}</option>
                       }
                     </select>
@@ -476,7 +476,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   <div class="form-group">
                     <label class="form-label">Site de formation <span class="required">*</span></label>
                     <select class="form-control" [(ngModel)]="editCandidat.siteId" name="editSiteId" required>
-                      @for (s of sites; track s) {
+                      @for (s of sitesAutorises; track s) {
                         <option [value]="s.id">{{ s.nom }}</option>
                       }
                     </select>
@@ -815,11 +815,12 @@ export class CandidatsComponent implements OnInit {
     return user?.role === 'MONITEUR' && this.epreuvesAutorisees.length > 0;
   }
 
-  /** Sites sur lesquels l'utilisateur courant peut programmer un examen : limités à ses
-   *  sites d'affectation pour un moniteur, tous les sites pour les autres rôles. */
+  /** Sites sur lesquels l'utilisateur courant peut inscrire un candidat ou programmer un
+   *  examen : limités à ses sites d'affectation pour un moniteur ou une secrétaire, tous
+   *  les sites pour ADMIN/CAISSIERE (qui n'inscrivent pas de candidat). */
   get sitesAutorises(): Site[] {
     const user = this.authService.currentUserValue;
-    if (user?.role === 'MONITEUR') {
+    if (user?.role === 'MONITEUR' || user?.role === 'SECRETAIRE') {
       return this.sites.filter(s => user.siteIds?.includes(s.id));
     }
     return this.sites;
@@ -916,7 +917,7 @@ export class CandidatsComponent implements OnInit {
     this.apiService.getSites(true).subscribe({
       next: (res) => {
         this.sites = res;
-        if (this.sites.length > 0) this.newCandidat.siteId = this.sites[0].id;
+        if (this.sitesAutorises.length > 0) this.newCandidat.siteId = this.sitesAutorises[0].id;
       }
     });
   }
@@ -968,7 +969,7 @@ export class CandidatsComponent implements OnInit {
       dateInscription: new Date().toISOString().substring(0, 10),
       categoriePermisId: this.categories.length > 0 ? this.categories[0].id : null,
       montant: this.categories.length > 0 ? this.categories[0].montant : null,
-      siteId: this.sites.length > 0 ? this.sites[0].id : null,
+      siteId: this.sitesAutorises.length > 0 ? this.sitesAutorises[0].id : null,
       statutInscription: 'NOUVEAU',
       montantPremierVersement: null,
       modeReglementPremierVersement: 'ESPECES',
@@ -991,7 +992,7 @@ export class CandidatsComponent implements OnInit {
       dateReceptionDossier: c.dateReceptionDossier ? c.dateReceptionDossier.substring(0, 10) : '',
       categoriePermisId: c.categoriePermisId,
       montant: c.montantForfait,
-      siteId: c.siteId ?? (this.sites.length > 0 ? this.sites[0].id : null),
+      siteId: c.siteId ?? (this.sitesAutorises.length > 0 ? this.sitesAutorises[0].id : null),
       priseEnChargeExamens: c.priseEnChargeExamens
     };
     this.showEditModal = true;

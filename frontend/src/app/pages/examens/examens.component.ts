@@ -755,11 +755,11 @@ export class ExamensComponent implements OnInit {
     return ['CODE', 'CRENEAU', 'CIRCULATION'];
   }
 
-  /** Sites sur lesquels l'utilisateur courant peut consulter/programmer : limités à
-   *  ses sites d'affectation pour un moniteur, tous les sites pour les autres rôles. */
+  /** Sites sur lesquels l'utilisateur courant peut consulter/programmer : limités à ses
+   *  sites d'affectation pour un moniteur ou une secrétaire, tous les sites pour ADMIN. */
   get sitesAutorises(): Site[] {
     const user = this.authService.currentUserValue;
-    if (user?.role === 'MONITEUR') {
+    if (user?.role === 'MONITEUR' || user?.role === 'SECRETAIRE') {
       return this.sites.filter(s => user.siteIds?.includes(s.id));
     }
     return this.sites;

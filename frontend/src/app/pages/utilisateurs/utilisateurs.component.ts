@@ -34,6 +34,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 <th>Email</th>
                 <th>Téléphone</th>
                 <th>Rôle Attribué</th>
+                <th>Site(s)</th>
                 <th>Statut</th>
                 <th>Date Création</th>
                 <th class="text-right">Actions</th>
@@ -42,7 +43,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
             <tbody>
               @if (loading) {
                 <tr>
-                  <td colspan="9" class="text-center py-4">Chargement des utilisateurs...</td>
+                  <td colspan="10" class="text-center py-4">Chargement des utilisateurs...</td>
                 </tr>
               }
               @for (u of utilisateurs; track u) {
@@ -68,6 +69,13 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                     'badge-solde': u.role === 'CAISSIERE',
                     'badge-ajourne': u.role === 'MONITEUR'
                   }">{{ u.roleLibelle }}</span>
+                  </td>
+                  <td>
+                    @if (u.siteNoms && u.siteNoms.length > 0) {
+                      {{ u.siteNoms.join(', ') }}
+                    } @else {
+                      <span class="text-muted">—</span>
+                    }
                   </td>
                   <td>
                     <span class="badge" [ngClass]="u.actif ? 'badge-solde' : 'badge-expire'">
@@ -156,7 +164,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                     <option value="MONITEUR">Moniteur (Suivi pédagogique & examens)</option>
                   </select>
                 </div>
-                @if (currentUserForm.role === 'MONITEUR') {
+                @if (['MONITEUR', 'SECRETAIRE', 'CAISSIERE'].includes(currentUserForm.role)) {
                   <div class="form-group">
                     <label class="form-label">Sites de formation <span class="required">*</span></label>
                     <div class="specialites-group">
@@ -166,8 +174,10 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                         </label>
                       }
                     </div>
-                    <div class="form-help">Le moniteur ne pourra voir et gérer que les candidats inscrits sur ces sites.</div>
+                    <div class="form-help">Cette personne ne pourra voir et gérer que les candidats, paiements et examens de ces sites.</div>
                   </div>
+                }
+                @if (currentUserForm.role === 'MONITEUR') {
                   <div class="form-group">
                     <label class="form-label">Spécialités</label>
                     <div class="specialites-group">

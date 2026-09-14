@@ -185,7 +185,10 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
             <thead>
               <tr>
                 <th>Site</th>
+                <th class="text-right">Personnel Affecté</th>
                 <th class="text-right">Candidats Actifs</th>
+                <th class="text-right">Inscriptions Créées</th>
+                <th class="text-right">Paiements Encaissés</th>
                 <th class="text-right">Montant Encaissé</th>
                 <th class="text-right">Solde Restant Dû</th>
               </tr>
@@ -193,13 +196,16 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
             <tbody>
               @if (statsSites.length === 0) {
                 <tr>
-                  <td colspan="4" class="text-center py-4 text-muted">Aucune donnée pour l'instant.</td>
+                  <td colspan="7" class="text-center py-4 text-muted">Aucune donnée pour l'instant.</td>
                 </tr>
               }
               @for (stat of statsSites; track stat) {
                 <tr>
                   <td><strong>{{ stat.siteNom }}</strong></td>
+                  <td class="text-right">{{ stat.nombrePersonnel }}</td>
                   <td class="text-right">{{ stat.nombreCandidatsActifs }}</td>
+                  <td class="text-right">{{ stat.nombreInscriptions }}</td>
+                  <td class="text-right">{{ stat.nombrePaiements }} <small class="text-muted">({{ stat.montantPaiements | number }} FCFA)</small></td>
                   <td class="text-right text-success">{{ stat.montantEncaisse | number }} FCFA</td>
                   <td class="text-right">{{ stat.montantRestantDu | number }} FCFA</td>
                 </tr>

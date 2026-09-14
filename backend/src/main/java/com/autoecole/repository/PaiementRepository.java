@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 
 @Repository
@@ -24,14 +25,23 @@ public interface PaiementRepository extends JpaRepository<Paiement, Long> {
            "(:candidatId IS NULL OR p.inscription.candidat.id = :candidatId) " +
            "AND (:statut IS NULL OR p.statut = :statut) " +
            "AND (CAST(:debut AS timestamp) IS NULL OR p.datePaiement >= :debut) " +
-           "AND (CAST(:fin AS timestamp) IS NULL OR p.datePaiement <= :fin)")
+           "AND (CAST(:fin AS timestamp) IS NULL OR p.datePaiement <= :fin) " +
+           "AND (:siteIds IS NULL OR p.inscription.site.id IN :siteIds)")
     Page<Paiement> filtrerPaiements(
             @Param("candidatId") Long candidatId,
             @Param("statut") StatutPaiement statut,
             @Param("debut") LocalDateTime debut,
             @Param("fin") LocalDateTime fin,
+            @Param("siteIds") Collection<Long> siteIds,
             Pageable pageable
     );
+
+    /** Nombre et montant total des paiements validés par site (statistiques d'activité par
+     *  site) : les paiements sans site (données historiques) ne sont pas comptabilisés ici. */
+    @Query("SELECT p.inscription.site.id, COUNT(p.id), COALESCE(SUM(p.montant), 0) " +
+           "FROM Paiement p WHERE p.statut = 'VALIDE' AND p.inscription.site IS NOT NULL " +
+           "GROUP BY p.inscription.site.id")
+    List<Object[]> statistiquesPaiementsParSite();
 
     @Query("SELECT p FROM Paiement p WHERE p.inscription.candidat.id = :candidatId ORDER BY p.datePaiement DESC")
     List<Paiement> findByCandidatIdOrderByDatePaiementDesc(@Param("candidatId") Long candidatId);

@@ -153,12 +153,16 @@ public class UtilisateurService {
         return mapToDTO(utilisateurRepository.save(user));
     }
 
+    /** Rôles de terrain rattachables à un ou plusieurs sites (RG : gestion par site, comme
+     *  pour un moniteur) ; ADMIN garde seul un compte sans site, à portée globale. */
+    private static final Set<RoleEnum> ROLES_AVEC_SITES = Set.of(RoleEnum.MONITEUR, RoleEnum.SECRETAIRE, RoleEnum.CAISSIERE);
+
     private Set<Site> resoudreSitesPourRole(RoleEnum role, Set<Long> siteIds) {
-        if (role != RoleEnum.MONITEUR) {
+        if (!ROLES_AVEC_SITES.contains(role)) {
             return Collections.emptySet();
         }
         if (siteIds == null || siteIds.isEmpty()) {
-            throw new BadRequestException("Au moins un site de formation est obligatoire pour un compte moniteur");
+            throw new BadRequestException("Au moins un site de formation est obligatoire pour ce rôle");
         }
         Set<Site> sites = new java.util.HashSet<>(siteRepository.findAllById(siteIds));
         if (sites.size() != siteIds.size()) {

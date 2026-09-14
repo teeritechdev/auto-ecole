@@ -36,9 +36,16 @@ public class PaiementService {
     private final RecuRepository recuRepository;
     private final CandidatService candidatService;
     private final AuditService auditService;
+    private final SiteAccessService siteAccessService;
 
+    /** Une caissière/secrétaire restreinte à un site ne voit et n'encaisse que les paiements
+     *  des candidats inscrits sur ce site (RG : gestion par site, comme pour un moniteur). */
     public Page<PaiementDTO> filtrerPaiements(Long candidatId, StatutPaiement statut, LocalDateTime debut, LocalDateTime fin, Pageable pageable) {
-        return paiementRepository.filtrerPaiements(candidatId, statut, debut, fin, pageable)
+        java.util.Set<Long> siteIds = siteAccessService.resoudreFiltreSitesPourListe();
+        if (siteIds != null && siteIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+        return paiementRepository.filtrerPaiements(candidatId, statut, debut, fin, siteIds, pageable)
                 .map(this::mapToDTO);
     }
 
@@ -54,11 +61,16 @@ public class PaiementService {
         return mapToDTO(p);
     }
 
-    /** Total encaissé et reste à payer, tous dossiers actifs confondus (en-tête de la page Paiements). */
+    /** Total encaissé et reste à payer, sur les dossiers actifs du/des site(s) de l'utilisateur
+     *  courant si restreint (en-tête de la page Paiements), tous sites confondus pour ADMIN. */
     public ResumePaiementsDTO getResume() {
+        java.util.Set<Long> siteIds = siteAccessService.resoudreFiltreSitesPourListe();
+        if (siteIds != null && siteIds.isEmpty()) {
+            return ResumePaiementsDTO.builder().totalEncaisse(BigDecimal.ZERO).totalReste(BigDecimal.ZERO).build();
+        }
         return ResumePaiementsDTO.builder()
-                .totalEncaisse(inscriptionRepository.sumTotalVerseActif(null))
-                .totalReste(inscriptionRepository.sumSoldeRestantActif(null))
+                .totalEncaisse(inscriptionRepository.sumTotalVerseActif(siteIds))
+                .totalReste(inscriptionRepository.sumSoldeRestantActif(siteIds))
                 .build();
     }
 

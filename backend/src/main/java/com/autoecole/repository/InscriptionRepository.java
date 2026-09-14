@@ -44,6 +44,11 @@ public interface InscriptionRepository extends JpaRepository<Inscription, Long> 
             @Param("siteIds") Collection<Long> siteIds
     );
 
+    /** Nombre total d'inscriptions (tous cycles, actifs ou non) créées sur chaque site :
+     *  volume d'activité par site, indépendant du statut courant du dossier. */
+    @Query("SELECT i.site.id, COUNT(i.id) FROM Inscription i WHERE i.site IS NOT NULL GROUP BY i.site.id")
+    List<Object[]> compterInscriptionsParSite();
+
     @Query("SELECT i FROM Inscription i WHERE i.active = true " +
            "AND i.dateEcheance < :dateRef AND i.statutDossier = 'EN_COURS'")
     List<Inscription> findInscriptionsActivesAExpirer(@Param("dateRef") LocalDate dateRef);

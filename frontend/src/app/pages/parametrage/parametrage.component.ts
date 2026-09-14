@@ -315,8 +315,16 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
 
     .grid-2-col {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+      /* 420px de minimum dépassait la largeur de nombreux téléphones : on descend sous
+         la largeur des petits téléphones plutôt que de dépendre de l'override global. */
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
       gap: 1.5rem;
+    }
+
+    .grid-2-col > .card {
+      /* Un item de grille refuse par défaut de rétrécir sous la largeur intrinsèque de
+         son contenu : sans ça, la colonne "1fr" déborde quand même sur petit téléphone. */
+      min-width: 0;
     }
 
     .stats-sites-card {

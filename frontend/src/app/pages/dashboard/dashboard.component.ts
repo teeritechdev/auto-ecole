@@ -296,8 +296,18 @@ import { DashboardStats } from '../../core/models/models';
 
     .dashboard-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+      /* 450px de minimum dépassait la largeur de nombreux téléphones (l'override global
+         @media qui force 1fr sur cette classe n'est pas fiable ici) : on descend le seuil
+         sous la largeur des petits téléphones plutôt que de dépendre de cet override. */
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
       gap: 1.5rem;
+    }
+
+    .dashboard-grid > .card {
+      /* Comme pour un flex item, un item de grille refuse par défaut de rétrécir sous la
+         largeur intrinsèque de son contenu (ici le card-header) : sans ça, la colonne
+         "1fr" s'élargit quand même au-delà de l'écran sur petit téléphone. */
+      min-width: 0;
     }
 
     .empty-state {

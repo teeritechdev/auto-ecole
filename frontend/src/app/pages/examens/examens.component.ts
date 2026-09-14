@@ -431,6 +431,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     .edit-date-row {
       display: flex;
       align-items: center;
+      flex-wrap: wrap;
       gap: 0.5rem;
     }
 

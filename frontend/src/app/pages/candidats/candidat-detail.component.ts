@@ -516,12 +516,17 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       margin-bottom: 1rem;
       border-bottom: 1px solid var(--border-color);
       padding-bottom: 0.5rem;
+      /* Sur petit téléphone, 3 onglets avec libellés longs ne tiennent pas sur une seule
+         ligne : on laisse défiler horizontalement plutôt que de les faire déborder de la page. */
+      overflow-x: auto;
     }
 
     .tab-btn {
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
+      flex-shrink: 0;
+      white-space: nowrap;
       background: transparent;
       border: none;
       padding: 0.65rem 1.25rem;

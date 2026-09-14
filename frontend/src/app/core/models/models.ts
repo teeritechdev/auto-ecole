@@ -4,11 +4,13 @@ export interface User {
   email: string;
   nom: string;
   prenom: string;
-  role: 'ADMIN' | 'SECRETAIRE' | 'CAISSIERE' | 'MONITEUR';
+  role: 'ADMIN' | 'SECRETAIRE' | 'CAISSIERE' | 'MONITEUR' | 'CANDIDAT';
   photoProfile?: string;
   token?: string;
   siteIds?: number[];
   specialites?: ('CODE' | 'CRENEAU' | 'CIRCULATION')[];
+  candidatId?: number;
+  doitChangerMotDePasse?: boolean;
 }
 
 export interface UtilisateurDTO {
@@ -83,6 +85,15 @@ export interface Candidat {
   codeReussi: boolean;
   creneauReussi: boolean;
   circulationReussi: boolean;
+  priseEnChargeExamens: boolean;
+  // Renseigné une seule fois, uniquement dans la réponse de création d'un candidat dont
+  // le compte de connexion vient d'être généré automatiquement.
+  identifiantsCompte?: IdentifiantsCompte;
+}
+
+export interface IdentifiantsCompte {
+  username: string;
+  motDePasseTemporaire: string;
 }
 
 export interface Paiement {
@@ -165,6 +176,12 @@ export interface BilanExamensCandidat {
   circulationReussi: boolean;
 }
 
+export interface CandidatConcerne {
+  id: number;
+  numeroDossier: string;
+  nomComplet: string;
+}
+
 export interface TransactionCaisse {
   id: number;
   typeMouvement: 'ENTREE' | 'SORTIE';
@@ -176,6 +193,10 @@ export interface TransactionCaisse {
   utilisateurId: number;
   utilisateurNomComplet: string;
   paiementId?: number;
+  typeOperation: 'FRAIS_EXAMEN' | 'PRELEVEMENT_FORMATION' | 'PAIEMENT_FORMATION' | 'AUTRE';
+  dateExamen?: string;
+  typeEpreuveExamen?: 'CODE' | 'CRENEAU' | 'CIRCULATION';
+  candidatsConcernes?: CandidatConcerne[];
 }
 
 export interface RecapCaisse {
@@ -185,6 +206,20 @@ export interface RecapCaisse {
   totalEntreesJour: number;
   totalSortiesJour: number;
   soldeJour: number;
+  totalFormationEncaisse: number;
+  totalPreleveFormation: number;
+  disponiblePourPrelevement: number;
+}
+
+export interface ResumePaiements {
+  totalEncaisse: number;
+  totalReste: number;
+}
+
+export interface TarifsExamens {
+  prixExamenCode: number;
+  prixExamenCreneau: number;
+  prixExamenCirculation: number;
 }
 
 export interface DashboardStats {
@@ -217,4 +252,120 @@ export interface HistoriqueAction {
   motif?: string;
   timestamp: string;
   ipAddress?: string;
+}
+
+// ================= CODE DE LA ROUTE =================
+
+export type LettreReponse = 'A' | 'B' | 'C' | 'D';
+export type StatutTentativeCode = 'EN_COURS' | 'REUSSI' | 'ECHEC' | 'EXPIREE' | 'ABANDONNEE';
+export type StatutCycle = 'VERROUILLE' | 'DISPONIBLE' | 'REUSSI' | 'ECHEC';
+
+export interface CodeConfiguration {
+  questionsParCycle: number;
+  seuilReussite: number;
+  tempsParQuestionSecondes: number;
+  dureeMaxCycleSecondes: number;
+  tentativesMax: number;
+  repriseAutoriseeApresEchec: boolean;
+  retourQuestionPrecedenteAutorise: boolean;
+  correctionImmediate: boolean;
+  deblocageAutomatiqueCycleSuivant: boolean;
+  dureeExpirationAccesJours?: number | null;
+  nombreQuestionsActives: number;
+  nombreDeCycles: number;
+}
+
+export interface CodeQuestion {
+  id: number;
+  ordre: number;
+  enonce: string;
+  imageData?: string;
+  reponseA: string;
+  reponseB: string;
+  reponseC?: string;
+  reponseD?: string;
+  bonneReponse: LettreReponse;
+  explication?: string;
+  actif: boolean;
+}
+
+export interface CodeQuestionPourCandidat {
+  id: number;
+  ordre: number;
+  enonce: string;
+  imageData?: string;
+  reponseA: string;
+  reponseB: string;
+  reponseC?: string;
+  reponseD?: string;
+}
+
+export interface CodeCycleStatut {
+  numeroCycle: number;
+  nombreQuestions: number;
+  statut: StatutCycle;
+  meilleurScore?: number;
+  nbTentativesUtilisees: number;
+  tentativesMax: number;
+}
+
+export interface CodeProgression {
+  candidatId: number;
+  totalCycles: number;
+  cyclesReussis: number;
+  pourcentageProgression: number;
+  accesExpire: boolean;
+  cycles: CodeCycleStatut[];
+}
+
+export interface TentativeEnCours {
+  tentativeId: number;
+  numeroCycle: number;
+  numeroTentative: number;
+  indexQuestionCourante: number;
+  totalQuestionsDuCycle: number;
+  question: CodeQuestionPourCandidat;
+  tempsParQuestionSecondes: number;
+  dureeMaxCycleSecondes: number;
+  dateDebut: string;
+  dateAffichageQuestionCourante: string;
+  retourAutorise: boolean;
+  peutRevenirEnArriere: boolean;
+}
+
+export interface CodeResultatTentative {
+  tentativeId: number;
+  numeroCycle: number;
+  score: number;
+  totalQuestions: number;
+  seuilReussite: number;
+  statut: StatutTentativeCode;
+  reussi: boolean;
+  cycleSuivantDebloque: boolean;
+  peutReprendre: boolean;
+}
+
+export interface CorrectionReponse {
+  correcte: boolean;
+  bonneReponse: LettreReponse;
+  explication?: string;
+}
+
+export interface EtatTentative {
+  enCours?: TentativeEnCours;
+  resultat?: CodeResultatTentative;
+  // Renseignée uniquement par /answer, et uniquement si la configuration "correction
+  // immédiate" était active au démarrage de la tentative (décision prise côté backend).
+  correction?: CorrectionReponse;
+}
+
+export interface CodeHistoriqueLigne {
+  tentativeId: number;
+  numeroCycle: number;
+  numeroTentative: number;
+  dateDebut: string;
+  dateFin?: string;
+  score: number;
+  totalQuestions: number;
+  statut: StatutTentativeCode;
 }

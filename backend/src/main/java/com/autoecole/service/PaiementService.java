@@ -5,6 +5,7 @@ import com.autoecole.dto.PaiementDTOs.CreatePaiementRequest;
 import com.autoecole.dto.PaiementDTOs.ModifierPaiementRequest;
 import com.autoecole.dto.PaiementDTOs.PaiementDTO;
 import com.autoecole.dto.PaiementDTOs.RecuDTO;
+import com.autoecole.dto.PaiementDTOs.ResumePaiementsDTO;
 import com.autoecole.entity.*;
 import com.autoecole.entity.enums.*;
 import com.autoecole.exception.BadRequestException;
@@ -53,6 +54,14 @@ public class PaiementService {
         Paiement p = paiementRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Paiement non trouvé avec l'id: " + id));
         return mapToDTO(p);
+    }
+
+    /** Total encaissé et reste à payer, tous dossiers actifs confondus (en-tête de la page Paiements). */
+    public ResumePaiementsDTO getResume() {
+        return ResumePaiementsDTO.builder()
+                .totalEncaisse(inscriptionRepository.sumTotalVerseActif(null))
+                .totalReste(inscriptionRepository.sumSoldeRestantActif(null))
+                .build();
     }
 
     @Transactional
@@ -124,7 +133,10 @@ public class PaiementService {
                 .build();
         recuRepository.save(recu);
 
-        // 4. Mouvement de caisse automatique (ENTREE)
+        // 4. Mouvement de caisse automatique (ENTREE), visible dans le Journal Caisse pour
+        // que l'ADMIN garde une vue complète de tous les mouvements financiers ; exclu du
+        // calcul du Solde de Caisse (cf. TransactionCaisseRepository) car cet argent n'est
+        // physiquement en caisse que s'il est ensuite transféré via un PRELEVEMENT_FORMATION.
         TransactionCaisse tx = TransactionCaisse.builder()
                 .typeMouvement(TypeMouvementCaisse.ENTREE)
                 .montant(montant)
@@ -132,6 +144,7 @@ public class PaiementService {
                 .categorie("RECETTE_FORMATION")
                 .referencePiece(numeroRecu)
                 .utilisateur(currentUser)
+                .typeOperation(TypeOperationCaisse.PAIEMENT_FORMATION)
                 .paiement(savedPaiement)
                 .build();
         transactionCaisseRepository.save(tx);
@@ -227,7 +240,8 @@ public class PaiementService {
 
         Paiement updated = paiementRepository.save(paiement);
 
-        // Transaction de caisse d'annulation (SORTIE compensatoire)
+        // Transaction de caisse d'annulation (SORTIE compensatoire), même logique de
+        // visibilité que l'encaissement d'origine (cf. enregistrerPaiement ci-dessus).
         TransactionCaisse tx = TransactionCaisse.builder()
                 .typeMouvement(TypeMouvementCaisse.SORTIE)
                 .montant(paiement.getMontant())
@@ -235,6 +249,8 @@ public class PaiementService {
                 .categorie("ANNULATION_RECETTE")
                 .referencePiece(paiement.getRecu() != null ? paiement.getRecu().getNumeroRecu() : null)
                 .utilisateur(currentUser)
+                .typeOperation(TypeOperationCaisse.PAIEMENT_FORMATION)
+                .paiement(updated)
                 .build();
         transactionCaisseRepository.save(tx);
 

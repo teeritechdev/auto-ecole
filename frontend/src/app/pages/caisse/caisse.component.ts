@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
-import { RecapCaisse, TransactionCaisse } from '../../core/models/models';
+import { CandidatConcerne, RecapCaisse, TarifsExamens, TransactionCaisse } from '../../core/models/models';
 import { extraireMessageErreur } from '../../core/utils/error-utils';
 
 @Component({
@@ -18,6 +18,9 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
           <p>Suivi global des entrées, sorties et du solde de caisse de l'auto-école</p>
         </div>
         <div class="header-buttons">
+          <button class="btn btn-outline btn-sm" [disabled]="refreshing" (click)="actualiser()">
+            {{ refreshing ? '⏳ Actualisation...' : '🔄 Actualiser' }}
+          </button>
           <button class="btn btn-outline btn-sm" (click)="exportPdf()">📄 Journal PDF</button>
           <button class="btn btn-outline btn-sm" (click)="exportExcel()">📊 Journal Excel</button>
           @if (canAdd) {
@@ -67,7 +70,18 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
             <div class="stat-sub">Activité journalière</div>
           </div>
         </div>
+
+        <div class="stat-card success">
+          <div class="stat-icon success">🎓</div>
+          <div class="stat-info">
+            <div class="stat-label">Disponible — Frais de Formation</div>
+            <div class="stat-value">{{ (recap?.disponiblePourPrelevement || 0) | number }} <small>FCFA</small></div>
+            <div class="stat-sub">Prélevable vers la caisse interne</div>
+          </div>
+        </div>
       </div>
+
+      <p class="caisse-note">💡 Les versements de formation (encaissements, annulations) apparaissent ci-dessous pour une vue complète de tous les mouvements financiers, mais ne comptent pas dans le Solde de Caisse : celui-ci ne suit que l'argent physiquement dans la caisse interne. Utilisez "Prélèvement sur frais de formation" pour y faire entrer de l'argent déjà encaissé.</p>
     
       <!-- FILTERS -->
       <div class="card filter-card">
@@ -125,7 +139,18 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                       {{ tx.typeMouvement === 'ENTREE' ? '📥 ENTRÉE' : '📤 SORTIE' }}
                     </span>
                   </td>
-                  <td><strong>{{ tx.libelle }}</strong></td>
+                  <td>
+                    <strong>{{ tx.libelle }}</strong>
+                    @if (tx.typeOperation === 'FRAIS_EXAMEN') {
+                      <div class="sub-text">🎓 {{ tx.candidatsConcernes?.length || 0 }} candidat(s) — {{ tx.typeEpreuveExamen }} du {{ tx.dateExamen | date:'dd/MM/yyyy' }}</div>
+                    }
+                    @if (tx.typeOperation === 'PRELEVEMENT_FORMATION') {
+                      <div class="sub-text">💵 Prélèvement sur frais de formation</div>
+                    }
+                    @if (tx.typeOperation === 'PAIEMENT_FORMATION') {
+                      <div class="sub-text">🧾 Versement de formation — hors Solde de Caisse</div>
+                    }
+                  </td>
                   <td><span class="cat-pill">{{ tx.categorie || 'Général' }}</span></td>
                   <td><code>{{ tx.referencePiece || '—' }}</code></td>
                   <td>
@@ -169,15 +194,85 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 }
                 <div class="form-group">
                   <label class="form-label">Type de mouvement <span class="required">*</span></label>
-                  <select class="form-control" [(ngModel)]="newTx.typeMouvement" name="typeMouvement" required>
+                  <select class="form-control" [(ngModel)]="newTx.typeMouvement" name="typeMouvement" required (change)="onTypeMouvementChange()">
                     <option value="ENTREE">📥 ENTRÉE (Recette / Encaissement)</option>
                     <option value="SORTIE">📤 SORTIE (Dépense / Charge / Achat)</option>
                   </select>
                 </div>
+
                 <div class="form-group">
-                  <label class="form-label">Montant (FCFA) <span class="required">*</span></label>
-                  <input type="number" class="form-control" [(ngModel)]="newTx.montant" name="montant" required placeholder="Ex: 15000" />
+                  <label class="form-label">Type d'opération <span class="required">*</span></label>
+                  <select class="form-control" [(ngModel)]="newTx.typeOperation" name="typeOperation" required (change)="onTypeOperationChange()">
+                    <option value="AUTRE">Autre (saisie libre)</option>
+                    @if (newTx.typeMouvement === 'SORTIE') {
+                      <option value="FRAIS_EXAMEN">Frais d'examen (prise en charge candidats)</option>
+                    }
+                    @if (newTx.typeMouvement === 'ENTREE') {
+                      <option value="PRELEVEMENT_FORMATION">Prélèvement sur frais de formation</option>
+                    }
+                  </select>
                 </div>
+
+                @if (newTx.typeOperation === 'FRAIS_EXAMEN') {
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="form-label">Épreuve <span class="required">*</span></label>
+                      <select class="form-control" [(ngModel)]="newTx.typeEpreuve" name="typeEpreuve" required (change)="onFraisExamenParamsChange()">
+                        <option value="CODE">1. Code de la route</option>
+                        <option value="CRENEAU">2. Manœuvre / Créneau</option>
+                        <option value="CIRCULATION">3. Conduite en circulation</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Date de l'examen <span class="required">*</span></label>
+                      <input type="date" class="form-control" [(ngModel)]="newTx.dateExamen" name="dateExamen" required (change)="onFraisExamenParamsChange()" />
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Candidats pris en charge</label>
+                    @if (loadingCandidatsEligibles) {
+                      <div class="form-help">Recherche des candidats programmés...</div>
+                    }
+                    @if (!loadingCandidatsEligibles && newTx.dateExamen && candidatsEligibles.length === 0) {
+                      <div class="form-help">Aucun candidat pris en charge n'est programmé à cette épreuve et cette date.</div>
+                    }
+                    @if (candidatsEligibles.length > 0) {
+                      <div class="candidats-list">
+                        @for (c of candidatsEligibles; track c.id) {
+                          <label class="candidat-option">
+                            <input type="checkbox" [checked]="isCandidatFraisExamenSelected(c.id)" (change)="toggleCandidatFraisExamen(c.id)" />
+                            <span class="candidat-option-text">
+                              <strong>{{ c.numeroDossier }}</strong>
+                              <span>{{ c.nomComplet }}</span>
+                            </span>
+                          </label>
+                        }
+                      </div>
+                    }
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="form-label">Nombre de candidats</label>
+                      <input class="form-control" type="text" [value]="candidatIdsSelectionnes.length" disabled />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Prix total (FCFA)</label>
+                      <input class="form-control" type="text" [value]="montantFraisExamenCalcule | number" disabled />
+                    </div>
+                  </div>
+                } @else if (newTx.typeOperation === 'PRELEVEMENT_FORMATION') {
+                  <div class="form-group">
+                    <label class="form-label">Montant (FCFA) <span class="required">*</span></label>
+                    <input type="number" class="form-control" [(ngModel)]="newTx.montant" name="montant" required placeholder="Ex: 15000" />
+                    <div class="form-help">Disponible : {{ (recap?.disponiblePourPrelevement || 0) | number }} FCFA</div>
+                  </div>
+                } @else {
+                  <div class="form-group">
+                    <label class="form-label">Montant (FCFA) <span class="required">*</span></label>
+                    <input type="number" class="form-control" [(ngModel)]="newTx.montant" name="montant" required placeholder="Ex: 15000" />
+                  </div>
+                }
+
                 <div class="form-group">
                   <label class="form-label">Libellé descriptif <span class="required">*</span></label>
                   <input type="text" class="form-control" [(ngModel)]="newTx.libelle" name="libelle" required placeholder="Ex: Achat carburant véhicule permis B" />
@@ -195,7 +290,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
               </div>
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" (click)="showNewTxModal = false">Annuler</button>
-                <button type="submit" class="btn btn-primary" [disabled]="saving || !newTx.montant || !newTx.libelle">
+                <button type="submit" class="btn btn-primary" [disabled]="saving || !isFormValide()">
                   {{ saving ? 'Enregistrement...' : 'Valider le Mouvement' }}
                 </button>
               </div>
@@ -249,6 +344,55 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     .text-right { text-align: right; }
     .text-success { color: #15803d; }
     .text-danger { color: #b91c1c; }
+
+    .caisse-note {
+      background: #eff6ff;
+      color: #1e40af;
+      border-radius: 0.5rem;
+      padding: 0.75rem 1rem;
+      font-size: 0.85rem;
+      margin: -0.5rem 0 1.5rem;
+    }
+
+    .sub-text {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.15rem;
+    }
+
+    .form-help {
+      margin-top: 0.35rem;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+    }
+
+    .candidats-list {
+      max-height: 11rem;
+      overflow-y: auto;
+      border: 1px solid var(--border-color);
+      border-radius: 0.5rem;
+      background: #fff;
+    }
+
+    .candidat-option {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 0.85rem;
+      cursor: pointer;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .candidat-option:last-child { border-bottom: 0; }
+    .candidat-option:hover { background: #f8fafc; }
+    .candidat-option input { width: 1.1rem; height: 1.1rem; flex: 0 0 auto; accent-color: var(--primary); }
+
+    .candidat-option-text {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+      font-size: 0.85rem;
+    }
   `]
 })
 export class CaisseComponent implements OnInit {
@@ -256,6 +400,7 @@ export class CaisseComponent implements OnInit {
   recap: RecapCaisse | null = null;
   loading = false;
   saving = false;
+  refreshing = false;
 
   typeFiltre = '';
   catFiltre = '';
@@ -266,18 +411,27 @@ export class CaisseComponent implements OnInit {
   showNewTxModal = false;
   newTx: any = {
     typeMouvement: 'ENTREE',
+    typeOperation: 'AUTRE',
     montant: null,
     libelle: '',
     categorie: '',
-    referencePiece: ''
+    referencePiece: '',
+    dateExamen: '',
+    typeEpreuve: 'CODE'
   };
   formError = '';
+
+  tarifs: TarifsExamens | null = null;
+  candidatsEligibles: CandidatConcerne[] = [];
+  candidatIdsSelectionnes: number[] = [];
+  loadingCandidatsEligibles = false;
 
   constructor(private apiService: ApiService, private authService: AuthService) {}
 
   ngOnInit(): void {
     this.loadRecap();
     this.loadTransactions();
+    this.apiService.getTarifsExamens().subscribe({ next: (res) => this.tarifs = res });
   }
 
   get canAdd(): boolean {
@@ -286,6 +440,27 @@ export class CaisseComponent implements OnInit {
 
   get isAdmin(): boolean {
     return this.authService.hasRole(['ADMIN']);
+  }
+
+  /** Rafraîchit le récapitulatif ET la liste : les transactions peuvent changer sans passer
+   *  par cet écran (un versement en Paiements, une inscription en Candidats...). */
+  actualiser(): void {
+    this.refreshing = true;
+    let restants = 2;
+    const termine = () => { if (--restants <= 0) this.refreshing = false; };
+    this.apiService.getRecapCaisse().subscribe({
+      next: (r) => { this.recap = r; termine(); },
+      error: (err) => { console.error(err); termine(); }
+    });
+    this.apiService.getTransactionsCaisse(this.typeFiltre, this.catFiltre, this.page).subscribe({
+      next: (res) => {
+        this.transactions = res.content || [];
+        this.totalPages = res.totalPages || 0;
+        this.totalElements = res.totalElements || 0;
+        termine();
+      },
+      error: (err) => { console.error(err); termine(); }
+    });
   }
 
   loadRecap(): void {
@@ -327,21 +502,124 @@ export class CaisseComponent implements OnInit {
     this.formError = '';
     this.newTx = {
       typeMouvement: 'ENTREE',
+      typeOperation: 'AUTRE',
       montant: null,
       libelle: '',
       categorie: '',
-      referencePiece: ''
+      referencePiece: '',
+      dateExamen: '',
+      typeEpreuve: 'CODE'
     };
+    this.candidatsEligibles = [];
+    this.candidatIdsSelectionnes = [];
     this.showNewTxModal = true;
   }
 
+  onTypeMouvementChange(): void {
+    // FRAIS_EXAMEN n'a de sens que pour une SORTIE, PRELEVEMENT_FORMATION que pour une ENTREE :
+    // on revient à AUTRE si le type d'opération choisi n'est plus cohérent.
+    this.newTx.typeOperation = 'AUTRE';
+    this.candidatsEligibles = [];
+    this.candidatIdsSelectionnes = [];
+  }
+
+  onTypeOperationChange(): void {
+    this.formError = '';
+    this.newTx.montant = null;
+    this.newTx.libelle = '';
+    this.candidatsEligibles = [];
+    this.candidatIdsSelectionnes = [];
+    if (this.newTx.typeOperation === 'FRAIS_EXAMEN') {
+      this.newTx.dateExamen = '';
+      this.newTx.typeEpreuve = 'CODE';
+    } else if (this.newTx.typeOperation === 'PRELEVEMENT_FORMATION') {
+      this.newTx.libelle = 'Prélèvement sur frais de formation';
+    }
+  }
+
+  onFraisExamenParamsChange(): void {
+    if (!this.newTx.dateExamen || !this.newTx.typeEpreuve) {
+      this.candidatsEligibles = [];
+      this.candidatIdsSelectionnes = [];
+      return;
+    }
+    this.loadingCandidatsEligibles = true;
+    this.apiService.getCandidatsEligiblesFraisExamen(this.newTx.typeEpreuve, this.newTx.dateExamen).subscribe({
+      next: (res) => {
+        this.candidatsEligibles = res;
+        this.candidatIdsSelectionnes = res.map(c => c.id);
+        this.loadingCandidatsEligibles = false;
+        this.newTx.libelle = `Frais d'examen ${this.epreuveLabel(this.newTx.typeEpreuve)} du ${this.newTx.dateExamen}`;
+      },
+      error: () => {
+        this.candidatsEligibles = [];
+        this.candidatIdsSelectionnes = [];
+        this.loadingCandidatsEligibles = false;
+      }
+    });
+  }
+
+  isCandidatFraisExamenSelected(id: number): boolean {
+    return this.candidatIdsSelectionnes.includes(id);
+  }
+
+  toggleCandidatFraisExamen(id: number): void {
+    this.candidatIdsSelectionnes = this.isCandidatFraisExamenSelected(id)
+      ? this.candidatIdsSelectionnes.filter(cid => cid !== id)
+      : [...this.candidatIdsSelectionnes, id];
+  }
+
+  get montantFraisExamenCalcule(): number {
+    const prix = this.prixUnitaireFraisExamen();
+    return prix * this.candidatIdsSelectionnes.length;
+  }
+
+  private prixUnitaireFraisExamen(): number {
+    if (!this.tarifs) return 0;
+    switch (this.newTx.typeEpreuve) {
+      case 'CODE': return this.tarifs.prixExamenCode || 0;
+      case 'CRENEAU': return this.tarifs.prixExamenCreneau || 0;
+      case 'CIRCULATION': return this.tarifs.prixExamenCirculation || 0;
+      default: return 0;
+    }
+  }
+
+  private epreuveLabel(t: string): string {
+    const labels: Record<string, string> = { CODE: 'Code', CRENEAU: 'Créneau', CIRCULATION: 'Circulation' };
+    return labels[t] || t;
+  }
+
+  isFormValide(): boolean {
+    if (!this.newTx.libelle) return false;
+    if (this.newTx.typeOperation === 'FRAIS_EXAMEN') {
+      return !!this.newTx.dateExamen && !!this.newTx.typeEpreuve && this.candidatIdsSelectionnes.length > 0;
+    }
+    return !!this.newTx.montant;
+  }
+
   saveTransaction(): void {
-    if (!this.newTx.montant || !this.newTx.libelle) return;
+    if (!this.isFormValide()) return;
 
     this.saving = true;
     this.formError = '';
 
-    this.apiService.enregistrerTransactionCaisse(this.newTx).subscribe({
+    const payload: any = {
+      typeMouvement: this.newTx.typeMouvement,
+      typeOperation: this.newTx.typeOperation,
+      libelle: this.newTx.libelle,
+      categorie: this.newTx.categorie,
+      referencePiece: this.newTx.referencePiece
+    };
+
+    if (this.newTx.typeOperation === 'FRAIS_EXAMEN') {
+      payload.dateExamen = this.newTx.dateExamen;
+      payload.typeEpreuve = this.newTx.typeEpreuve;
+      payload.candidatIds = this.candidatIdsSelectionnes;
+    } else {
+      payload.montant = this.newTx.montant;
+    }
+
+    this.apiService.enregistrerTransactionCaisse(payload).subscribe({
       next: () => {
         this.saving = false;
         this.showNewTxModal = false;

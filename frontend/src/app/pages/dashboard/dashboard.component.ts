@@ -17,6 +17,9 @@ import { DashboardStats } from '../../core/models/models';
           <p>Bienvenue sur votre espace de gestion <strong>Nerwaya Auto-École</strong> (Profil : <span class="role-badge">{{ currentUser?.role }}</span>)</p>
         </div>
         <div class="quick-actions">
+          <button class="btn btn-outline btn-sm" [disabled]="loadingStats" (click)="loadStats()" style="color: white; border-color: rgba(255,255,255,0.5);">
+            {{ loadingStats ? '⏳ Actualisation...' : '🔄 Actualiser' }}
+          </button>
           @if (hasRole(['ADMIN', 'SECRETAIRE'])) {
             <a routerLink="/candidats" class="btn btn-primary btn-sm">
               ➕ Nouveau Candidat
@@ -291,6 +294,7 @@ import { DashboardStats } from '../../core/models/models';
 export class DashboardComponent implements OnInit {
   stats: DashboardStats | null = null;
   currentUser: any = null;
+  loadingStats = false;
 
   constructor(private apiService: ApiService, private authService: AuthService) {}
 
@@ -300,9 +304,10 @@ export class DashboardComponent implements OnInit {
   }
 
   loadStats(): void {
+    this.loadingStats = true;
     this.apiService.getDashboardStats().subscribe({
-      next: (res) => this.stats = res,
-      error: (err) => console.error('Erreur chargement stats:', err)
+      next: (res) => { this.stats = res; this.loadingStats = false; },
+      error: (err) => { console.error('Erreur chargement stats:', err); this.loadingStats = false; }
     });
   }
 

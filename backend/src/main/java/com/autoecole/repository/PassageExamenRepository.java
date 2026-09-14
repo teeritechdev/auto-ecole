@@ -1,5 +1,6 @@
 package com.autoecole.repository;
 
+import com.autoecole.entity.Candidat;
 import com.autoecole.entity.PassageExamen;
 import com.autoecole.entity.enums.ResultatExamen;
 import com.autoecole.entity.enums.TypeEpreuve;
@@ -62,4 +63,17 @@ public interface PassageExamenRepository extends JpaRepository<PassageExamen, Lo
     @Query("SELECT COUNT(pe) FROM PassageExamen pe WHERE pe.resultat = :resultat " +
            "AND (:siteIds IS NULL OR pe.inscription.site.id IN :siteIds)")
     long countByResultatAndSite(@Param("resultat") ResultatExamen resultat, @Param("siteIds") Collection<Long> siteIds);
+
+    /**
+     * Candidats dont l'inscription active bénéficie de la prise en charge totale des frais
+     * d'examen, et programmés (résultat encore en attente) à cette épreuve et cette date —
+     * utilisé par la Caisse & Trésorerie interne pour pré-remplir un décaissement "Frais d'examen".
+     */
+    @Query("SELECT DISTINCT pe.inscription.candidat FROM PassageExamen pe WHERE " +
+           "pe.inscription.active = true " +
+           "AND pe.inscription.priseEnChargeExamens = true " +
+           "AND pe.typeEpreuve = :typeEpreuve " +
+           "AND pe.datePassage = :dateExamen " +
+           "AND pe.resultat = com.autoecole.entity.enums.ResultatExamen.PROGRAMME")
+    List<Candidat> findCandidatsPriseEnChargeParEpreuveEtDate(@Param("typeEpreuve") TypeEpreuve typeEpreuve, @Param("dateExamen") LocalDate dateExamen);
 }

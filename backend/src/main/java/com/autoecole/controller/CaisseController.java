@@ -1,6 +1,7 @@
 package com.autoecole.controller;
 
 import com.autoecole.dto.CaisseDTOs.*;
+import com.autoecole.entity.enums.TypeEpreuve;
 import com.autoecole.entity.enums.TypeMouvementCaisse;
 import com.autoecole.service.CaisseService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,7 +18,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/caisse")
@@ -52,6 +55,15 @@ public class CaisseController {
             @Valid @RequestBody CreateTransactionCaisseRequest request
     ) {
         return new ResponseEntity<>(caisseService.enregistrerTransaction(request), HttpStatus.CREATED);
+    }
+
+    @GetMapping("/candidats-frais-examen")
+    @Operation(summary = "Lister les candidats pris en charge, programmés pour cette épreuve à cette date")
+    public ResponseEntity<List<CandidatConcerneDTO>> getCandidatsEligiblesFraisExamen(
+            @RequestParam TypeEpreuve typeEpreuve,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateExamen
+    ) {
+        return ResponseEntity.ok(caisseService.getCandidatsEligiblesFraisExamen(typeEpreuve, dateExamen));
     }
 
     @DeleteMapping("/transactions/{id}")

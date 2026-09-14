@@ -16,7 +16,16 @@ import {
   Site,
   SiteStat,
   UtilisateurDTO,
-  HistoriqueAction
+  HistoriqueAction,
+  CandidatConcerne,
+  ResumePaiements,
+  TarifsExamens,
+  CodeConfiguration,
+  CodeQuestion,
+  CodeProgression,
+  EtatTentative,
+  CodeHistoriqueLigne,
+  LettreReponse
 } from '../models/models';
 
 @Injectable({
@@ -28,12 +37,13 @@ export class ApiService {
   constructor(private http: HttpClient) {}
 
   // ================= CANDIDATS =================
-  public getCandidats(recherche?: string, statut?: string, categorieId?: number, page: number = 0, size: number = 15, statutInscription?: string): Observable<any> {
+  public getCandidats(recherche?: string, statut?: string, categorieId?: number, page: number = 0, size: number = 15, statutInscription?: string, ignoreEtapeFilter?: boolean): Observable<any> {
     let params = new HttpParams().set('page', page).set('size', size);
     if (recherche) params = params.set('recherche', recherche);
     if (statut) params = params.set('statut', statut);
     if (categorieId) params = params.set('categorieId', categorieId);
     if (statutInscription) params = params.set('statutInscription', statutInscription);
+    if (ignoreEtapeFilter) params = params.set('ignoreEtapeFilter', 'true');
 
     return this.http.get<any>(`${this.base}/candidats`, { params });
   }
@@ -79,6 +89,10 @@ export class ApiService {
 
   public getPaiementById(id: number): Observable<Paiement> {
     return this.http.get<Paiement>(`${this.base}/paiements/${id}`);
+  }
+
+  public getResumePaiements(): Observable<ResumePaiements> {
+    return this.http.get<ResumePaiements>(`${this.base}/paiements/resume`);
   }
 
   public enregistrerPaiement(data: { candidatId: number; montant: number; modeReglement: string }): Observable<Paiement> {
@@ -176,6 +190,11 @@ export class ApiService {
     return this.http.post<TransactionCaisse>(`${this.base}/caisse/transactions`, data);
   }
 
+  public getCandidatsEligiblesFraisExamen(typeEpreuve: string, dateExamen: string): Observable<CandidatConcerne[]> {
+    const params = new HttpParams().set('typeEpreuve', typeEpreuve).set('dateExamen', dateExamen);
+    return this.http.get<CandidatConcerne[]>(`${this.base}/caisse/candidats-frais-examen`, { params });
+  }
+
   public deleteTransactionCaisse(id: number, motif?: string): Observable<void> {
     let params = new HttpParams();
     if (motif) params = params.set('motif', motif);
@@ -253,6 +272,14 @@ export class ApiService {
     return this.http.put<{ logoData: string | null }>(`${this.base}/configuration/logo`, { logoData });
   }
 
+  public getTarifsExamens(): Observable<TarifsExamens> {
+    return this.http.get<TarifsExamens>(`${this.base}/configuration/tarifs-examens`);
+  }
+
+  public updateTarifsExamens(data: TarifsExamens): Observable<TarifsExamens> {
+    return this.http.put<TarifsExamens>(`${this.base}/configuration/tarifs-examens`, data);
+  }
+
   // ================= AUDIT =================
   public getAuditLogs(entite?: string, action?: string, page: number = 0, size: number = 20, debut?: string, fin?: string, utilisateurId?: number): Observable<any> {
     let params = new HttpParams().set('page', page).set('size', size);
@@ -301,5 +328,58 @@ export class ApiService {
     if (debut) parts.push(`debut=${encodeURIComponent(debut)}`);
     if (fin) parts.push(`fin=${encodeURIComponent(fin)}`);
     return parts.length > 0 ? `?${parts.join('&')}` : '';
+  }
+
+  // ================= CODE DE LA ROUTE =================
+  public getCodeConfiguration(): Observable<CodeConfiguration> {
+    return this.http.get<CodeConfiguration>(`${this.base}/code/configuration`);
+  }
+
+  public updateCodeConfiguration(data: CodeConfiguration): Observable<CodeConfiguration> {
+    return this.http.put<CodeConfiguration>(`${this.base}/code/configuration`, data);
+  }
+
+  public getCodeQuestions(): Observable<CodeQuestion[]> {
+    return this.http.get<CodeQuestion[]>(`${this.base}/code/questions`);
+  }
+
+  public createCodeQuestion(data: Partial<CodeQuestion>): Observable<CodeQuestion> {
+    return this.http.post<CodeQuestion>(`${this.base}/code/questions`, data);
+  }
+
+  public updateCodeQuestion(id: number, data: Partial<CodeQuestion>): Observable<CodeQuestion> {
+    return this.http.put<CodeQuestion>(`${this.base}/code/questions/${id}`, data);
+  }
+
+  public deleteCodeQuestion(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/code/questions/${id}`);
+  }
+
+  public getCodeProgression(candidatId: number): Observable<CodeProgression> {
+    return this.http.get<CodeProgression>(`${this.base}/code/progression/${candidatId}`);
+  }
+
+  public getCodeHistorique(candidatId: number): Observable<CodeHistoriqueLigne[]> {
+    return this.http.get<CodeHistoriqueLigne[]>(`${this.base}/code/historique/${candidatId}`);
+  }
+
+  public demarrerCycleCode(numero: number): Observable<EtatTentative> {
+    return this.http.post<EtatTentative>(`${this.base}/code/cycles/${numero}/start`, {});
+  }
+
+  public getEtatTentativeCode(tentativeId: number): Observable<EtatTentative> {
+    return this.http.get<EtatTentative>(`${this.base}/code/tentatives/${tentativeId}`);
+  }
+
+  public repondreTentativeCode(tentativeId: number, reponse: LettreReponse | null): Observable<EtatTentative> {
+    return this.http.post<EtatTentative>(`${this.base}/code/tentatives/${tentativeId}/answer`, { reponse });
+  }
+
+  public revenirQuestionPrecedenteCode(tentativeId: number): Observable<EtatTentative> {
+    return this.http.post<EtatTentative>(`${this.base}/code/tentatives/${tentativeId}/precedente`, {});
+  }
+
+  public terminerTentativeCode(tentativeId: number): Observable<EtatTentative> {
+    return this.http.post<EtatTentative>(`${this.base}/code/tentatives/${tentativeId}/finish`, {});
   }
 }

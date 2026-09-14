@@ -2,6 +2,7 @@ package com.autoecole.repository;
 
 import com.autoecole.entity.TransactionCaisse;
 import com.autoecole.entity.enums.TypeMouvementCaisse;
+import com.autoecole.entity.enums.TypeOperationCaisse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -38,10 +39,17 @@ public interface TransactionCaisseRepository extends JpaRepository<TransactionCa
             @Param("fin") LocalDateTime fin
     );
 
-    @Query("SELECT COALESCE(SUM(tc.montant), 0) FROM TransactionCaisse tc WHERE tc.typeMouvement = :type")
+    // PAIEMENT_FORMATION est exclu : ces lignes ne font que rendre visibles les versements de
+    // formation dans le Journal Caisse (transparence pour l'ADMIN) ; l'argent correspondant
+    // n'est physiquement dans la caisse que s'il est explicitement transféré via un
+    // PRELEVEMENT_FORMATION, donc on ne les compte pas dans le Solde de Caisse pour éviter
+    // de compter deux fois le même argent.
+    @Query("SELECT COALESCE(SUM(tc.montant), 0) FROM TransactionCaisse tc WHERE tc.typeMouvement = :type " +
+           "AND tc.typeOperation <> com.autoecole.entity.enums.TypeOperationCaisse.PAIEMENT_FORMATION")
     BigDecimal sumByTypeMouvement(@Param("type") TypeMouvementCaisse type);
 
     @Query("SELECT COALESCE(SUM(tc.montant), 0) FROM TransactionCaisse tc WHERE tc.typeMouvement = :type " +
+           "AND tc.typeOperation <> com.autoecole.entity.enums.TypeOperationCaisse.PAIEMENT_FORMATION " +
            "AND tc.dateTransaction BETWEEN :debut AND :fin")
     BigDecimal sumByTypeMouvementBetween(
             @Param("type") TypeMouvementCaisse type,
@@ -50,4 +58,11 @@ public interface TransactionCaisseRepository extends JpaRepository<TransactionCa
     );
 
     List<TransactionCaisse> findTop10ByOrderByDateTransactionDesc();
+
+    @Query("SELECT COALESCE(SUM(tc.montant), 0) FROM TransactionCaisse tc WHERE " +
+           "tc.typeMouvement = :typeMouvement AND tc.typeOperation = :typeOperation")
+    BigDecimal sumByTypeMouvementAndTypeOperation(
+            @Param("typeMouvement") TypeMouvementCaisse typeMouvement,
+            @Param("typeOperation") TypeOperationCaisse typeOperation
+    );
 }

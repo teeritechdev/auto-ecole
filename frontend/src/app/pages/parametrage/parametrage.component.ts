@@ -39,6 +39,39 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
           </div>
         </div>
 
+        <!-- TARIFS DES EXAMENS -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🎓 Tarifs des examens</div>
+          </div>
+          <form (ngSubmit)="saveTarifsExamens()">
+            <div class="tarifs-examens-form">
+              <div class="form-group">
+                <label class="form-label">Prix examen Code (FCFA)</label>
+                <input type="number" class="form-control" [(ngModel)]="tarifsForm.prixExamenCode" name="prixExamenCode" min="0" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Prix examen Créneau (FCFA)</label>
+                <input type="number" class="form-control" [(ngModel)]="tarifsForm.prixExamenCreneau" name="prixExamenCreneau" min="0" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Prix examen Circulation (FCFA)</label>
+                <input type="number" class="form-control" [(ngModel)]="tarifsForm.prixExamenCirculation" name="prixExamenCirculation" min="0" required />
+              </div>
+            </div>
+            <p class="form-help">Utilisés par Caisse & Trésorerie pour calculer automatiquement le montant à décaisser lors d'une prise en charge des frais d'examen.</p>
+            @if (tarifsError) {
+              <div class="alert alert-danger">{{ tarifsError }}</div>
+            }
+            @if (tarifsSuccess) {
+              <div class="alert alert-success">Tarifs enregistrés.</div>
+            }
+            <button type="submit" class="btn btn-primary btn-sm" [disabled]="savingTarifs">
+              {{ savingTarifs ? 'Enregistrement...' : 'Enregistrer les tarifs' }}
+            </button>
+          </form>
+        </div>
+
         <!-- 1. CATÉGORIES DE PERMIS -->
         <div class="card">
           <div class="card-header">
@@ -249,6 +282,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     .logo-preview { width: 7rem; height: 7rem; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 0.75rem; background: #eff6ff; color: #2563eb; font-size: 2.5rem; }
     .logo-preview img { width: 100%; height: 100%; object-fit: contain; }
     .form-help { color: var(--text-muted); font-size: 0.8rem; margin: 0; }
+    .tarifs-examens-form { display: flex; flex-direction: column; gap: 0.85rem; margin-bottom: 0.75rem; }
   `]
 })
 export class ParametrageComponent implements OnInit {
@@ -271,6 +305,11 @@ export class ParametrageComponent implements OnInit {
   logoData: string | null = null;
   logoError = '';
 
+  tarifsForm: any = { prixExamenCode: 0, prixExamenCreneau: 0, prixExamenCirculation: 0 };
+  tarifsError = '';
+  tarifsSuccess = false;
+  savingTarifs = false;
+
   constructor(private apiService: ApiService) {}
 
   ngOnInit(): void {
@@ -282,6 +321,24 @@ export class ParametrageComponent implements OnInit {
     this.apiService.getSites().subscribe({ next: (res) => this.sites = res });
     this.apiService.getStatistiquesSites().subscribe({ next: (res) => this.statsSites = res });
     this.apiService.getLogo().subscribe({ next: (res) => this.logoData = res.logoData });
+    this.apiService.getTarifsExamens().subscribe({ next: (res) => this.tarifsForm = { ...res } });
+  }
+
+  saveTarifsExamens(): void {
+    this.tarifsError = '';
+    this.tarifsSuccess = false;
+    this.savingTarifs = true;
+    this.apiService.updateTarifsExamens(this.tarifsForm).subscribe({
+      next: (res) => {
+        this.savingTarifs = false;
+        this.tarifsForm = { ...res };
+        this.tarifsSuccess = true;
+      },
+      error: (err) => {
+        this.savingTarifs = false;
+        this.tarifsError = extraireMessageErreur(err, "Erreur lors de l'enregistrement des tarifs.");
+      }
+    });
   }
 
   onLogoSelected(event: Event): void {

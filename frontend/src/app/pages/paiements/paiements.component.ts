@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
-import { Candidat, Paiement, Recu } from '../../core/models/models';
+import { Candidat, Paiement, Recu, ResumePaiements } from '../../core/models/models';
 import { extraireMessageErreur } from '../../core/utils/error-utils';
 
 @Component({
@@ -19,6 +19,9 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
           <p>Enregistrez les versements, imprimez les reçus officiels et contrôlez les soldes</p>
         </div>
         <div class="header-buttons">
+          <button class="btn btn-outline btn-sm" [disabled]="refreshing" (click)="actualiser()">
+            {{ refreshing ? '⏳ Actualisation...' : '🔄 Actualiser' }}
+          </button>
           @if (canAdd) {
             <button class="btn btn-primary" (click)="openNewPaiementModal()">
               💵 Nouvel Encaissement
@@ -26,7 +29,19 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
           }
         </div>
       </div>
-    
+
+      <!-- RÉSUMÉ ENCAISSEMENTS -->
+      <div class="resume-bar">
+        <div class="resume-box resume-encaisse">
+          <div class="resume-label">💰 Total encaissé</div>
+          <div class="resume-value">{{ (resume?.totalEncaisse || 0) | number }} FCFA</div>
+        </div>
+        <div class="resume-box resume-reste">
+          <div class="resume-label">⏳ Reste à payer</div>
+          <div class="resume-value">{{ (resume?.totalReste || 0) | number }} FCFA</div>
+        </div>
+      </div>
+
       <!-- FILTERS -->
       <div class="card filter-card">
         <div class="filter-grid">
@@ -278,6 +293,40 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       margin-bottom: 1.5rem;
     }
 
+    .resume-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .resume-box {
+      background: #fff;
+      border: 1px solid var(--border-color);
+      border-radius: 0.75rem;
+      padding: 1rem 1.25rem;
+    }
+
+    .resume-encaisse {
+      border-left: 4px solid var(--success, #16a34a);
+    }
+
+    .resume-reste {
+      border-left: 4px solid var(--danger, #dc2626);
+    }
+
+    .resume-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 0.35rem;
+    }
+
+    .resume-value {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
     .filter-card {
       margin-bottom: 1.5rem;
       padding: 1.25rem;
@@ -340,6 +389,9 @@ export class PaiementsComponent implements OnInit {
   totalPages = 0;
   totalElements = 0;
 
+  resume: ResumePaiements | null = null;
+  refreshing = false;
+
   showNewModal = false;
   selectedCandidatId: number | null = null;
   selectedCandidat: Candidat | null = null;
@@ -361,10 +413,39 @@ export class PaiementsComponent implements OnInit {
   ngOnInit(): void {
     this.loadPaiements();
     this.loadNonSoldesCandidats();
+    this.loadResume();
+  }
+
+  loadResume(): void {
+    this.apiService.getResumePaiements().subscribe({
+      next: (res) => this.resume = res,
+      error: () => this.resume = null
+    });
   }
 
   get canAdd(): boolean {
     return this.authService.hasRole(['ADMIN', 'CAISSIERE']);
+  }
+
+  /** Rafraîchit la liste ET le résumé : un versement peut être enregistré par un autre
+   *  utilisateur (autre poste Caisse/Secrétariat) sans que cet écran ne le sache. */
+  actualiser(): void {
+    this.refreshing = true;
+    let restants = 2;
+    const termine = () => { if (--restants <= 0) this.refreshing = false; };
+    this.apiService.getPaiements(undefined, this.statutFiltre, this.page).subscribe({
+      next: (res) => {
+        this.paiements = res.content || [];
+        this.totalPages = res.totalPages || 0;
+        this.totalElements = res.totalElements || 0;
+        termine();
+      },
+      error: (err) => { console.error(err); termine(); }
+    });
+    this.apiService.getResumePaiements().subscribe({
+      next: (res) => { this.resume = res; termine(); },
+      error: () => { this.resume = null; termine(); }
+    });
   }
 
   loadPaiements(): void {
@@ -436,6 +517,7 @@ export class PaiementsComponent implements OnInit {
         this.showNewModal = false;
         this.loadPaiements();
         this.loadNonSoldesCandidats();
+        this.loadResume();
         if (res.recuId) this.imprimerRecu(res.recuId);
       },
       error: (err) => {
@@ -469,6 +551,7 @@ export class PaiementsComponent implements OnInit {
         this.saving = false;
         this.showEditModal = false;
         this.loadPaiements();
+        this.loadResume();
       },
       error: (err) => {
         this.saving = false;
@@ -492,6 +575,7 @@ export class PaiementsComponent implements OnInit {
         this.saving = false;
         this.showCancelModal = false;
         this.loadPaiements();
+        this.loadResume();
       },
       error: (err) => {
         this.saving = false;

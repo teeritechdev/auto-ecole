@@ -1,5 +1,6 @@
 package com.autoecole.service;
 
+import com.autoecole.dto.CandidatDTOs.IdentifiantsCompteDTO;
 import com.autoecole.entity.*;
 import com.autoecole.entity.enums.*;
 import com.autoecole.repository.*;
@@ -31,8 +32,8 @@ public class DataInitializerService implements CommandLineRunner {
     private final PaiementRepository paiementRepository;
     private final RecuRepository recuRepository;
     private final PassageExamenRepository passageRepository;
-    private final TransactionCaisseRepository transactionCaisseRepository;
     private final PasswordEncoder passwordEncoder;
+    private final CandidatAccountService candidatAccountService;
 
     @Value("${app.seed.enabled:true}")
     private boolean seedEnabled;
@@ -49,6 +50,7 @@ public class DataInitializerService implements CommandLineRunner {
         Role roleSecretaire = initRole(RoleEnum.SECRETAIRE, "Secrétaire Administrative");
         Role roleCaissiere = initRole(RoleEnum.CAISSIERE, "Caissière / Comptable");
         Role roleMoniteur = initRole(RoleEnum.MONITEUR, "Moniteur Pédagogique");
+        initRole(RoleEnum.CANDIDAT, "Candidat");
 
         // 2. Catégories de permis, avec leur tarif (données de référence, toujours créées)
         CategoriePermis catA1 = initCategorie("A1", "Permis Moto légère (125 cm³)", new BigDecimal("75000"), "Conduite motocyclettes");
@@ -143,6 +145,16 @@ public class DataInitializerService implements CommandLineRunner {
         });
     }
 
+    /** Crée le compte de connexion du candidat de démonstration et journalise son mot de
+     *  passe temporaire dans les logs (uniquement en environnement de démo/dev, APP_SEED_ENABLED=true). */
+    private void creerCompteCandidatDemo(Candidat candidat) {
+        IdentifiantsCompteDTO identifiants = candidatAccountService.creerCompteCandidatSiAbsent(candidat);
+        if (identifiants != null) {
+            log.info("Compte candidat de démonstration créé — identifiant : {} / mot de passe : {}",
+                    identifiants.getUsername(), identifiants.getMotDePasseTemporaire());
+        }
+    }
+
     private Site initSite(String nom, String adresse) {
         return siteRepository.findByNom(nom).orElseGet(() -> {
             Site s = Site.builder().nom(nom).adresse(adresse).actif(true).build();
@@ -165,6 +177,7 @@ public class DataInitializerService implements CommandLineRunner {
                 .email("bakary.traore@email.ci")
                 .build();
         c1 = candidatRepository.save(c1);
+        creerCompteCandidatDemo(c1);
 
         Inscription i1 = Inscription.builder()
                 .candidat(c1)
@@ -202,16 +215,6 @@ public class DataInitializerService implements CommandLineRunner {
                 .build();
         recuRepository.save(r1);
 
-        transactionCaisseRepository.save(TransactionCaisse.builder()
-                .typeMouvement(TypeMouvementCaisse.ENTREE)
-                .montant(new BigDecimal("40000"))
-                .libelle("1er Versement Inscription DOS-2026-0001 (TRAORE Bakary)")
-                .categorie("RECETTE_FORMATION")
-                .referencePiece("REC-2026-0001")
-                .utilisateur(admin)
-                .paiement(p1)
-                .build());
-
         // Passage examen Code pour C1 (Réussi)
         passageRepository.save(PassageExamen.builder()
                 .inscription(i1)
@@ -235,6 +238,7 @@ public class DataInitializerService implements CommandLineRunner {
                 .email("fatou.kone@email.ci")
                 .build();
         c2 = candidatRepository.save(c2);
+        creerCompteCandidatDemo(c2);
 
         Inscription i2 = Inscription.builder()
                 .candidat(c2)
@@ -287,26 +291,6 @@ public class DataInitializerService implements CommandLineRunner {
                 .imprimePar("KOUASSI Jean-Marc")
                 .build());
 
-        transactionCaisseRepository.save(TransactionCaisse.builder()
-                .typeMouvement(TypeMouvementCaisse.ENTREE)
-                .montant(new BigDecimal("50000"))
-                .libelle("1er Versement Inscription DOS-2026-0002 (KONE Fatoumata)")
-                .categorie("RECETTE_FORMATION")
-                .referencePiece("REC-2026-0002")
-                .utilisateur(admin)
-                .paiement(p2_1)
-                .build());
-
-        transactionCaisseRepository.save(TransactionCaisse.builder()
-                .typeMouvement(TypeMouvementCaisse.ENTREE)
-                .montant(new BigDecimal("75000"))
-                .libelle("Solde de formation DOS-2026-0002 (KONE Fatoumata)")
-                .categorie("RECETTE_FORMATION")
-                .referencePiece("REC-2026-0003")
-                .utilisateur(admin)
-                .paiement(p2_2)
-                .build());
-
         // Passages d'examens pour C2 (Code réussi, Créneau réussi, Circulation programmée)
         passageRepository.save(PassageExamen.builder()
                 .inscription(i2)
@@ -338,23 +322,8 @@ public class DataInitializerService implements CommandLineRunner {
                 .moniteur(moniteur)
                 .build());
 
-        // Quelques dépenses de caisse pour la démonstration
-        transactionCaisseRepository.save(TransactionCaisse.builder()
-                .typeMouvement(TypeMouvementCaisse.SORTIE)
-                .montant(new BigDecimal("25000"))
-                .libelle("Achat carburant véhicule auto-école Toyota Yaris")
-                .categorie("CARBURANT")
-                .referencePiece("FACT-TOTAL-889")
-                .utilisateur(admin)
-                .build());
-
-        transactionCaisseRepository.save(TransactionCaisse.builder()
-                .typeMouvement(TypeMouvementCaisse.SORTIE)
-                .montant(new BigDecimal("15000"))
-                .libelle("Achat fournitures de bureau et livrets de code")
-                .categorie("FOURNITURES")
-                .referencePiece("TICKET-LIB-44")
-                .utilisateur(admin)
-                .build());
+        // Note : aucune donnée de démonstration n'est semée pour la Caisse & Trésorerie —
+        // c'est une caisse de dépenses/recettes diverses totalement autonome (cf. CaisseService),
+        // dont les Natures d'opération sont définies par l'ADMIN lui-même (aucun contenu imposé).
     }
 }

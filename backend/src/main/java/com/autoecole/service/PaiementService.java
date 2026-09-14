@@ -5,6 +5,7 @@ import com.autoecole.dto.PaiementDTOs.CreatePaiementRequest;
 import com.autoecole.dto.PaiementDTOs.ModifierPaiementRequest;
 import com.autoecole.dto.PaiementDTOs.PaiementDTO;
 import com.autoecole.dto.PaiementDTOs.RecuDTO;
+import com.autoecole.dto.PaiementDTOs.ResumePaiementsDTO;
 import com.autoecole.entity.*;
 import com.autoecole.entity.enums.*;
 import com.autoecole.exception.BadRequestException;
@@ -12,7 +13,6 @@ import com.autoecole.exception.ResourceNotFoundException;
 import com.autoecole.repository.InscriptionRepository;
 import com.autoecole.repository.PaiementRepository;
 import com.autoecole.repository.RecuRepository;
-import com.autoecole.repository.TransactionCaisseRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -34,7 +34,6 @@ public class PaiementService {
     private final InscriptionRepository inscriptionRepository;
     private final InscriptionService inscriptionService;
     private final RecuRepository recuRepository;
-    private final TransactionCaisseRepository transactionCaisseRepository;
     private final CandidatService candidatService;
     private final AuditService auditService;
 
@@ -53,6 +52,14 @@ public class PaiementService {
         Paiement p = paiementRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Paiement non trouvé avec l'id: " + id));
         return mapToDTO(p);
+    }
+
+    /** Total encaissé et reste à payer, tous dossiers actifs confondus (en-tête de la page Paiements). */
+    public ResumePaiementsDTO getResume() {
+        return ResumePaiementsDTO.builder()
+                .totalEncaisse(inscriptionRepository.sumTotalVerseActif(null))
+                .totalReste(inscriptionRepository.sumSoldeRestantActif(null))
+                .build();
     }
 
     @Transactional
@@ -124,18 +131,9 @@ public class PaiementService {
                 .build();
         recuRepository.save(recu);
 
-        // 4. Mouvement de caisse automatique (ENTREE)
-        TransactionCaisse tx = TransactionCaisse.builder()
-                .typeMouvement(TypeMouvementCaisse.ENTREE)
-                .montant(montant)
-                .libelle("Versement " + typeVersement.name() + " - Dossier " + candidat.getNumeroDossier() + " (" + candidat.getNom() + " " + candidat.getPrenom() + ")")
-                .categorie("RECETTE_FORMATION")
-                .referencePiece(numeroRecu)
-                .utilisateur(currentUser)
-                .paiement(savedPaiement)
-                .build();
-        transactionCaisseRepository.save(tx);
-
+        // Note : les paiements de formation n'alimentent jamais la Caisse & Trésorerie —
+        // c'est une caisse de dépenses/recettes diverses totalement autonome (cf. CaisseService),
+        // sans aucun lien avec les candidats, les inscriptions ou les paiements.
         auditService.logAction("ENCAISSEMENT_VERSEMENT", "Paiement", numeroRecu,
                 "Encaissement de " + montant + " FCFA pour le candidat " + candidat.getNumeroDossier() + " (Nouveau solde: " + inscription.getSoldeRestant() + " FCFA)", null);
 
@@ -213,7 +211,6 @@ public class PaiementService {
 
         Utilisateur currentUser = auditService.getCurrentUser();
         Inscription inscription = paiement.getInscription();
-        Candidat candidat = inscription.getCandidat();
 
         // Déduire le montant de l'inscription
         inscription.setTotalVerse(inscription.getTotalVerse().subtract(paiement.getMontant()));
@@ -226,17 +223,6 @@ public class PaiementService {
         paiement.setUtilisateurModif(currentUser);
 
         Paiement updated = paiementRepository.save(paiement);
-
-        // Transaction de caisse d'annulation (SORTIE compensatoire)
-        TransactionCaisse tx = TransactionCaisse.builder()
-                .typeMouvement(TypeMouvementCaisse.SORTIE)
-                .montant(paiement.getMontant())
-                .libelle("Annulation versement candidat " + candidat.getNumeroDossier() + " - Motif: " + request.getMotif())
-                .categorie("ANNULATION_RECETTE")
-                .referencePiece(paiement.getRecu() != null ? paiement.getRecu().getNumeroRecu() : null)
-                .utilisateur(currentUser)
-                .build();
-        transactionCaisseRepository.save(tx);
 
         auditService.logAction("ANNULATION_PAIEMENT", "Paiement", paiement.getId().toString(),
                 "Annulation versement de " + paiement.getMontant() + " FCFA", request.getMotif());

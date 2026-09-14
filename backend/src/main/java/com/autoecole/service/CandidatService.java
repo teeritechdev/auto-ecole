@@ -2,6 +2,7 @@ package com.autoecole.service;
 
 import com.autoecole.dto.CandidatDTOs.CandidatDTO;
 import com.autoecole.dto.CandidatDTOs.CreateCandidatRequest;
+import com.autoecole.dto.CandidatDTOs.IdentifiantsCompteDTO;
 import com.autoecole.dto.CandidatDTOs.ReinscrireCandidatRequest;
 import com.autoecole.dto.CandidatDTOs.UpdateCandidatRequest;
 import com.autoecole.entity.*;
@@ -36,15 +37,29 @@ public class CandidatService {
     private final SiteRepository siteRepository;
     private final PaiementRepository paiementRepository;
     private final RecuRepository recuRepository;
-    private final TransactionCaisseRepository transactionCaisseRepository;
     private final PassageExamenRepository passageRepository;
     private final AuditService auditService;
     private final SiteAccessService siteAccessService;
+    private final CandidatAccountService candidatAccountService;
 
-    public Page<CandidatDTO> rechercherCandidats(String recherche, StatutDossier statut, Long categorieId, StatutInscription statutInscription, Pageable pageable) {
+    public Page<CandidatDTO> rechercherCandidats(String recherche, StatutDossier statut, Long categorieId, StatutInscription statutInscription, boolean ignoreEtapeFilter, Pageable pageable) {
         java.util.Set<Long> siteIds = siteAccessService.resoudreFiltreSitesPourListe();
-        java.util.Set<com.autoecole.entity.enums.EtapeParcours> etapesAutorisees = siteAccessService.resoudreFiltreEtapesPourListe();
-        if ((siteIds != null && siteIds.isEmpty()) || (etapesAutorisees != null && etapesAutorisees.isEmpty())) {
+        java.util.Set<com.autoecole.entity.enums.EtapeParcours> etapesAutorisees = ignoreEtapeFilter ? null : siteAccessService.resoudreFiltreEtapesPourListe();
+        
+        // Si ignoreEtapeFilter est true, on vérifie quand même si l'utilisateur est un moniteur.
+        // Un moniteur spécialisé Code peut voir les candidats au-delà de l'étape Code.
+        // Mais un moniteur spécialisé UNIQUEMENT Créneau ne devrait pas voir le module Code... 
+        // Toutefois, le frontend n'appelle avec ignoreEtapeFilter=true que sur la page CodeResultats
+        // qui est elle-même protégée par le routing. Et on garde la restriction par site !
+        if (ignoreEtapeFilter) {
+            // S'assurer que le moniteur a bien la spécialité requise pour ignorer le filtre
+            // (ici la logique spécifique pour le module Code : il DOIT avoir la spécialité CODE)
+            if (siteAccessService.estMoniteurRestreint()) {
+                siteAccessService.verifierAccesEpreuve(com.autoecole.entity.enums.TypeEpreuve.CODE);
+            }
+        }
+
+        if ((siteIds != null && siteIds.isEmpty()) || (etapesAutorisees != null && etapesAutorisees.isEmpty() && !ignoreEtapeFilter)) {
             return Page.empty(pageable);
         }
         return candidatRepository.rechercherCandidats(recherche, statut, categorieId, siteIds, statutInscription, etapesAutorisees, pageable)
@@ -102,14 +117,20 @@ public class CandidatService {
         Candidat savedCandidat = candidatRepository.save(candidat);
 
         BigDecimal totalVerse = (premierVersement != null) ? premierVersement : BigDecimal.ZERO;
-        Inscription inscription = inscriptionService.creerInscriptionInitiale(savedCandidat, categorie, site, dateInsc, request.getMontant(), totalVerse, request.getStatutInscription());
+        Inscription inscription = inscriptionService.creerInscriptionInitiale(savedCandidat, categorie, site, dateInsc, request.getMontant(), totalVerse, request.getStatutInscription(), request.isPriseEnChargeExamens());
 
         enregistrerPremierVersementSiFourni(savedCandidat, inscription, premierVersement, request.getModeReglementPremierVersement());
+
+        // RG-CAND-01 : la première inscription validée d'un candidat crée automatiquement
+        // son compte de connexion (rôle CANDIDAT), réutilisé lors des reprises suivantes.
+        IdentifiantsCompteDTO identifiants = candidatAccountService.creerCompteCandidatSiAbsent(savedCandidat);
 
         auditService.logAction("CREATION_CANDIDAT", "Candidat", savedCandidat.getNumeroDossier(),
                 "Inscription du candidat " + savedCandidat.getNom() + " " + savedCandidat.getPrenom() + " pour la catégorie " + categorie.getLibelle(), null);
 
-        return mapToDTO(savedCandidat, inscription);
+        CandidatDTO dto = mapToDTO(savedCandidat, inscription);
+        dto.setIdentifiantsCompte(identifiants);
+        return dto;
     }
 
     /**
@@ -133,7 +154,7 @@ public class CandidatService {
         validerPremierVersement(premierVersement);
 
         BigDecimal totalVerse = (premierVersement != null) ? premierVersement : BigDecimal.ZERO;
-        Inscription inscription = inscriptionService.creerNouveauCycle(candidat, categorie, site, request.getDateInscription(), request.getMontant(), totalVerse);
+        Inscription inscription = inscriptionService.creerNouveauCycle(candidat, categorie, site, request.getDateInscription(), request.getMontant(), totalVerse, request.isPriseEnChargeExamens());
 
         enregistrerPremierVersementSiFourni(candidat, inscription, premierVersement, request.getModeReglementPremierVersement());
 
@@ -183,16 +204,9 @@ public class CandidatService {
                 .build();
         recuRepository.save(recu);
 
-        TransactionCaisse tx = TransactionCaisse.builder()
-                .typeMouvement(TypeMouvementCaisse.ENTREE)
-                .montant(premierVersement)
-                .libelle("1er Versement Inscription " + candidat.getNumeroDossier() + " (" + candidat.getNom() + " " + candidat.getPrenom() + ")")
-                .categorie("RECETTE_FORMATION")
-                .referencePiece(numRecu)
-                .utilisateur(currentUser)
-                .paiement(savedPaiement)
-                .build();
-        transactionCaisseRepository.save(tx);
+        // Note : les paiements de formation n'alimentent jamais la Caisse & Trésorerie —
+        // c'est une caisse de dépenses/recettes diverses totalement autonome (cf. CaisseService),
+        // sans aucun lien avec les candidats, les inscriptions ou les paiements.
     }
 
     @Transactional
@@ -216,7 +230,7 @@ public class CandidatService {
         candidat.setDateDepotDossier(request.getDateDepotDossier());
 
         Candidat updated = candidatRepository.save(candidat);
-        Inscription active = inscriptionService.mettreAJourCategorieEtMontant(id, categorie, request.getMontant(), site);
+        Inscription active = inscriptionService.mettreAJourCategorieEtMontant(id, categorie, request.getMontant(), site, request.isPriseEnChargeExamens());
 
         auditService.logAction("MODIFICATION_CANDIDAT", "Candidat", updated.getNumeroDossier(), "Mise à jour fiche candidat", null);
 
@@ -320,6 +334,7 @@ public class CandidatService {
                 .codeReussi(passageRepository.existsByInscriptionIdAndTypeEpreuveAndResultat(i.getId(), TypeEpreuve.CODE, ResultatExamen.REUSSI))
                 .creneauReussi(passageRepository.existsByInscriptionIdAndTypeEpreuveAndResultat(i.getId(), TypeEpreuve.CRENEAU, ResultatExamen.REUSSI))
                 .circulationReussi(passageRepository.existsByInscriptionIdAndTypeEpreuveAndResultat(i.getId(), TypeEpreuve.CIRCULATION, ResultatExamen.REUSSI))
+                .priseEnChargeExamens(i.isPriseEnChargeExamens())
                 .build();
     }
 }

@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
-import { Candidat, Paiement, Recu } from '../../core/models/models';
+import { Candidat, Paiement, Recu, ResumePaiements } from '../../core/models/models';
 import { extraireMessageErreur } from '../../core/utils/error-utils';
 
 @Component({
@@ -19,14 +19,37 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
           <p>Enregistrez les versements, imprimez les reçus officiels et contrôlez les soldes</p>
         </div>
         <div class="header-buttons">
+          <button class="btn btn-outline btn-sm" [disabled]="refreshing" (click)="actualiser()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+            {{ refreshing ? 'Actualisation...' : 'Actualiser' }}
+          </button>
           @if (canAdd) {
             <button class="btn btn-primary" (click)="openNewPaiementModal()">
-              💵 Nouvel Encaissement
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+              Nouvel Encaissement
             </button>
           }
         </div>
       </div>
-    
+
+      <!-- RÉSUMÉ ENCAISSEMENTS -->
+      <div class="resume-bar">
+        <div class="resume-box resume-encaisse">
+          <div class="resume-label">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
+            Total encaissé
+          </div>
+          <div class="resume-value">{{ (resume?.totalEncaisse || 0) | number }} FCFA</div>
+        </div>
+        <div class="resume-box resume-reste">
+          <div class="resume-label">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Reste à payer
+          </div>
+          <div class="resume-value">{{ (resume?.totalReste || 0) | number }} FCFA</div>
+        </div>
+      </div>
+
       <!-- FILTERS -->
       <div class="card filter-card">
         <div class="filter-grid">
@@ -102,17 +125,18 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                     <div class="action-flex">
                       @if (p.recuId) {
                         <button class="btn btn-outline btn-sm" (click)="imprimerRecu(p.recuId)" title="Télécharger Reçu PDF">
-                          🖨️ Reçu PDF
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                          Reçu PDF
                         </button>
                       }
                       @if (canAdd && p.statut !== 'ANNULE') {
                         <button class="btn btn-outline btn-sm" (click)="openEditModal(p)" title="Modifier">
-                          ✏️
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
                         </button>
                       }
                       @if (canAdd && p.statut !== 'ANNULE') {
                         <button class="btn btn-danger btn-sm" (click)="openCancelModal(p)" title="Annuler">
-                          ✕
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
                         </button>
                       }
                     </div>
@@ -125,9 +149,15 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     
         @if (totalPages > 1) {
           <div class="pagination-bar">
-            <button class="btn btn-outline btn-sm" [disabled]="page === 0" (click)="changePage(page - 1)">◀ Précédent</button>
+            <button class="btn btn-outline btn-sm" [disabled]="page === 0" (click)="changePage(page - 1)">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              Précédent
+            </button>
             <span>Page {{ page + 1 }} sur {{ totalPages }} ({{ totalElements }} versements)</span>
-            <button class="btn btn-outline btn-sm" [disabled]="page >= totalPages - 1" (click)="changePage(page + 1)">Suivant ▶</button>
+            <button class="btn btn-outline btn-sm" [disabled]="page >= totalPages - 1" (click)="changePage(page + 1)">
+              Suivant
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
           </div>
         }
       </div>
@@ -137,13 +167,19 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
         <div class="modal-backdrop">
           <div class="modal-content">
             <div class="modal-header">
-              <h3>💵 Nouvel Encaissement</h3>
+              <h3 style="display:flex; align-items:center; gap:0.5rem;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                Nouvel Encaissement
+              </h3>
               <button class="btn btn-outline btn-sm" (click)="showNewModal = false">✕</button>
             </div>
             <form (ngSubmit)="saveNewPaiement()">
               <div class="modal-body">
                 @if (formError) {
-                  <div class="alert alert-danger">⚠️ {{ formError }}</div>
+                  <div class="alert alert-danger">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    {{ formError }}
+                  </div>
                 }
                 <div class="form-group">
                   <label class="form-label">Sélectionner le candidat <span class="required">*</span></label>
@@ -201,13 +237,19 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
         <div class="modal-backdrop">
           <div class="modal-content">
             <div class="modal-header">
-              <h3>✏️ Modifier un Versement (Traçabilité RG10)</h3>
+              <h3 style="display:flex; align-items:center; gap:0.5rem;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+                Modifier un Versement (Traçabilité RG10)
+              </h3>
               <button class="btn btn-outline btn-sm" (click)="showEditModal = false">✕</button>
             </div>
             <form (ngSubmit)="saveEditPaiement()">
               <div class="modal-body">
                 @if (formError) {
-                  <div class="alert alert-danger">⚠️ {{ formError }}</div>
+                  <div class="alert alert-danger">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    {{ formError }}
+                  </div>
                 }
                 <div class="form-group">
                   <label class="form-label">Nouveau Montant (FCFA) <span class="required">*</span></label>
@@ -243,7 +285,10 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
         <div class="modal-backdrop">
           <div class="modal-content">
             <div class="modal-header">
-              <h3>✕ Annuler un Versement</h3>
+              <h3 style="display:flex; align-items:center; gap:0.5rem;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                Annuler un Versement
+              </h3>
               <button class="btn btn-outline btn-sm" (click)="showCancelModal = false">✕</button>
             </div>
             <form (ngSubmit)="confirmCancelPaiement()">
@@ -276,6 +321,43 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       flex-wrap: wrap;
       gap: 1rem;
       margin-bottom: 1.5rem;
+    }
+
+    .resume-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .resume-box {
+      background: #fff;
+      border: 1px solid var(--border-color);
+      border-radius: 0.75rem;
+      padding: 1rem 1.25rem;
+    }
+
+    .resume-encaisse {
+      border-left: 4px solid var(--success, #16a34a);
+    }
+
+    .resume-reste {
+      border-left: 4px solid var(--danger, #dc2626);
+    }
+
+    .resume-label {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 0.35rem;
+    }
+
+    .resume-value {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--text-main);
     }
 
     .filter-card {
@@ -340,6 +422,9 @@ export class PaiementsComponent implements OnInit {
   totalPages = 0;
   totalElements = 0;
 
+  resume: ResumePaiements | null = null;
+  refreshing = false;
+
   showNewModal = false;
   selectedCandidatId: number | null = null;
   selectedCandidat: Candidat | null = null;
@@ -361,10 +446,39 @@ export class PaiementsComponent implements OnInit {
   ngOnInit(): void {
     this.loadPaiements();
     this.loadNonSoldesCandidats();
+    this.loadResume();
+  }
+
+  loadResume(): void {
+    this.apiService.getResumePaiements().subscribe({
+      next: (res) => this.resume = res,
+      error: () => this.resume = null
+    });
   }
 
   get canAdd(): boolean {
     return this.authService.hasRole(['ADMIN', 'CAISSIERE']);
+  }
+
+  /** Rafraîchit la liste ET le résumé : un versement peut être enregistré par un autre
+   *  utilisateur (autre poste Caisse/Secrétariat) sans que cet écran ne le sache. */
+  actualiser(): void {
+    this.refreshing = true;
+    let restants = 2;
+    const termine = () => { if (--restants <= 0) this.refreshing = false; };
+    this.apiService.getPaiements(undefined, this.statutFiltre, this.page).subscribe({
+      next: (res) => {
+        this.paiements = res.content || [];
+        this.totalPages = res.totalPages || 0;
+        this.totalElements = res.totalElements || 0;
+        termine();
+      },
+      error: (err) => { console.error(err); termine(); }
+    });
+    this.apiService.getResumePaiements().subscribe({
+      next: (res) => { this.resume = res; termine(); },
+      error: () => { this.resume = null; termine(); }
+    });
   }
 
   loadPaiements(): void {
@@ -436,6 +550,7 @@ export class PaiementsComponent implements OnInit {
         this.showNewModal = false;
         this.loadPaiements();
         this.loadNonSoldesCandidats();
+        this.loadResume();
         if (res.recuId) this.imprimerRecu(res.recuId);
       },
       error: (err) => {
@@ -469,6 +584,7 @@ export class PaiementsComponent implements OnInit {
         this.saving = false;
         this.showEditModal = false;
         this.loadPaiements();
+        this.loadResume();
       },
       error: (err) => {
         this.saving = false;
@@ -492,6 +608,7 @@ export class PaiementsComponent implements OnInit {
         this.saving = false;
         this.showCancelModal = false;
         this.loadPaiements();
+        this.loadResume();
       },
       error: (err) => {
         this.saving = false;

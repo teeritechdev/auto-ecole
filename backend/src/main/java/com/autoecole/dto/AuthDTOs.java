@@ -40,6 +40,10 @@ public class AuthDTOs {
         private String photoProfile;
         private Set<Long> siteIds;
         private Set<TypeEpreuve> specialites;
+
+        // Renseigné uniquement pour un compte de rôle CANDIDAT (cf. Utilisateur.candidat).
+        private Long candidatId;
+        private boolean doitChangerMotDePasse;
     }
 
     @Data

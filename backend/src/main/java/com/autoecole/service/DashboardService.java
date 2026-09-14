@@ -12,6 +12,7 @@ import com.autoecole.entity.enums.StatutDossier;
 import com.autoecole.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -31,6 +32,12 @@ public class DashboardService {
     private final ExamenService examenService;
     private final SiteAccessService siteAccessService;
 
+    // @Transactional : cette méthode assemble des DTO à partir de plusieurs entités liées
+    // par des relations LAZY (ex. candidatsConcernes d'une TransactionCaisse) ; sans session
+    // Hibernate ouverte pour toute la durée de l'agrégation, ces accès lèvent une
+    // LazyInitializationException (500), ce qui rendait le tableau de bord et les
+    // statistiques de paiement désespérément à zéro pour tous les rôles (ADMIN compris).
+    @Transactional(readOnly = true)
     public DashboardStatsDTO getDashboardStats() {
         // Un moniteur ne voit que les indicateurs de ses propres sites (§19 : "accès limité"
         // pour le tableau de bord) ; ADMIN/SECRETAIRE/CAISSIERE gardent la vision globale.

@@ -18,17 +18,64 @@ public class CaisseDTOs {
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
+    public static class NatureOperationDTO {
+        private Long id;
+        private String code;
+        private String libelle;
+        private TypeMouvementCaisse sens;
+        private String planComptable;
+        private String description;
+        private boolean actif;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class CreateNatureOperationRequest {
+        @NotBlank(message = "Le code est obligatoire")
+        private String code;
+
+        @NotBlank(message = "Le libellé est obligatoire")
+        private String libelle;
+
+        @NotNull(message = "Le sens (recette ou dépense) est obligatoire")
+        private TypeMouvementCaisse sens;
+
+        private String planComptable;
+        private String description;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class UpdateNatureOperationRequest {
+        @NotBlank(message = "Le libellé est obligatoire")
+        private String libelle;
+
+        private String planComptable;
+        private String description;
+        private boolean actif;
+        // Le sens n'est volontairement pas modifiable après création : des opérations
+        // existantes ont déjà hérité du sens d'origine, le changer les rendrait incohérentes
+        // avec le solde déjà calculé.
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
     public static class TransactionCaisseDTO {
         private Long id;
+        private NatureOperationDTO natureOperation;
         private TypeMouvementCaisse typeMouvement;
         private BigDecimal montant;
         private String libelle;
-        private String categorie;
-        private String referencePiece;
+        private String numeroFacture;
         private LocalDateTime dateTransaction;
         private Long utilisateurId;
         private String utilisateurNomComplet;
-        private Long paiementId;
     }
 
     @Data
@@ -36,8 +83,8 @@ public class CaisseDTOs {
     @AllArgsConstructor
     @Builder
     public static class CreateTransactionCaisseRequest {
-        @NotNull(message = "Le type de mouvement est obligatoire (ENTREE, SORTIE)")
-        private TypeMouvementCaisse typeMouvement;
+        @NotNull(message = "La nature de l'opération est obligatoire")
+        private Long natureOperationId;
 
         @NotNull(message = "Le montant est obligatoire")
         @DecimalMin(value = "1.0", message = "Le montant doit être supérieur à 0")
@@ -46,8 +93,7 @@ public class CaisseDTOs {
         @NotBlank(message = "Le libellé est obligatoire")
         private String libelle;
 
-        private String categorie;
-        private String referencePiece;
+        private String numeroFacture;
     }
 
     @Data

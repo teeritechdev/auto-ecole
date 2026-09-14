@@ -57,6 +57,13 @@ public class PaiementController {
         return ResponseEntity.ok(paiementService.getPaiementById(id));
     }
 
+    @GetMapping("/resume")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CAISSIERE', 'SECRETAIRE')")
+    @Operation(summary = "Total encaissé et reste à payer, tous dossiers actifs confondus")
+    public ResponseEntity<ResumePaiementsDTO> getResume() {
+        return ResponseEntity.ok(paiementService.getResume());
+    }
+
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'CAISSIERE')")
     @Operation(summary = "Enregistrer un nouveau versement (validation 1er versement 35k-50k et solde)")
@@ -76,7 +83,7 @@ public class PaiementController {
 
     @PostMapping("/{id}/annuler")
     @PreAuthorize("hasAnyRole('ADMIN', 'CAISSIERE')")
-    @Operation(summary = "Annuler un versement (avec motif obligatoire et mouvement compensatoire de caisse)")
+    @Operation(summary = "Annuler un versement (avec motif obligatoire)")
     public ResponseEntity<PaiementDTO> annulerPaiement(
             @PathVariable Long id,
             @Valid @RequestBody AnnulerPaiementRequest request

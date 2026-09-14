@@ -103,4 +103,13 @@ public class PaiementDTOs {
         private String typeVersement;
         private String imprimePar;
     }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class ResumePaiementsDTO {
+        private BigDecimal totalEncaisse;
+        private BigDecimal totalReste;
+    }
 }

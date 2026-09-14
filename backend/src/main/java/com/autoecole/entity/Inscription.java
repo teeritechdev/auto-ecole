@@ -110,6 +110,16 @@ public class Inscription {
     private EtapeParcours etapeParcours = EtapeParcours.INSCRIPTION;
 
     /**
+     * Indique si les frais de formation déjà versés englobent la prise en charge
+     * totale des frais d'examen par l'auto-école (sinon le candidat les paie
+     * lui-même à part). Utilisé par la Caisse & Trésorerie interne pour déterminer
+     * quels candidats programmés à une date donnée doivent être décaissés.
+     */
+    @Column(name = "prise_en_charge_examens", nullable = false)
+    @Builder.Default
+    private boolean priseEnChargeExamens = false;
+
+    /**
      * Méthode utilitaire de recalcul du statut et du solde de ce cycle d'inscription.
      */
     public void recalculerSoldeEtStatut() {

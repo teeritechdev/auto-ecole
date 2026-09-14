@@ -4,5 +4,6 @@ public enum RoleEnum {
     ADMIN,
     SECRETAIRE,
     CAISSIERE,
-    MONITEUR
+    MONITEUR,
+    CANDIDAT
 }

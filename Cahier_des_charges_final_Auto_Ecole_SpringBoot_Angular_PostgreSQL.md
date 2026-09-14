@@ -1,10 +1,10 @@
 CAHIER DES CHARGES FINAL
 Application web de gestion d'une auto-école
-Version : 2.0 — Septembre 2026
+Version : 3.0 — Septembre 2026
 
 1. PRÉSENTATION DU PROJET
 1.1 Contexte
-L'auto-école assure la gestion administrative, financière et pédagogique des candidats préparant différents permis de conduire.
+L'auto-école assure la gestion administrative, financière et pédagogique des candidats préparant différents permis de conduire, sur un ou plusieurs sites de formation.
 La gestion actuelle repose notamment sur des fiches d'inscription, registres de candidats, supports de suivi des paiements, reçus, informations relatives aux examens et documents de caisse.
 L'objectif du projet est de remplacer ces supports par une application web centralisée, sécurisée et adaptée au fonctionnement réel de l'auto-école.
 L'application devra permettre de suivre le candidat depuis son inscription jusqu'à la fin de son parcours, tout en distinguant clairement :
@@ -33,14 +33,16 @@ L'application devra permettre de :
 ·	gérer les catégories de permis ;
 ·	gérer les inscriptions ;
 ·	gérer les forfaits ;
+·	gérer plusieurs sites de formation et restreindre l'accès des moniteurs à leur(s) site(s) et spécialité(s) ;
 ·	suivre les heures et la progression de formation ;
+·	suivre le parcours pédagogique du candidat étape par étape ;
 ·	gérer les paiements ;
 ·	calculer automatiquement les soldes ;
 ·	générer les reçus ;
-·	suivre les examens ;
+·	suivre les examens regroupés en sessions ;
 ·	gérer les expirations ;
 ·	gérer les reprises après expiration ;
-·	gérer la caisse ;
+·	gérer une caisse interne indépendante des paiements de formation ;
 ·	fournir un tableau de bord ;
 ·	produire des rapports ;
 ·	gérer les utilisateurs et leurs droits ;
@@ -58,7 +60,22 @@ Acteur	Responsabilités
 Administrateur	Supervision générale, utilisateurs, droits, paramétrage et consultation globale
 Secrétaire	Gestion administrative des candidats, dossiers et inscriptions
 Caissière	Encaissements, reçus et gestion de la caisse
-Moniteur	Suivi pédagogique, formation pratique et examens
+Moniteur	Suivi pédagogique, formation pratique et examens, sur son ou ses site(s) et spécialité(s) de rattachement
+
+4.1 Sites de formation
+L'auto-école peut exploiter plusieurs sites de formation.
+Chaque site possède :
+·	un nom (unique) ;
+·	une adresse ;
+·	un statut actif/inactif.
+Un candidat est rattaché à un site via son inscription. La liste des sites est gérée par l'Administrateur (création, modification, activation/désactivation).
+4.2 Rattachement des moniteurs (sites et spécialités)
+Un Moniteur peut être rattaché à un ou plusieurs sites, et à une ou plusieurs spécialités (Code, Créneau, Circulation).
+L'accès du Moniteur est restreint automatiquement :
+·	aux candidats inscrits sur ses site(s) de rattachement ;
+·	aux examens et sessions relevant de ses spécialités ;
+·	au tableau de bord, limité aux mêmes sites et spécialités.
+Un Moniteur non rattaché à aucun site, ou consultant une donnée hors de son périmètre, n'obtient aucun résultat (ou une erreur d'accès selon le cas). Ce contrôle est appliqué côté backend et ne dépend pas de l'affichage Angular.
 
 5. AUTHENTIFICATION ET SÉCURITÉ
 L'accès à l'application est réservé au personnel autorisé.
@@ -88,6 +105,7 @@ La fiche candidat devra permettre d'enregistrer :
 ·	autres contacts utiles ;
 ·	date d'inscription ;
 ·	catégorie de permis demandée ;
+·	site de formation ;
 ·	informations administratives du dossier.
 6.2 Identifiant
 Chaque candidat possède un numéro de dossier unique généré automatiquement.
@@ -105,14 +123,22 @@ La recherche pourra être effectuée par :
 ·	catégorie ;
 ·	statut du dossier ;
 ·	statut financier ;
-·	statut de formation.
+·	statut de formation ;
+·	site de formation.
+6.5 Prise en charge des frais d'examen
+À l'inscription (ou à sa modification), il est possible d'indiquer si les frais de formation déjà versés englobent la prise en charge totale des frais d'examen par l'auto-école, ou si le candidat les règle lui-même séparément.
+Cette information est utilisée par le module Caisse (§15) pour déterminer automatiquement quels candidats programmés à une date d'examen doivent être décaissés.
+6.6 Indicateur de programmation
+Un candidat déjà programmé à une épreuve (résultat encore en attente) est signalé comme « Programmé » sur la liste des candidats. Un candidat dans cet état ne peut pas être sélectionné pour une nouvelle programmation d'examen tant que son passage en cours n'a pas reçu de résultat ou n'a pas été retiré.
 7. MODULE DES INSCRIPTIONS
 7.1 Création d'une inscription
 Lors de l'inscription, le candidat est associé :
 ·	à une catégorie de permis ;
 ·	à un forfait ;
+·	à un site de formation ;
 ·	à une date d'inscription ;
-·	à une date d'expiration calculée automatiquement.
+·	à une date d'expiration calculée automatiquement ;
+·	à une indication de prise en charge (ou non) des frais d'examen (cf. §6.5).
 7.2 Date de début
 La date d'inscription constitue le point de départ de la période de validité.
 7.3 Durée de validité
@@ -139,6 +165,22 @@ Lorsqu'une difficulté particulière empêche ou ralentit la formation, le candi
 L'absence d'un paiement mensuel ne doit pas entraîner automatiquement la suspension de la formation.
 Il n'existe aucun échéancier mensuel obligatoire.
 La situation financière et la progression pédagogique doivent être suivies séparément.
+8.6 Étapes du parcours pédagogique
+Le système suit automatiquement l'étape du parcours de chaque inscription, dans l'ordre suivant :
+1.	Inscription ;
+2.	Code (formation théorique) ;
+3.	Examen Code (programmé) ;
+4.	Créneau (manœuvre) ;
+5.	Examen Créneau (programmé) ;
+6.	Circulation (conduite) ;
+7.	Examen Circulation (programmé) ;
+8.	Permis obtenu.
+Une étape « Expirée » prime sur toute autre étape lorsque la durée de validité de l'inscription (§11) est dépassée.
+Le passage d'une étape à l'autre est automatique :
+·	le premier versement fait passer l'inscription de « Inscription » à « Code » ;
+·	la programmation d'un examen fait passer à l'étape « Examen … (programmé) » correspondante ;
+·	un résultat Réussi fait avancer à l'étape suivante (ou à « Permis obtenu » après la Circulation) ;
+·	un résultat Ajourné, ou le retrait du candidat de la session, ramène l'inscription à l'étape précédant l'examen.
 9. MODULE DES FORFAITS
 Forfait	Montant
 Forfait 1	100 000 FCFA
@@ -175,6 +217,11 @@ Toute modification ou annulation est contrôlée par les droits de l'utilisateur
 ·	date et heure ;
 ·	opération ;
 ·	motif.
+L'annulation d'un versement met à jour le solde de l'inscription ; elle ne génère plus de mouvement automatique dans le module Caisse (§15), désormais indépendant des paiements de formation.
+10.7 Résumé des paiements
+La page Paiements affiche un résumé global, tous dossiers actifs confondus :
+·	total encaissé ;
+·	total restant dû.
 11. EXPIRATION DE L'INSCRIPTION
 11.1 Déclenchement
 Date d'expiration = Date d'inscription + 8 mois
@@ -214,36 +261,51 @@ Les trois types d'épreuves sont :
 1.	Code
 2.	Créneau
 3.	Circulation
-Pour chaque type, le système permet actuellement d'enregistrer jusqu'à 5 passages.
-Chaque passage contient :
-·	date ;
+13.1 Sessions d'examen
+Les passages sont regroupés en sessions : une session correspond à une épreuve, une date, un site et un moniteur donnés, et peut réunir plusieurs candidats.
+Une session affiche un statut calculé :
+·	En cours, tant qu'au moins un candidat de la session est en attente de résultat ;
+·	Terminée, lorsque tous les candidats de la session ont reçu un résultat définitif.
+La date d'une session peut être modifiée.
+13.2 Passages et résultats
+Chaque passage (candidat rattaché à une session) contient :
+·	date (celle de la session) ;
 ·	résultat ;
 ·	observation.
-Résultats possibles notamment :
-·	PROGRAMMÉ ;
+Résultats possibles :
+·	PROGRAMMÉ (en attente) ;
 ·	RÉUSSI ;
-·	ÉCHEC ;
 ·	AJOURNÉ.
+Le nombre maximal de tentatives (résultats Ajourné) est fixé à 5 par épreuve et par candidat ; ce plafond atteint, une nouvelle programmation sur cette épreuve est refusée.
 Tous les passages restent consultables dans l'historique.
+13.3 Retrait d'un candidat d'une session
+Un candidat peut être retiré d'une session avant la saisie de son résultat. Le retrait supprime le passage : le candidat redevient immédiatement disponible pour une nouvelle programmation, et son étape de parcours (§8.6) revient à l'étape précédant l'examen.
+13.4 Filtrage par site et spécialité
+La liste des sessions et des candidats éligibles est filtrée selon le rôle :
+·	Administrateur et Secrétaire voient l'ensemble des sites ;
+·	Moniteur ne voit que les sessions de son ou ses site(s) et spécialité(s) de rattachement (§4.2).
 14. SUIVI DE LA PROGRESSION
 La fiche candidat distingue :
-·	Administratif : dossier, inscription, catégorie, validité ;
+·	Administratif : dossier, inscription, catégorie, site, validité ;
 ·	Financier : forfait, total payé, solde, statut ;
-·	Pédagogique : théorie, pratique, progression ;
+·	Pédagogique : théorie, pratique, étape du parcours (§8.6) ;
 ·	Examens : Code, Créneau, Circulation.
 15. MODULE DE GESTION DE LA CAISSE
+La Caisse & Trésorerie est une caisse interne, indépendante des paiements de formation (module Paiements, §10). Les versements des candidats et leurs annulations n'alimentent plus automatiquement ce module.
 15.1 Entrées
-·	encaissements ;
 ·	recettes diverses ;
+·	prélèvement sur les frais de formation (§15.6) ;
 ·	autres entrées autorisées.
 15.2 Sorties
 ·	charges ;
 ·	dépenses de fonctionnement ;
+·	frais d'examen (§15.6) ;
 ·	autres sorties autorisées.
 15.3 Transaction
 Chaque transaction contient :
 ·	date ;
-·	type ;
+·	type de mouvement (entrée/sortie) ;
+·	type d'opération (§15.6) ;
 ·	montant ;
 ·	libellé ;
 ·	utilisateur.
@@ -251,6 +313,13 @@ Chaque transaction contient :
 Solde caisse = Total des entrées − Total des sorties
 15.5 Historique
 Consultation, filtrage par période et distinction entrées/sorties.
+15.6 Types d'opération
+Trois types d'opération sont distingués :
+·	Autre — saisie libre classique (montant et libellé saisis manuellement), comportement historique ;
+·	Frais d'examen — décaissement (sortie) : l'utilisateur choisit une épreuve, une date d'examen et les candidats pris en charge parmi ceux éligibles (candidats programmés à cette épreuve et cette date dont l'inscription bénéficie de la prise en charge des frais d'examen, §6.5) ; le montant est calculé automatiquement (nombre de candidats × tarif unitaire de l'épreuve, §15.7) ;
+·	Prélèvement sur frais de formation — encaissement (entrée) : un montant est transféré des frais de formation déjà encaissés vers la caisse interne ; ce montant ne peut pas dépasser le solde disponible, égal au total encaissé en formation diminué des prélèvements déjà effectués.
+15.7 Tarifs des examens
+L'Administrateur configure, dans le paramétrage (§27.10), un tarif unitaire par épreuve (Code, Créneau, Circulation), utilisé pour le calcul automatique des décaissements « Frais d'examen ».
 16. TABLEAU DE BORD
 Indicateurs :
 ·	nombre total de candidats ;
@@ -264,7 +333,7 @@ Indicateurs :
 ·	prochains examens ;
 ·	dernières transactions ;
 ·	candidats en cours de formation.
-Les informations sensibles sont limitées selon le rôle.
+Les informations sensibles sont limitées selon le rôle. Pour le Moniteur, l'ensemble des indicateurs est en outre restreint à son ou ses site(s) et spécialité(s) de rattachement (§4.2).
 17. RAPPORTS ET EXPORTS
 Rapports prévus :
 ·	liste des candidats ;
@@ -280,14 +349,16 @@ Seul l'Administrateur peut :
 ·	modifier un utilisateur ;
 ·	désactiver un compte ;
 ·	attribuer un rôle ;
+·	rattacher un moniteur à un ou plusieurs sites et spécialités ;
 ·	consulter les utilisateurs ;
-·	gérer les paramètres autorisés.
+·	gérer les paramètres autorisés (dont les sites de formation et les tarifs des examens).
 19. MATRICE DES DROITS
 La matrice des droits définit les actions autorisées pour chaque utilisateur selon son rôle dans le système.
 Module	Administrateur	Secrétaire	Caissière	Moniteur
 Candidats	Gestion complète	Gestion complète	Consultation	Consultation
 Inscriptions	Gestion complète	Gestion complète	Consultation	Aucun accès
 Catégories de permis	Gestion complète	Consultation	Consultation	Consultation
+Sites de formation	Gestion complète	Consultation	Consultation	Consultation (ses sites)
 Forfaits	Gestion complète	Consultation	Consultation	Aucun accès
 Paiements	Gestion complète	Consultation	Gestion complète	Aucun accès
 Reçus	Gestion complète	Consultation	Gestion complète	Aucun accès
@@ -339,7 +410,8 @@ La Caissière est responsable des opérations financières. Elle peut notamment 
 ·	consulter l'historique des paiements ;
 ·	générer et réimprimer les reçus ;
 ·	gérer les entrées et sorties de caisse ;
-·	consulter les informations nécessaires à l'identification du candidat.
+·	consulter les informations nécessaires à l'identification du candidat ;
+·	exporter la liste des candidats (PDF/Excel).
 Elle ne peut pas gérer les informations pédagogiques, les examens ou les utilisateurs.
 Moniteur
 Le Moniteur est responsable du suivi pédagogique des candidats. Il peut notamment :
@@ -347,6 +419,7 @@ Le Moniteur est responsable du suivi pédagogique des candidats. Il peut notamme
 ·	enregistrer ou mettre à jour la progression de la formation ;
 ·	suivre les heures théoriques et pratiques ;
 ·	gérer les informations liées aux examens et aux passages autorisés.
+Son accès est restreint à son ou ses site(s) et spécialité(s) de rattachement (§4.2).
 Il ne peut pas gérer les paiements, la caisse ou les utilisateurs.
 19.3 Principe de sécurité
 Les droits définis dans cette matrice constituent les droits fonctionnels généraux. Le contrôle réel des permissions doit être effectué côté backend Spring Boot afin qu'un utilisateur ne puisse pas contourner les restrictions en modifiant l'interface Angular.
@@ -367,11 +440,19 @@ Chaque action sensible doit être contrôlée selon le rôle de l'utilisateur et
 ·	RG13 — Reprise : nouvelle inscription après expiration.
 ·	RG14 — Nouveau forfait : 100 000 ou 125 000 FCFA selon le forfait.
 ·	RG15 — Pénalité : 25 000 FCFA selon les conditions validées.
-·	RG16 — Examens : Code, Créneau, Circulation.
+·	RG16 — Examens : Code, Créneau, Circulation, regroupés en sessions.
 ·	RG17 — Soldé : total des versements égal au forfait.
 ·	RG18 — Reçu : numéro unique et séquentiel.
 ·	RG19 — Solde : recalcul automatique.
 ·	RG20 — Traçabilité : opérations sensibles historisées.
+·	RG21 — Multi-site : un candidat est rattaché à un site ; un moniteur peut être rattaché à plusieurs sites et spécialités.
+·	RG22 — Accès moniteur : restreint aux candidats, examens et indicateurs de son ou ses site(s)/spécialité(s).
+·	RG23 — Résultats d'examen : PROGRAMMÉ, RÉUSSI ou AJOURNÉ (pas de résultat ÉCHEC distinct).
+·	RG24 — Tentatives : maximum 5 résultats Ajourné par épreuve et par candidat.
+·	RG25 — Programmation : un candidat déjà programmé sur une épreuve ne peut pas être reprogrammé tant que son résultat n'est pas connu ou qu'il n'a pas été retiré.
+·	RG26 — Caisse interne : indépendante des paiements de formation, aucun mouvement automatique généré par un versement ou son annulation.
+·	RG27 — Frais d'examen : décaissement calculé automatiquement (nombre de candidats pris en charge × tarif configuré par épreuve).
+·	RG28 — Prélèvement formation : plafonné au total encaissé en formation diminué des prélèvements déjà effectués.
 21. STATUTS DU CANDIDAT
 Le système pourra utiliser notamment :
 ·	EN_COURS ;
@@ -381,6 +462,7 @@ Le système pourra utiliser notamment :
 ·	REPRISE ;
 ·	TERMINE.
 Les statuts définitifs seront validés lors de la conception.
+Ce statut (administratif/financier) est distinct de l'étape du parcours pédagogique (§8.6), qui suit séparément la progression du candidat dans sa formation et ses examens.
 22. ARCHITECTURE TECHNIQUE
 ANGULAR (Frontend)
         |
@@ -425,21 +507,30 @@ frontend/
     ├── rapports/
     └── utilisateurs/
 
+22.3 Déploiement
+L'application est packagée pour un déploiement Docker en production :
+·	backend : image Java (build multi-étapes, exécution non-root) ;
+·	frontend : image Nginx servant le build Angular et relayant les appels /api vers le backend ;
+·	base de données : PostgreSQL ;
+·	orchestration via docker-compose, avec variables d'environnement dédiées (identifiants base de données, secret JWT, origines CORS autorisées, etc.) et vérifications de démarrage (healthchecks).
+
 23. BASE DE DONNÉES
 Principales entités :
 ·	Utilisateur ;
 ·	Role ;
+·	Site ;
 ·	Candidat ;
 ·	CategoriePermis ;
 ·	Forfait ;
-·	Inscription ;
+·	Inscription (dont étape de parcours et prise en charge des frais d'examen) ;
 ·	Formation ;
 ·	ProgressionFormation ;
 ·	Paiement ;
 ·	Recu ;
-·	Examen ;
+·	SessionExamen ;
 ·	PassageExamen ;
-·	TransactionCaisse ;
+·	TransactionCaisse (dont type d'opération, candidats concernés) ;
+·	ConfigurationApplication (dont tarifs des examens) ;
 ·	HistoriqueAction.
 La conception doit permettre de distinguer le candidat, ses inscriptions successives, ses anciens parcours, ses paiements, ses formations et ses examens.
 24. API REST
@@ -452,23 +543,26 @@ GET    /api/candidats/{id}
 PUT    /api/candidats/{id}
 DELETE /api/candidats/{id}
 
-GET    /api/categories-permis
-POST   /api/categories-permis
+GET    /api/parametrage/categories
+POST   /api/parametrage/categories
+PUT    /api/parametrage/categories/{id}
 
 GET    /api/inscriptions
 POST   /api/inscriptions
 GET    /api/inscriptions/{id}
 
-GET    /api/forfaits
-POST   /api/forfaits
-PUT    /api/forfaits/{id}
+GET    /api/parametrage/sites
+POST   /api/parametrage/sites
+PUT    /api/parametrage/sites/{id}
 
 GET    /api/paiements
 POST   /api/paiements
 PUT    /api/paiements/{id}
 DELETE /api/paiements/{id}
+GET    /api/paiements/resume
 
 GET    /api/examens
+GET    /api/examens/sessions
 POST   /api/examens
 PUT    /api/examens/{id}
 
@@ -478,6 +572,7 @@ PUT    /api/formations/{id}
 
 GET    /api/caisse/transactions
 POST   /api/caisse/transactions
+GET    /api/caisse/candidats-frais-examen
 
 GET    /api/dashboard
 
@@ -489,6 +584,9 @@ GET    /api/rapports/caisse
 GET    /api/utilisateurs
 POST   /api/utilisateurs
 PUT    /api/utilisateurs/{id}
+
+GET    /api/configuration/tarifs-examens
+PUT    /api/configuration/tarifs-examens
 
 25. SÉCURITÉ
 Le système devra assurer :
@@ -525,9 +623,9 @@ L'historique doit identifier l'utilisateur, l'action, la date et le motif lorsqu
 ·	examens ;
 ·	transactions.
 27.3 Candidats
-·	liste ;
+·	liste (avec colonne site et indicateur « Programmé ») ;
 ·	recherche ;
-·	filtres ;
+·	filtres (dont par site) ;
 ·	création ;
 ·	modification ;
 ·	détail.
@@ -552,6 +650,7 @@ Examens
 Historique
 
 27.5 Paiements
+·	résumé global (total encaissé / reste à payer) ;
 ·	nouveau versement ;
 ·	historique ;
 ·	solde ;
@@ -566,12 +665,15 @@ Historique
 ·	Code ;
 ·	Créneau ;
 ·	Circulation ;
-·	passages ;
+·	sessions (candidats regroupés, statut En cours/Terminée) ;
+·	filtre par site ;
 ·	résultats.
 27.8 Caisse
 ·	solde ;
 ·	entrées ;
 ·	sorties ;
+·	type d'opération (Frais d'examen, Prélèvement sur frais de formation, Autre) ;
+·	montant disponible pour prélèvement ;
 ·	historique ;
 ·	filtres.
 27.9 Rapports
@@ -584,8 +686,11 @@ Historique
 27.10 Administration
 ·	utilisateurs ;
 ·	rôles ;
+·	sites de formation ;
+·	rattachement des moniteurs (sites, spécialités) ;
 ·	forfaits ;
 ·	catégories ;
+·	tarifs des examens ;
 ·	paramètres de reprise et pénalités.
 28. VALIDATION DES DONNÉES
 L'application devra contrôler :
@@ -752,9 +857,16 @@ Reprise après expiration	Nouvelle inscription
 Nouveau forfait normal	100 000 ou 125 000 FCFA
 Pénalité éventuelle	25 000 FCFA, selon règle validée
 Épreuves	Code, Créneau, Circulation
-Passages	Jusqu'à 5 par épreuve
+Résultat d'examen	Programmé, Réussi ou Ajourné
+Tentatives	Maximum 5 (résultats Ajourné) par épreuve
+Passages	Regroupés en sessions (plusieurs candidats)
 Reçu	Numéro unique et séquentiel
 Solde	Calcul automatique
+Sites de formation	Un ou plusieurs, gérés par l'Administrateur
+Accès moniteur	Restreint à son ou ses site(s) et spécialité(s)
+Caisse interne	Indépendante des paiements de formation
+Frais d'examen (caisse)	Calcul automatique = candidats pris en charge × tarif épreuve
+Prélèvement sur frais de formation	Plafonné au solde disponible
 
 38. CONCLUSION
 Le projet consiste à développer une application web professionnelle permettant à l'auto-école de centraliser la gestion administrative, financière et pédagogique de ses candidats.
@@ -774,9 +886,9 @@ Le système devra notamment :
 11.	gérer les expirations ;
 12.	conserver l'historique ;
 13.	gérer les reprises après expiration ;
-14.	gérer la caisse ;
-15.	produire des rapports ;
-16.	assurer la traçabilité.
+14.	gérer plusieurs sites de formation et restreindre l'accès des moniteurs ;
+15.	gérer une caisse interne indépendante des paiements de formation ;
+16.	produire des rapports ;
+17.	assurer la traçabilité.
 Ce cahier des charges constitue la référence pour les phases suivantes :
 Analyse → Conception UML → Base de données → API → Maquettes → Backend → Frontend → Intégration → Tests → Déploiement.
-il

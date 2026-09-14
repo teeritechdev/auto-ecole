@@ -13,32 +13,41 @@ import { DashboardStats } from '../../core/models/models';
       <!-- HEADER BANNER -->
       <div class="welcome-banner">
         <div>
-          <h2>Bonjour, {{ currentUser?.nom }} {{ currentUser?.prenom }} 👋</h2>
+          <h2>Bonjour, {{ currentUser?.nom }} {{ currentUser?.prenom }}</h2>
           <p>Bienvenue sur votre espace de gestion <strong>Nerwaya Auto-École</strong> (Profil : <span class="role-badge">{{ currentUser?.role }}</span>)</p>
         </div>
         <div class="quick-actions">
+          <button class="btn btn-outline btn-sm" [disabled]="loadingStats" (click)="loadStats()" style="color: white; border-color: rgba(255,255,255,0.5);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+            {{ loadingStats ? 'Actualisation...' : 'Actualiser' }}
+          </button>
           @if (hasRole(['ADMIN', 'SECRETAIRE'])) {
             <a routerLink="/candidats" class="btn btn-primary btn-sm">
-              ➕ Nouveau Candidat
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="16" y1="11" x2="22" y2="11"/></svg>
+              Nouveau Candidat
             </a>
           }
           @if (hasRole(['ADMIN', 'CAISSIERE'])) {
             <a routerLink="/paiements" class="btn btn-success btn-sm">
-              💵 Nouvel Encaissement
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+              Nouvel Encaissement
             </a>
           }
           @if (hasRole(['ADMIN', 'CAISSIERE'])) {
             <a routerLink="/caisse" class="btn btn-secondary btn-sm">
-              🏦 Journal Caisse
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 21 8 3 8"/><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/></svg>
+              Journal Caisse
             </a>
           }
         </div>
       </div>
-    
+
       <!-- ALERTE EXPIRATION SI EXISTANTE -->
       @if (stats?.alertesExpiration && stats!.alertesExpiration.length > 0) {
         <div class="alert alert-warning">
-          <div class="alert-icon">⚠️</div>
+          <div class="alert-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
           <div class="alert-content">
             <strong>Attention — {{ stats!.alertesExpiration.length }} dossier(s) proche(s) de l'expiration (RG05 - Validité 8 mois) :</strong>
             <div class="alert-list">
@@ -56,7 +65,9 @@ import { DashboardStats } from '../../core/models/models';
       <div class="stats-grid">
         <!-- 1. Total Candidats -->
         <div class="stat-card primary">
-          <div class="stat-icon primary">👥</div>
+          <div class="stat-icon primary">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
           <div class="stat-info">
             <div class="stat-label">Total Candidats</div>
             <div class="stat-value">{{ stats?.totalCandidats || 0 }}</div>
@@ -71,7 +82,9 @@ import { DashboardStats } from '../../core/models/models';
         <!-- 2. Montant Total Encaissé -->
         @if (hasRole(['ADMIN', 'CAISSIERE', 'SECRETAIRE'])) {
           <div class="stat-card success">
-            <div class="stat-icon success">💰</div>
+            <div class="stat-icon success">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
+            </div>
             <div class="stat-info">
               <div class="stat-label">Total Encaissé</div>
               <div class="stat-value">{{ (stats?.montantTotalEncaisse || 0) | number }} <small>FCFA</small></div>
@@ -85,7 +98,9 @@ import { DashboardStats } from '../../core/models/models';
         <!-- 3. Solde Caisse Actuel -->
         @if (hasRole(['ADMIN', 'CAISSIERE'])) {
           <div class="stat-card info">
-            <div class="stat-icon info">🏦</div>
+            <div class="stat-icon info">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 21 8 3 8"/><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/></svg>
+            </div>
             <div class="stat-info">
               <div class="stat-label">Solde de Caisse</div>
               <div class="stat-value">{{ (stats?.soldeCaisseActuel || 0) | number }} <small>FCFA</small></div>
@@ -98,7 +113,9 @@ import { DashboardStats } from '../../core/models/models';
     
         <!-- 4. Réussite Examens -->
         <div class="stat-card warning">
-          <div class="stat-icon warning">🎓</div>
+          <div class="stat-icon warning">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg>
+          </div>
           <div class="stat-info">
             <div class="stat-label">Examens Pédagogiques</div>
             <div class="stat-value">{{ stats?.totalExamensReussis || 0 }} <small>réussis</small></div>
@@ -114,7 +131,10 @@ import { DashboardStats } from '../../core/models/models';
         <!-- Prochains Examens -->
         <div class="card">
           <div class="card-header">
-            <div class="card-title">📅 Prochains Examens Programmés</div>
+            <div class="card-title" style="display:flex; align-items:center; gap:0.5rem;">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              Prochains Examens Programmés
+            </div>
             <a routerLink="/examens" class="btn btn-outline btn-sm">Voir tout</a>
           </div>
     
@@ -162,7 +182,10 @@ import { DashboardStats } from '../../core/models/models';
         @if (hasRole(['ADMIN', 'CAISSIERE', 'SECRETAIRE'])) {
           <div class="card">
             <div class="card-header">
-              <div class="card-title">💵 Derniers Versements Enregistrés</div>
+              <div class="card-title" style="display:flex; align-items:center; gap:0.5rem;">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                Derniers Versements Enregistrés
+              </div>
               <a routerLink="/paiements" class="btn btn-outline btn-sm">Voir tout</a>
             </div>
             @if (!stats?.derniersPaiements || stats!.derniersPaiements.length === 0) {
@@ -291,6 +314,7 @@ import { DashboardStats } from '../../core/models/models';
 export class DashboardComponent implements OnInit {
   stats: DashboardStats | null = null;
   currentUser: any = null;
+  loadingStats = false;
 
   constructor(private apiService: ApiService, private authService: AuthService) {}
 
@@ -300,9 +324,10 @@ export class DashboardComponent implements OnInit {
   }
 
   loadStats(): void {
+    this.loadingStats = true;
     this.apiService.getDashboardStats().subscribe({
-      next: (res) => this.stats = res,
-      error: (err) => console.error('Erreur chargement stats:', err)
+      next: (res) => { this.stats = res; this.loadingStats = false; },
+      error: (err) => { console.error('Erreur chargement stats:', err); this.loadingStats = false; }
     });
   }
 

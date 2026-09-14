@@ -49,7 +49,16 @@ export class AuthService {
   }
 
   public changePassword(data: { ancienPassword: string; nouveauPassword: string }): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/change-password`, data);
+    return this.http.post<void>(`${this.apiUrl}/change-password`, data).pipe(
+      tap(() => {
+        const current = this.currentUserValue;
+        if (current) {
+          const updatedUser = { ...current, doitChangerMotDePasse: false };
+          localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+          this.currentUserSubject.next(updatedUser);
+        }
+      })
+    );
   }
 
   public updateMyPhoto(photoProfile: string | null): Observable<User> {

@@ -17,7 +17,8 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
         </div>
         <div class="header-buttons">
           <button class="btn btn-primary" (click)="openCreateModal()">
-            ➕ Nouvel Utilisateur
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="17" y1="11" x2="23" y2="11"/></svg>
+            Nouvel Utilisateur
           </button>
         </div>
       </div>
@@ -76,7 +77,9 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   <td>{{ u.dateCreation | date:'dd/MM/yyyy' }}</td>
                   <td class="text-right">
                     <div class="table-actions">
-                      <button class="btn btn-outline btn-sm" (click)="openEditModal(u)" title="Modifier">✏️</button>
+                      <button class="btn btn-outline btn-sm" (click)="openEditModal(u)" title="Modifier">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+                      </button>
                       <button class="btn btn-sm" [ngClass]="u.actif ? 'btn-danger' : 'btn-success'" (click)="toggleActif(u)">
                         {{ u.actif ? 'Désactiver' : 'Activer' }}
                       </button>
@@ -94,13 +97,23 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
         <div class="modal-backdrop">
           <div class="modal-content">
             <div class="modal-header">
-              <h3>{{ isEdit ? '✏️ Modifier l’utilisateur' : '👤 Créer un compte utilisateur' }}</h3>
+              <h3 style="display:flex; align-items:center; gap:0.5rem;">
+                @if (isEdit) {
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+                } @else {
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+                }
+                {{ isEdit ? 'Modifier l’utilisateur' : 'Créer un compte utilisateur' }}
+              </h3>
               <button class="btn btn-outline btn-sm" (click)="showModal = false">✕</button>
             </div>
             <form (ngSubmit)="saveUtilisateur()">
               <div class="modal-body">
                 @if (formError) {
-                  <div class="alert alert-danger">⚠️ {{ formError }}</div>
+                  <div class="alert alert-danger">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    {{ formError }}
+                  </div>
                 }
                 @if (!isEdit) {
                   <div class="form-row">

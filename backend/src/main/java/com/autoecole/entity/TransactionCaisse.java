@@ -6,6 +6,13 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * Une opération de la Caisse & Trésorerie interne : caisse de dépenses/recettes diverses
+ * totalement autonome, indépendante des candidats, des inscriptions et des paiements de
+ * formation (ceux-ci sont suivis exclusivement dans le module Paiements). Chaque opération
+ * est rattachée à une {@link NatureOperation} qui détermine son sens (recette/dépense) —
+ * ce sens n'est jamais ressaisi ici, il est copié depuis la nature au moment de la création.
+ */
 @Entity
 @Table(name = "transactions_caisse", indexes = {
     @Index(name = "idx_caisse_date", columnList = "date_transaction"),
@@ -22,6 +29,12 @@ public class TransactionCaisse {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "nature_operation_id", nullable = false)
+    private NatureOperation natureOperation;
+
+    /** Copié depuis natureOperation.sens à la création (jamais saisi directement) : conservé
+     *  en colonne propre pour que les agrégations (solde, totaux) restent de simples sommes. */
     @Enumerated(EnumType.STRING)
     @Column(name = "type_mouvement", length = 30, nullable = false)
     private TypeMouvementCaisse typeMouvement;
@@ -32,11 +45,8 @@ public class TransactionCaisse {
     @Column(length = 255, nullable = false)
     private String libelle;
 
-    @Column(length = 100)
-    private String categorie;
-
-    @Column(name = "reference_piece", length = 100)
-    private String referencePiece;
+    @Column(name = "numero_facture", length = 100)
+    private String numeroFacture;
 
     @Builder.Default
     @Column(name = "date_transaction", nullable = false)
@@ -45,8 +55,4 @@ public class TransactionCaisse {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "utilisateur_id", nullable = false)
     private Utilisateur utilisateur;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "paiement_id")
-    private Paiement paiement;
 }

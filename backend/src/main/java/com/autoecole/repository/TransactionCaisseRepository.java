@@ -18,12 +18,12 @@ public interface TransactionCaisseRepository extends JpaRepository<TransactionCa
 
     @Query("SELECT tc FROM TransactionCaisse tc WHERE " +
            "(:type IS NULL OR tc.typeMouvement = :type) " +
-           "AND (:categorie IS NULL OR tc.categorie = :categorie) " +
+           "AND (:natureOperationId IS NULL OR tc.natureOperation.id = :natureOperationId) " +
            "AND (CAST(:debut AS timestamp) IS NULL OR tc.dateTransaction >= :debut) " +
            "AND (CAST(:fin AS timestamp) IS NULL OR tc.dateTransaction <= :fin)")
     Page<TransactionCaisse> filtrerTransactions(
             @Param("type") TypeMouvementCaisse type,
-            @Param("categorie") String categorie,
+            @Param("natureOperationId") Long natureOperationId,
             @Param("debut") LocalDateTime debut,
             @Param("fin") LocalDateTime fin,
             Pageable pageable

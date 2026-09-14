@@ -21,6 +21,17 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
     open-in-view: false
 
+# Supervision : seul /actuator/health est exposé (pour les probes Docker / orchestrateur),
+# sans détail interne (composants, connexions DB, etc.) qui pourrait renseigner un attaquant.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
 # OpenAPI Documentation
 springdoc:
   api-docs:

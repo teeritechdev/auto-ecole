@@ -296,11 +296,11 @@ public class ExportService {
             title.setSpacingAfter(15);
             document.add(title);
 
-            PdfPTable table = new PdfPTable(6);
+            PdfPTable table = new PdfPTable(7);
             table.setWidthPercentage(100);
-            table.setWidths(new float[]{3f, 2f, 5f, 3f, 3f, 3f});
+            table.setWidths(new float[]{3f, 4f, 2f, 5f, 3f, 3f, 3f});
 
-            String[] heads = {"Date", "Mouvement", "Libellé", "Réf. Pièce", "Montant", "Agent"};
+            String[] heads = {"Date", "Nature d'opération", "Mouvement", "Libellé", "N° Facture", "Montant", "Agent"};
             for (String h : heads) {
                 PdfPCell cell = new PdfPCell(new Phrase(h, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, Color.WHITE)));
                 cell.setBackgroundColor(PRIMARY_COLOR);
@@ -313,9 +313,10 @@ public class ExportService {
 
             for (TransactionCaisseDTO tx : transactions) {
                 table.addCell(new Phrase(tx.getDateTransaction() != null ? tx.getDateTransaction().format(dtf) : "", regFont));
+                table.addCell(new Phrase(tx.getNatureOperation() != null ? tx.getNatureOperation().getLibelle() : "-", regFont));
                 table.addCell(new Phrase(tx.getTypeMouvement().name(), regFont));
                 table.addCell(new Phrase(tx.getLibelle(), regFont));
-                table.addCell(new Phrase(tx.getReferencePiece() != null ? tx.getReferencePiece() : "-", regFont));
+                table.addCell(new Phrase(tx.getNumeroFacture() != null ? tx.getNumeroFacture() : "-", regFont));
                 table.addCell(new Phrase(tx.getMontant() + " FCFA", regFont));
                 table.addCell(new Phrase(tx.getUtilisateurNomComplet(), regFont));
             }
@@ -334,7 +335,7 @@ public class ExportService {
             Sheet sheet = workbook.createSheet("Journal de Caisse");
 
             org.apache.poi.ss.usermodel.Row headerRow = sheet.createRow(0);
-            String[] cols = {"Date", "Type Mouvement", "Libellé", "Catégorie", "Réf Pièce", "Montant (FCFA)", "Agent"};
+            String[] cols = {"Date", "Nature d'opération", "Plan comptable", "Type Mouvement", "Libellé", "N° Facture", "Montant (FCFA)", "Agent"};
             for (int i = 0; i < cols.length; i++) {
                 org.apache.poi.ss.usermodel.Cell cell = headerRow.createCell(i);
                 cell.setCellValue(cols[i]);
@@ -344,12 +345,13 @@ public class ExportService {
             for (TransactionCaisseDTO tx : transactions) {
                 org.apache.poi.ss.usermodel.Row row = sheet.createRow(r++);
                 row.createCell(0).setCellValue(tx.getDateTransaction() != null ? tx.getDateTransaction().toString() : "");
-                row.createCell(1).setCellValue(tx.getTypeMouvement().name());
-                row.createCell(2).setCellValue(sanitizeForExcel(tx.getLibelle()));
-                row.createCell(3).setCellValue(sanitizeForExcel(tx.getCategorie() != null ? tx.getCategorie() : ""));
-                row.createCell(4).setCellValue(sanitizeForExcel(tx.getReferencePiece() != null ? tx.getReferencePiece() : ""));
-                row.createCell(5).setCellValue(tx.getMontant().doubleValue());
-                row.createCell(6).setCellValue(sanitizeForExcel(tx.getUtilisateurNomComplet()));
+                row.createCell(1).setCellValue(sanitizeForExcel(tx.getNatureOperation() != null ? tx.getNatureOperation().getLibelle() : ""));
+                row.createCell(2).setCellValue(sanitizeForExcel(tx.getNatureOperation() != null && tx.getNatureOperation().getPlanComptable() != null ? tx.getNatureOperation().getPlanComptable() : ""));
+                row.createCell(3).setCellValue(tx.getTypeMouvement().name());
+                row.createCell(4).setCellValue(sanitizeForExcel(tx.getLibelle()));
+                row.createCell(5).setCellValue(sanitizeForExcel(tx.getNumeroFacture() != null ? tx.getNumeroFacture() : ""));
+                row.createCell(6).setCellValue(tx.getMontant().doubleValue());
+                row.createCell(7).setCellValue(sanitizeForExcel(tx.getUtilisateurNomComplet()));
             }
 
             for (int i = 0; i < cols.length; i++) {

@@ -27,6 +27,21 @@ export const roleGuard: CanActivateFn = (route, state) => {
     return true;
   }
 
-  router.navigate(['/dashboard']);
+  router.navigate([authService.hasRole(['CANDIDAT']) ? '/espace-candidat' : '/dashboard']);
   return false;
+};
+
+/**
+ * Un compte CANDIDAT dont le mot de passe temporaire n'a pas encore été changé est
+ * redirigé vers l'écran de changement de mot de passe avant tout accès à son espace.
+ */
+export const mustChangePasswordGuard: CanActivateFn = () => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  if (authService.currentUserValue?.doitChangerMotDePasse) {
+    router.navigate(['/premiere-connexion']);
+    return false;
+  }
+  return true;
 };

@@ -188,9 +188,9 @@ button, input, select, textarea {
   gap: 0.75rem;
   padding: 0.7rem 0.85rem;
   border-radius: var(--radius-md);
-  color: #475569;
+  color: var(--text-main);
+  font-weight: 600;
   font-size: 0.9rem;
-  font-weight: 500;
   transition: all var(--transition-fast);
   cursor: pointer;
 }

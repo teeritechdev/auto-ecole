@@ -16,30 +16,9 @@ import { DashboardStats } from '../../core/models/models';
           <h2>Bonjour, {{ currentUser?.nom }} {{ currentUser?.prenom }}</h2>
           <p>Bienvenue sur votre espace de gestion <strong>Nerwaya Auto-École</strong> (Profil : <span class="role-badge">{{ currentUser?.role }}</span>)</p>
         </div>
-        <div class="quick-actions">
-          <button class="btn btn-outline btn-sm" [disabled]="loadingStats" (click)="loadStats()" style="color: white; border-color: rgba(255,255,255,0.5);">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
-            {{ loadingStats ? 'Actualisation...' : 'Actualiser' }}
-          </button>
-          @if (hasRole(['ADMIN', 'SECRETAIRE'])) {
-            <a routerLink="/candidats" class="btn btn-primary btn-sm">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="16" y1="11" x2="22" y2="11"/></svg>
-              Nouveau Candidat
-            </a>
-          }
-          @if (hasRole(['ADMIN', 'CAISSIERE'])) {
-            <a routerLink="/paiements" class="btn btn-success btn-sm">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-              Nouvel Encaissement
-            </a>
-          }
-          @if (hasRole(['ADMIN', 'CAISSIERE'])) {
-            <a routerLink="/caisse" class="btn btn-secondary btn-sm">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 21 8 3 8"/><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/></svg>
-              Journal Caisse
-            </a>
-          }
-        </div>
+        <button class="refresh-btn" [class.spinning]="loadingStats" [disabled]="loadingStats" (click)="loadStats()" title="Actualiser les statistiques">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+        </button>
       </div>
 
       <!-- ALERTE EXPIRATION SI EXISTANTE -->
@@ -265,10 +244,36 @@ import { DashboardStats } from '../../core/models/models';
       color: #ffffff;
     }
 
-    .quick-actions {
-      display: flex;
-      gap: 0.5rem;
-      flex-wrap: wrap;
+    .refresh-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.75rem;
+      height: 2.75rem;
+      flex-shrink: 0;
+      border-radius: var(--radius-full);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      background: rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+      cursor: pointer;
+      transition: background var(--transition-fast), transform var(--transition-fast);
+    }
+
+    .refresh-btn:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.24);
+      transform: translateY(-1px);
+    }
+
+    .refresh-btn:disabled {
+      cursor: not-allowed;
+    }
+
+    .refresh-btn.spinning svg {
+      animation: refresh-spin 0.8s linear infinite;
+    }
+
+    @keyframes refresh-spin {
+      to { transform: rotate(360deg); }
     }
 
     .alert-list {

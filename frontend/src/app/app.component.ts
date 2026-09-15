@@ -23,7 +23,7 @@ import { extraireMessageErreur } from './core/utils/error-utils';
       <div class="app-container">
         <!-- OVERLAY (mobile) : referme la barre latérale au clic à l'extérieur -->
         @if (sidebarOpen) {
-          <div class="sidebar-backdrop" (click)="sidebarOpen = false"></div>
+          <div class="sidebar-backdrop" (click)="sidebarOpen = false; closeParamSubmenu()"></div>
         }
         <!-- ZONE DE SURVOL : ramène le curseur sur le bord gauche pour rouvrir -->
         @if (!sidebarOpen) {
@@ -119,10 +119,16 @@ import { extraireMessageErreur } from './core/utils/error-utils';
               </a>
             }
             @if (hasRole(['ADMIN'])) {
-              <a routerLink="/parametrage" routerLinkActive="active" class="nav-item">
-                <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82A1.65 1.65 0 0 0 3 13.09H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
-                <span>Paramètres Généraux</span>
-              </a>
+              <div class="nav-item-flyout" [class.open]="paramSubmenuOpen"
+                   (mouseenter)="openParamSubmenu($event)" (mouseleave)="scheduleCloseParamSubmenu()">
+                <a routerLink="/parametrage" routerLinkActive="active" class="nav-item">
+                  <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82A1.65 1.65 0 0 0 3 13.09H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+                  <span>Paramètres Généraux</span>
+                </a>
+                <button type="button" class="submenu-caret-btn" (click)="toggleParamSubmenu($event)" aria-label="Afficher les catégories de Paramètres Généraux">
+                  <svg class="submenu-caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+              </div>
             }
             @if (hasRole(['ADMIN'])) {
               <a routerLink="/code/questions" routerLinkActive="active" class="nav-item">
@@ -161,6 +167,20 @@ import { extraireMessageErreur } from './core/utils/error-utils';
             </div>
           </div>
         </aside>
+        <!-- SOUS-MENU "PARAMÈTRES GÉNÉRAUX" : rendu hors de <aside>/.sidebar-nav (qui a
+             overflow-y:auto, forçant aussi le clipping horizontal du sous-menu positionné
+             à côté) ; position calculée en JS et appliquée en position:fixed. -->
+        @if (paramSubmenuOpen) {
+          <div class="submenu-flyout"
+               [style.top.px]="paramSubmenuTop" [style.left.px]="paramSubmenuLeft" [style.width.px]="paramSubmenuWidth"
+               (mouseenter)="cancelCloseParamSubmenu()" (mouseleave)="scheduleCloseParamSubmenu()">
+            <a routerLink="/parametrage" [queryParams]="{tab: 'identite'}" class="submenu-item" (click)="closeParamSubmenu()">Identité</a>
+            <a routerLink="/parametrage" [queryParams]="{tab: 'categories'}" class="submenu-item" (click)="closeParamSubmenu()">Catégories de Permis</a>
+            <a routerLink="/parametrage" [queryParams]="{tab: 'tarifs'}" class="submenu-item" (click)="closeParamSubmenu()">Tarifs des Examens</a>
+            <a routerLink="/parametrage" [queryParams]="{tab: 'sites'}" class="submenu-item" (click)="closeParamSubmenu()">Sites de Formation</a>
+            <a routerLink="/parametrage" [queryParams]="{tab: 'stats'}" class="submenu-item" (click)="closeParamSubmenu()">Statistiques par Site</a>
+          </div>
+        }
         <!-- MAIN CONTENT WRAPPER -->
         <div class="main-wrapper" [class.sidebar-closed]="!sidebarOpen">
           <!-- TOPBAR -->
@@ -378,6 +398,85 @@ import { extraireMessageErreur } from './core/utils/error-utils';
       font-weight: 600;
     }
 
+    /* Sous-menu "Paramètres Généraux" : un petit panneau flottant à côté du lien plutôt
+       qu'un dépliage qui pousserait les liens suivants vers le bas. Affiché au survol sur
+       ordinateur (souris). Le tactile n'ayant pas de survol, un bouton chevron dédié
+       bascule le même état (paramSubmenuOpen) via toggleParamSubmenu() : il est
+       volontairement SÉPARÉ du lien "Paramètres Généraux" lui-même (qui navigue
+       normalement, sans interception), car empêcher la navigation d'un routerLink au clic
+       s'est révélé peu fiable (RouterLink navigue indépendamment de preventDefault/
+       stopPropagation posés sur un gestionnaire (click) séparé sur le même élément).
+       Rendu en position:fixed et hors de <aside> (cf. template) : .sidebar-nav a
+       overflow-y:auto, qui force aussi le clipping horizontal (overflow-x devient
+       implicitement auto), donc un panneau positionné à côté du lien mais resté DANS
+       .sidebar-nav serait invisible/inatteignable malgré un opacity:1 correct — la
+       position/largeur exactes sont calculées en JS (openParamSubmenu) selon la place
+       disponible à l'écran. */
+    .nav-item-flyout {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .nav-item-flyout .nav-item {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .submenu-caret-btn {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2rem;
+      height: 2rem;
+      background: transparent;
+      border: none;
+      border-radius: var(--radius-md);
+      color: #94a3b8;
+      cursor: pointer;
+    }
+
+    .submenu-caret-btn:hover {
+      background: var(--bg-sidebar-hover);
+      color: #ffffff;
+    }
+
+    .submenu-caret {
+      transition: transform var(--transition-fast);
+    }
+
+    .nav-item-flyout.open .submenu-caret {
+      transform: rotate(90deg);
+    }
+
+    .submenu-flyout {
+      position: fixed;
+      min-width: 220px;
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-lg);
+      padding: 0.4rem;
+      z-index: 45;
+    }
+
+    .submenu-item {
+      display: block;
+      padding: 0.6rem 0.85rem;
+      border-radius: var(--radius-sm);
+      color: #cbd5e1;
+      font-size: 0.87rem;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .submenu-item:hover {
+      background: var(--bg-sidebar-hover);
+      color: #ffffff;
+    }
+
     /* Icônes de la navigation : chaque rubrique a sa propre couleur au repos,
        et devient blanche lorsque son lien est actif (fond bleu). */
     .nav-icon { flex-shrink: 0; }
@@ -423,6 +522,11 @@ export class AppComponent {
   pwdSuccess = false;
   profileError = '';
   logoData: string | null = null;
+  paramSubmenuOpen = false;
+  paramSubmenuTop = 0;
+  paramSubmenuLeft = 0;
+  paramSubmenuWidth: number | null = null;
+  private paramSubmenuCloseTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(public authService: AuthService, private router: Router, private apiService: ApiService) {
     this.authService.currentUser$.subscribe(user => {
@@ -454,6 +558,75 @@ export class AppComponent {
 
   logout(): void {
     this.authService.logout();
+  }
+
+  /** Place le sous-menu à droite du lien s'il y a la place, sinon en dessous (petit écran) :
+   *  calculé dynamiquement plutôt qu'en CSS pur, car le panneau est rendu hors de <aside>
+   *  (cf. commentaire sur .submenu-flyout) et n'a donc plus de position relative naturelle
+   *  par rapport au lien survolé. */
+  private positionParamSubmenu(rect: DOMRect): void {
+    const largeurSousMenu = 220;
+    const marge = 8;
+    if (rect.right + marge + largeurSousMenu <= window.innerWidth) {
+      this.paramSubmenuTop = rect.top;
+      this.paramSubmenuLeft = rect.right + marge;
+      this.paramSubmenuWidth = null;
+    } else {
+      this.paramSubmenuTop = rect.bottom + 4;
+      this.paramSubmenuLeft = rect.left;
+      this.paramSubmenuWidth = rect.width;
+    }
+  }
+
+  /** Le tactile synthétise parfois mouseenter/mouseleave après un appui (sans survol réel
+   *  persistant) : sans ce garde-fou, le sous-menu ouvert par toggleParamSubmenu() se
+   *  refermait aussitôt via un mouseleave synthétique. Ces deux méthodes ne font donc rien
+   *  sur un appareil sans souris ; seul le bouton chevron y contrôle le sous-menu. */
+  private get survolDisponible(): boolean {
+    return typeof window !== 'undefined' && !!window.matchMedia && window.matchMedia('(hover: hover)').matches;
+  }
+
+  /** Survol (souris) : ouvre immédiatement, sans attendre un clic. */
+  openParamSubmenu(event: MouseEvent): void {
+    if (!this.survolDisponible) return;
+    this.cancelCloseParamSubmenu();
+    this.positionParamSubmenu((event.currentTarget as HTMLElement).getBoundingClientRect());
+    this.paramSubmenuOpen = true;
+  }
+
+  /** Petit délai avant de refermer, pour laisser le temps au curseur de traverser
+   *  l'intervalle entre le lien et le panneau (tous deux annulent ce délai à leur survol
+   *  via cancelCloseParamSubmenu, cf. template). */
+  scheduleCloseParamSubmenu(): void {
+    if (!this.survolDisponible) return;
+    this.paramSubmenuCloseTimer = setTimeout(() => { this.paramSubmenuOpen = false; }, 200);
+  }
+
+  cancelCloseParamSubmenu(): void {
+    if (this.paramSubmenuCloseTimer) {
+      clearTimeout(this.paramSubmenuCloseTimer);
+      this.paramSubmenuCloseTimer = null;
+    }
+  }
+
+  /** Bouton chevron dédié (séparé du lien qui navigue) : un appui bascule le sous-menu,
+   *  aussi bien tactile que souris. stopPropagation évite que la barre latérale entière se
+   *  referme (cf. (click) sur <nav class="sidebar-nav">, pensé pour les liens qui naviguent
+   *  réellement) et que le clic atteigne l'écouteur mouseleave du survol. */
+  toggleParamSubmenu(event: Event): void {
+    event.stopPropagation();
+    if (this.paramSubmenuOpen) {
+      this.paramSubmenuOpen = false;
+      return;
+    }
+    const wrapper = (event.currentTarget as HTMLElement).closest('.nav-item-flyout') as HTMLElement;
+    this.positionParamSubmenu(wrapper.getBoundingClientRect());
+    this.paramSubmenuOpen = true;
+  }
+
+  closeParamSubmenu(): void {
+    this.cancelCloseParamSubmenu();
+    this.paramSubmenuOpen = false;
   }
 
   onProfilePhotoSelected(event: Event): void {

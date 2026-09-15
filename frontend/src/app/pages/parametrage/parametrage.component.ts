@@ -1,11 +1,13 @@
 import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { CategoriePermis, Identite, Site, SiteStat } from '../../core/models/models';
 import { extraireMessageErreur } from '../../core/utils/error-utils';
 
 type OngletParametrage = 'identite' | 'categories' | 'tarifs' | 'sites' | 'stats';
+const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'tarifs', 'sites', 'stats'];
 
 @Component({
     selector: 'app-parametrage',
@@ -497,10 +499,19 @@ export class ParametrageComponent implements OnInit {
   tarifsSuccess = false;
   savingTarifs = false;
 
-  constructor(private apiService: ApiService) {}
+  constructor(private apiService: ApiService, private route: ActivatedRoute) {}
 
   ngOnInit(): void {
     this.loadData();
+    // Ouvre directement le bon onglet quand on arrive depuis le sous-menu de la barre
+    // latérale (?tab=...) ; s'abonne (plutôt qu'un simple snapshot) car Angular réutilise
+    // cette même instance de composant en changeant seulement les query params.
+    this.route.queryParams.subscribe(params => {
+      const tab = params['tab'];
+      if (ONGLETS_VALIDES.includes(tab)) {
+        this.activeTab = tab;
+      }
+    });
   }
 
   loadData(): void {

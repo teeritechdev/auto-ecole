@@ -17,33 +17,12 @@ const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'tarifs'
       <div class="page-header-bar">
         <div>
           <h2>Paramètres Généraux</h2>
-          <p>Identité de l'auto-école, tarifs, catégories de permis et sites de formation</p>
+          <p>{{ sousTitrePourOnglet() }}</p>
         </div>
       </div>
 
-      <!-- SOUS-ONGLETS -->
-      <div class="tabs-header">
-        <button class="tab-btn" [class.active]="activeTab === 'identite'" (click)="activeTab = 'identite'">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 13.42 20.6a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82Z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-          Identité
-        </button>
-        <button class="tab-btn" [class.active]="activeTab === 'categories'" (click)="activeTab = 'categories'">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L19 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2"/><circle cx="6.5" cy="16.5" r="2.5"/><circle cx="16.5" cy="16.5" r="2.5"/></svg>
-          Catégories de Permis
-        </button>
-        <button class="tab-btn" [class.active]="activeTab === 'tarifs'" (click)="activeTab = 'tarifs'">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg>
-          Tarifs des Examens
-        </button>
-        <button class="tab-btn" [class.active]="activeTab === 'sites'" (click)="activeTab = 'sites'">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><line x1="9" y1="9" x2="9" y2="9.01"/><line x1="9" y1="12" x2="9" y2="12.01"/><line x1="9" y1="15" x2="9" y2="15.01"/><line x1="9" y1="18" x2="9" y2="18.01"/></svg>
-          Sites de Formation
-        </button>
-        <button class="tab-btn" [class.active]="activeTab === 'stats'" (click)="activeTab = 'stats'">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-          Statistiques par Site
-        </button>
-      </div>
+      <!-- Navigation entre sections : via le sous-menu au survol de "Paramètres Généraux"
+           dans la barre latérale (plus de barre d'onglets redondante ici). -->
 
       <!-- ===================== ONGLET IDENTITÉ ===================== -->
       @if (activeTab === 'identite') {
@@ -389,44 +368,6 @@ const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'tarifs'
       margin-bottom: 1.5rem;
     }
 
-    .tabs-header {
-      display: flex;
-      gap: 0.5rem;
-      margin-bottom: 1.5rem;
-      background: var(--bg-card);
-      padding: 0.4rem;
-      border-radius: var(--radius-md);
-      border: 1px solid var(--border-color);
-      width: fit-content;
-      max-width: 100%;
-      /* Filet de sécurité si les libellés d'onglets ne tiennent pas sur un petit téléphone :
-         on défile horizontalement plutôt que de déborder de la page. */
-      overflow-x: auto;
-    }
-
-    .tab-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      flex-shrink: 0;
-      white-space: nowrap;
-      background: transparent;
-      border: none;
-      padding: 0.55rem 1.1rem;
-      border-radius: var(--radius-md);
-      font-weight: 600;
-      font-size: 0.88rem;
-      color: var(--text-muted);
-      cursor: pointer;
-    }
-
-    .tab-btn:hover { color: var(--text-main); }
-    .tab-btn.active {
-      background: var(--primary);
-      color: white;
-      box-shadow: var(--shadow-sm);
-    }
-
     .text-right { text-align: right; }
     .text-success { color: #15803d; }
     .text-danger { color: #b91c1c; }
@@ -512,6 +453,18 @@ export class ParametrageComponent implements OnInit {
         this.activeTab = tab;
       }
     });
+  }
+
+  /** Remplace la barre d'onglets (retirée, redondante avec le sous-menu de la barre
+   *  latérale) : précise quand même quelle section est affichée. */
+  sousTitrePourOnglet(): string {
+    switch (this.activeTab) {
+      case 'identite': return "Logo, nom et coordonnées de l'auto-école";
+      case 'categories': return 'Catégories de permis proposées et leur tarif';
+      case 'tarifs': return 'Tarifs unitaires des épreuves d\'examen';
+      case 'sites': return 'Sites de formation de l\'auto-école';
+      case 'stats': return 'Activité et finances de chaque site';
+    }
   }
 
   loadData(): void {

@@ -23,7 +23,7 @@ import { extraireMessageErreur } from './core/utils/error-utils';
       <div class="app-container">
         <!-- OVERLAY (mobile) : referme la barre latérale au clic à l'extérieur -->
         @if (sidebarOpen) {
-          <div class="sidebar-backdrop" (click)="sidebarOpen = false; closeParamSubmenu()"></div>
+          <div class="sidebar-backdrop" (click)="sidebarOpen = false; closeFlyout()"></div>
         }
         <!-- ZONE DE SURVOL : ramène le curseur sur le bord gauche pour rouvrir -->
         @if (!sidebarOpen) {
@@ -98,10 +98,16 @@ import { extraireMessageErreur } from './core/utils/error-utils';
               </a>
             }
             @if (hasRole(['ADMIN', 'CAISSIERE'])) {
-              <a routerLink="/caisse" routerLinkActive="active" class="nav-item">
-                <svg class="nav-icon icon-teal" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 21 8 3 8"/><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/></svg>
-                <span>Caisse Ménu Dépense</span>
-              </a>
+              <div class="nav-item-flyout" [class.open]="openFlyoutMenu === 'caisse'"
+                   (mouseenter)="openFlyout('caisse', $event)" (mouseleave)="scheduleCloseFlyout()">
+                <a routerLink="/caisse" routerLinkActive="active" class="nav-item">
+                  <svg class="nav-icon icon-teal" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 21 8 3 8"/><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/></svg>
+                  <span>Caisse Ménu Dépense</span>
+                </a>
+                <button type="button" class="submenu-caret-btn" (click)="toggleFlyout('caisse', $event)" aria-label="Afficher les catégories de Caisse Ménu Dépense">
+                  <svg class="submenu-caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+              </div>
             }
             @if (hasRole(['ADMIN', 'SECRETAIRE', 'CAISSIERE'])) {
               <a routerLink="/rapports" routerLinkActive="active" class="nav-item">
@@ -119,13 +125,13 @@ import { extraireMessageErreur } from './core/utils/error-utils';
               </a>
             }
             @if (hasRole(['ADMIN'])) {
-              <div class="nav-item-flyout" [class.open]="paramSubmenuOpen"
-                   (mouseenter)="openParamSubmenu($event)" (mouseleave)="scheduleCloseParamSubmenu()">
+              <div class="nav-item-flyout" [class.open]="openFlyoutMenu === 'parametrage'"
+                   (mouseenter)="openFlyout('parametrage', $event)" (mouseleave)="scheduleCloseFlyout()">
                 <a routerLink="/parametrage" routerLinkActive="active" class="nav-item">
                   <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82A1.65 1.65 0 0 0 3 13.09H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
                   <span>Paramètres Généraux</span>
                 </a>
-                <button type="button" class="submenu-caret-btn" (click)="toggleParamSubmenu($event)" aria-label="Afficher les catégories de Paramètres Généraux">
+                <button type="button" class="submenu-caret-btn" (click)="toggleFlyout('parametrage', $event)" aria-label="Afficher les catégories de Paramètres Généraux">
                   <svg class="submenu-caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                 </button>
               </div>
@@ -167,18 +173,25 @@ import { extraireMessageErreur } from './core/utils/error-utils';
             </div>
           </div>
         </aside>
-        <!-- SOUS-MENU "PARAMÈTRES GÉNÉRAUX" : rendu hors de <aside>/.sidebar-nav (qui a
-             overflow-y:auto, forçant aussi le clipping horizontal du sous-menu positionné
-             à côté) ; position calculée en JS et appliquée en position:fixed. -->
-        @if (paramSubmenuOpen) {
+        <!-- SOUS-MENU (Paramètres Généraux / Caisse Ménu Dépense) : rendu hors de
+             <aside>/.sidebar-nav (qui a overflow-y:auto, forçant aussi le clipping
+             horizontal du sous-menu positionné à côté) ; position calculée en JS et
+             appliquée en position:fixed. -->
+        @if (openFlyoutMenu) {
           <div class="submenu-flyout"
-               [style.top.px]="paramSubmenuTop" [style.left.px]="paramSubmenuLeft" [style.width.px]="paramSubmenuWidth"
-               (mouseenter)="cancelCloseParamSubmenu()" (mouseleave)="scheduleCloseParamSubmenu()">
-            <a routerLink="/parametrage" [queryParams]="{tab: 'identite'}" class="submenu-item" (click)="closeParamSubmenu()">Identité</a>
-            <a routerLink="/parametrage" [queryParams]="{tab: 'categories'}" class="submenu-item" (click)="closeParamSubmenu()">Catégories de Permis</a>
-            <a routerLink="/parametrage" [queryParams]="{tab: 'tarifs'}" class="submenu-item" (click)="closeParamSubmenu()">Tarifs des Examens</a>
-            <a routerLink="/parametrage" [queryParams]="{tab: 'sites'}" class="submenu-item" (click)="closeParamSubmenu()">Sites de Formation</a>
-            <a routerLink="/parametrage" [queryParams]="{tab: 'stats'}" class="submenu-item" (click)="closeParamSubmenu()">Statistiques par Site</a>
+               [style.top.px]="flyoutTop" [style.left.px]="flyoutLeft" [style.width.px]="flyoutWidth"
+               (mouseenter)="cancelCloseFlyout()" (mouseleave)="scheduleCloseFlyout()">
+            @if (openFlyoutMenu === 'parametrage') {
+              <a routerLink="/parametrage" [queryParams]="{tab: 'identite'}" class="submenu-item" (click)="closeFlyout()">Identité</a>
+              <a routerLink="/parametrage" [queryParams]="{tab: 'categories'}" class="submenu-item" (click)="closeFlyout()">Catégories de Permis</a>
+              <a routerLink="/parametrage" [queryParams]="{tab: 'tarifs'}" class="submenu-item" (click)="closeFlyout()">Tarifs des Examens</a>
+              <a routerLink="/parametrage" [queryParams]="{tab: 'sites'}" class="submenu-item" (click)="closeFlyout()">Sites de Formation</a>
+              <a routerLink="/parametrage" [queryParams]="{tab: 'stats'}" class="submenu-item" (click)="closeFlyout()">Statistiques par Site</a>
+            }
+            @if (openFlyoutMenu === 'caisse') {
+              <a routerLink="/caisse" [queryParams]="{tab: 'operations'}" class="submenu-item" (click)="closeFlyout()">Opérations</a>
+              <a routerLink="/caisse" [queryParams]="{tab: 'natures'}" class="submenu-item" (click)="closeFlyout()">Natures d'opération</a>
+            }
           </div>
         }
         <!-- MAIN CONTENT WRAPPER -->
@@ -399,20 +412,20 @@ import { extraireMessageErreur } from './core/utils/error-utils';
       font-weight: 600;
     }
 
-    /* Sous-menu "Paramètres Généraux" : un petit panneau flottant à côté du lien plutôt
-       qu'un dépliage qui pousserait les liens suivants vers le bas. Affiché au survol sur
-       ordinateur (souris). Le tactile n'ayant pas de survol, un bouton chevron dédié
-       bascule le même état (paramSubmenuOpen) via toggleParamSubmenu() : il est
-       volontairement SÉPARÉ du lien "Paramètres Généraux" lui-même (qui navigue
-       normalement, sans interception), car empêcher la navigation d'un routerLink au clic
-       s'est révélé peu fiable (RouterLink navigue indépendamment de preventDefault/
-       stopPropagation posés sur un gestionnaire (click) séparé sur le même élément).
+    /* Sous-menu de liens (Paramètres Généraux, Caisse Ménu Dépense...) : un petit panneau
+       flottant à côté du lien plutôt qu'un dépliage qui pousserait les liens suivants vers
+       le bas. Affiché au survol sur ordinateur (souris). Le tactile n'ayant pas de survol,
+       un bouton chevron dédié bascule le même état (openFlyoutMenu) via toggleFlyout() : il
+       est volontairement SÉPARÉ du lien lui-même (qui navigue normalement, sans
+       interception), car empêcher la navigation d'un routerLink au clic s'est révélé peu
+       fiable (RouterLink navigue indépendamment de preventDefault/stopPropagation posés sur
+       un gestionnaire (click) séparé sur le même élément).
        Rendu en position:fixed et hors de <aside> (cf. template) : .sidebar-nav a
        overflow-y:auto, qui force aussi le clipping horizontal (overflow-x devient
        implicitement auto), donc un panneau positionné à côté du lien mais resté DANS
        .sidebar-nav serait invisible/inatteignable malgré un opacity:1 correct — la
-       position/largeur exactes sont calculées en JS (openParamSubmenu) selon la place
-       disponible à l'écran. */
+       position/largeur exactes sont calculées en JS (openFlyout) selon la place disponible
+       à l'écran. Un seul sous-menu ouvert à la fois (openFlyoutMenu). */
     .nav-item-flyout {
       position: relative;
       display: flex;
@@ -523,11 +536,15 @@ export class AppComponent {
   pwdSuccess = false;
   profileError = '';
   logoData: string | null = null;
-  paramSubmenuOpen = false;
-  paramSubmenuTop = 0;
-  paramSubmenuLeft = 0;
-  paramSubmenuWidth: number | null = null;
-  private paramSubmenuCloseTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /** Sous-menu de la barre latérale actuellement ouvert (survol souris ou bouton chevron
+   *  tactile) : null = aucun. Un seul à la fois, mécanisme partagé par tous les liens qui
+   *  en ont un (Paramètres Généraux, Caisse Ménu Dépense...). */
+  openFlyoutMenu: 'parametrage' | 'caisse' | null = null;
+  flyoutTop = 0;
+  flyoutLeft = 0;
+  flyoutWidth: number | null = null;
+  private flyoutCloseTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(public authService: AuthService, private router: Router, private apiService: ApiService) {
     this.authService.currentUser$.subscribe(user => {
@@ -565,48 +582,49 @@ export class AppComponent {
    *  calculé dynamiquement plutôt qu'en CSS pur, car le panneau est rendu hors de <aside>
    *  (cf. commentaire sur .submenu-flyout) et n'a donc plus de position relative naturelle
    *  par rapport au lien survolé. */
-  private positionParamSubmenu(rect: DOMRect): void {
+  private positionFlyout(rect: DOMRect): void {
     const largeurSousMenu = 220;
     const marge = 8;
     if (rect.right + marge + largeurSousMenu <= window.innerWidth) {
-      this.paramSubmenuTop = rect.top;
-      this.paramSubmenuLeft = rect.right + marge;
-      this.paramSubmenuWidth = null;
+      this.flyoutTop = rect.top;
+      this.flyoutLeft = rect.right + marge;
+      this.flyoutWidth = null;
     } else {
-      this.paramSubmenuTop = rect.bottom + 4;
-      this.paramSubmenuLeft = rect.left;
-      this.paramSubmenuWidth = rect.width;
+      this.flyoutTop = rect.bottom + 4;
+      this.flyoutLeft = rect.left;
+      this.flyoutWidth = rect.width;
     }
   }
 
   /** Le tactile synthétise parfois mouseenter/mouseleave après un appui (sans survol réel
-   *  persistant) : sans ce garde-fou, le sous-menu ouvert par toggleParamSubmenu() se
-   *  refermait aussitôt via un mouseleave synthétique. Ces deux méthodes ne font donc rien
-   *  sur un appareil sans souris ; seul le bouton chevron y contrôle le sous-menu. */
+   *  persistant) : sans ce garde-fou, le sous-menu ouvert par toggleFlyout() se refermait
+   *  aussitôt via un mouseleave synthétique. Ces deux méthodes ne font donc rien sur un
+   *  appareil sans souris ; seul le bouton chevron y contrôle le sous-menu. */
   private get survolDisponible(): boolean {
     return typeof window !== 'undefined' && !!window.matchMedia && window.matchMedia('(hover: hover)').matches;
   }
 
-  /** Survol (souris) : ouvre immédiatement, sans attendre un clic. */
-  openParamSubmenu(event: MouseEvent): void {
+  /** Survol (souris) : ouvre immédiatement, sans attendre un clic. Un seul sous-menu ouvert
+   *  à la fois (menu générique, réutilisé par tous les liens qui en ont un). */
+  openFlyout(menu: 'parametrage' | 'caisse', event: MouseEvent): void {
     if (!this.survolDisponible) return;
-    this.cancelCloseParamSubmenu();
-    this.positionParamSubmenu((event.currentTarget as HTMLElement).getBoundingClientRect());
-    this.paramSubmenuOpen = true;
+    this.cancelCloseFlyout();
+    this.positionFlyout((event.currentTarget as HTMLElement).getBoundingClientRect());
+    this.openFlyoutMenu = menu;
   }
 
   /** Petit délai avant de refermer, pour laisser le temps au curseur de traverser
    *  l'intervalle entre le lien et le panneau (tous deux annulent ce délai à leur survol
-   *  via cancelCloseParamSubmenu, cf. template). */
-  scheduleCloseParamSubmenu(): void {
+   *  via cancelCloseFlyout, cf. template). */
+  scheduleCloseFlyout(): void {
     if (!this.survolDisponible) return;
-    this.paramSubmenuCloseTimer = setTimeout(() => { this.paramSubmenuOpen = false; }, 200);
+    this.flyoutCloseTimer = setTimeout(() => { this.openFlyoutMenu = null; }, 200);
   }
 
-  cancelCloseParamSubmenu(): void {
-    if (this.paramSubmenuCloseTimer) {
-      clearTimeout(this.paramSubmenuCloseTimer);
-      this.paramSubmenuCloseTimer = null;
+  cancelCloseFlyout(): void {
+    if (this.flyoutCloseTimer) {
+      clearTimeout(this.flyoutCloseTimer);
+      this.flyoutCloseTimer = null;
     }
   }
 
@@ -614,20 +632,20 @@ export class AppComponent {
    *  aussi bien tactile que souris. stopPropagation évite que la barre latérale entière se
    *  referme (cf. (click) sur <nav class="sidebar-nav">, pensé pour les liens qui naviguent
    *  réellement) et que le clic atteigne l'écouteur mouseleave du survol. */
-  toggleParamSubmenu(event: Event): void {
+  toggleFlyout(menu: 'parametrage' | 'caisse', event: Event): void {
     event.stopPropagation();
-    if (this.paramSubmenuOpen) {
-      this.paramSubmenuOpen = false;
+    if (this.openFlyoutMenu === menu) {
+      this.openFlyoutMenu = null;
       return;
     }
     const wrapper = (event.currentTarget as HTMLElement).closest('.nav-item-flyout') as HTMLElement;
-    this.positionParamSubmenu(wrapper.getBoundingClientRect());
-    this.paramSubmenuOpen = true;
+    this.positionFlyout(wrapper.getBoundingClientRect());
+    this.openFlyoutMenu = menu;
   }
 
-  closeParamSubmenu(): void {
-    this.cancelCloseParamSubmenu();
-    this.paramSubmenuOpen = false;
+  closeFlyout(): void {
+    this.cancelCloseFlyout();
+    this.openFlyoutMenu = null;
   }
 
   onProfilePhotoSelected(event: Event): void {

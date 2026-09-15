@@ -1,6 +1,7 @@
 import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { NatureOperation, RecapCaisse, Site, TransactionCaisse } from '../../core/models/models';
@@ -102,17 +103,9 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
         </div>
       </div>
 
-      <!-- SOUS-ONGLETS -->
-      <div class="tabs-header">
-        <button class="tab-btn" [class.active]="activeTab === 'operations'" (click)="switchTab('operations')">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-          Opérations
-        </button>
-        <button class="tab-btn" [class.active]="activeTab === 'natures'" (click)="switchTab('natures')">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
-          Natures d'opération
-        </button>
-      </div>
+      <!-- Navigation entre "Opérations" et "Natures d'opération" : via le sous-menu au
+           survol de "Caisse Ménu Dépense" dans la barre latérale (plus de barre d'onglets
+           redondante ici, cf. Paramètres Généraux). -->
 
       <!-- ===================== ONGLET OPÉRATIONS ===================== -->
       @if (activeTab === 'operations') {
@@ -518,43 +511,6 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       gap: 1rem;
     }
 
-    .tabs-header {
-      display: flex;
-      gap: 0.5rem;
-      margin-bottom: 1.25rem;
-      background: var(--bg-card);
-      padding: 0.4rem;
-      border-radius: var(--radius-md);
-      border: 1px solid var(--border-color);
-      width: fit-content;
-      max-width: 100%;
-      /* Filet de sécurité si les libellés d'onglets ne tiennent pas sur un petit téléphone :
-         on défile horizontalement plutôt que de déborder de la page. */
-      overflow-x: auto;
-    }
-
-    .tab-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      flex-shrink: 0;
-      white-space: nowrap;
-      background: transparent;
-      border: none;
-      padding: 0.55rem 1.1rem;
-      border-radius: var(--radius-md);
-      font-weight: 600;
-      font-size: 0.88rem;
-      color: var(--text-muted);
-      cursor: pointer;
-    }
-
-    .tab-btn:hover { color: var(--text-main); }
-    .tab-btn.active {
-      background: var(--primary);
-      color: white;
-      box-shadow: var(--shadow-sm);
-    }
 
     .pagination-bar {
       display: flex;
@@ -636,7 +592,7 @@ export class CaisseComponent implements OnInit {
   targetTx: TransactionCaisse | null = null;
   deleteMotif = '';
 
-  constructor(private apiService: ApiService, private authService: AuthService) {}
+  constructor(private apiService: ApiService, private authService: AuthService, private route: ActivatedRoute) {}
 
   ngOnInit(): void {
     this.loadSites();
@@ -644,6 +600,14 @@ export class CaisseComponent implements OnInit {
     this.loadTransactions();
     this.loadNaturesActives();
     this.loadNaturesToutes();
+    // Ouvre directement le bon onglet quand on arrive depuis le sous-menu de la barre
+    // latérale (?tab=...) ; s'abonne (plutôt qu'un simple snapshot) car Angular réutilise
+    // cette même instance de composant en changeant seulement les query params.
+    this.route.queryParams.subscribe(params => {
+      if (params['tab'] === 'operations' || params['tab'] === 'natures') {
+        this.activeTab = params['tab'];
+      }
+    });
   }
 
   get canAdd(): boolean {
@@ -683,10 +647,6 @@ export class CaisseComponent implements OnInit {
     this.page = 0;
     this.loadRecap();
     this.loadTransactions();
-  }
-
-  switchTab(tab: 'operations' | 'natures'): void {
-    this.activeTab = tab;
   }
 
   /** Rafraîchit tout ce qui peut avoir changé sans passer par cet écran. */

@@ -14,7 +14,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       <!-- HEADER -->
       <div class="page-header-bar">
         <div>
-          <h2>Caisse & Trésorerie</h2>
+          <h2>Caisse Ménu Dépense</h2>
           <p>Caisse de dépenses et recettes diverses, indépendante des paiements de formation (suivis dans l'onglet Paiements)</p>
         </div>
         <div class="header-buttons">

@@ -153,7 +153,7 @@ const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'tarifs'
                 <input type="number" class="form-control" [(ngModel)]="tarifsForm.prixExamenCirculation" name="prixExamenCirculation" min="0" required />
               </div>
             </div>
-            <p class="form-help">Utilisés par Caisse & Trésorerie pour calculer automatiquement le montant à décaisser lors d'une prise en charge des frais d'examen.</p>
+            <p class="form-help">Utilisés par Caisse Ménu Dépense pour calculer automatiquement le montant à décaisser lors d'une prise en charge des frais d'examen.</p>
             @if (tarifsError) {
               <div class="alert alert-danger">{{ tarifsError }}</div>
             }

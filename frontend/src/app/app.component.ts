@@ -127,7 +127,7 @@ import { extraireMessageErreur } from './core/utils/error-utils';
             @if (hasRole(['ADMIN'])) {
               <div class="nav-item-flyout" [class.open]="openFlyoutMenu === 'parametrage'"
                    (mouseenter)="openFlyout('parametrage', $event)" (mouseleave)="scheduleCloseFlyout()">
-                <a routerLink="/parametrage" routerLinkActive="active" class="nav-item">
+                <a routerLink="/parametrage" [class.active]="isParametrageGeneralActive" class="nav-item">
                   <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82A1.65 1.65 0 0 0 3 13.09H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
                   <span>Paramètres Généraux</span>
                 </a>
@@ -135,6 +135,12 @@ import { extraireMessageErreur } from './core/utils/error-utils';
                   <svg class="submenu-caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                 </button>
               </div>
+            }
+            @if (hasRole(['ADMIN'])) {
+              <a routerLink="/parametrage" [queryParams]="{tab: 'permissions'}" [class.active]="isPermissionsActive" class="nav-item">
+                <svg class="nav-icon icon-violet" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <span>Permissions</span>
+              </a>
             }
             @if (hasPermission(['CODE_QUESTIONS_GERER'])) {
               <a routerLink="/code/questions" routerLinkActive="active" class="nav-item">
@@ -187,7 +193,6 @@ import { extraireMessageErreur } from './core/utils/error-utils';
               <a routerLink="/parametrage" [queryParams]="{tab: 'tarifs'}" class="submenu-item" (click)="closeFlyout()">Tarifs des Examens</a>
               <a routerLink="/parametrage" [queryParams]="{tab: 'sites'}" class="submenu-item" (click)="closeFlyout()">Sites de Formation</a>
               <a routerLink="/parametrage" [queryParams]="{tab: 'stats'}" class="submenu-item" (click)="closeFlyout()">Statistiques par Site</a>
-              <a routerLink="/parametrage" [queryParams]="{tab: 'permissions'}" class="submenu-item" (click)="closeFlyout()">Permissions</a>
             }
             @if (openFlyoutMenu === 'caisse') {
               <a routerLink="/caisse" [queryParams]="{tab: 'operations'}" class="submenu-item" (click)="closeFlyout()">Opérations</a>
@@ -579,26 +584,29 @@ export class AppComponent {
     return this.authService.hasPermission(permissions);
   }
 
+  /** "Paramètres Généraux" et "Permissions" pointent tous deux vers /parametrage (avec un
+   *  tab différent en query param) : routerLinkActive seul ne distingue pas les deux liens
+   *  sur ce même chemin, d'où ces deux getters basés sur l'URL courante. */
+  get isPermissionsActive(): boolean {
+    return this.router.url.startsWith('/parametrage') && this.router.url.includes('tab=permissions');
+  }
+
+  get isParametrageGeneralActive(): boolean {
+    return this.router.url.startsWith('/parametrage') && !this.router.url.includes('tab=permissions');
+  }
+
   logout(): void {
     this.authService.logout();
   }
 
-  /** Place le sous-menu à droite du lien s'il y a la place, sinon en dessous (petit écran) :
-   *  calculé dynamiquement plutôt qu'en CSS pur, car le panneau est rendu hors de <aside>
-   *  (cf. commentaire sur .submenu-flyout) et n'a donc plus de position relative naturelle
-   *  par rapport au lien survolé. */
+  /** Place le sous-menu toujours en dessous du lien (jamais à côté) : calculé dynamiquement
+   *  plutôt qu'en CSS pur, car le panneau est rendu hors de <aside> (cf. commentaire sur
+   *  .submenu-flyout) et n'a donc plus de position relative naturelle par rapport au lien
+   *  survolé. */
   private positionFlyout(rect: DOMRect): void {
-    const largeurSousMenu = 220;
-    const marge = 8;
-    if (rect.right + marge + largeurSousMenu <= window.innerWidth) {
-      this.flyoutTop = rect.top;
-      this.flyoutLeft = rect.right + marge;
-      this.flyoutWidth = null;
-    } else {
-      this.flyoutTop = rect.bottom + 4;
-      this.flyoutLeft = rect.left;
-      this.flyoutWidth = rect.width;
-    }
+    this.flyoutTop = rect.bottom + 4;
+    this.flyoutLeft = rect.left;
+    this.flyoutWidth = rect.width;
   }
 
   /** Le tactile synthétise parfois mouseenter/mouseleave après un appui (sans survol réel

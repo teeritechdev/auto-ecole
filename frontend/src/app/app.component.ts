@@ -64,19 +64,13 @@ import { extraireMessageErreur } from './core/utils/error-utils';
                 <span>Historique Code</span>
               </a>
             }
-            @if (!hasRole(['CANDIDAT'])) {
-              <div class="nav-section-title">Gestion Métier</div>
+            @if (showCandidatsSection) {
+              <div class="nav-section-title">Candidats & Scolarité</div>
             }
             @if (hasPermission(['CANDIDATS_VOIR'])) {
               <a routerLink="/candidats" routerLinkActive="active" class="nav-item">
                 <svg class="nav-icon icon-violet" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 <span>Inscriptions</span>
-              </a>
-            }
-            @if (hasPermission(['PAIEMENTS_VOIR'])) {
-              <a routerLink="/paiements" routerLinkActive="active" class="nav-item">
-                <svg class="nav-icon icon-green" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-                <span>Paiements & Reçus</span>
               </a>
             }
             @if (hasPermission(['EXAMENS_VOIR'])) {
@@ -85,16 +79,13 @@ import { extraireMessageErreur } from './core/utils/error-utils';
                 <span>Examens & Épreuves</span>
               </a>
             }
-            @if (hasPermission(['CODE_SUIVI'])) {
-              <a routerLink="/code/resultats" routerLinkActive="active" class="nav-item">
-                <svg class="nav-icon icon-amber" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 9 12 4 2 9l10 5 10-5Z"/><path d="M6 11.5V16c0 1.4 2.7 2.8 6 2.8s6-1.4 6-2.8v-4.5"/><path d="M2 9v5"/></svg>
-                <span>Résultats Code</span>
-              </a>
+            @if (showFinancesSection) {
+              <div class="nav-section-title">Finances</div>
             }
-            @if (hasPermission(['CODE_CONFIGURATION_GERER'])) {
-              <a routerLink="/parametrage-code" routerLinkActive="active" class="nav-item">
-                <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82A1.65 1.65 0 0 0 3 13.09H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
-                <span>Configuration Code</span>
+            @if (hasPermission(['PAIEMENTS_VOIR'])) {
+              <a routerLink="/paiements" routerLinkActive="active" class="nav-item">
+                <svg class="nav-icon icon-green" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                <span>Paiements & Reçus</span>
               </a>
             }
             @if (hasPermission(['CAISSE_VOIR'])) {
@@ -123,7 +114,28 @@ import { extraireMessageErreur } from './core/utils/error-utils';
                 <span>Rapports & Exports</span>
               </a>
             }
-            @if (hasRole(['ADMIN'])) {
+            @if (showCodeSection) {
+              <div class="nav-section-title">Code de la Route</div>
+            }
+            @if (hasPermission(['CODE_SUIVI'])) {
+              <a routerLink="/code/resultats" routerLinkActive="active" class="nav-item">
+                <svg class="nav-icon icon-amber" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 9 12 4 2 9l10 5 10-5Z"/><path d="M6 11.5V16c0 1.4 2.7 2.8 6 2.8s6-1.4 6-2.8v-4.5"/><path d="M2 9v5"/></svg>
+                <span>Résultats Code</span>
+              </a>
+            }
+            @if (hasPermission(['CODE_CONFIGURATION_GERER'])) {
+              <a routerLink="/parametrage-code" routerLinkActive="active" class="nav-item">
+                <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82A1.65 1.65 0 0 0 3 13.09H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+                <span>Configuration Code</span>
+              </a>
+            }
+            @if (hasPermission(['CODE_QUESTIONS_GERER'])) {
+              <a routerLink="/code/questions" routerLinkActive="active" class="nav-item">
+                <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>
+                <span>Banque de questions Code</span>
+              </a>
+            }
+            @if (showAdminSection) {
               <div class="nav-section-title">Administration</div>
             }
             @if (hasPermission(['UTILISATEURS_VOIR'])) {
@@ -159,12 +171,6 @@ import { extraireMessageErreur } from './core/utils/error-utils';
               <a routerLink="/parametrage" [queryParams]="{tab: 'permissions'}" [class.active]="isPermissionsActive" class="nav-item">
                 <svg class="nav-icon icon-violet" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                 <span>Permissions</span>
-              </a>
-            }
-            @if (hasPermission(['CODE_QUESTIONS_GERER'])) {
-              <a routerLink="/code/questions" routerLinkActive="active" class="nav-item">
-                <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>
-                <span>Banque de questions Code</span>
               </a>
             }
             @if (hasPermission(['AUDIT_VOIR'])) {
@@ -583,6 +589,25 @@ export class AppComponent {
 
   get isParametrageGeneralActive(): boolean {
     return this.router.url.startsWith('/parametrage') && !this.router.url.includes('tab=permissions');
+  }
+
+  /** Visibilité des titres de section : un titre ne s'affiche que si au moins un des
+   *  boutons qu'il regroupe est lui-même visible pour l'utilisateur connecté (sinon on
+   *  se retrouverait avec un titre de section sans aucun bouton en dessous). */
+  get showCandidatsSection(): boolean {
+    return this.hasPermission(['CANDIDATS_VOIR']) || this.hasPermission(['EXAMENS_VOIR']);
+  }
+
+  get showFinancesSection(): boolean {
+    return this.hasPermission(['PAIEMENTS_VOIR']) || this.hasPermission(['CAISSE_VOIR']) || this.hasPermission(['RAPPORTS_CANDIDATS', 'RAPPORTS_CAISSE']);
+  }
+
+  get showCodeSection(): boolean {
+    return this.hasPermission(['CODE_SUIVI']) || this.hasPermission(['CODE_CONFIGURATION_GERER']) || this.hasPermission(['CODE_QUESTIONS_GERER']);
+  }
+
+  get showAdminSection(): boolean {
+    return this.hasPermission(['UTILISATEURS_VOIR']) || this.hasPermission(['AUDIT_VOIR']) || this.hasRole(['ADMIN']);
   }
 
   logout(): void {

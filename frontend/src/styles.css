@@ -34,8 +34,8 @@
   /* Neutral / Grayscale */
   --bg-main: #f8fafc;
   --bg-card: #ffffff;
-  --bg-sidebar: #334155;
-  --bg-sidebar-hover: #475569;
+  --bg-sidebar: #ffffff;
+  --bg-sidebar-hover: #f1f5f9;
   --bg-sidebar-active: #2563eb;
   
   --text-main: #1e293b;
@@ -116,7 +116,7 @@ button, input, select, textarea {
 .sidebar {
   width: 260px;
   background-color: var(--bg-sidebar);
-  color: #94a3b8;
+  color: var(--text-muted);
   display: flex;
   flex-direction: column;
   position: fixed;
@@ -125,7 +125,8 @@ button, input, select, textarea {
   left: 0;
   z-index: 40;
   transition: transform var(--transition-normal);
-  box-shadow: 2px 0 8px rgba(0,0,0,0.15);
+  border-right: 1px solid var(--border-color);
+  box-shadow: 2px 0 8px rgba(0,0,0,0.04);
 }
 
 .sidebar-brand {
@@ -133,7 +134,7 @@ button, input, select, textarea {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .brand-icon {
@@ -152,13 +153,13 @@ button, input, select, textarea {
 
 .brand-text h2 {
   font-size: 1.15rem;
-  color: #ffffff;
+  color: var(--text-main);
   margin-bottom: 0.1rem;
 }
 
 .brand-text span {
   font-size: 0.75rem;
-  color: #94a3b8;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -187,7 +188,7 @@ button, input, select, textarea {
   gap: 0.75rem;
   padding: 0.7rem 0.85rem;
   border-radius: var(--radius-md);
-  color: #cbd5e1;
+  color: #475569;
   font-size: 0.9rem;
   font-weight: 500;
   transition: all var(--transition-fast);
@@ -196,7 +197,7 @@ button, input, select, textarea {
 
 .nav-item:hover {
   background-color: var(--bg-sidebar-hover);
-  color: #ffffff;
+  color: var(--text-main);
   transform: translateX(3px);
 }
 
@@ -215,8 +216,8 @@ button, input, select, textarea {
 
 .sidebar-footer {
   padding: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(0,0,0,0.2);
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-main);
 }
 
 .user-profile-widget {
@@ -236,7 +237,7 @@ button, input, select, textarea {
   justify-content: center;
   font-weight: 700;
   font-size: 0.9rem;
-  border: 2px solid rgba(255,255,255,0.1);
+  border: 2px solid var(--bg-card);
 }
 
 .user-meta {
@@ -247,7 +248,7 @@ button, input, select, textarea {
 .user-name {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-main);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -255,7 +256,7 @@ button, input, select, textarea {
 
 .user-role-badge {
   font-size: 0.7rem;
-  color: #60a5fa;
+  color: var(--primary);
   font-weight: 600;
   text-transform: uppercase;
 }

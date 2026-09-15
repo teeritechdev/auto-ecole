@@ -288,17 +288,18 @@ import { extraireMessageErreur } from './core/utils/error-utils';
     `,
     changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
-    /* Boutons du pied de barre latérale (photo, déconnexion) : sur fond sombre,
-       .btn-outline (pensé pour un fond clair) rendait les icônes illisibles. */
+    /* Boutons du pied de barre latérale (photo, déconnexion) : n'ont pas de classe
+       .btn-outline/.btn-primary (juste .btn-icon), donc sans cette couleur ils resteraient
+       transparents avec le texte par défaut du navigateur. */
     .sidebar-footer-btn {
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      color: #cbd5e1;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
     }
 
     .sidebar-footer-btn:hover {
-      background: rgba(255, 255, 255, 0.14);
-      color: #ffffff;
+      background: var(--bg-main);
+      color: var(--text-main);
     }
 
     .sidebar-toggle-btn {
@@ -434,13 +435,13 @@ import { extraireMessageErreur } from './core/utils/error-utils';
       background: transparent;
       border: none;
       border-radius: var(--radius-md);
-      color: #94a3b8;
+      color: var(--text-muted);
       cursor: pointer;
     }
 
     .submenu-caret-btn:hover {
       background: var(--bg-sidebar-hover);
-      color: #ffffff;
+      color: var(--text-main);
     }
 
     .submenu-caret {
@@ -454,8 +455,8 @@ import { extraireMessageErreur } from './core/utils/error-utils';
     .submenu-flyout {
       position: fixed;
       min-width: 220px;
-      background: #1e293b;
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
       border-radius: var(--radius-md);
       box-shadow: var(--shadow-lg);
       padding: 0.4rem;
@@ -466,7 +467,7 @@ import { extraireMessageErreur } from './core/utils/error-utils';
       display: block;
       padding: 0.6rem 0.85rem;
       border-radius: var(--radius-sm);
-      color: #cbd5e1;
+      color: var(--text-main);
       font-size: 0.87rem;
       font-weight: 500;
       white-space: nowrap;
@@ -474,7 +475,7 @@ import { extraireMessageErreur } from './core/utils/error-utils';
 
     .submenu-item:hover {
       background: var(--bg-sidebar-hover);
-      color: #ffffff;
+      color: var(--text-main);
     }
 
     /* Icônes de la navigation : chaque rubrique a sa propre couleur au repos,
@@ -487,7 +488,7 @@ import { extraireMessageErreur } from './core/utils/error-utils';
     .icon-teal { color: #0d9488; }
     .icon-indigo { color: #6366f1; }
     .icon-rose { color: #ec4899; }
-    .icon-slate { color: #94a3b8; }
+    .icon-slate { color: #64748b; }
     .icon-red { color: #ef4444; }
     .nav-item.active .nav-icon { color: #ffffff; }
 

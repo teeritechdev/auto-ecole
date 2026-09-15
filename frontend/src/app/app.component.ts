@@ -480,9 +480,9 @@ import { extraireMessageErreur } from './core/utils/error-utils';
       display: block;
       padding: 0.5rem 0.75rem;
       border-radius: var(--radius-sm);
-      color: var(--text-muted);
+      color: var(--text-main);
       font-size: 0.85rem;
-      font-weight: 500;
+      font-weight: 600;
     }
 
     .submenu-item:hover {

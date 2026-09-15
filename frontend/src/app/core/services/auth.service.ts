@@ -21,7 +21,16 @@ export class AuthService {
     const savedUser = localStorage.getItem('currentUser');
     if (savedUser) {
       try {
-        this.currentUserSubject.next(JSON.parse(savedUser));
+        const user: User = JSON.parse(savedUser);
+        // Session mise en cache avant l'introduction des permissions dynamiques (ou après
+        // modification du profil d'un utilisateur déjà connecté) : sans permissions à jour,
+        // la barre latérale masquerait tous les boutons. On force une reconnexion propre
+        // plutôt que de laisser l'utilisateur avec un menu vide sans explication.
+        if (!user.permissions) {
+          this.clearLocalSession();
+          return;
+        }
+        this.currentUserSubject.next(user);
       } catch (e) {
         localStorage.removeItem('currentUser');
       }

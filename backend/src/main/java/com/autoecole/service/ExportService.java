@@ -4,6 +4,7 @@ import com.autoecole.dto.CandidatDTOs.CandidatDTO;
 import com.autoecole.dto.CaisseDTOs.TransactionCaisseDTO;
 import com.autoecole.dto.PaiementDTOs.PaiementDTO;
 import com.autoecole.dto.PaiementDTOs.RecuDTO;
+import com.autoecole.repository.ConfigurationApplicationRepository;
 import com.lowagie.text.Document;
 import com.lowagie.text.Element;
 import com.lowagie.text.FontFactory;
@@ -39,9 +40,18 @@ public class ExportService {
     private final PaiementService paiementService;
     private final RecuService recuService;
     private final CaisseService caisseService;
+    private final ConfigurationApplicationRepository configurationRepository;
 
+    /** Valeur de repli tant qu'aucun nom n'a été saisi par l'ADMIN dans l'onglet Identité
+     *  (Paramètres Généraux) ; le nom effectif est ensuite lu dynamiquement en base à
+     *  chaque export, sans nécessiter de redémarrage du serveur pour le changer. */
     @Value("${app.etablissement.nom}")
-    private String nomEtablissement;
+    private String nomEtablissementParDefaut;
+
+    private String getNomEtablissement() {
+        String nom = configurationRepository.findById(1L).map(c -> c.getNomEtablissement()).orElse(null);
+        return (nom == null || nom.isBlank()) ? nomEtablissementParDefaut : nom;
+    }
 
     private static final Color PRIMARY_COLOR = new Color(24, 76, 120);
 
@@ -109,7 +119,7 @@ public class ExportService {
 
             // Titre
             com.lowagie.text.Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16, PRIMARY_COLOR);
-            Paragraph title = new Paragraph(nomEtablissement + " - LISTE OFFICIELLE DES CANDIDATS", titleFont);
+            Paragraph title = new Paragraph(getNomEtablissement() + " - LISTE OFFICIELLE DES CANDIDATS", titleFont);
             title.setAlignment(Element.ALIGN_CENTER);
             title.setSpacingAfter(15);
             document.add(title);
@@ -164,7 +174,7 @@ public class ExportService {
 
             // En-tête auto-école
             com.lowagie.text.Font headerFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, PRIMARY_COLOR);
-            Paragraph entete = new Paragraph(nomEtablissement + "\nREÇU OFFICIEL DE PAIEMENT", headerFont);
+            Paragraph entete = new Paragraph(getNomEtablissement() + "\nREÇU OFFICIEL DE PAIEMENT", headerFont);
             entete.setAlignment(Element.ALIGN_CENTER);
             entete.setSpacingAfter(10);
             document.add(entete);

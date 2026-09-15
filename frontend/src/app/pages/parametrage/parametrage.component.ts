@@ -2,8 +2,10 @@ import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
-import { CategoriePermis, Site, SiteStat } from '../../core/models/models';
+import { CategoriePermis, Identite, Site, SiteStat } from '../../core/models/models';
 import { extraireMessageErreur } from '../../core/utils/error-utils';
+
+type OngletParametrage = 'identite' | 'categories' | 'tarifs' | 'sites' | 'stats';
 
 @Component({
     selector: 'app-parametrage',
@@ -12,75 +14,97 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     <div class="parametrage-page">
       <div class="page-header-bar">
         <div>
-          <h2>Paramétrage du Système</h2>
-          <p>Configurez les catégories de permis (avec leur tarif) et les sites de formation</p>
+          <h2>Paramètres Généraux</h2>
+          <p>Identité de l'auto-école, tarifs, catégories de permis et sites de formation</p>
         </div>
       </div>
 
-      <div class="grid-2-col">
-        <div class="card brand-settings-card">
+      <!-- SOUS-ONGLETS -->
+      <div class="tabs-header">
+        <button class="tab-btn" [class.active]="activeTab === 'identite'" (click)="activeTab = 'identite'">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 13.42 20.6a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82Z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+          Identité
+        </button>
+        <button class="tab-btn" [class.active]="activeTab === 'categories'" (click)="activeTab = 'categories'">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L19 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2"/><circle cx="6.5" cy="16.5" r="2.5"/><circle cx="16.5" cy="16.5" r="2.5"/></svg>
+          Catégories de Permis
+        </button>
+        <button class="tab-btn" [class.active]="activeTab === 'tarifs'" (click)="activeTab = 'tarifs'">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg>
+          Tarifs des Examens
+        </button>
+        <button class="tab-btn" [class.active]="activeTab === 'sites'" (click)="activeTab = 'sites'">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><line x1="9" y1="9" x2="9" y2="9.01"/><line x1="9" y1="12" x2="9" y2="12.01"/><line x1="9" y1="15" x2="9" y2="15.01"/><line x1="9" y1="18" x2="9" y2="18.01"/></svg>
+          Sites de Formation
+        </button>
+        <button class="tab-btn" [class.active]="activeTab === 'stats'" (click)="activeTab = 'stats'">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          Statistiques par Site
+        </button>
+      </div>
+
+      <!-- ===================== ONGLET IDENTITÉ ===================== -->
+      @if (activeTab === 'identite') {
+        <div class="card identite-card">
           <div class="card-header">
             <div class="card-title" style="display:flex; align-items:center; gap:0.5rem;">
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 13.42 20.6a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82Z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-              Logo de l'entreprise
+              Identité de l'auto-école
             </div>
           </div>
-          <div class="logo-settings">
-            <div class="logo-preview">
-              @if (logoData) {
-                <img [src]="logoData" alt="Logo actuel" />
-              }
-              @if (!logoData) {
-                <span>
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L19 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2"/><circle cx="6.5" cy="16.5" r="2.5"/><circle cx="16.5" cy="16.5" r="2.5"/></svg>
-                </span>
-              }
-            </div>
-            <input type="file" accept="image/png,image/jpeg,image/webp" (change)="onLogoSelected($event)" />
-            <p class="form-help">Le logo sera affiché sur toutes les pages. JPG, PNG ou WebP, maximum 2 Mo.</p>
-            @if (logoError) {
-              <div class="alert alert-danger">{{ logoError }}</div>
+          <form (ngSubmit)="saveIdentite()">
+            @if (identiteError) {
+              <div class="alert alert-danger">{{ identiteError }}</div>
             }
-          </div>
-        </div>
-
-        <!-- TARIFS DES EXAMENS -->
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title" style="display:flex; align-items:center; gap:0.5rem;">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg>
-              Tarifs des examens
-            </div>
-          </div>
-          <form (ngSubmit)="saveTarifsExamens()">
-            <div class="tarifs-examens-form">
-              <div class="form-group">
-                <label class="form-label">Prix examen Code (FCFA)</label>
-                <input type="number" class="form-control" [(ngModel)]="tarifsForm.prixExamenCode" name="prixExamenCode" min="0" required />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Prix examen Créneau (FCFA)</label>
-                <input type="number" class="form-control" [(ngModel)]="tarifsForm.prixExamenCreneau" name="prixExamenCreneau" min="0" required />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Prix examen Circulation (FCFA)</label>
-                <input type="number" class="form-control" [(ngModel)]="tarifsForm.prixExamenCirculation" name="prixExamenCirculation" min="0" required />
-              </div>
-            </div>
-            <p class="form-help">Utilisés par Caisse & Trésorerie pour calculer automatiquement le montant à décaisser lors d'une prise en charge des frais d'examen.</p>
-            @if (tarifsError) {
-              <div class="alert alert-danger">{{ tarifsError }}</div>
+            @if (identiteSuccess) {
+              <div class="alert alert-success">Identité enregistrée.</div>
             }
-            @if (tarifsSuccess) {
-              <div class="alert alert-success">Tarifs enregistrés.</div>
-            }
-            <button type="submit" class="btn btn-primary btn-sm" [disabled]="savingTarifs">
-              {{ savingTarifs ? 'Enregistrement...' : 'Enregistrer les tarifs' }}
+            <div class="identite-layout">
+              <div class="logo-settings">
+                <div class="logo-preview">
+                  @if (identiteForm.logoData) {
+                    <img [src]="identiteForm.logoData" alt="Logo actuel" />
+                  } @else {
+                    <span>
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L19 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2"/><circle cx="6.5" cy="16.5" r="2.5"/><circle cx="16.5" cy="16.5" r="2.5"/></svg>
+                    </span>
+                  }
+                </div>
+                <input type="file" accept="image/png,image/jpeg,image/webp" (change)="onLogoSelected($event)" />
+                <p class="form-help">Affiché sur toutes les pages et l'écran de connexion. JPG, PNG ou WebP, maximum 2 Mo.</p>
+              </div>
+              <div class="identite-fields">
+                <div class="form-group">
+                  <label class="form-label">Nom de l'auto-école <span class="required">*</span></label>
+                  <input type="text" class="form-control" [(ngModel)]="identiteForm.nomEtablissement" name="nomEtablissement" required placeholder="Ex: Nerwaya Auto-École" />
+                  <p class="form-help">Affiché sur l'écran de connexion et les documents officiels (reçus, PDF).</p>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Téléphone</label>
+                    <input type="tel" class="form-control" [(ngModel)]="identiteForm.telephone" name="telephone" placeholder="Ex: 0701020304" />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-control" [(ngModel)]="identiteForm.email" name="email" placeholder="Ex: contact@autoecole.ci" />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Adresse du siège</label>
+                  <textarea class="form-control" rows="2" [(ngModel)]="identiteForm.adresseSiege" name="adresseSiege" placeholder="Ex: Boulevard de France, Cocody, Abidjan"></textarea>
+                  <p class="form-help">Coordonnées du siège de l'entreprise, distinctes de l'adresse de chaque site de formation.</p>
+                </div>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm" [disabled]="savingIdentite">
+              {{ savingIdentite ? 'Enregistrement...' : 'Enregistrer' }}
             </button>
           </form>
         </div>
+      }
 
-        <!-- 1. CATÉGORIES DE PERMIS -->
+      <!-- ===================== ONGLET CATÉGORIES DE PERMIS ===================== -->
+      @if (activeTab === 'categories') {
         <div class="card">
           <div class="card-header">
             <div class="card-title" style="display:flex; align-items:center; gap:0.5rem;">
@@ -122,8 +146,48 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
             </table>
           </div>
         </div>
+      }
 
-        <!-- 2. SITES DE FORMATION -->
+      <!-- ===================== ONGLET TARIFS DES EXAMENS ===================== -->
+      @if (activeTab === 'tarifs') {
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title" style="display:flex; align-items:center; gap:0.5rem;">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg>
+              Tarifs des examens
+            </div>
+          </div>
+          <form (ngSubmit)="saveTarifsExamens()">
+            <div class="tarifs-examens-form">
+              <div class="form-group">
+                <label class="form-label">Prix examen Code (FCFA)</label>
+                <input type="number" class="form-control" [(ngModel)]="tarifsForm.prixExamenCode" name="prixExamenCode" min="0" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Prix examen Créneau (FCFA)</label>
+                <input type="number" class="form-control" [(ngModel)]="tarifsForm.prixExamenCreneau" name="prixExamenCreneau" min="0" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Prix examen Circulation (FCFA)</label>
+                <input type="number" class="form-control" [(ngModel)]="tarifsForm.prixExamenCirculation" name="prixExamenCirculation" min="0" required />
+              </div>
+            </div>
+            <p class="form-help">Utilisés par Caisse & Trésorerie pour calculer automatiquement le montant à décaisser lors d'une prise en charge des frais d'examen.</p>
+            @if (tarifsError) {
+              <div class="alert alert-danger">{{ tarifsError }}</div>
+            }
+            @if (tarifsSuccess) {
+              <div class="alert alert-success">Tarifs enregistrés.</div>
+            }
+            <button type="submit" class="btn btn-primary btn-sm" [disabled]="savingTarifs">
+              {{ savingTarifs ? 'Enregistrement...' : 'Enregistrer les tarifs' }}
+            </button>
+          </form>
+        </div>
+      }
+
+      <!-- ===================== ONGLET SITES DE FORMATION ===================== -->
+      @if (activeTab === 'sites') {
         <div class="card">
           <div class="card-header">
             <div class="card-title" style="display:flex; align-items:center; gap:0.5rem;">
@@ -169,53 +233,55 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
             </table>
           </div>
         </div>
-      </div>
+      }
 
-      <!-- 3. STATISTIQUES PAR SITE -->
-      <div class="card stats-sites-card">
-        <div class="card-header">
-          <div class="card-title" style="display:flex; align-items:center; gap:0.5rem;">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-            Statistiques par Site
+      <!-- ===================== ONGLET STATISTIQUES PAR SITE ===================== -->
+      @if (activeTab === 'stats') {
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title" style="display:flex; align-items:center; gap:0.5rem;">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+              Statistiques par Site
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Site</th>
+                  <th class="text-right">Personnel Affecté</th>
+                  <th class="text-right">Candidats Actifs</th>
+                  <th class="text-right">Inscriptions Créées</th>
+                  <th class="text-right">Paiements Encaissés</th>
+                  <th class="text-right">Montant Encaissé</th>
+                  <th class="text-right">Solde Restant Dû</th>
+                  <th class="text-right">Solde Caisse</th>
+                </tr>
+              </thead>
+              <tbody>
+                @if (statsSites.length === 0) {
+                  <tr>
+                    <td colspan="8" class="text-center py-4 text-muted">Aucune donnée pour l'instant.</td>
+                  </tr>
+                }
+                @for (stat of statsSites; track stat) {
+                  <tr>
+                    <td><strong>{{ stat.siteNom }}</strong></td>
+                    <td class="text-right">{{ stat.nombrePersonnel }}</td>
+                    <td class="text-right">{{ stat.nombreCandidatsActifs }}</td>
+                    <td class="text-right">{{ stat.nombreInscriptions }}</td>
+                    <td class="text-right">{{ stat.nombrePaiements }} <small class="text-muted">({{ stat.montantPaiements | number }} FCFA)</small></td>
+                    <td class="text-right text-success">{{ stat.montantEncaisse | number }} FCFA</td>
+                    <td class="text-right">{{ stat.montantRestantDu | number }} FCFA</td>
+                    <td class="text-right" [ngClass]="stat.soldeCaisse >= 0 ? 'text-success' : 'text-danger'">{{ stat.soldeCaisse | number }} FCFA</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
           </div>
         </div>
-
-        <div class="table-responsive">
-          <table class="custom-table">
-            <thead>
-              <tr>
-                <th>Site</th>
-                <th class="text-right">Personnel Affecté</th>
-                <th class="text-right">Candidats Actifs</th>
-                <th class="text-right">Inscriptions Créées</th>
-                <th class="text-right">Paiements Encaissés</th>
-                <th class="text-right">Montant Encaissé</th>
-                <th class="text-right">Solde Restant Dû</th>
-                <th class="text-right">Solde Caisse</th>
-              </tr>
-            </thead>
-            <tbody>
-              @if (statsSites.length === 0) {
-                <tr>
-                  <td colspan="8" class="text-center py-4 text-muted">Aucune donnée pour l'instant.</td>
-                </tr>
-              }
-              @for (stat of statsSites; track stat) {
-                <tr>
-                  <td><strong>{{ stat.siteNom }}</strong></td>
-                  <td class="text-right">{{ stat.nombrePersonnel }}</td>
-                  <td class="text-right">{{ stat.nombreCandidatsActifs }}</td>
-                  <td class="text-right">{{ stat.nombreInscriptions }}</td>
-                  <td class="text-right">{{ stat.nombrePaiements }} <small class="text-muted">({{ stat.montantPaiements | number }} FCFA)</small></td>
-                  <td class="text-right text-success">{{ stat.montantEncaisse | number }} FCFA</td>
-                  <td class="text-right">{{ stat.montantRestantDu | number }} FCFA</td>
-                  <td class="text-right" [ngClass]="stat.soldeCaisse >= 0 ? 'text-success' : 'text-danger'">{{ stat.soldeCaisse | number }} FCFA</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      </div>
+      }
 
       <!-- MODAL CATEGORIE -->
       @if (showCatModal) {
@@ -321,28 +387,81 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       margin-bottom: 1.5rem;
     }
 
-    .grid-2-col {
-      display: grid;
-      /* 420px de minimum dépassait la largeur de nombreux téléphones : on descend sous
-         la largeur des petits téléphones plutôt que de dépendre de l'override global. */
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 1.5rem;
+    .tabs-header {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      background: var(--bg-card);
+      padding: 0.4rem;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+      width: fit-content;
+      max-width: 100%;
+      /* Filet de sécurité si les libellés d'onglets ne tiennent pas sur un petit téléphone :
+         on défile horizontalement plutôt que de déborder de la page. */
+      overflow-x: auto;
     }
 
-    .grid-2-col > .card {
-      /* Un item de grille refuse par défaut de rétrécir sous la largeur intrinsèque de
-         son contenu : sans ça, la colonne "1fr" déborde quand même sur petit téléphone. */
-      min-width: 0;
+    .tab-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-shrink: 0;
+      white-space: nowrap;
+      background: transparent;
+      border: none;
+      padding: 0.55rem 1.1rem;
+      border-radius: var(--radius-md);
+      font-weight: 600;
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      cursor: pointer;
     }
 
-    .stats-sites-card {
-      margin-top: 1.5rem;
+    .tab-btn:hover { color: var(--text-main); }
+    .tab-btn.active {
+      background: var(--primary);
+      color: white;
+      box-shadow: var(--shadow-sm);
     }
 
     .text-right { text-align: right; }
     .text-success { color: #15803d; }
     .text-danger { color: #b91c1c; }
-    .logo-settings { display: flex; flex-direction: column; align-items: flex-start; gap: 0.75rem; }
+
+    .identite-layout {
+      display: grid;
+      grid-template-columns: minmax(160px, 220px) 1fr;
+      gap: 2rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .identite-fields {
+      display: flex;
+      flex-direction: column;
+      gap: 1.15rem;
+      min-width: 0;
+    }
+
+    /* Sur petit téléphone, le logo passe au-dessus des champs plutôt que de forcer deux
+       colonnes trop étroites pour être utilisables. */
+    @media (max-width: 560px) {
+      .identite-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .logo-settings {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.75rem;
+      /* Un input file natif refuse de rétrécir sous sa largeur intrinsèque : sans ça, il
+         déborde de cette colonne étroite et chevauche la colonne des champs à côté. */
+      min-width: 0;
+      width: 100%;
+    }
+    .logo-settings input[type="file"] { max-width: 100%; }
     .logo-preview { width: 7rem; height: 7rem; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 0.75rem; background: #eff6ff; color: #2563eb; font-size: 2.5rem; }
     .logo-preview img { width: 100%; height: 100%; object-fit: contain; }
     .form-help { color: var(--text-muted); font-size: 0.8rem; margin: 0; }
@@ -350,6 +469,8 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
   `]
 })
 export class ParametrageComponent implements OnInit {
+  activeTab: OngletParametrage = 'identite';
+
   categories: CategoriePermis[] = [];
   sites: Site[] = [];
   statsSites: SiteStat[] = [];
@@ -366,8 +487,10 @@ export class ParametrageComponent implements OnInit {
   siteForm: any = { nom: '', adresse: '', actif: true };
   siteError = '';
 
-  logoData: string | null = null;
-  logoError = '';
+  identiteForm: Identite = { logoData: null, nomEtablissement: '', telephone: '', email: '', adresseSiege: '' };
+  identiteError = '';
+  identiteSuccess = false;
+  savingIdentite = false;
 
   tarifsForm: any = { prixExamenCode: 0, prixExamenCreneau: 0, prixExamenCirculation: 0 };
   tarifsError = '';
@@ -384,7 +507,7 @@ export class ParametrageComponent implements OnInit {
     this.apiService.getCategories().subscribe({ next: (res) => this.categories = res });
     this.apiService.getSites().subscribe({ next: (res) => this.sites = res });
     this.apiService.getStatistiquesSites().subscribe({ next: (res) => this.statsSites = res });
-    this.apiService.getLogo().subscribe({ next: (res) => this.logoData = res.logoData });
+    this.apiService.getIdentite().subscribe({ next: (res) => this.identiteForm = { ...res } });
     this.apiService.getTarifsExamens().subscribe({ next: (res) => this.tarifsForm = { ...res } });
   }
 
@@ -410,17 +533,32 @@ export class ParametrageComponent implements OnInit {
     const file = input.files?.[0];
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) {
-      this.logoError = 'Le logo ne doit pas dépasser 2 Mo.';
+      this.identiteError = 'Le logo ne doit pas dépasser 2 Mo.';
       return;
     }
     const reader = new FileReader();
     reader.onload = () => {
-      this.apiService.updateLogo(reader.result as string).subscribe({
-        next: response => { this.logoData = response.logoData; this.logoError = ''; },
-        error: err => this.logoError = extraireMessageErreur(err, 'Impossible d’enregistrer le logo.')
-      });
+      this.identiteForm.logoData = reader.result as string;
+      this.identiteError = '';
     };
     reader.readAsDataURL(file);
+  }
+
+  saveIdentite(): void {
+    this.identiteError = '';
+    this.identiteSuccess = false;
+    this.savingIdentite = true;
+    this.apiService.updateIdentite(this.identiteForm).subscribe({
+      next: (res) => {
+        this.savingIdentite = false;
+        this.identiteForm = { ...res };
+        this.identiteSuccess = true;
+      },
+      error: (err) => {
+        this.savingIdentite = false;
+        this.identiteError = extraireMessageErreur(err, "Erreur lors de l'enregistrement de l'identité.");
+      }
+    });
   }
 
   openCatModal(): void {

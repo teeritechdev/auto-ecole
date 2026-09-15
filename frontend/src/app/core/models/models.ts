@@ -248,6 +248,19 @@ export interface TarifsExamens {
   prixExamenCirculation: number;
 }
 
+export interface Identite {
+  logoData: string | null;
+  nomEtablissement: string;
+  telephone: string | null;
+  email: string | null;
+  adresseSiege: string | null;
+}
+
+export interface IdentitePublique {
+  nomEtablissement: string;
+  logoData: string | null;
+}
+
 export interface DashboardStats {
   totalCandidats: number;
   candidatsEnCours: number;

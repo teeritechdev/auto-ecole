@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -21,23 +22,56 @@ public class ConfigurationController {
 
     private final ConfigurationApplicationRepository repository;
 
+    /** Valeur de repli tant qu'aucun nom n'a été saisi par l'ADMIN dans l'onglet Identité. */
+    @Value("${app.etablissement.nom}")
+    private String nomEtablissementParDefaut;
+
+    private String resoudreNom(ConfigurationApplication configuration) {
+        String nom = configuration != null ? configuration.getNomEtablissement() : null;
+        return (nom == null || nom.isBlank()) ? nomEtablissementParDefaut : nom;
+    }
+
     @GetMapping("/logo")
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Récupérer le logo de l'entreprise")
+    @Operation(summary = "Récupérer le logo de l'entreprise (affiché dans la barre latérale)")
     public ResponseEntity<LogoResponse> getLogo() {
         ConfigurationApplication configuration = repository.findById(1L).orElse(null);
         return ResponseEntity.ok(new LogoResponse(configuration != null ? configuration.getLogoData() : null));
     }
 
-    @PutMapping("/logo")
+    @GetMapping("/identite")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Récupérer l'identité complète de l'auto-école (logo, nom, contact)")
+    public ResponseEntity<IdentiteResponse> getIdentite() {
+        ConfigurationApplication configuration = repository.findById(1L).orElse(null);
+        return ResponseEntity.ok(new IdentiteResponse(
+                configuration != null ? configuration.getLogoData() : null,
+                resoudreNom(configuration),
+                configuration != null ? configuration.getTelephone() : null,
+                configuration != null ? configuration.getEmail() : null,
+                configuration != null ? configuration.getAdresseSiege() : null
+        ));
+    }
+
+    @PutMapping("/identite")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Modifier le logo de l'entreprise")
-    public ResponseEntity<LogoResponse> updateLogo(@RequestBody LogoRequest request) {
+    @Operation(summary = "Modifier l'identité de l'auto-école (logo, nom, contact)")
+    public ResponseEntity<IdentiteResponse> updateIdentite(@RequestBody IdentiteRequest request) {
         validateLogo(request.getLogoData());
         ConfigurationApplication configuration = repository.findById(1L).orElseGet(ConfigurationApplication::new);
         configuration.setLogoData(request.getLogoData());
+        configuration.setNomEtablissement(request.getNomEtablissement() != null ? request.getNomEtablissement().trim() : null);
+        configuration.setTelephone(request.getTelephone());
+        configuration.setEmail(request.getEmail());
+        configuration.setAdresseSiege(request.getAdresseSiege());
         repository.save(configuration);
-        return ResponseEntity.ok(new LogoResponse(configuration.getLogoData()));
+        return ResponseEntity.ok(new IdentiteResponse(
+                configuration.getLogoData(),
+                resoudreNom(configuration),
+                configuration.getTelephone(),
+                configuration.getEmail(),
+                configuration.getAdresseSiege()
+        ));
     }
 
     private void validateLogo(String logoData) {
@@ -90,14 +124,28 @@ public class ConfigurationController {
     }
 
     @Data
-    public static class LogoRequest {
+    @RequiredArgsConstructor
+    public static class LogoResponse {
+        private final String logoData;
+    }
+
+    @Data
+    public static class IdentiteRequest {
         private String logoData;
+        private String nomEtablissement;
+        private String telephone;
+        private String email;
+        private String adresseSiege;
     }
 
     @Data
     @RequiredArgsConstructor
-    public static class LogoResponse {
+    public static class IdentiteResponse {
         private final String logoData;
+        private final String nomEtablissement;
+        private final String telephone;
+        private final String email;
+        private final String adresseSiege;
     }
 
     @Data

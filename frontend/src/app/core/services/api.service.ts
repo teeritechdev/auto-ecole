@@ -23,6 +23,8 @@ import {
   HistoriqueAction,
   ResumePaiements,
   TarifsExamens,
+  Identite,
+  IdentitePublique,
   CodeConfiguration,
   CodeQuestion,
   CodeProgression,
@@ -285,8 +287,17 @@ export class ApiService {
     return this.http.get<{ logoData: string | null }>(`${this.base}/configuration/logo`);
   }
 
-  public updateLogo(logoData: string | null): Observable<{ logoData: string | null }> {
-    return this.http.put<{ logoData: string | null }>(`${this.base}/configuration/logo`, { logoData });
+  public getIdentite(): Observable<Identite> {
+    return this.http.get<Identite>(`${this.base}/configuration/identite`);
+  }
+
+  public updateIdentite(data: Identite): Observable<Identite> {
+    return this.http.put<Identite>(`${this.base}/configuration/identite`, data);
+  }
+
+  /** Nom et logo affichés sur l'écran de connexion, avant toute authentification. */
+  public getIdentitePublique(): Observable<IdentitePublique> {
+    return this.http.get<IdentitePublique>(`${this.base}/public/identite`);
   }
 
   public getTarifsExamens(): Observable<TarifsExamens> {

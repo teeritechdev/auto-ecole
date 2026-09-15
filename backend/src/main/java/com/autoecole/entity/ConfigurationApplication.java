@@ -23,6 +23,21 @@ public class ConfigurationApplication {
     @Column(name = "logo_data", columnDefinition = "TEXT")
     private String logoData;
 
+    /** Identité affichée sur les documents officiels (reçus, PDF) et sur l'écran de
+     *  connexion ; nullable en base, avec repli sur app.etablissement.nom (application.yml)
+     *  tant qu'aucune valeur n'a été saisie par l'ADMIN (cf. ConfigurationController). */
+    @Column(name = "nom_etablissement", length = 150)
+    private String nomEtablissement;
+
+    @Column(name = "telephone", length = 30)
+    private String telephone;
+
+    @Column(name = "email", length = 150)
+    private String email;
+
+    @Column(name = "adresse_siege", length = 255)
+    private String adresseSiege;
+
     /**
      * Prix unitaire des frais d'examen par épreuve, utilisés par la Caisse & Trésorerie
      * interne pour calculer automatiquement le montant à décaisser lors d'une prise en

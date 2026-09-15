@@ -30,7 +30,7 @@ public class ExamenController {
     private final ExamenService examenService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'MONITEUR', 'SECRETAIRE')")
+    @PreAuthorize("hasAuthority('PERM_EXAMENS_VOIR')")
     @Operation(summary = "Lister et filtrer les passages d'examens avec pagination")
     public ResponseEntity<Page<PassageExamenDTO>> filtrerPassages(
             @RequestParam(required = false) Long candidatId,
@@ -43,56 +43,56 @@ public class ExamenController {
     }
 
     @GetMapping("/candidat/{candidatId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MONITEUR', 'SECRETAIRE')")
+    @PreAuthorize("hasAuthority('PERM_EXAMENS_VOIR')")
     @Operation(summary = "Obtenir l'historique complet des passages d'un candidat")
     public ResponseEntity<List<PassageExamenDTO>> getPassagesByCandidat(@PathVariable Long candidatId) {
         return ResponseEntity.ok(examenService.getPassagesByCandidat(candidatId));
     }
 
     @GetMapping("/candidat/{candidatId}/bilan")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MONITEUR', 'SECRETAIRE')")
+    @PreAuthorize("hasAuthority('PERM_EXAMENS_VOIR')")
     @Operation(summary = "Obtenir le bilan synthétique des 3 épreuves pour un candidat")
     public ResponseEntity<BilanExamensCandidatDTO> getBilanExamensCandidat(@PathVariable Long candidatId) {
         return ResponseEntity.ok(examenService.getBilanExamensCandidat(candidatId));
     }
 
     @GetMapping("/prochains")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MONITEUR', 'SECRETAIRE')")
+    @PreAuthorize("hasAuthority('PERM_EXAMENS_VOIR')")
     @Operation(summary = "Obtenir les prochains examens programmés")
     public ResponseEntity<List<PassageExamenDTO>> getProchainsExamens() {
         return ResponseEntity.ok(examenService.getProchainsExamens());
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('MONITEUR')")
+    @PreAuthorize("hasAuthority('PERM_EXAMENS_PROGRAMMER')")
     @Operation(summary = "Programmer ou enregistrer un passage d'examen (limite 5 passages par épreuve)")
     public ResponseEntity<PassageExamenDTO> programmerPassage(@Valid @RequestBody CreatePassageRequest request) {
         return new ResponseEntity<>(examenService.programmerOuEnregistrerPassage(request), HttpStatus.CREATED);
     }
 
     @PostMapping("/sessions")
-    @PreAuthorize("hasRole('MONITEUR')")
+    @PreAuthorize("hasAuthority('PERM_EXAMENS_PROGRAMMER')")
     @Operation(summary = "Créer une session d'examen pour un groupe de candidats")
     public ResponseEntity<SessionExamenDTO> creerSession(@Valid @RequestBody CreatePassageBulkRequest request) {
         return new ResponseEntity<>(examenService.creerSession(request), HttpStatus.CREATED);
     }
 
     @GetMapping("/sessions")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MONITEUR', 'SECRETAIRE')")
+    @PreAuthorize("hasAuthority('PERM_EXAMENS_VOIR')")
     @Operation(summary = "Lister les sessions d'examen")
     public ResponseEntity<List<SessionExamenDTO>> listerSessions() {
         return ResponseEntity.ok(examenService.listerSessions());
     }
 
     @GetMapping("/sessions/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MONITEUR', 'SECRETAIRE')")
+    @PreAuthorize("hasAuthority('PERM_EXAMENS_VOIR')")
     @Operation(summary = "Détail d'une session d'examen et de ses candidats")
     public ResponseEntity<SessionExamenDTO> getSessionDetail(@PathVariable Long id) {
         return ResponseEntity.ok(examenService.getSessionDetail(id));
     }
 
     @PostMapping("/sessions/{id}/candidats")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MONITEUR')")
+    @PreAuthorize("hasAuthority('PERM_EXAMENS_GERER_SESSION')")
     @Operation(summary = "Ajouter des candidats à une session d'examen existante")
     public ResponseEntity<SessionExamenDTO> ajouterCandidatsASession(
             @PathVariable Long id,
@@ -102,7 +102,7 @@ public class ExamenController {
     }
 
     @DeleteMapping("/sessions/{id}/candidats/{passageId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MONITEUR')")
+    @PreAuthorize("hasAuthority('PERM_EXAMENS_GERER_SESSION')")
     @Operation(summary = "Retirer un candidat d'une session d'examen")
     public ResponseEntity<Void> retirerCandidatDeSession(@PathVariable Long id, @PathVariable Long passageId) {
         examenService.retirerCandidatDeSession(id, passageId);
@@ -110,14 +110,14 @@ public class ExamenController {
     }
 
     @PutMapping("/sessions/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MONITEUR')")
+    @PreAuthorize("hasAuthority('PERM_EXAMENS_GERER_SESSION')")
     @Operation(summary = "Modifier la date d'une session d'examen")
     public ResponseEntity<SessionExamenDTO> modifierDateSession(@PathVariable Long id, @Valid @RequestBody UpdateSessionRequest request) {
         return ResponseEntity.ok(examenService.modifierDateSession(id, request));
     }
 
     @PutMapping("/{id}/resultat")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MONITEUR')")
+    @PreAuthorize("hasAuthority('PERM_EXAMENS_GERER_SESSION')")
     @Operation(summary = "Mettre à jour le résultat d'un passage (Réussi, Échec, Ajourné)")
     public ResponseEntity<PassageExamenDTO> updateResultat(
             @PathVariable Long id,
@@ -127,7 +127,7 @@ public class ExamenController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERM_EXAMENS_SUPPRIMER')")
     @Operation(summary = "Supprimer un passage d'examen")
     public ResponseEntity<Void> deletePassage(@PathVariable Long id) {
         examenService.deletePassage(id);

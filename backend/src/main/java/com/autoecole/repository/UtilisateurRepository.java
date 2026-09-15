@@ -24,6 +24,9 @@ public interface UtilisateurRepository extends JpaRepository<Utilisateur, Long> 
      *  ne doivent pas y apparaître (cf. audit ÉTAPE 5). */
     List<Utilisateur> findByRoleCodeNot(RoleEnum roleCode);
 
+    /** Utilisé pour interdire la suppression d'un profil encore assigné à des comptes. */
+    long countByProfilId(Long profilId);
+
     /** Nombre de membres du personnel actifs rattachés à chaque site (statistiques d'activité
      *  par site) : un utilisateur affecté à plusieurs sites est compté sur chacun d'eux. */
     @Query("SELECT s.id, COUNT(DISTINCT u.id) FROM Utilisateur u JOIN u.sites s " +

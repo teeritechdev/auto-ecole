@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
 import java.util.Set;
 
 public class AuthDTOs {
@@ -37,6 +38,7 @@ public class AuthDTOs {
         private String nom;
         private String prenom;
         private String role;
+        private List<String> permissions;
         private String photoProfile;
         private Set<Long> siteIds;
         private Set<TypeEpreuve> specialites;

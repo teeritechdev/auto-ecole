@@ -611,7 +611,7 @@ export class CaisseComponent implements OnInit {
   }
 
   get canAdd(): boolean {
-    return this.authService.hasRole(['ADMIN', 'CAISSIERE']);
+    return this.authService.hasPermission(['CAISSE_CREER']);
   }
 
   get isAdmin(): boolean {

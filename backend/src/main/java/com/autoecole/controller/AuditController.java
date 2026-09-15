@@ -22,7 +22,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/audit")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAuthority('PERM_AUDIT_VOIR')")
 @Tag(name = "Audit", description = "Journalisation et traçabilité des opérations sensibles")
 public class AuditController {
 
@@ -42,6 +42,7 @@ public class AuditController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('PERM_AUDIT_SUPPRIMER')")
     @Operation(summary = "Supprimer une entrée du journal d'audit (motif obligatoire, action elle-même journalisée)")
     public ResponseEntity<Void> supprimerAction(@PathVariable Long id, @RequestParam String motif) {
         auditService.supprimerActions(List.of(id), motif);
@@ -49,6 +50,7 @@ public class AuditController {
     }
 
     @PostMapping("/supprimer")
+    @PreAuthorize("hasAuthority('PERM_AUDIT_SUPPRIMER')")
     @Operation(summary = "Supprimer plusieurs entrées du journal d'audit (motif obligatoire, action elle-même journalisée)")
     public ResponseEntity<Void> supprimerActions(@Valid @RequestBody SuppressionAuditRequest request) {
         auditService.supprimerActions(request.getIds(), request.getMotif());

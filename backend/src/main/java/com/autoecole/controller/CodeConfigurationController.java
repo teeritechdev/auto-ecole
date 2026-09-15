@@ -20,14 +20,14 @@ public class CodeConfigurationController {
     private final CodeConfigurationService configurationService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'MONITEUR')")
+    @PreAuthorize("hasAuthority('PERM_CODE_CONFIGURATION_GERER')")
     @Operation(summary = "Récupérer la configuration du module Code de la route")
     public ResponseEntity<CodeConfigurationDTO> getConfiguration() {
         return ResponseEntity.ok(configurationService.getConfiguration());
     }
 
     @PutMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'MONITEUR')")
+    @PreAuthorize("hasAuthority('PERM_CODE_CONFIGURATION_GERER')")
     @Operation(summary = "Modifier la configuration du module Code de la route")
     public ResponseEntity<CodeConfigurationDTO> updateConfiguration(@Valid @RequestBody UpdateCodeConfigurationRequest request) {
         return ResponseEntity.ok(configurationService.updateConfiguration(request));

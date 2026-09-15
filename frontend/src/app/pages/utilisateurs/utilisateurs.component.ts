@@ -2,7 +2,7 @@ import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
-import { UtilisateurDTO, Site } from '../../core/models/models';
+import { UtilisateurDTO, Site, Profil } from '../../core/models/models';
 import { extraireMessageErreur } from '../../core/utils/error-utils';
 
 @Component({
@@ -34,6 +34,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 <th>Email</th>
                 <th>Téléphone</th>
                 <th>Rôle Attribué</th>
+                <th>Profil</th>
                 <th>Site(s)</th>
                 <th>Statut</th>
                 <th>Date Création</th>
@@ -43,7 +44,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
             <tbody>
               @if (loading) {
                 <tr>
-                  <td colspan="10" class="text-center py-4">Chargement des utilisateurs...</td>
+                  <td colspan="11" class="text-center py-4">Chargement des utilisateurs...</td>
                 </tr>
               }
               @for (u of utilisateurs; track u) {
@@ -70,6 +71,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                     'badge-ajourne': u.role === 'MONITEUR'
                   }">{{ u.roleLibelle }}</span>
                   </td>
+                  <td><small class="text-muted">{{ u.profilNom || '—' }}</small></td>
                   <td>
                     @if (u.siteNoms && u.siteNoms.length > 0) {
                       {{ u.siteNoms.join(', ') }}
@@ -157,12 +159,21 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 </div>
                 <div class="form-group">
                   <label class="form-label">Rôle attribué <span class="required">*</span></label>
-                  <select class="form-control" [(ngModel)]="currentUserForm.role" name="role" required>
+                  <select class="form-control" [(ngModel)]="currentUserForm.role" name="role" required (change)="onRoleChange()">
                     <option value="ADMIN">Administrateur (Tous les droits)</option>
                     <option value="SECRETAIRE">Secrétaire (Gestion candidats & inscriptions)</option>
                     <option value="CAISSIERE">Caissière (Encaissements, reçus, caisse)</option>
                     <option value="MONITEUR">Moniteur (Suivi pédagogique & examens)</option>
                   </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Profil de permissions</label>
+                  <select class="form-control" [(ngModel)]="currentUserForm.profilId" name="profilId">
+                    @for (p of profils; track p.id) {
+                      <option [ngValue]="p.id">{{ p.nom }}{{ p.systeme ? ' (Système)' : '' }}</option>
+                    }
+                  </select>
+                  <div class="form-help">Détermine précisément les fonctionnalités accessibles à ce compte (cf. Paramètres Généraux &gt; Permissions). Présélectionné selon le rôle, modifiable librement.</div>
                 </div>
                 @if (['MONITEUR', 'SECRETAIRE', 'CAISSIERE'].includes(currentUserForm.role)) {
                   <div class="form-group">
@@ -259,6 +270,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
 export class UtilisateursComponent implements OnInit {
   utilisateurs: UtilisateurDTO[] = [];
   sites: Site[] = [];
+  profils: Profil[] = [];
   loading = false;
   saving = false;
 
@@ -285,6 +297,16 @@ export class UtilisateursComponent implements OnInit {
   ngOnInit(): void {
     this.loadUsers();
     this.apiService.getSites(true).subscribe({ next: (res) => this.sites = res });
+    this.apiService.getProfils().subscribe({ next: (res) => this.profils = res });
+  }
+
+  /** Présélectionne le profil système du rôle choisi (l'administrateur reste libre d'en
+   *  choisir un autre, y compris un profil personnalisé, juste après). */
+  onRoleChange(): void {
+    const profilSysteme = this.profils.find(p => p.roleSysteme === this.currentUserForm.role);
+    if (profilSysteme) {
+      this.currentUserForm.profilId = profilSysteme.id;
+    }
   }
 
   hasSpecialite(type: string): boolean {
@@ -341,10 +363,12 @@ export class UtilisateursComponent implements OnInit {
       email: '',
       telephone: '',
       role: 'SECRETAIRE',
+      profilId: null,
       siteIds: [],
       specialites: [],
       photoProfile: null
     };
+    this.onRoleChange();
     this.showModal = true;
   }
 
@@ -358,6 +382,7 @@ export class UtilisateursComponent implements OnInit {
       email: u.email,
       telephone: u.telephone,
       role: u.role,
+      profilId: u.profilId ?? null,
       password: '',
       siteIds: u.siteIds ? [...u.siteIds] : [],
       specialites: u.specialites ? [...u.specialites] : [],

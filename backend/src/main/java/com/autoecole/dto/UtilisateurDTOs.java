@@ -30,6 +30,8 @@ public class UtilisateurDTOs {
         private String photoProfile;
         private String role;
         private String roleLibelle;
+        private Long profilId;
+        private String profilNom;
         private Set<Long> siteIds;
         private Set<String> siteNoms;
         private Set<TypeEpreuve> specialites;
@@ -67,6 +69,9 @@ public class UtilisateurDTOs {
         @NotNull(message = "Le rôle est obligatoire")
         private RoleEnum role;
 
+        // Profil de permissions ; si omis, le profil système correspondant au rôle est utilisé
+        private Long profilId;
+
         // Pertinent uniquement pour le rôle MONITEUR
         private Set<Long> siteIds;
         private Set<TypeEpreuve> specialites;
@@ -94,6 +99,9 @@ public class UtilisateurDTOs {
 
         @NotNull(message = "Le rôle est obligatoire")
         private RoleEnum role;
+
+        // Profil de permissions ; si omis, le profil système correspondant au rôle est utilisé
+        private Long profilId;
 
         private Boolean actif;
 

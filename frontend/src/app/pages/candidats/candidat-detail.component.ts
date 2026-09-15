@@ -680,15 +680,15 @@ export class CandidatDetailComponent implements OnInit {
   }
 
   get canAddPayment(): boolean {
-    return this.authService.hasRole(['ADMIN', 'CAISSIERE']);
+    return this.authService.hasPermission(['PAIEMENTS_CREER']);
   }
 
   get canAddExam(): boolean {
-    return this.authService.hasRole(['ADMIN', 'MONITEUR']);
+    return this.authService.hasPermission(['EXAMENS_PROGRAMMER']);
   }
 
   get canSeeFinancialData(): boolean {
-    return this.authService.hasRole(['ADMIN', 'SECRETAIRE', 'CAISSIERE']);
+    return this.authService.hasPermission(['PAIEMENTS_VOIR']);
   }
 
   loadAll(): void {

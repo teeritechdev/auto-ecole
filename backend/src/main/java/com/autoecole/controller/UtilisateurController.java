@@ -23,35 +23,35 @@ public class UtilisateurController {
     private final UtilisateurService utilisateurService;
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERM_UTILISATEURS_VOIR')")
     @Operation(summary = "Lister tous les comptes utilisateurs")
     public ResponseEntity<List<UtilisateurDTO>> getAllUtilisateurs() {
         return ResponseEntity.ok(utilisateurService.getAllUtilisateurs());
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERM_UTILISATEURS_VOIR')")
     @Operation(summary = "Obtenir les détails d'un utilisateur par son id")
     public ResponseEntity<UtilisateurDTO> getUtilisateurById(@PathVariable Long id) {
         return ResponseEntity.ok(utilisateurService.getUtilisateurById(id));
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERM_UTILISATEURS_CREER')")
     @Operation(summary = "Créer un nouveau compte utilisateur")
     public ResponseEntity<UtilisateurDTO> createUtilisateur(@Valid @RequestBody CreateUtilisateurRequest request) {
         return new ResponseEntity<>(utilisateurService.createUtilisateur(request), HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERM_UTILISATEURS_MODIFIER')")
     @Operation(summary = "Modifier un compte utilisateur existant")
     public ResponseEntity<UtilisateurDTO> updateUtilisateur(@PathVariable Long id, @Valid @RequestBody UpdateUtilisateurRequest request) {
         return ResponseEntity.ok(utilisateurService.updateUtilisateur(id, request));
     }
 
     @PatchMapping("/{id}/toggle-actif")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERM_UTILISATEURS_MODIFIER')")
     @Operation(summary = "Activer ou désactiver un compte utilisateur")
     public ResponseEntity<Void> toggleActif(@PathVariable Long id) {
         utilisateurService.toggleActif(id);
@@ -59,7 +59,7 @@ public class UtilisateurController {
     }
 
     @PatchMapping("/{id}/photo")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERM_UTILISATEURS_MODIFIER')")
     public ResponseEntity<UtilisateurDTO> updatePhoto(@PathVariable Long id, @Valid @RequestBody PhotoRequest request) {
         validatePhoto(request.getPhotoProfile());
         return ResponseEntity.ok(utilisateurService.updatePhoto(id, request.getPhotoProfile()));

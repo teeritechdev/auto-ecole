@@ -22,6 +22,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -59,7 +61,17 @@ public class AuthService {
         String jwt = jwtUtils.generateJwtToken(authentication);
 
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        String role = userDetails.getAuthorities().iterator().next().getAuthority().replace("ROLE_", "");
+        String role = userDetails.getAuthorities().stream()
+                .map(a -> a.getAuthority())
+                .filter(a -> a.startsWith("ROLE_"))
+                .findFirst()
+                .map(a -> a.replace("ROLE_", ""))
+                .orElseThrow();
+        List<String> permissions = userDetails.getAuthorities().stream()
+                .map(a -> a.getAuthority())
+                .filter(a -> a.startsWith("PERM_"))
+                .map(a -> a.replace("PERM_", ""))
+                .collect(java.util.stream.Collectors.toList());
         Utilisateur user = utilisateurRepository.findById(userDetails.getId()).orElseThrow();
 
         auditService.logAction("CONNEXION", "Utilisateur", userDetails.getUsername(), "Connexion réussie de l'utilisateur", null);
@@ -72,6 +84,7 @@ public class AuthService {
                 .nom(userDetails.getNom())
                 .prenom(userDetails.getPrenom())
                 .role(role)
+                .permissions(permissions)
                 .photoProfile(user.getPhotoProfile())
                 .siteIds(user.getSites().stream().map(com.autoecole.entity.Site::getId).collect(java.util.stream.Collectors.toSet()))
                 .specialites(user.getSpecialites())

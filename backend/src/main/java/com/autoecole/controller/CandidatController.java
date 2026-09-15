@@ -26,7 +26,7 @@ public class CandidatController {
     private final CandidatService candidatService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETAIRE', 'CAISSIERE', 'MONITEUR')")
+    @PreAuthorize("hasAuthority('PERM_CANDIDATS_VOIR')")
     @Operation(summary = "Rechercher et filtrer les candidats avec pagination")
     public ResponseEntity<Page<CandidatDTO>> rechercherCandidats(
             @RequestParam(required = false) String recherche,
@@ -40,42 +40,42 @@ public class CandidatController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETAIRE', 'CAISSIERE', 'MONITEUR')")
+    @PreAuthorize("hasAuthority('PERM_CANDIDATS_VOIR')")
     @Operation(summary = "Obtenir la fiche complète d'un candidat")
     public ResponseEntity<CandidatDTO> getCandidatById(@PathVariable Long id) {
         return ResponseEntity.ok(candidatService.getCandidatById(id));
     }
 
     @GetMapping("/dossier/{numeroDossier}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETAIRE', 'CAISSIERE', 'MONITEUR')")
+    @PreAuthorize("hasAuthority('PERM_CANDIDATS_VOIR')")
     @Operation(summary = "Rechercher un candidat par son numéro de dossier")
     public ResponseEntity<CandidatDTO> getCandidatByNumeroDossier(@PathVariable String numeroDossier) {
         return ResponseEntity.ok(candidatService.getCandidatByNumeroDossier(numeroDossier));
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETAIRE')")
+    @PreAuthorize("hasAuthority('PERM_CANDIDATS_CREER')")
     @Operation(summary = "Créer un nouveau candidat avec inscription et 1er versement optionnel")
     public ResponseEntity<CandidatDTO> createCandidat(@Valid @RequestBody CreateCandidatRequest request) {
         return new ResponseEntity<>(candidatService.createCandidat(request), HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETAIRE')")
+    @PreAuthorize("hasAuthority('PERM_CANDIDATS_MODIFIER')")
     @Operation(summary = "Modifier les informations d'un candidat")
     public ResponseEntity<CandidatDTO> updateCandidat(@PathVariable Long id, @Valid @RequestBody UpdateCandidatRequest request) {
         return ResponseEntity.ok(candidatService.updateCandidat(id, request));
     }
 
     @PostMapping("/{id}/reinscrire")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETAIRE')")
+    @PreAuthorize("hasAuthority('PERM_CANDIDATS_CREER')")
     @Operation(summary = "Rattacher une nouvelle inscription (redoublant) à un candidat déjà connu, au lieu de créer un dossier en doublon")
     public ResponseEntity<CandidatDTO> reinscrireCandidat(@PathVariable Long id, @Valid @RequestBody ReinscrireCandidatRequest request) {
         return ResponseEntity.ok(candidatService.reinscrireCandidat(id, request));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERM_CANDIDATS_SUPPRIMER')")
     @Operation(summary = "Supprimer un dossier candidat (réservé ADMIN)")
     public ResponseEntity<Void> deleteCandidat(
             @PathVariable Long id,

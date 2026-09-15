@@ -461,7 +461,7 @@ export class PaiementsComponent implements OnInit {
   }
 
   get canAdd(): boolean {
-    return this.authService.hasRole(['ADMIN', 'CAISSIERE']);
+    return this.authService.hasPermission(['PAIEMENTS_CREER']);
   }
 
   /** Rafraîchit la liste ET le résumé : un versement peut être enregistré par un autre

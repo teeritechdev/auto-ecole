@@ -30,7 +30,9 @@ import {
   CodeProgression,
   EtatTentative,
   CodeHistoriqueLigne,
-  LettreReponse
+  LettreReponse,
+  Profil,
+  PermissionCatalogue
 } from '../models/models';
 
 @Injectable({
@@ -281,6 +283,27 @@ export class ApiService {
 
   public updateMyPhoto(photoProfile: string | null): Observable<UtilisateurDTO> {
     return this.http.patch<UtilisateurDTO>(`${this.base}/utilisateurs/me/photo`, { photoProfile });
+  }
+
+  // ================= PROFILS & PERMISSIONS =================
+  public getPermissionsCatalogue(): Observable<PermissionCatalogue[]> {
+    return this.http.get<PermissionCatalogue[]>(`${this.base}/profils/permissions`);
+  }
+
+  public getProfils(): Observable<Profil[]> {
+    return this.http.get<Profil[]>(`${this.base}/profils`);
+  }
+
+  public createProfil(data: { nom: string; description?: string; permissionCodes: string[] }): Observable<Profil> {
+    return this.http.post<Profil>(`${this.base}/profils`, data);
+  }
+
+  public updateProfil(id: number, data: { nom: string; description?: string; permissionCodes: string[] }): Observable<Profil> {
+    return this.http.put<Profil>(`${this.base}/profils/${id}`, data);
+  }
+
+  public deleteProfil(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/profils/${id}`);
   }
 
   public getLogo(): Observable<{ logoData: string | null }> {

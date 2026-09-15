@@ -8,10 +8,11 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 @Getter
 @AllArgsConstructor
@@ -30,9 +31,13 @@ public class UserDetailsImpl implements UserDetails {
     private boolean actif;
     private Collection<? extends GrantedAuthority> authorities;
 
-    public static UserDetailsImpl build(Utilisateur user) {
+    public static UserDetailsImpl build(Utilisateur user, Set<String> permissionCodes) {
         String roleName = "ROLE_" + user.getRole().getCode().name();
-        List<GrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority(roleName));
+        List<GrantedAuthority> authorities = new ArrayList<>();
+        authorities.add(new SimpleGrantedAuthority(roleName));
+        for (String code : permissionCodes) {
+            authorities.add(new SimpleGrantedAuthority("PERM_" + code));
+        }
 
         return new UserDetailsImpl(
                 user.getId(),

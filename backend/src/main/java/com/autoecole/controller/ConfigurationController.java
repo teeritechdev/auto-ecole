@@ -54,7 +54,7 @@ public class ConfigurationController {
     }
 
     @PutMapping("/identite")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERM_CONFIGURATION_IDENTITE_MODIFIER')")
     @Operation(summary = "Modifier l'identité de l'auto-école (logo, nom, contact)")
     public ResponseEntity<IdentiteResponse> updateIdentite(@RequestBody IdentiteRequest request) {
         validateLogo(request.getLogoData());
@@ -85,7 +85,7 @@ public class ConfigurationController {
     }
 
     @GetMapping("/tarifs-examens")
-    @PreAuthorize("hasAnyRole('ADMIN', 'CAISSIERE')")
+    @PreAuthorize("hasAuthority('PERM_CONFIGURATION_TARIFS_VOIR')")
     @Operation(summary = "Récupérer le prix unitaire des frais d'examen par épreuve")
     public ResponseEntity<TarifsExamensResponse> getTarifsExamens() {
         ConfigurationApplication configuration = repository.findById(1L).orElseGet(ConfigurationApplication::new);
@@ -97,7 +97,7 @@ public class ConfigurationController {
     }
 
     @PutMapping("/tarifs-examens")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERM_CONFIGURATION_TARIFS_MODIFIER')")
     @Operation(summary = "Modifier le prix unitaire des frais d'examen par épreuve")
     public ResponseEntity<TarifsExamensResponse> updateTarifsExamens(@RequestBody TarifsExamensRequest request) {
         validerTarif(request.getPrixExamenCode());

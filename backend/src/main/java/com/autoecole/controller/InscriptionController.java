@@ -23,7 +23,7 @@ public class InscriptionController {
     private final InscriptionService inscriptionService;
 
     @GetMapping("/candidat/{candidatId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETAIRE', 'CAISSIERE')")
+    @PreAuthorize("hasAuthority('PERM_INSCRIPTIONS_VOIR')")
     @Operation(summary = "Historique des cycles d'inscription d'un candidat (inscription initiale + reprises)")
     public ResponseEntity<List<InscriptionDTO>> getHistoriqueByCandidat(@PathVariable Long candidatId) {
         return ResponseEntity.ok(inscriptionService.getHistoriqueByCandidat(candidatId));

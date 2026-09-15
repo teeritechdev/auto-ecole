@@ -3,6 +3,7 @@ package com.autoecole.service;
 import com.autoecole.dto.UtilisateurDTOs.CreateUtilisateurRequest;
 import com.autoecole.dto.UtilisateurDTOs.UpdateUtilisateurRequest;
 import com.autoecole.dto.UtilisateurDTOs.UtilisateurDTO;
+import com.autoecole.entity.Profil;
 import com.autoecole.entity.Role;
 import com.autoecole.entity.Site;
 import com.autoecole.entity.Utilisateur;
@@ -10,6 +11,7 @@ import com.autoecole.entity.enums.RoleEnum;
 import com.autoecole.entity.enums.TypeEpreuve;
 import com.autoecole.exception.BadRequestException;
 import com.autoecole.exception.ResourceNotFoundException;
+import com.autoecole.repository.ProfilRepository;
 import com.autoecole.repository.RoleRepository;
 import com.autoecole.repository.SiteRepository;
 import com.autoecole.repository.UtilisateurRepository;
@@ -30,6 +32,7 @@ public class UtilisateurService {
     private final UtilisateurRepository utilisateurRepository;
     private final RoleRepository roleRepository;
     private final SiteRepository siteRepository;
+    private final ProfilRepository profilRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuditService auditService;
 
@@ -62,6 +65,7 @@ public class UtilisateurService {
                 .orElseThrow(() -> new BadRequestException("Rôle inexistant: " + request.getRole()));
 
         Set<Site> sites = resoudreSitesPourRole(request.getRole(), request.getSiteIds());
+        Profil profil = resoudreProfil(request.getProfilId(), request.getRole());
 
         Utilisateur user = Utilisateur.builder()
                 .username(request.getUsername().trim())
@@ -72,6 +76,7 @@ public class UtilisateurService {
                 .telephone(request.getTelephone())
                 .photoProfile(request.getPhotoProfile())
                 .role(role)
+                .profil(profil)
                 .sites(sites)
                 .specialites(resoudreSpecialites(request.getRole(), request.getSpecialites()))
                 .actif(true)
@@ -97,6 +102,7 @@ public class UtilisateurService {
                 .orElseThrow(() -> new BadRequestException("Rôle inexistant: " + request.getRole()));
 
         Set<Site> sites = resoudreSitesPourRole(request.getRole(), request.getSiteIds());
+        Profil profil = resoudreProfil(request.getProfilId(), request.getRole());
 
         user.setEmail(request.getEmail().trim().toLowerCase());
         user.setNom(request.getNom().trim());
@@ -104,6 +110,7 @@ public class UtilisateurService {
         user.setTelephone(request.getTelephone());
         user.setPhotoProfile(request.getPhotoProfile());
         user.setRole(role);
+        user.setProfil(profil);
         user.setSites(sites);
         user.setSpecialites(resoudreSpecialites(request.getRole(), request.getSpecialites()));
 
@@ -171,6 +178,17 @@ public class UtilisateurService {
         return sites;
     }
 
+    /** Si aucun profil n'est explicitement choisi, on rattache l'utilisateur au profil
+     *  système de son rôle (comportement historique préservé par défaut). */
+    private Profil resoudreProfil(Long profilId, RoleEnum role) {
+        if (profilId != null) {
+            return profilRepository.findById(profilId)
+                    .orElseThrow(() -> new BadRequestException("Profil de permissions inexistant: " + profilId));
+        }
+        return profilRepository.findByRoleSysteme(role)
+                .orElseThrow(() -> new BadRequestException("Aucun profil système trouvé pour le rôle: " + role));
+    }
+
     private Set<TypeEpreuve> resoudreSpecialites(RoleEnum role, Set<TypeEpreuve> specialites) {
         if (role != RoleEnum.MONITEUR || specialites == null) {
             return Collections.emptySet();
@@ -199,6 +217,8 @@ public class UtilisateurService {
                 .photoProfile(u.getPhotoProfile())
                 .role(u.getRole().getCode().name())
                 .roleLibelle(u.getRole().getLibelle())
+                .profilId(u.getProfil() != null ? u.getProfil().getId() : null)
+                .profilNom(u.getProfil() != null ? u.getProfil().getNom() : null)
                 .siteIds(u.getSites().stream().map(Site::getId).collect(Collectors.toSet()))
                 .siteNoms(u.getSites().stream().map(Site::getNom).collect(Collectors.toSet()))
                 .specialites(u.getSpecialites())

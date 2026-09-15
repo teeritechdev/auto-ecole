@@ -22,13 +22,13 @@ import java.time.LocalDateTime;
 @RestController
 @RequestMapping("/api/caisse")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('ADMIN', 'CAISSIERE')")
 @Tag(name = "Caisse", description = "Caisse & Trésorerie interne : opérations diverses (recettes/dépenses), indépendante des paiements de formation")
 public class CaisseController {
 
     private final CaisseService caisseService;
 
     @GetMapping("/transactions")
+    @PreAuthorize("hasAuthority('PERM_CAISSE_VOIR')")
     @Operation(summary = "Lister et filtrer les opérations de caisse avec pagination")
     public ResponseEntity<Page<TransactionCaisseDTO>> filtrerTransactions(
             @RequestParam(required = false) TypeMouvementCaisse type,
@@ -42,12 +42,14 @@ public class CaisseController {
     }
 
     @GetMapping("/recap")
+    @PreAuthorize("hasAuthority('PERM_CAISSE_VOIR')")
     @Operation(summary = "Obtenir le récapitulatif du solde de caisse (total et journalier), pour un site donné ou tous sites confondus (ADMIN)")
     public ResponseEntity<RecapCaisseDTO> getRecapCaisse(@RequestParam(required = false) Long siteId) {
         return ResponseEntity.ok(caisseService.getRecapCaisse(siteId));
     }
 
     @PostMapping("/transactions")
+    @PreAuthorize("hasAuthority('PERM_CAISSE_CREER')")
     @Operation(summary = "Enregistrer une opération de caisse (le sens est hérité de la nature d'opération choisie)")
     public ResponseEntity<TransactionCaisseDTO> enregistrerTransaction(
             @Valid @RequestBody CreateTransactionCaisseRequest request
@@ -56,7 +58,7 @@ public class CaisseController {
     }
 
     @DeleteMapping("/transactions/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERM_CAISSE_SUPPRIMER')")
     @Operation(summary = "Supprimer une opération de caisse (réservé ADMIN)")
     public ResponseEntity<Void> deleteTransaction(
             @PathVariable Long id,

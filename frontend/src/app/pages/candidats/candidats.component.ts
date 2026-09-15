@@ -787,7 +787,7 @@ export class CandidatsComponent implements OnInit {
   }
 
   get canEdit(): boolean {
-    return this.authService.hasRole(['ADMIN', 'SECRETAIRE']);
+    return this.authService.hasPermission(['CANDIDATS_MODIFIER']);
   }
 
   get isAdmin(): boolean {
@@ -795,7 +795,7 @@ export class CandidatsComponent implements OnInit {
   }
 
   get canSeeFinancialData(): boolean {
-    return this.authService.hasRole(['ADMIN', 'SECRETAIRE', 'CAISSIERE']);
+    return this.authService.hasPermission(['PAIEMENTS_VOIR']);
   }
 
   /** Types d'épreuves programmables par l'utilisateur courant : non restreint pour

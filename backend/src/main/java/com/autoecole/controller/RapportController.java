@@ -31,7 +31,7 @@ public class RapportController {
     private final CaisseService caisseService;
 
     @GetMapping("/candidats/excel")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETAIRE', 'CAISSIERE')")
+    @PreAuthorize("hasAuthority('PERM_RAPPORTS_CANDIDATS')")
     @Operation(summary = "Exporter la liste des candidats en Excel (.xlsx)")
     public ResponseEntity<byte[]> exportCandidatsExcel(
             @RequestParam(required = false) StatutDossier statut,
@@ -47,7 +47,7 @@ public class RapportController {
     }
 
     @GetMapping("/candidats/pdf")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETAIRE', 'CAISSIERE')")
+    @PreAuthorize("hasAuthority('PERM_RAPPORTS_CANDIDATS')")
     @Operation(summary = "Exporter la liste des candidats en PDF")
     public ResponseEntity<byte[]> exportCandidatsPdf(
             @RequestParam(required = false) StatutDossier statut,
@@ -63,7 +63,7 @@ public class RapportController {
     }
 
     @GetMapping("/releve-paiement/{candidatId}/pdf")
-    @PreAuthorize("hasAnyRole('ADMIN', 'CAISSIERE', 'SECRETAIRE')")
+    @PreAuthorize("hasAuthority('PERM_RAPPORTS_CANDIDATS')")
     @Operation(summary = "Générer le relevé de paiement individuel d'un candidat en PDF")
     public ResponseEntity<byte[]> exportRelevePaiementPdf(@PathVariable Long candidatId) {
         byte[] bytes = exportService.exportRelevePaiementCandidatPdf(candidatId);
@@ -75,7 +75,7 @@ public class RapportController {
     }
 
     @GetMapping("/recu/{recuId}/pdf")
-    @PreAuthorize("hasAnyRole('ADMIN', 'CAISSIERE', 'SECRETAIRE')")
+    @PreAuthorize("hasAuthority('PERM_RAPPORTS_CANDIDATS')")
     @Operation(summary = "Imprimer ou exporter un reçu officiel en PDF")
     public ResponseEntity<byte[]> exportRecuPdf(@PathVariable Long recuId) {
         byte[] bytes = exportService.exportRecuPdf(recuId);
@@ -87,7 +87,7 @@ public class RapportController {
     }
 
     @GetMapping("/caisse/pdf")
-    @PreAuthorize("hasAnyRole('ADMIN', 'CAISSIERE')")
+    @PreAuthorize("hasAuthority('PERM_RAPPORTS_CAISSE')")
     @Operation(summary = "Générer le relevé de caisse périodique en PDF")
     public ResponseEntity<byte[]> exportCaissePdf(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime debut,
@@ -103,7 +103,7 @@ public class RapportController {
     }
 
     @GetMapping("/caisse/excel")
-    @PreAuthorize("hasAnyRole('ADMIN', 'CAISSIERE')")
+    @PreAuthorize("hasAuthority('PERM_RAPPORTS_CAISSE')")
     @Operation(summary = "Générer le relevé de caisse périodique en Excel")
     public ResponseEntity<byte[]> exportCaisseExcel(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime debut,

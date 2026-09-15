@@ -67,37 +67,37 @@ import { extraireMessageErreur } from './core/utils/error-utils';
             @if (!hasRole(['CANDIDAT'])) {
               <div class="nav-section-title">Gestion Métier</div>
             }
-            @if (hasRole(['ADMIN', 'SECRETAIRE', 'CAISSIERE', 'MONITEUR'])) {
+            @if (hasPermission(['CANDIDATS_VOIR'])) {
               <a routerLink="/candidats" routerLinkActive="active" class="nav-item">
                 <svg class="nav-icon icon-violet" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 <span>Inscriptions</span>
               </a>
             }
-            @if (hasRole(['ADMIN', 'CAISSIERE', 'SECRETAIRE'])) {
+            @if (hasPermission(['PAIEMENTS_VOIR'])) {
               <a routerLink="/paiements" routerLinkActive="active" class="nav-item">
                 <svg class="nav-icon icon-green" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
                 <span>Paiements & Reçus</span>
               </a>
             }
-            @if (hasRole(['ADMIN', 'MONITEUR', 'SECRETAIRE'])) {
+            @if (hasPermission(['EXAMENS_VOIR'])) {
               <a routerLink="/examens" routerLinkActive="active" class="nav-item">
                 <svg class="nav-icon icon-amber" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 9 12 4 2 9l10 5 10-5Z"/><path d="M6 11.5V16c0 1.4 2.7 2.8 6 2.8s6-1.4 6-2.8v-4.5"/><path d="M2 9v5"/></svg>
                 <span>Examens & Épreuves</span>
               </a>
             }
-            @if (hasRole(['ADMIN', 'MONITEUR'])) {
+            @if (hasPermission(['CODE_SUIVI'])) {
               <a routerLink="/code/resultats" routerLinkActive="active" class="nav-item">
                 <svg class="nav-icon icon-amber" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 9 12 4 2 9l10 5 10-5Z"/><path d="M6 11.5V16c0 1.4 2.7 2.8 6 2.8s6-1.4 6-2.8v-4.5"/><path d="M2 9v5"/></svg>
                 <span>Résultats Code</span>
               </a>
             }
-            @if (hasRole(['ADMIN', 'MONITEUR'])) {
+            @if (hasPermission(['CODE_CONFIGURATION_GERER'])) {
               <a routerLink="/parametrage-code" routerLinkActive="active" class="nav-item">
                 <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82A1.65 1.65 0 0 0 3 13.09H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
                 <span>Configuration Code</span>
               </a>
             }
-            @if (hasRole(['ADMIN', 'CAISSIERE'])) {
+            @if (hasPermission(['CAISSE_VOIR'])) {
               <div class="nav-item-flyout" [class.open]="openFlyoutMenu === 'caisse'"
                    (mouseenter)="openFlyout('caisse', $event)" (mouseleave)="scheduleCloseFlyout()">
                 <a routerLink="/caisse" routerLinkActive="active" class="nav-item">
@@ -109,7 +109,7 @@ import { extraireMessageErreur } from './core/utils/error-utils';
                 </button>
               </div>
             }
-            @if (hasRole(['ADMIN', 'SECRETAIRE', 'CAISSIERE'])) {
+            @if (hasPermission(['RAPPORTS_CANDIDATS', 'RAPPORTS_CAISSE'])) {
               <a routerLink="/rapports" routerLinkActive="active" class="nav-item">
                 <svg class="nav-icon icon-indigo" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                 <span>Rapports & Exports</span>
@@ -118,7 +118,7 @@ import { extraireMessageErreur } from './core/utils/error-utils';
             @if (hasRole(['ADMIN'])) {
               <div class="nav-section-title">Administration</div>
             }
-            @if (hasRole(['ADMIN'])) {
+            @if (hasPermission(['UTILISATEURS_VOIR'])) {
               <a routerLink="/utilisateurs" routerLinkActive="active" class="nav-item">
                 <svg class="nav-icon icon-rose" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
                 <span>Comptes Utilisateurs</span>
@@ -136,13 +136,13 @@ import { extraireMessageErreur } from './core/utils/error-utils';
                 </button>
               </div>
             }
-            @if (hasRole(['ADMIN'])) {
+            @if (hasPermission(['CODE_QUESTIONS_GERER'])) {
               <a routerLink="/code/questions" routerLinkActive="active" class="nav-item">
                 <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>
                 <span>Banque de questions Code</span>
               </a>
             }
-            @if (hasRole(['ADMIN'])) {
+            @if (hasPermission(['AUDIT_VOIR'])) {
               <a routerLink="/audit" routerLinkActive="active" class="nav-item">
                 <svg class="nav-icon icon-red" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg>
                 <span>Journal d'Audit</span>
@@ -187,6 +187,7 @@ import { extraireMessageErreur } from './core/utils/error-utils';
               <a routerLink="/parametrage" [queryParams]="{tab: 'tarifs'}" class="submenu-item" (click)="closeFlyout()">Tarifs des Examens</a>
               <a routerLink="/parametrage" [queryParams]="{tab: 'sites'}" class="submenu-item" (click)="closeFlyout()">Sites de Formation</a>
               <a routerLink="/parametrage" [queryParams]="{tab: 'stats'}" class="submenu-item" (click)="closeFlyout()">Statistiques par Site</a>
+              <a routerLink="/parametrage" [queryParams]="{tab: 'permissions'}" class="submenu-item" (click)="closeFlyout()">Permissions</a>
             }
             @if (openFlyoutMenu === 'caisse') {
               <a routerLink="/caisse" [queryParams]="{tab: 'operations'}" class="submenu-item" (click)="closeFlyout()">Opérations</a>
@@ -572,6 +573,10 @@ export class AppComponent {
 
   hasRole(roles: string[]): boolean {
     return this.authService.hasRole(roles);
+  }
+
+  hasPermission(permissions: string[]): boolean {
+    return this.authService.hasPermission(permissions);
   }
 
   logout(): void {

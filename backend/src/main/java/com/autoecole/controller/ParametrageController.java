@@ -31,14 +31,14 @@ public class ParametrageController {
     }
 
     @PostMapping("/categories")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERM_PARAMETRAGE_CATEGORIES_GERER')")
     @Operation(summary = "Créer une nouvelle catégorie de permis")
     public ResponseEntity<CategoriePermisDTO> createCategorie(@Valid @RequestBody CategoriePermisDTO dto) {
         return new ResponseEntity<>(parametrageService.createCategorie(dto), HttpStatus.CREATED);
     }
 
     @PutMapping("/categories/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERM_PARAMETRAGE_CATEGORIES_GERER')")
     @Operation(summary = "Modifier une catégorie de permis")
     public ResponseEntity<CategoriePermisDTO> updateCategorie(@PathVariable Long id, @Valid @RequestBody CategoriePermisDTO dto) {
         return ResponseEntity.ok(parametrageService.updateCategorie(id, dto));
@@ -52,21 +52,21 @@ public class ParametrageController {
     }
 
     @PostMapping("/sites")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERM_PARAMETRAGE_SITES_GERER')")
     @Operation(summary = "Créer un nouveau site de formation")
     public ResponseEntity<SiteDTO> createSite(@Valid @RequestBody SiteDTO dto) {
         return new ResponseEntity<>(parametrageService.createSite(dto), HttpStatus.CREATED);
     }
 
     @PutMapping("/sites/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERM_PARAMETRAGE_SITES_GERER')")
     @Operation(summary = "Modifier un site de formation")
     public ResponseEntity<SiteDTO> updateSite(@PathVariable Long id, @Valid @RequestBody SiteDTO dto) {
         return ResponseEntity.ok(parametrageService.updateSite(id, dto));
     }
 
     @GetMapping("/sites/statistiques")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERM_PARAMETRAGE_SITES_STATISTIQUES')")
     @Operation(summary = "Statistiques par site (candidats actifs, montants encaissés et restants dus)")
     public ResponseEntity<List<SiteStatDTO>> getStatistiquesSites() {
         return ResponseEntity.ok(parametrageService.getStatistiquesSites());

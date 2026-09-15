@@ -50,6 +50,16 @@ public class Utilisateur {
     private Role role;
 
     /**
+     * Profil de permissions assigné à l'utilisateur (cf. Profil). Nullable en base pour ne
+     * pas casser les lignes existantes lors de la migration ; toujours résolu par
+     * l'application (à défaut, le profil système correspondant au rôle) - cf.
+     * UtilisateurService et DataInitializerService.
+     */
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "profil_id")
+    private Profil profil;
+
+    /**
      * Sites de rattachement, principalement utilisés pour les moniteurs :
      * déterminent les candidats auxquels ils ont accès (cf. RoleEnum.MONITEUR).
      * Un moniteur peut être affecté à plusieurs sites, comme pour ses spécialités.

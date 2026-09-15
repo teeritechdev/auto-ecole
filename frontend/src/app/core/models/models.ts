@@ -5,6 +5,7 @@ export interface User {
   nom: string;
   prenom: string;
   role: 'ADMIN' | 'SECRETAIRE' | 'CAISSIERE' | 'MONITEUR' | 'CANDIDAT';
+  permissions?: string[];
   photoProfile?: string;
   token?: string;
   siteIds?: number[];
@@ -23,11 +24,31 @@ export interface UtilisateurDTO {
   photoProfile?: string;
   role: string;
   roleLibelle: string;
+  profilId?: number;
+  profilNom?: string;
   siteIds?: number[];
   siteNoms?: string[];
   specialites?: ('CODE' | 'CRENEAU' | 'CIRCULATION')[];
   actif: boolean;
   dateCreation: string;
+}
+
+export interface PermissionCatalogue {
+  id: number;
+  code: string;
+  module: string;
+  libelle: string;
+}
+
+export interface Profil {
+  id: number;
+  nom: string;
+  description?: string;
+  systeme: boolean;
+  roleSysteme?: string;
+  verrouille: boolean;
+  nombreUtilisateurs: number;
+  permissionCodes: string[];
 }
 
 export interface CategoriePermis {

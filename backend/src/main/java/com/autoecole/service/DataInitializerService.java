@@ -16,7 +16,11 @@ import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Base64;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -24,6 +28,8 @@ import java.util.Set;
 public class DataInitializerService implements CommandLineRunner {
 
     private final RoleRepository roleRepository;
+    private final PermissionRepository permissionRepository;
+    private final ProfilRepository profilRepository;
     private final UtilisateurRepository utilisateurRepository;
     private final CategoriePermisRepository categorieRepository;
     private final SiteRepository siteRepository;
@@ -50,7 +56,13 @@ public class DataInitializerService implements CommandLineRunner {
         Role roleSecretaire = initRole(RoleEnum.SECRETAIRE, "Secrétaire Administrative");
         Role roleCaissiere = initRole(RoleEnum.CAISSIERE, "Caissière / Comptable");
         Role roleMoniteur = initRole(RoleEnum.MONITEUR, "Moniteur Pédagogique");
-        initRole(RoleEnum.CANDIDAT, "Candidat");
+        Role roleCandidat = initRole(RoleEnum.CANDIDAT, "Candidat");
+
+        // 1bis. Catalogue de permissions + profils système (onglet Permissions de Paramétrage) :
+        //       reproduit fidèlement les accès historiques par rôle ; l'ADMIN garde toujours
+        //       l'intégralité des permissions (cf. UserDetailsServiceImpl).
+        initPermissionsEtProfils(roleAdmin, roleSecretaire, roleCaissiere, roleMoniteur, roleCandidat);
+        rattacherProfilsManquants();
 
         // 2. Catégories de permis, avec leur tarif (données de référence, toujours créées)
         CategoriePermis catA1 = initCategorie("A1", "Permis Moto légère (125 cm³)", new BigDecimal("75000"), "Conduite motocyclettes");
@@ -132,9 +144,106 @@ public class DataInitializerService implements CommandLineRunner {
                     .prenom(prenom)
                     .telephone(tel)
                     .role(role)
+                    .profil(profilRepository.findByRoleSysteme(role.getCode()).orElse(null))
                     .actif(true)
                     .build();
             return utilisateurRepository.save(u);
+        });
+    }
+
+    /** Définit le catalogue de permissions et les 5 profils système, sans jamais écraser des
+     *  permissions déjà personnalisées par l'administrateur sur un profil existant. */
+    private void initPermissionsEtProfils(Role admin, Role secretaire, Role caissiere, Role moniteur, Role candidat) {
+        record Def(String code, String module, String libelle) {}
+        List<Def> catalogue = List.of(
+                new Def("CANDIDATS_VOIR", "Candidats", "Voir la liste et les fiches candidats"),
+                new Def("CANDIDATS_CREER", "Candidats", "Créer un dossier candidat"),
+                new Def("CANDIDATS_MODIFIER", "Candidats", "Modifier un dossier candidat"),
+                new Def("CANDIDATS_SUPPRIMER", "Candidats", "Supprimer un dossier candidat"),
+                new Def("INSCRIPTIONS_VOIR", "Candidats", "Voir l'historique des cycles d'inscription"),
+                new Def("EXAMENS_VOIR", "Examens", "Voir les passages et sessions d'examen"),
+                new Def("EXAMENS_PROGRAMMER", "Examens", "Programmer un passage ou une session d'examen"),
+                new Def("EXAMENS_GERER_SESSION", "Examens", "Gérer une session d'examen (candidats, date, résultat)"),
+                new Def("EXAMENS_SUPPRIMER", "Examens", "Supprimer un passage d'examen"),
+                new Def("PAIEMENTS_VOIR", "Paiements", "Voir les versements et reçus"),
+                new Def("PAIEMENTS_CREER", "Paiements", "Enregistrer un versement"),
+                new Def("PAIEMENTS_MODIFIER", "Paiements", "Modifier un versement"),
+                new Def("PAIEMENTS_ANNULER", "Paiements", "Annuler un versement"),
+                new Def("CAISSE_VOIR", "Caisse Ménu Dépense", "Voir les opérations et le récapitulatif de caisse"),
+                new Def("CAISSE_CREER", "Caisse Ménu Dépense", "Enregistrer une opération de caisse"),
+                new Def("CAISSE_SUPPRIMER", "Caisse Ménu Dépense", "Supprimer une opération de caisse"),
+                new Def("CAISSE_NATURES_VOIR", "Caisse Ménu Dépense", "Voir les natures d'opération actives"),
+                new Def("CAISSE_NATURES_GERER", "Caisse Ménu Dépense", "Créer ou modifier les natures d'opération"),
+                new Def("UTILISATEURS_VOIR", "Utilisateurs", "Voir les comptes utilisateurs"),
+                new Def("UTILISATEURS_CREER", "Utilisateurs", "Créer un compte utilisateur"),
+                new Def("UTILISATEURS_MODIFIER", "Utilisateurs", "Modifier un compte utilisateur"),
+                new Def("CODE_PRATIQUER", "Code de la route", "Passer les tests d'entraînement au code"),
+                new Def("CODE_SUIVI", "Code de la route", "Suivre la progression au code d'un candidat"),
+                new Def("CODE_CONFIGURATION_GERER", "Code de la route", "Configurer le module Code de la route"),
+                new Def("CODE_QUESTIONS_GERER", "Code de la route", "Gérer la banque de questions du code"),
+                new Def("PARAMETRAGE_CATEGORIES_GERER", "Paramétrage", "Gérer les catégories de permis"),
+                new Def("PARAMETRAGE_SITES_GERER", "Paramétrage", "Gérer les sites de formation"),
+                new Def("PARAMETRAGE_SITES_STATISTIQUES", "Paramétrage", "Voir les statistiques par site"),
+                new Def("CONFIGURATION_IDENTITE_MODIFIER", "Paramétrage", "Modifier l'identité de l'auto-école"),
+                new Def("CONFIGURATION_TARIFS_VOIR", "Paramétrage", "Voir les tarifs des examens"),
+                new Def("CONFIGURATION_TARIFS_MODIFIER", "Paramétrage", "Modifier les tarifs des examens"),
+                new Def("RAPPORTS_CANDIDATS", "Rapports", "Exporter les rapports candidats et paiements"),
+                new Def("RAPPORTS_CAISSE", "Rapports", "Exporter les relevés de caisse"),
+                new Def("AUDIT_VOIR", "Audit", "Consulter le journal d'audit"),
+                new Def("AUDIT_SUPPRIMER", "Audit", "Supprimer des entrées du journal d'audit")
+        );
+
+        Map<String, Permission> parCode = new java.util.HashMap<>();
+        for (Def d : catalogue) {
+            Permission p = permissionRepository.findByCode(d.code()).orElseGet(() ->
+                    permissionRepository.save(Permission.builder().code(d.code()).module(d.module()).libelle(d.libelle()).build()));
+            parCode.put(d.code(), p);
+        }
+
+        Set<String> tout = parCode.keySet();
+        Set<String> secretaireDefaut = Set.of("CANDIDATS_VOIR", "CANDIDATS_CREER", "CANDIDATS_MODIFIER",
+                "EXAMENS_VOIR", "PAIEMENTS_VOIR", "INSCRIPTIONS_VOIR", "RAPPORTS_CANDIDATS");
+        Set<String> caissiereDefaut = Set.of("CANDIDATS_VOIR", "PAIEMENTS_VOIR", "PAIEMENTS_CREER", "PAIEMENTS_MODIFIER",
+                "PAIEMENTS_ANNULER", "CAISSE_VOIR", "CAISSE_CREER", "CAISSE_NATURES_VOIR", "CONFIGURATION_TARIFS_VOIR",
+                "INSCRIPTIONS_VOIR", "RAPPORTS_CANDIDATS", "RAPPORTS_CAISSE");
+        Set<String> moniteurDefaut = Set.of("CANDIDATS_VOIR", "EXAMENS_VOIR", "EXAMENS_PROGRAMMER",
+                "EXAMENS_GERER_SESSION", "CODE_SUIVI", "CODE_CONFIGURATION_GERER");
+        Set<String> candidatDefaut = Set.of("CODE_PRATIQUER", "CODE_SUIVI");
+
+        initProfilSysteme("Administrateur", "Accès total au système, toujours garanti", admin.getCode(), parCode, tout);
+        initProfilSysteme("Secrétaire", "Gestion des dossiers candidats et suivi des examens", secretaire.getCode(), parCode, secretaireDefaut);
+        initProfilSysteme("Caissière", "Encaissements, caisse et rapports financiers", caissiere.getCode(), parCode, caissiereDefaut);
+        initProfilSysteme("Moniteur", "Suivi pédagogique et gestion des examens de terrain", moniteur.getCode(), parCode, moniteurDefaut);
+        initProfilSysteme("Candidat", "Espace personnel d'entraînement au code de la route", candidat.getCode(), parCode, candidatDefaut);
+    }
+
+    /** Crée le profil système s'il n'existe pas encore ; ne touche plus à ses permissions une
+     *  fois créé, pour respecter les personnalisations éventuelles de l'administrateur. */
+    private void initProfilSysteme(String nom, String description, RoleEnum roleSysteme,
+                                    Map<String, Permission> parCode, Set<String> codesDefaut) {
+        if (profilRepository.findByRoleSysteme(roleSysteme).isPresent()) {
+            return;
+        }
+        Set<Permission> permissions = codesDefaut.stream().map(parCode::get).collect(Collectors.toSet());
+        profilRepository.save(Profil.builder()
+                .nom(nom)
+                .description(description)
+                .systeme(true)
+                .roleSysteme(roleSysteme)
+                .permissions(new HashSet<>(permissions))
+                .build());
+    }
+
+    /** Rattache au profil système correspondant à leur rôle les comptes déjà existants qui
+     *  n'ont pas encore de profil (migration depuis une base antérieure à l'onglet Permissions). */
+    private void rattacherProfilsManquants() {
+        utilisateurRepository.findAll().forEach(u -> {
+            if (u.getProfil() == null) {
+                profilRepository.findByRoleSysteme(u.getRole().getCode()).ifPresent(profil -> {
+                    u.setProfil(profil);
+                    utilisateurRepository.save(u);
+                });
+            }
         });
     }
 

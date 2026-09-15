@@ -3,11 +3,11 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
-import { CategoriePermis, Identite, Site, SiteStat } from '../../core/models/models';
+import { CategoriePermis, Identite, Site, SiteStat, Profil, PermissionCatalogue } from '../../core/models/models';
 import { extraireMessageErreur } from '../../core/utils/error-utils';
 
-type OngletParametrage = 'identite' | 'categories' | 'tarifs' | 'sites' | 'stats';
-const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'tarifs', 'sites', 'stats'];
+type OngletParametrage = 'identite' | 'categories' | 'tarifs' | 'sites' | 'stats' | 'permissions';
+const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'tarifs', 'sites', 'stats', 'permissions'];
 
 @Component({
     selector: 'app-parametrage',
@@ -264,6 +264,138 @@ const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'tarifs'
         </div>
       }
 
+      <!-- ===================== ONGLET PERMISSIONS ===================== -->
+      @if (activeTab === 'permissions') {
+        <div class="permissions-layout">
+          <div class="card profils-list-card">
+            <div class="card-header">
+              <div class="card-title" style="display:flex; align-items:center; gap:0.5rem;">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 7.3 12 12l-8.5-4.7"/><path d="M12 22V12"/><path d="m20.5 16.7-8.5 4.7-8.5-4.7"/><path d="m3.5 7.3 8.5-4.7 8.5 4.7-8.5 4.7-8.5-4.7Z"/></svg>
+                Profils
+              </div>
+              <button class="btn btn-primary btn-sm" (click)="openCreateProfilModal()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                Nouveau Profil
+              </button>
+            </div>
+            <ul class="profils-list">
+              @for (p of profils; track p.id) {
+                <li [class.active]="selectedProfil?.id === p.id" (click)="selectProfil(p)">
+                  <div class="profil-item-main">
+                    <strong>{{ p.nom }}</strong>
+                    @if (p.systeme) { <span class="badge badge-programme">Système</span> }
+                  </div>
+                  <small class="text-muted">{{ p.nombreUtilisateurs }} compte(s)</small>
+                </li>
+              }
+            </ul>
+          </div>
+
+          <div class="card profil-detail-card">
+            @if (!selectedProfil) {
+              <div class="empty-state-inline">Sélectionnez un profil à gauche pour voir ou modifier ses permissions.</div>
+            }
+            @if (selectedProfil) {
+              <div class="card-header">
+                <div class="card-title" style="display:flex; align-items:center; gap:0.5rem;">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  {{ selectedProfil.nom }}
+                </div>
+                @if (!selectedProfil.systeme) {
+                  <button class="btn btn-outline btn-sm" [disabled]="selectedProfil.nombreUtilisateurs > 0" [title]="selectedProfil.nombreUtilisateurs > 0 ? 'Réaffectez d\\'abord les comptes utilisant ce profil' : 'Supprimer ce profil'" (click)="deleteProfil()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    Supprimer
+                  </button>
+                }
+              </div>
+
+              @if (selectedProfil.verrouille) {
+                <div class="alert alert-info">
+                  Le profil Administrateur garde toujours l'intégralité des permissions et ne peut pas être restreint, pour ne jamais bloquer un administrateur.
+                </div>
+              }
+
+              @if (!selectedProfil.verrouille) {
+                <div class="form-row" style="margin-bottom:1rem;">
+                  <div class="form-group">
+                    <label class="form-label">Nom du profil</label>
+                    <input type="text" class="form-control" [(ngModel)]="profilForm.nom" name="profilNom" />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <input type="text" class="form-control" [(ngModel)]="profilForm.description" name="profilDescription" />
+                  </div>
+                </div>
+              }
+
+              @if (profilError) {
+                <div class="alert alert-danger">{{ profilError }}</div>
+              }
+              @if (profilSuccess) {
+                <div class="alert alert-success">Profil enregistré.</div>
+              }
+
+              <div class="permissions-matrix">
+                @for (module of modulesPermissions; track module.nom) {
+                  <div class="permission-module">
+                    <div class="permission-module-title">{{ module.nom }}</div>
+                    <div class="permission-module-items">
+                      @for (perm of module.items; track perm.code) {
+                        <label class="permission-check">
+                          <input type="checkbox"
+                                 [checked]="workingPermissionCodes.has(perm.code)"
+                                 [disabled]="selectedProfil.verrouille"
+                                 (change)="togglePermission(perm.code)" />
+                          {{ perm.libelle }}
+                        </label>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+
+              @if (!selectedProfil.verrouille) {
+                <button class="btn btn-primary btn-sm" style="margin-top:1rem;" [disabled]="savingProfil" (click)="saveProfil()">
+                  {{ savingProfil ? 'Enregistrement...' : 'Enregistrer les permissions' }}
+                </button>
+              }
+            }
+          </div>
+        </div>
+      }
+
+      <!-- MODAL NOUVEAU PROFIL -->
+      @if (showCreateProfilModal) {
+        <div class="modal-backdrop">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3>Nouveau Profil de Permissions</h3>
+              <button class="btn btn-outline btn-sm" (click)="showCreateProfilModal = false">✕</button>
+            </div>
+            <form (ngSubmit)="createProfil()">
+              <div class="modal-body">
+                @if (createProfilError) {
+                  <div class="alert alert-danger">{{ createProfilError }}</div>
+                }
+                <div class="form-group">
+                  <label class="form-label">Nom du profil <span class="required">*</span></label>
+                  <input type="text" class="form-control" [(ngModel)]="newProfilForm.nom" name="newProfilNom" required placeholder="Ex: Superviseur régional" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Description</label>
+                  <textarea class="form-control" rows="2" [(ngModel)]="newProfilForm.description" name="newProfilDescription" placeholder="Rôle et responsabilités de ce profil"></textarea>
+                </div>
+                <p class="form-help">Les permissions se cochent ensuite, une fois le profil créé.</p>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" (click)="showCreateProfilModal = false">Annuler</button>
+                <button type="submit" class="btn btn-primary">Créer</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      }
+
       <!-- MODAL CATEGORIE -->
       @if (showCatModal) {
         <div class="modal-backdrop">
@@ -409,6 +541,30 @@ const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'tarifs'
     .logo-preview img { width: 100%; height: 100%; object-fit: contain; }
     .form-help { color: var(--text-muted); font-size: 0.8rem; margin: 0; }
     .tarifs-examens-form { display: flex; flex-direction: column; gap: 0.85rem; margin-bottom: 0.75rem; }
+
+    .permissions-layout {
+      display: grid;
+      grid-template-columns: minmax(200px, 280px) 1fr;
+      gap: 1.25rem;
+      align-items: start;
+    }
+    @media (max-width: 720px) {
+      .permissions-layout { grid-template-columns: 1fr; }
+    }
+    .profils-list { list-style: none; margin: 0; padding: 0; }
+    .profils-list li {
+      display: flex; flex-direction: column; gap: 0.15rem;
+      padding: 0.65rem 0.9rem; border-radius: var(--radius-sm, 6px); cursor: pointer;
+      border: 1px solid transparent;
+    }
+    .profils-list li:hover { background: var(--bg-sidebar-hover, #f1f5f9); }
+    .profils-list li.active { background: #eff6ff; border-color: #bfdbfe; }
+    .profil-item-main { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+    .empty-state-inline { padding: 2rem 1rem; text-align: center; color: var(--text-muted); }
+    .permissions-matrix { display: flex; flex-direction: column; gap: 1rem; }
+    .permission-module-title { font-weight: 600; margin-bottom: 0.4rem; color: var(--text-main); }
+    .permission-module-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.5rem 1rem; }
+    .permission-check { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; font-weight: 400; cursor: pointer; }
   `]
 })
 export class ParametrageComponent implements OnInit {
@@ -440,6 +596,28 @@ export class ParametrageComponent implements OnInit {
   tarifsSuccess = false;
   savingTarifs = false;
 
+  profils: Profil[] = [];
+  permissionsCatalogue: PermissionCatalogue[] = [];
+  selectedProfil: Profil | null = null;
+  workingPermissionCodes: Set<string> = new Set();
+  profilForm: { nom: string; description: string } = { nom: '', description: '' };
+  profilError = '';
+  profilSuccess = false;
+  savingProfil = false;
+
+  showCreateProfilModal = false;
+  newProfilForm: { nom: string; description: string } = { nom: '', description: '' };
+  createProfilError = '';
+
+  get modulesPermissions(): { nom: string; items: PermissionCatalogue[] }[] {
+    const parModule = new Map<string, PermissionCatalogue[]>();
+    for (const p of this.permissionsCatalogue) {
+      if (!parModule.has(p.module)) parModule.set(p.module, []);
+      parModule.get(p.module)!.push(p);
+    }
+    return Array.from(parModule.entries()).map(([nom, items]) => ({ nom, items }));
+  }
+
   constructor(private apiService: ApiService, private route: ActivatedRoute) {}
 
   ngOnInit(): void {
@@ -464,6 +642,7 @@ export class ParametrageComponent implements OnInit {
       case 'tarifs': return 'Tarifs unitaires des épreuves d\'examen';
       case 'sites': return 'Sites de formation de l\'auto-école';
       case 'stats': return 'Activité et finances de chaque site';
+      case 'permissions': return "Permissions accordées à chaque profil d'utilisateur";
     }
   }
 
@@ -473,6 +652,93 @@ export class ParametrageComponent implements OnInit {
     this.apiService.getStatistiquesSites().subscribe({ next: (res) => this.statsSites = res });
     this.apiService.getIdentite().subscribe({ next: (res) => this.identiteForm = { ...res } });
     this.apiService.getTarifsExamens().subscribe({ next: (res) => this.tarifsForm = { ...res } });
+    this.apiService.getPermissionsCatalogue().subscribe({ next: (res) => this.permissionsCatalogue = res });
+    this.loadProfils();
+  }
+
+  loadProfils(): void {
+    this.apiService.getProfils().subscribe({
+      next: (res) => {
+        this.profils = res;
+        if (this.selectedProfil) {
+          const rafraichi = res.find(p => p.id === this.selectedProfil!.id) || null;
+          this.selectedProfil = rafraichi;
+          if (rafraichi) {
+            this.workingPermissionCodes = new Set(rafraichi.permissionCodes);
+            this.profilForm = { nom: rafraichi.nom, description: rafraichi.description || '' };
+          }
+        }
+      }
+    });
+  }
+
+  selectProfil(p: Profil): void {
+    this.selectedProfil = p;
+    this.workingPermissionCodes = new Set(p.permissionCodes);
+    this.profilForm = { nom: p.nom, description: p.description || '' };
+    this.profilError = '';
+    this.profilSuccess = false;
+  }
+
+  togglePermission(code: string): void {
+    if (this.workingPermissionCodes.has(code)) {
+      this.workingPermissionCodes.delete(code);
+    } else {
+      this.workingPermissionCodes.add(code);
+    }
+  }
+
+  saveProfil(): void {
+    if (!this.selectedProfil) return;
+    this.profilError = '';
+    this.profilSuccess = false;
+    this.savingProfil = true;
+    const payload = {
+      nom: this.profilForm.nom,
+      description: this.profilForm.description,
+      permissionCodes: Array.from(this.workingPermissionCodes)
+    };
+    this.apiService.updateProfil(this.selectedProfil.id, payload).subscribe({
+      next: () => {
+        this.savingProfil = false;
+        this.profilSuccess = true;
+        this.loadProfils();
+      },
+      error: (err) => {
+        this.savingProfil = false;
+        this.profilError = extraireMessageErreur(err, "Erreur lors de l'enregistrement du profil.");
+      }
+    });
+  }
+
+  deleteProfil(): void {
+    if (!this.selectedProfil || this.selectedProfil.nombreUtilisateurs > 0) return;
+    if (!confirm(`Supprimer définitivement le profil "${this.selectedProfil.nom}" ?`)) return;
+    this.apiService.deleteProfil(this.selectedProfil.id).subscribe({
+      next: () => {
+        this.selectedProfil = null;
+        this.loadProfils();
+      },
+      error: (err) => this.profilError = extraireMessageErreur(err, 'Erreur lors de la suppression du profil.')
+    });
+  }
+
+  openCreateProfilModal(): void {
+    this.newProfilForm = { nom: '', description: '' };
+    this.createProfilError = '';
+    this.showCreateProfilModal = true;
+  }
+
+  createProfil(): void {
+    this.createProfilError = '';
+    this.apiService.createProfil({ ...this.newProfilForm, permissionCodes: [] }).subscribe({
+      next: (profil) => {
+        this.showCreateProfilModal = false;
+        this.loadProfils();
+        this.selectProfil(profil);
+      },
+      error: (err) => this.createProfilError = extraireMessageErreur(err, 'Erreur lors de la création du profil.')
+    });
   }
 
   saveTarifsExamens(): void {

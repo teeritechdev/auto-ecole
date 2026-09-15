@@ -105,4 +105,12 @@ export class AuthService {
     if (!user) return false;
     return roles.includes(user.role);
   }
+
+  /** Vrai si l'utilisateur connecté dispose d'au moins une des permissions données
+   *  (cf. onglet Permissions de Paramétrage, qui détermine dynamiquement cette liste). */
+  public hasPermission(permissions: string[]): boolean {
+    const user = this.currentUserValue;
+    if (!user || !user.permissions) return false;
+    return permissions.some(p => user.permissions!.includes(p));
+  }
 }

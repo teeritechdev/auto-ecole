@@ -97,14 +97,17 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
 
     <!-- DÉTAIL DU CANDIDAT SÉLECTIONNÉ -->
     @if (candidatSelectionne) {
-      <div class="card detail-card">
-        <div class="card-header">
-          <div class="card-title">
+      <div class="modal-backdrop" (click)="fermerDetail()">
+      <div class="modal-content modal-lg" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3 style="display:flex; align-items:center; gap:0.5rem;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg>
             {{ candidatSelectionne.nom }} {{ candidatSelectionne.prenom }}
             <span class="text-muted">— {{ candidatSelectionne.numeroDossier }}</span>
-          </div>
-          <button class="btn btn-outline btn-sm" (click)="fermerDetail()">✕ Fermer</button>
+          </h3>
+          <button class="btn btn-outline btn-sm" (click)="fermerDetail()">✕</button>
         </div>
+        <div class="modal-body">
 
         @if (loadingDetail) {
           <p>Chargement des données Code de la route...</p>
@@ -201,6 +204,8 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
             </table>
           </div>
         }
+        </div>
+      </div>
       </div>
     }
   `,
@@ -210,7 +215,6 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     .text-muted { color: var(--text-muted); }
     .text-right { text-align: right; }
     .pagination-bar { display: flex; align-items: center; justify-content: center; gap: 1rem; padding: 1rem; }
-    .detail-card { margin-top: 1.5rem; }
     .section-title { margin: 1.5rem 0 0.75rem; font-size: 1rem; }
     .selected-row { background: var(--primary-light); }
   `],

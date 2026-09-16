@@ -10,10 +10,11 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     selector: 'app-login',
     imports: [FormsModule],
     template: `
-    <div class="login-split" [class.no-image]="!imageConnexion">
+    <div class="login-split">
       <!-- IMAGE DE FOND : illustration configurable (Paramètres Généraux > Identité), pleine
            page, ancrée à droite et estompée en diagonale vers la gauche derrière le formulaire.
-           Sans image définie, on affiche un simple dégradé blanc plutôt qu'un repli coloré. -->
+           Le dégradé reste blanc dans les deux cas (avec ou sans image) : seule la présence
+           ou non de la photo change, jamais la teinte de la page. -->
       @if (imageConnexion) {
         <div class="login-image-panel" [style.background-image]="'url(' + imageConnexion + ')'"></div>
         <div class="login-image-blend"></div>
@@ -240,27 +241,12 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     `,
     changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
+    /* Dégradé blanc constant, avec ou sans image de connexion définie. */
     .login-split {
       height: 100vh;
       position: relative;
       overflow: hidden;
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      background-color: #090e1a;
-    }
-
-    .login-split::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 4px;
-      background: linear-gradient(90deg, #1e40af, #3b82f6, #0ea5e9);
-      z-index: 5;
-    }
-
-    /* Sans image de connexion définie : simple dégradé blanc, pas de photo ni de zone sombre. */
-    .login-split.no-image {
       background: linear-gradient(135deg, #ffffff 0%, #f3f7ff 55%, #e3ecfd 100%);
     }
 
@@ -273,19 +259,19 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       z-index: 0;
     }
 
-    /* Estompage diagonal : opaque à gauche (où repose le formulaire), transparent à droite
-       (où l'image domine) — c'est ce dégradé qui "fait apparaître" l'image vers la droite. */
+    /* Estompage diagonal : opaque (blanc) à gauche où repose le formulaire, transparent à
+       droite où l'image domine — c'est ce dégradé qui "fait apparaître" l'image vers la droite. */
     .login-image-blend {
       position: absolute;
       inset: 0;
       z-index: 1;
-      background: linear-gradient(100deg, #090e1a 0%, #090e1a 40%, rgba(9, 14, 26, 0.7) 54%, transparent 74%);
+      background: linear-gradient(100deg, #ffffff 0%, #ffffff 40%, rgba(255, 255, 255, 0.75) 54%, transparent 74%);
     }
 
     .caption-dot { opacity: 0.6; }
 
     @media (max-width: 900px) {
-      .login-image-blend { background: #090e1a; }
+      .login-image-blend { background: #ffffff; }
     }
 
     .login-wrapper {
@@ -385,9 +371,8 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       to { transform: rotate(360deg); }
     }
 
-    /* Sans carte, ce texte repose directement sur la page : les couleurs par défaut
-       supposent le fond sombre (image + estompage) ; l'override .no-image plus bas les
-       assombrit pour rester lisibles sur le dégradé blanc. */
+    /* Sans carte, ce texte repose directement sur la page — toujours sur fond clair
+       désormais, donc toujours en teintes foncées. */
     .brand-title {
       font-family: 'Outfit', sans-serif;
       font-size: 1.55rem;
@@ -395,12 +380,6 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       letter-spacing: -0.025em;
       margin: 0;
       line-height: 1.25;
-      background: linear-gradient(135deg, #ffffff 0%, #bfdbfe 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .login-split.no-image .brand-title {
       background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
@@ -408,13 +387,11 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
 
     .brand-subtitle {
       font-size: 0.84rem;
-      color: #cbd5e1;
+      color: #64748b;
       margin-top: 0.35rem;
       font-weight: 500;
       letter-spacing: -0.01em;
     }
-
-    .login-split.no-image .brand-subtitle { color: #64748b; }
 
     .brand-divider {
       width: 44px;
@@ -509,11 +486,9 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     .field-label {
       font-size: 0.84rem;
       font-weight: 600;
-      color: #e2e8f0;
+      color: #334155;
       letter-spacing: -0.01em;
     }
-
-    .login-split.no-image .field-label { color: #334155; }
 
     .required-star {
       color: #ef4444;
@@ -620,11 +595,9 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       gap: 0.5rem;
       cursor: pointer;
       font-size: 0.82rem;
-      color: #cbd5e1;
+      color: #475569;
       user-select: none;
     }
-
-    .login-split.no-image .remember-me { color: #475569; }
 
     .remember-me input {
       position: absolute;
@@ -668,7 +641,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     .forgot-link {
       background: none;
       border: none;
-      color: #60a5fa;
+      color: #2563eb;
       font-size: 0.82rem;
       font-weight: 600;
       cursor: pointer;
@@ -676,11 +649,8 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       transition: color 0.15s;
     }
 
-    .login-split.no-image .forgot-link { color: #2563eb; }
-    .login-split.no-image .forgot-link:hover { color: #1d4ed8; }
-
     .forgot-link:hover {
-      color: #93c5fd;
+      color: #1d4ed8;
       text-decoration: underline;
     }
 
@@ -756,22 +726,18 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     .card-security-footer {
       margin-top: 1rem;
       padding-top: 0.85rem;
-      border-top: 1px solid rgba(255, 255, 255, 0.15);
+      border-top: 1px solid #f1f5f9;
       text-align: center;
     }
-
-    .login-split.no-image .card-security-footer { border-top-color: #f1f5f9; }
 
     .security-badge {
       display: inline-flex;
       align-items: center;
       gap: 0.45rem;
       font-size: 0.74rem;
-      color: #cbd5e1;
+      color: #64748b;
       font-weight: 500;
     }
-
-    .login-split.no-image .security-badge { color: #64748b; }
 
     .security-badge svg {
       width: 14px;
@@ -784,12 +750,12 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     .global-footer {
       margin-top: 0.9rem;
       text-align: center;
-      color: #94a3b8;
+      color: #64748b;
       font-size: 0.8rem;
     }
 
     .global-footer strong {
-      color: #e2e8f0;
+      color: #1e293b;
       font-weight: 600;
     }
 
@@ -800,14 +766,8 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       gap: 0.5rem;
       flex-wrap: wrap;
       margin-bottom: 0.35rem;
-      color: #cbd5e1;
+      color: #475569;
     }
-
-    /* Sur fond blanc (pas d'image définie), le texte clair prévu pour un fond sombre
-       deviendrait illisible : on bascule vers des teintes foncées. */
-    .login-split.no-image .global-footer { color: #64748b; }
-    .login-split.no-image .global-footer strong { color: #1e293b; }
-    .login-split.no-image .footer-contact { color: #475569; }
 
     /* Forgot Password Modal */
     .modal-backdrop {

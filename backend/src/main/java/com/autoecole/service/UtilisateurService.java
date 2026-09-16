@@ -1,5 +1,6 @@
 package com.autoecole.service;
 
+import com.autoecole.dto.CandidatDTOs.IdentifiantsCompteDTO;
 import com.autoecole.dto.UtilisateurDTOs.CreateUtilisateurRequest;
 import com.autoecole.dto.UtilisateurDTOs.UpdateUtilisateurRequest;
 import com.autoecole.dto.UtilisateurDTOs.UtilisateurDTO;
@@ -35,6 +36,7 @@ public class UtilisateurService {
     private final ProfilRepository profilRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuditService auditService;
+    private final CandidatAccountService candidatAccountService;
 
     /** Ne renvoie que les comptes du personnel (ADMIN/SECRETAIRE/CAISSIERE/MONITEUR) : les
      *  comptes CANDIDAT sont auto-créés, n'ont pas nécessairement d'email et n'ont pas leur
@@ -126,6 +128,29 @@ public class UtilisateurService {
         auditService.logAction("MODIFICATION_COMPTE", "Utilisateur", updated.getUsername(), "Mise à jour des informations du compte", null);
 
         return mapToDTO(updated);
+    }
+
+    /** Réinitialise le mot de passe d'un compte du personnel qui l'a oublié : un nouveau mot
+     *  de passe temporaire est généré et affiché une seule fois à l'administrateur (aucun
+     *  mécanisme d'envoi d'email/SMS dans l'application), à charge pour lui de le communiquer
+     *  au titulaire du compte. Celui-ci devra le changer à sa prochaine connexion. */
+    @Transactional
+    public IdentifiantsCompteDTO resetPassword(Long id) {
+        Utilisateur user = utilisateurRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Utilisateur non trouvé avec l'id: " + id));
+
+        String motDePasseTemporaire = candidatAccountService.genererMotDePasseTemporaire();
+        user.setPassword(passwordEncoder.encode(motDePasseTemporaire));
+        user.setDoitChangerMotDePasse(true);
+        utilisateurRepository.save(user);
+
+        auditService.logAction("REINITIALISATION_MOT_DE_PASSE", "Utilisateur", user.getUsername(),
+                "Réinitialisation du mot de passe du compte par l'administrateur", null);
+
+        return IdentifiantsCompteDTO.builder()
+                .username(user.getUsername())
+                .motDePasseTemporaire(motDePasseTemporaire)
+                .build();
     }
 
     @Transactional

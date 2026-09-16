@@ -1,5 +1,6 @@
 package com.autoecole.controller;
 
+import com.autoecole.dto.CandidatDTOs.IdentifiantsCompteDTO;
 import com.autoecole.dto.UtilisateurDTOs.*;
 import com.autoecole.exception.BadRequestException;
 import com.autoecole.service.UtilisateurService;
@@ -56,6 +57,13 @@ public class UtilisateurController {
     public ResponseEntity<Void> toggleActif(@PathVariable Long id) {
         utilisateurService.toggleActif(id);
         return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{id}/reset-password")
+    @PreAuthorize("hasAuthority('PERM_UTILISATEURS_RESET_PASSWORD')")
+    @Operation(summary = "Réinitialiser le mot de passe d'un compte du personnel qui l'a oublié")
+    public ResponseEntity<IdentifiantsCompteDTO> resetPassword(@PathVariable Long id) {
+        return ResponseEntity.ok(utilisateurService.resetPassword(id));
     }
 
     @PatchMapping("/{id}/photo")

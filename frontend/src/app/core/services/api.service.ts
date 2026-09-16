@@ -306,6 +306,10 @@ export class ApiService {
     return this.http.patch<void>(`${this.base}/utilisateurs/${id}/toggle-actif`, {});
   }
 
+  public resetPasswordUtilisateur(id: number): Observable<IdentifiantsCompte> {
+    return this.http.patch<IdentifiantsCompte>(`${this.base}/utilisateurs/${id}/reset-password`, {});
+  }
+
   public updateUtilisateurPhoto(id: number, photoProfile: string | null): Observable<UtilisateurDTO> {
     return this.http.patch<UtilisateurDTO>(`${this.base}/utilisateurs/${id}/photo`, { photoProfile });
   }

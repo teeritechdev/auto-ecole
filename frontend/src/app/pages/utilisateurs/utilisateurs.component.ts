@@ -2,7 +2,7 @@ import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
-import { UtilisateurDTO, Site, Profil } from '../../core/models/models';
+import { UtilisateurDTO, Site, Profil, IdentifiantsCompte } from '../../core/models/models';
 import { extraireMessageErreur } from '../../core/utils/error-utils';
 
 @Component({
@@ -89,6 +89,9 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                     <div class="table-actions">
                       <button class="btn btn-outline btn-sm" (click)="openEditModal(u)" title="Modifier">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+                      </button>
+                      <button class="btn btn-outline btn-sm" (click)="resetPassword(u)" title="Réinitialiser le mot de passe">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                       </button>
                       <button class="btn btn-sm" [ngClass]="u.actif ? 'btn-danger' : 'btn-success'" (click)="toggleActif(u)">
                         {{ u.actif ? 'Désactiver' : 'Activer' }}
@@ -226,6 +229,36 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
           </div>
         </div>
       }
+
+      <!-- MODAL MOT DE PASSE RÉINITIALISÉ (affichage unique) -->
+      @if (identifiantsCompteAAfficher) {
+        <div class="modal-backdrop">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3 style="display:flex; align-items:center; gap:0.5rem;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                Mot de passe réinitialisé
+              </h3>
+              <button class="btn btn-outline btn-sm" (click)="identifiantsCompteAAfficher = null">✕</button>
+            </div>
+            <div class="modal-body">
+              <p>Un nouveau mot de passe temporaire a été généré pour ce compte. Communiquez-le-lui dès maintenant : il ne sera plus jamais affiché.</p>
+              <div class="form-group mt-3">
+                <label class="form-label">Identifiant</label>
+                <input type="text" class="form-control" [value]="identifiantsCompteAAfficher.username" readonly />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Mot de passe temporaire</label>
+                <input type="text" class="form-control" [value]="identifiantsCompteAAfficher.motDePasseTemporaire" readonly />
+              </div>
+              <p class="form-help">L'utilisateur devra changer ce mot de passe à sa prochaine connexion.</p>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary" (click)="identifiantsCompteAAfficher = null">J'ai noté les identifiants</button>
+            </div>
+          </div>
+        </div>
+      }
     </div>
     `,
     changeDetection: ChangeDetectionStrategy.Eager,
@@ -279,6 +312,7 @@ export class UtilisateursComponent implements OnInit {
   selectedId: number | null = null;
   formError = '';
   pendingPhoto: string | null = null;
+  identifiantsCompteAAfficher: IdentifiantsCompte | null = null;
 
   currentUserForm: any = {
     username: '',
@@ -443,6 +477,16 @@ export class UtilisateursComponent implements OnInit {
     this.apiService.toggleActifUtilisateur(u.id).subscribe({
       next: () => this.loadUsers(),
       error: (err) => alert(extraireMessageErreur(err, 'Erreur lors du changement de statut.'))
+    });
+  }
+
+  resetPassword(u: UtilisateurDTO): void {
+    if (!confirm(`Réinitialiser le mot de passe de ${u.nom} ${u.prenom} ? Son ancien mot de passe cessera immédiatement de fonctionner.`)) {
+      return;
+    }
+    this.apiService.resetPasswordUtilisateur(u.id).subscribe({
+      next: (identifiants) => this.identifiantsCompteAAfficher = identifiants,
+      error: (err) => alert(extraireMessageErreur(err, 'Erreur lors de la réinitialisation du mot de passe.'))
     });
   }
 }

@@ -16,6 +16,7 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class CandidatDTOs {
 
@@ -83,6 +84,33 @@ public class CandidatDTOs {
     public static class IdentifiantsCompteDTO {
         private String username;
         private String motDePasseTemporaire;
+    }
+
+    /** Statistiques homme/femme (globales + par site) calculées sur le même sous-ensemble
+     *  filtré que la liste de candidats affichée au-dessus, pour rester cohérentes avec les
+     *  filtres actifs (recherche, site, étape, etc.). */
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class CandidatStatistiquesDTO {
+        private long totalHommes;
+        private long totalFemmes;
+        private long totalNonRenseigne;
+        private List<SiteStatSexeDTO> parSite;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class SiteStatSexeDTO {
+        private Long siteId;
+        private String siteNom;
+        private long hommes;
+        private long femmes;
+        private long nonRenseigne;
+        private long total;
     }
 
     @Data

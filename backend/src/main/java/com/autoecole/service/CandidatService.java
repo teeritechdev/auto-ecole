@@ -66,6 +66,68 @@ public class CandidatService {
                 .map(this::mapToDTO);
     }
 
+    /** Statistiques homme/femme (globales + par site), calculées sur exactement le même
+     *  sous-ensemble filtré (mêmes paramètres) et avec la même restriction d'accès par site
+     *  que {@link #rechercherCandidats}, pour qu'elles suivent les filtres actifs de la page. */
+    public com.autoecole.dto.CandidatDTOs.CandidatStatistiquesDTO getStatistiques(String recherche, StatutDossier statut, Long categorieId, StatutInscription statutInscription, boolean ignoreEtapeFilter, Long siteFiltreId, com.autoecole.entity.enums.EtapeParcours etapeFiltre, Boolean priseEnChargeExamens, java.time.LocalDate dateExamenProgramme) {
+        java.util.Set<Long> siteIds = siteAccessService.resoudreFiltreSitesPourListe();
+        java.util.Set<com.autoecole.entity.enums.EtapeParcours> etapesAutorisees = ignoreEtapeFilter ? null : siteAccessService.resoudreFiltreEtapesPourListe();
+
+        if (ignoreEtapeFilter) {
+            if (siteAccessService.estMoniteurRestreint()) {
+                siteAccessService.verifierAccesEpreuve(com.autoecole.entity.enums.TypeEpreuve.CODE);
+            }
+        }
+
+        if ((siteIds != null && siteIds.isEmpty()) || (etapesAutorisees != null && etapesAutorisees.isEmpty() && !ignoreEtapeFilter)) {
+            return com.autoecole.dto.CandidatDTOs.CandidatStatistiquesDTO.builder()
+                    .totalHommes(0).totalFemmes(0).totalNonRenseigne(0).parSite(List.of()).build();
+        }
+
+        List<Object[]> rows = candidatRepository.statistiquesParSiteEtSexe(recherche, statut, categorieId, siteIds, statutInscription, etapesAutorisees, siteFiltreId, etapeFiltre, priseEnChargeExamens, dateExamenProgramme);
+
+        java.util.Map<Long, String> nomsParSite = new java.util.LinkedHashMap<>();
+        java.util.Map<Long, long[]> comptageParSite = new java.util.LinkedHashMap<>(); // [hommes, femmes, nonRenseigne]
+        long totalHommes = 0, totalFemmes = 0, totalNonRenseigne = 0;
+
+        for (Object[] row : rows) {
+            Long siteId = (Long) row[0];
+            String siteNom = (String) row[1];
+            Sexe sexe = (Sexe) row[2];
+            long count = (Long) row[3];
+
+            Long cle = siteId != null ? siteId : -1L;
+            nomsParSite.putIfAbsent(cle, siteNom != null ? siteNom : "Sans site");
+            long[] compte = comptageParSite.computeIfAbsent(cle, k -> new long[3]);
+
+            if (sexe == Sexe.HOMME) { compte[0] += count; totalHommes += count; }
+            else if (sexe == Sexe.FEMME) { compte[1] += count; totalFemmes += count; }
+            else { compte[2] += count; totalNonRenseigne += count; }
+        }
+
+        List<com.autoecole.dto.CandidatDTOs.SiteStatSexeDTO> parSite = comptageParSite.entrySet().stream()
+                .map(e -> {
+                    long[] c = e.getValue();
+                    return com.autoecole.dto.CandidatDTOs.SiteStatSexeDTO.builder()
+                            .siteId(e.getKey() == -1L ? null : e.getKey())
+                            .siteNom(nomsParSite.get(e.getKey()))
+                            .hommes(c[0])
+                            .femmes(c[1])
+                            .nonRenseigne(c[2])
+                            .total(c[0] + c[1] + c[2])
+                            .build();
+                })
+                .sorted(java.util.Comparator.comparing(com.autoecole.dto.CandidatDTOs.SiteStatSexeDTO::getSiteNom))
+                .collect(Collectors.toList());
+
+        return com.autoecole.dto.CandidatDTOs.CandidatStatistiquesDTO.builder()
+                .totalHommes(totalHommes)
+                .totalFemmes(totalFemmes)
+                .totalNonRenseigne(totalNonRenseigne)
+                .parSite(parSite)
+                .build();
+    }
+
     public List<CandidatDTO> getTousLesCandidatsPourRapport(StatutDossier statut, Long categorieId) {
         return candidatRepository.filtrerPourRapport(statut, categorieId).stream()
                 .map(this::mapToDTO)

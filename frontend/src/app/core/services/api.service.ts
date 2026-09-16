@@ -19,6 +19,7 @@ import {
   CategoriePermis,
   Site,
   SiteStat,
+  CandidatStatistiques,
   UtilisateurDTO,
   HistoriqueAction,
   ResumePaiements,
@@ -57,6 +58,22 @@ export class ApiService {
     if (dateExamenProgramme) params = params.set('dateExamenProgramme', dateExamenProgramme);
 
     return this.http.get<any>(`${this.base}/candidats`, { params });
+  }
+
+  /** Mêmes paramètres de filtre que getCandidats, mais renvoie la répartition homme/femme
+   *  (globale + par site) au lieu de la liste paginée. */
+  public getCandidatsStatistiques(recherche?: string, statut?: string, categorieId?: number, statutInscription?: string, siteId?: number, etapeParcours?: string, priseEnChargeExamens?: boolean, dateExamenProgramme?: string): Observable<CandidatStatistiques> {
+    let params = new HttpParams();
+    if (recherche) params = params.set('recherche', recherche);
+    if (statut) params = params.set('statut', statut);
+    if (categorieId) params = params.set('categorieId', categorieId);
+    if (statutInscription) params = params.set('statutInscription', statutInscription);
+    if (siteId) params = params.set('siteId', siteId);
+    if (etapeParcours) params = params.set('etapeParcours', etapeParcours);
+    if (priseEnChargeExamens !== undefined) params = params.set('priseEnChargeExamens', priseEnChargeExamens);
+    if (dateExamenProgramme) params = params.set('dateExamenProgramme', dateExamenProgramme);
+
+    return this.http.get<CandidatStatistiques>(`${this.base}/candidats/statistiques`, { params });
   }
 
   public getCandidatById(id: number): Observable<Candidat> {

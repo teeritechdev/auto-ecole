@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
-import { Candidat, CategoriePermis, Site, IdentifiantsCompte } from '../../core/models/models';
+import { Candidat, CategoriePermis, Site, IdentifiantsCompte, CandidatStatistiques } from '../../core/models/models';
 import { extraireMessageErreur } from '../../core/utils/error-utils';
 
 @Component({
@@ -44,6 +44,54 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
             </button>
           }
         </div>
+      </div>
+
+      <!-- STATISTIQUES HOMME / FEMME (suivent les filtres actifs ci-dessous) -->
+      <div class="stats-sexe-bar">
+        <div class="stats-sexe-box hommes">
+          <span class="stats-sexe-value">{{ statsSexe?.totalHommes || 0 }}</span>
+          <span class="stats-sexe-label">Hommes</span>
+        </div>
+        <div class="stats-sexe-box femmes">
+          <span class="stats-sexe-value">{{ statsSexe?.totalFemmes || 0 }}</span>
+          <span class="stats-sexe-label">Femmes</span>
+        </div>
+        @if (statsSexe && statsSexe.totalNonRenseigne > 0) {
+          <div class="stats-sexe-box non-renseigne">
+            <span class="stats-sexe-value">{{ statsSexe.totalNonRenseigne }}</span>
+            <span class="stats-sexe-label">Sexe non renseigné</span>
+          </div>
+        }
+        @if (statsSexe && statsSexe.parSite.length > 1) {
+          <div class="stats-sexe-par-site">
+            <table class="stats-site-table">
+              <thead>
+                <tr>
+                  <th>Site</th>
+                  <th>Hommes</th>
+                  <th>Femmes</th>
+                  @if (statsSexe.totalNonRenseigne > 0) {
+                    <th>Non renseigné</th>
+                  }
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (s of statsSexe.parSite; track s.siteNom) {
+                  <tr>
+                    <td>{{ s.siteNom }}</td>
+                    <td>{{ s.hommes }}</td>
+                    <td>{{ s.femmes }}</td>
+                    @if (statsSexe.totalNonRenseigne > 0) {
+                      <td>{{ s.nonRenseigne }}</td>
+                    }
+                    <td><strong>{{ s.total }}</strong></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
       </div>
 
       <!-- FILTER BAR -->
@@ -687,6 +735,74 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       cursor: pointer;
     }
 
+    .stats-sexe-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: stretch;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .stats-sexe-box {
+      background: #fff;
+      border: 1px solid var(--border-color);
+      border-radius: 0.75rem;
+      padding: 0.85rem 1.25rem;
+      min-width: 140px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stats-sexe-box.hommes { border-left: 4px solid #2563eb; }
+    .stats-sexe-box.femmes { border-left: 4px solid #ec4899; }
+    .stats-sexe-box.non-renseigne { border-left: 4px solid var(--text-muted); }
+
+    .stats-sexe-value {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .stats-sexe-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 0.15rem;
+    }
+
+    .stats-sexe-par-site {
+      flex: 1;
+      min-width: 260px;
+      background: #fff;
+      border: 1px solid var(--border-color);
+      border-radius: 0.75rem;
+      padding: 0.5rem 0.75rem;
+      overflow-x: auto;
+    }
+
+    .stats-site-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+
+    .stats-site-table th {
+      text-align: left;
+      color: var(--text-muted);
+      font-weight: 600;
+      padding: 0.35rem 0.5rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .stats-site-table td {
+      padding: 0.35rem 0.5rem;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-main);
+    }
+
+    .stats-site-table tr:last-child td {
+      border-bottom: none;
+    }
+
     .filter-card {
       margin-bottom: 1.5rem;
       padding: 1.25rem;
@@ -776,6 +892,7 @@ export class CandidatsComponent implements OnInit {
   sites: Site[] = [];
   loading = false;
   saving = false;
+  statsSexe: CandidatStatistiques | null = null;
 
   recherche = '';
   statutFiltre = '';
@@ -980,6 +1097,19 @@ export class CandidatsComponent implements OnInit {
         console.error(err);
         this.loading = false;
       }
+    });
+    this.loadStatsSexe();
+  }
+
+  /** Répartition homme/femme (globale + par site) recalculée sur exactement les mêmes
+   *  filtres que la liste, pour qu'elle bouge avec eux plutôt que de rester figée. */
+  private loadStatsSexe(): void {
+    const catId = this.categorieFiltre ? Number(this.categorieFiltre) : undefined;
+    const siteId = this.siteFiltre ? Number(this.siteFiltre) : undefined;
+    const priseEnCharge = this.priseEnChargeExamensFiltre ? this.priseEnChargeExamensFiltre === 'true' : undefined;
+    this.apiService.getCandidatsStatistiques(this.recherche, this.statutFiltre, catId, this.statutInscriptionFiltre || undefined, siteId, this.etapeFiltre || undefined, priseEnCharge, this.dateExamenProgrammeFiltre || undefined).subscribe({
+      next: (res) => this.statsSexe = res,
+      error: (err) => { console.error(err); this.statsSexe = null; }
     });
   }
 

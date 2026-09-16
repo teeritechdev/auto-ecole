@@ -118,6 +118,22 @@ export interface Candidat {
   identifiantsCompte?: IdentifiantsCompte;
 }
 
+export interface SiteStatSexe {
+  siteId?: number;
+  siteNom: string;
+  hommes: number;
+  femmes: number;
+  nonRenseigne: number;
+  total: number;
+}
+
+export interface CandidatStatistiques {
+  totalHommes: number;
+  totalFemmes: number;
+  totalNonRenseigne: number;
+  parSite: SiteStatSexe[];
+}
+
 export interface IdentifiantsCompte {
   username: string;
   motDePasseTemporaire: string;

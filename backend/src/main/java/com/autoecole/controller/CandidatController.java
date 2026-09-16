@@ -44,6 +44,23 @@ public class CandidatController {
         return ResponseEntity.ok(candidatService.rechercherCandidats(recherche, statut, categorieId, statutInscription, ignoreEtapeFilter, siteId, etapeParcours, priseEnChargeExamens, dateExamenProgramme, pageable));
     }
 
+    @GetMapping("/statistiques")
+    @PreAuthorize("hasAuthority('PERM_CANDIDATS_VOIR')")
+    @Operation(summary = "Répartition homme/femme, globale et par site, sur le même sous-ensemble filtré que la recherche")
+    public ResponseEntity<CandidatStatistiquesDTO> getStatistiques(
+            @RequestParam(required = false) String recherche,
+            @RequestParam(required = false) StatutDossier statut,
+            @RequestParam(required = false) Long categorieId,
+            @RequestParam(required = false) StatutInscription statutInscription,
+            @RequestParam(required = false, defaultValue = "false") boolean ignoreEtapeFilter,
+            @RequestParam(required = false) Long siteId,
+            @RequestParam(required = false) EtapeParcours etapeParcours,
+            @RequestParam(required = false) Boolean priseEnChargeExamens,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate dateExamenProgramme
+    ) {
+        return ResponseEntity.ok(candidatService.getStatistiques(recherche, statut, categorieId, statutInscription, ignoreEtapeFilter, siteId, etapeParcours, priseEnChargeExamens, dateExamenProgramme));
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('PERM_CANDIDATS_VOIR')")
     @Operation(summary = "Obtenir la fiche complète d'un candidat")

@@ -301,6 +301,11 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
                         </button>
                       }
+                      @if (canResetPassword) {
+                        <button class="btn btn-outline btn-sm" (click)="resetPassword(c)" title="Réinitialiser le mot de passe">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        </button>
+                      }
                       @if (isAdmin) {
                         <button class="btn btn-danger btn-sm" (click)="openDeleteModal(c)" title="Supprimer">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
@@ -622,12 +627,12 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
             <div class="modal-header">
               <h3 style="display:flex; align-items:center; gap:0.5rem;">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg>
-                Compte candidat créé
+                Identifiants du compte candidat
               </h3>
               <button class="btn btn-outline btn-sm" (click)="identifiantsCompteAAfficher = null">✕</button>
             </div>
             <div class="modal-body">
-              <p>Un compte de connexion a été créé automatiquement pour ce candidat. Communiquez-lui ces identifiants dès maintenant : ils ne seront plus jamais affichés.</p>
+              <p>Communiquez ces identifiants au candidat dès maintenant : ils ne seront plus jamais affichés.</p>
               <div class="form-group mt-3">
                 <label class="form-label">Identifiant</label>
                 <input type="text" class="form-control" [value]="identifiantsCompteAAfficher.username" readonly />
@@ -636,7 +641,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 <label class="form-label">Mot de passe temporaire</label>
                 <input type="text" class="form-control" [value]="identifiantsCompteAAfficher.motDePasseTemporaire" readonly />
               </div>
-              <p class="form-help">Le candidat devra changer ce mot de passe lors de sa première connexion.</p>
+              <p class="form-help">Le candidat devra changer ce mot de passe à sa prochaine connexion.</p>
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-primary" (click)="identifiantsCompteAAfficher = null">J'ai noté les identifiants</button>
@@ -951,6 +956,10 @@ export class CandidatsComponent implements OnInit {
 
   get isAdmin(): boolean {
     return this.authService.hasRole(['ADMIN']);
+  }
+
+  get canResetPassword(): boolean {
+    return this.authService.hasPermission(['UTILISATEURS_RESET_PASSWORD']);
   }
 
   get canSeeFinancialData(): boolean {
@@ -1287,6 +1296,16 @@ export class CandidatsComponent implements OnInit {
         this.saving = false;
         this.modalError = extraireMessageErreur(err, 'Erreur lors de la création du candidat.');
       }
+    });
+  }
+
+  resetPassword(c: Candidat): void {
+    if (!confirm(`Réinitialiser le mot de passe de ${c.nom} ${c.prenom} ? Son ancien mot de passe cessera immédiatement de fonctionner.`)) {
+      return;
+    }
+    this.apiService.resetPasswordCandidat(c.id).subscribe({
+      next: (identifiants) => this.identifiantsCompteAAfficher = identifiants,
+      error: (err) => alert(extraireMessageErreur(err, 'Erreur lors de la réinitialisation du mot de passe.'))
     });
   }
 

@@ -42,6 +42,7 @@ public class PublicConfigurationController {
                 nom,
                 configuration != null ? configuration.getLogoData() : null,
                 configuration != null ? configuration.getImageConnexion() : null,
+                configuration != null ? configuration.getImageConnexionAjustement() : "cover",
                 configuration != null ? configuration.getTelephone() : null,
                 configuration != null ? configuration.getAdresseSiege() : null
         ));
@@ -53,6 +54,7 @@ public class PublicConfigurationController {
         private String nomEtablissement;
         private String logoData;
         private String imageConnexion;
+        private String imageConnexionAjustement;
         private String telephone;
         private String adresseSiege;
     }

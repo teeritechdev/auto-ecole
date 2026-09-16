@@ -28,6 +28,12 @@ public class ConfigurationApplication {
     @Column(name = "image_connexion", columnDefinition = "TEXT")
     private String imageConnexion;
 
+    /** "cover" (remplit tout l'écran, recadre l'image si besoin) ou "contain" (l'image
+     *  entière reste visible, sans recadrage) — réglable par l'ADMIN car une image très
+     *  large peut sembler "zoomée" à outrance une fois recadrée en cover. */
+    @Column(name = "image_connexion_ajustement", length = 20)
+    private String imageConnexionAjustement = "cover";
+
     /** Identité affichée sur les documents officiels (reçus, PDF) et sur l'écran de
      *  connexion ; nullable en base, avec repli sur app.etablissement.nom (application.yml)
      *  tant qu'aucune valeur n'a été saisie par l'ADMIN (cf. ConfigurationController). */

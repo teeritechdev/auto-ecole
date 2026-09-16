@@ -47,6 +47,7 @@ public class ConfigurationController {
         return ResponseEntity.ok(new IdentiteResponse(
                 configuration != null ? configuration.getLogoData() : null,
                 configuration != null ? configuration.getImageConnexion() : null,
+                configuration != null ? configuration.getImageConnexionAjustement() : "cover",
                 resoudreNom(configuration),
                 configuration != null ? configuration.getTelephone() : null,
                 configuration != null ? configuration.getEmail() : null,
@@ -60,9 +61,11 @@ public class ConfigurationController {
     public ResponseEntity<IdentiteResponse> updateIdentite(@RequestBody IdentiteRequest request) {
         validateImage(request.getLogoData(), "Le logo", 2_800_000);
         validateImage(request.getImageConnexion(), "L'image de connexion", 4_200_000);
+        validerAjustement(request.getImageConnexionAjustement());
         ConfigurationApplication configuration = repository.findById(1L).orElseGet(ConfigurationApplication::new);
         configuration.setLogoData(request.getLogoData());
         configuration.setImageConnexion(request.getImageConnexion());
+        configuration.setImageConnexionAjustement(request.getImageConnexionAjustement() != null ? request.getImageConnexionAjustement() : "cover");
         configuration.setNomEtablissement(request.getNomEtablissement() != null ? request.getNomEtablissement().trim() : null);
         configuration.setTelephone(request.getTelephone());
         configuration.setEmail(request.getEmail());
@@ -71,6 +74,7 @@ public class ConfigurationController {
         return ResponseEntity.ok(new IdentiteResponse(
                 configuration.getLogoData(),
                 configuration.getImageConnexion(),
+                configuration.getImageConnexionAjustement(),
                 resoudreNom(configuration),
                 configuration.getTelephone(),
                 configuration.getEmail(),
@@ -88,6 +92,12 @@ public class ConfigurationController {
         }
         if (imageData.length() > tailleMaxCaracteres) {
             throw new BadRequestException(libelleAvecArticle + " ne doit pas dépasser " + (tailleMaxCaracteres / 1_400_000) + " Mo environ");
+        }
+    }
+
+    private void validerAjustement(String ajustement) {
+        if (ajustement != null && !ajustement.equals("cover") && !ajustement.equals("contain")) {
+            throw new BadRequestException("Ajustement d'image invalide");
         }
     }
 
@@ -140,6 +150,7 @@ public class ConfigurationController {
     public static class IdentiteRequest {
         private String logoData;
         private String imageConnexion;
+        private String imageConnexionAjustement;
         private String nomEtablissement;
         private String telephone;
         private String email;
@@ -151,6 +162,7 @@ public class ConfigurationController {
     public static class IdentiteResponse {
         private final String logoData;
         private final String imageConnexion;
+        private final String imageConnexionAjustement;
         private final String nomEtablissement;
         private final String telephone;
         private final String email;

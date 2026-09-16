@@ -16,7 +16,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
            Le dégradé reste blanc dans les deux cas (avec ou sans image) : seule la présence
            ou non de la photo change, jamais la teinte de la page. -->
       @if (imageConnexion) {
-        <div class="login-image-panel" [style.background-image]="'url(' + imageConnexion + ')'"></div>
+        <div class="login-image-panel" [style.background-image]="'url(' + imageConnexion + ')'" [style.background-size]="imageConnexionAjustement"></div>
         <div class="login-image-blend"></div>
       }
 
@@ -256,6 +256,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       inset: 0;
       background-size: cover;
       background-position: center right;
+      background-repeat: no-repeat;
       z-index: 0;
     }
 
@@ -883,6 +884,7 @@ export class LoginComponent implements OnInit {
   nomEtablissement = 'Nerwaya Auto-École';
   logoData: string | null = null;
   imageConnexion: string | null = null;
+  imageConnexionAjustement: 'cover' | 'contain' = 'cover';
   telephone: string | null = null;
   adresseSiege: string | null = null;
   anneeCourante = new Date().getFullYear();
@@ -899,6 +901,7 @@ export class LoginComponent implements OnInit {
         this.nomEtablissement = id.nomEtablissement;
         this.logoData = id.logoData;
         this.imageConnexion = id.imageConnexion;
+        this.imageConnexionAjustement = id.imageConnexionAjustement || 'cover';
         this.telephone = id.telephone;
         this.adresseSiege = id.adresseSiege;
       },

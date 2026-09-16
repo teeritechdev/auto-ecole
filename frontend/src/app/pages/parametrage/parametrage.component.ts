@@ -68,6 +68,13 @@ const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'tarifs'
                   <input type="file" accept="image/png,image/jpeg,image/webp" (change)="onImageConnexionSelected($event)" />
                   <p class="form-help">Photo affichée à côté du formulaire de connexion. JPG, PNG ou WebP, maximum 3 Mo — compressez-la avant l'envoi pour un chargement rapide de l'écran de connexion.</p>
                   @if (identiteForm.imageConnexion) {
+                    <div class="form-group" style="width: 100%; margin-top: 0.5rem;">
+                      <label class="form-label">Ajustement de l'image</label>
+                      <select class="form-control" [(ngModel)]="identiteForm.imageConnexionAjustement" name="imageConnexionAjustement">
+                        <option value="cover">Remplir l'écran (peut recadrer l'image)</option>
+                        <option value="contain">Toujours voir l'image entière (sans recadrage)</option>
+                      </select>
+                    </div>
                     <button type="button" class="btn btn-outline btn-sm" (click)="retirerImageConnexion()">Retirer l'image</button>
                   }
                 </div>
@@ -614,7 +621,7 @@ export class ParametrageComponent implements OnInit {
   siteForm: any = { nom: '', adresse: '', actif: true };
   siteError = '';
 
-  identiteForm: Identite = { logoData: null, imageConnexion: null, nomEtablissement: '', telephone: '', email: '', adresseSiege: '' };
+  identiteForm: Identite = { logoData: null, imageConnexion: null, imageConnexionAjustement: 'cover', nomEtablissement: '', telephone: '', email: '', adresseSiege: '' };
   identiteError = '';
   identiteSuccess = false;
   savingIdentite = false;

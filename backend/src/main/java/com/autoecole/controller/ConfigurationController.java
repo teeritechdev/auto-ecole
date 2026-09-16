@@ -31,6 +31,14 @@ public class ConfigurationController {
         return (nom == null || nom.isBlank()) ? nomEtablissementParDefaut : nom;
     }
 
+    /** Valeur de repli tant qu'aucun slogan n'a été saisi par l'ADMIN. */
+    private static final String SLOGAN_PAR_DEFAUT = "Plateforme Intégrée de Gestion & Formation";
+
+    private String resoudreSlogan(ConfigurationApplication configuration) {
+        String slogan = configuration != null ? configuration.getSlogan() : null;
+        return (slogan == null || slogan.isBlank()) ? SLOGAN_PAR_DEFAUT : slogan;
+    }
+
     @GetMapping("/logo")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Récupérer le logo de l'entreprise (affiché dans la barre latérale)")
@@ -49,6 +57,7 @@ public class ConfigurationController {
                 configuration != null ? configuration.getImageConnexion() : null,
                 configuration != null ? configuration.getImageConnexionAjustement() : "cover",
                 resoudreNom(configuration),
+                resoudreSlogan(configuration),
                 configuration != null ? configuration.getTelephone() : null,
                 configuration != null ? configuration.getEmail() : null,
                 configuration != null ? configuration.getAdresseSiege() : null
@@ -67,6 +76,7 @@ public class ConfigurationController {
         configuration.setImageConnexion(request.getImageConnexion());
         configuration.setImageConnexionAjustement(request.getImageConnexionAjustement() != null ? request.getImageConnexionAjustement() : "cover");
         configuration.setNomEtablissement(request.getNomEtablissement() != null ? request.getNomEtablissement().trim() : null);
+        configuration.setSlogan(request.getSlogan() != null ? request.getSlogan().trim() : null);
         configuration.setTelephone(request.getTelephone());
         configuration.setEmail(request.getEmail());
         configuration.setAdresseSiege(request.getAdresseSiege());
@@ -76,6 +86,7 @@ public class ConfigurationController {
                 configuration.getImageConnexion(),
                 configuration.getImageConnexionAjustement(),
                 resoudreNom(configuration),
+                resoudreSlogan(configuration),
                 configuration.getTelephone(),
                 configuration.getEmail(),
                 configuration.getAdresseSiege()
@@ -152,6 +163,7 @@ public class ConfigurationController {
         private String imageConnexion;
         private String imageConnexionAjustement;
         private String nomEtablissement;
+        private String slogan;
         private String telephone;
         private String email;
         private String adresseSiege;
@@ -164,6 +176,7 @@ public class ConfigurationController {
         private final String imageConnexion;
         private final String imageConnexionAjustement;
         private final String nomEtablissement;
+        private final String slogan;
         private final String telephone;
         private final String email;
         private final String adresseSiege;

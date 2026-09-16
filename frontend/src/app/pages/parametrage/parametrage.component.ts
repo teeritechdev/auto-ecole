@@ -85,6 +85,11 @@ const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'tarifs'
                   <input type="text" class="form-control" [(ngModel)]="identiteForm.nomEtablissement" name="nomEtablissement" required placeholder="Ex: Nerwaya Auto-École" />
                   <p class="form-help">Affiché sur l'écran de connexion et les documents officiels (reçus, PDF).</p>
                 </div>
+                <div class="form-group">
+                  <label class="form-label">Slogan</label>
+                  <input type="text" class="form-control" [(ngModel)]="identiteForm.slogan" name="slogan" placeholder="Ex: Plateforme Intégrée de Gestion & Formation" />
+                  <p class="form-help">Sous-titre affiché sous le nom sur l'écran de connexion.</p>
+                </div>
                 <div class="form-row">
                   <div class="form-group">
                     <label class="form-label">Téléphone</label>
@@ -621,7 +626,7 @@ export class ParametrageComponent implements OnInit {
   siteForm: any = { nom: '', adresse: '', actif: true };
   siteError = '';
 
-  identiteForm: Identite = { logoData: null, imageConnexion: null, imageConnexionAjustement: 'cover', nomEtablissement: '', telephone: '', email: '', adresseSiege: '' };
+  identiteForm: Identite = { logoData: null, imageConnexion: null, imageConnexionAjustement: 'cover', nomEtablissement: '', slogan: '', telephone: '', email: '', adresseSiege: '' };
   identiteError = '';
   identiteSuccess = false;
   savingIdentite = false;

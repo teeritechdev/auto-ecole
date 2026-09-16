@@ -44,7 +44,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
             </div>
 
             <h1 class="brand-title">{{ nomEtablissement }}</h1>
-            <p class="brand-subtitle">Plateforme Intégrée de Gestion & Formation</p>
+            <p class="brand-subtitle">{{ slogan }}</p>
             <div class="brand-divider"></div>
           </div>
     
@@ -882,6 +882,7 @@ export class LoginComponent implements OnInit {
   showForgotModal = false;
 
   nomEtablissement = 'Nerwaya Auto-École';
+  slogan = 'Plateforme Intégrée de Gestion & Formation';
   logoData: string | null = null;
   imageConnexion: string | null = null;
   imageConnexionAjustement: 'cover' | 'contain' = 'cover';
@@ -899,6 +900,7 @@ export class LoginComponent implements OnInit {
     this.apiService.getIdentitePublique().subscribe({
       next: (id) => {
         this.nomEtablissement = id.nomEtablissement;
+        this.slogan = id.slogan;
         this.logoData = id.logoData;
         this.imageConnexion = id.imageConnexion;
         this.imageConnexionAjustement = id.imageConnexionAjustement || 'cover';

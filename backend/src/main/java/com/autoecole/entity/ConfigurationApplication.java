@@ -40,6 +40,12 @@ public class ConfigurationApplication {
     @Column(name = "nom_etablissement", length = 150)
     private String nomEtablissement;
 
+    /** Sous-titre affiché sous le nom sur l'écran de connexion (ex: "Plateforme Intégrée
+     *  de Gestion & Formation") ; nullable, avec un repli générique côté frontend tant
+     *  qu'aucune valeur n'a été saisie par l'ADMIN. */
+    @Column(name = "slogan", length = 150)
+    private String slogan;
+
     @Column(name = "telephone", length = 30)
     private String telephone;
 

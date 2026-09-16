@@ -30,16 +30,23 @@ public class PublicConfigurationController {
     @Value("${app.etablissement.nom}")
     private String nomEtablissementParDefaut;
 
+    private static final String SLOGAN_PAR_DEFAUT = "Plateforme Intégrée de Gestion & Formation";
+
     @GetMapping("/identite")
-    @Operation(summary = "Récupérer l'identité (nom, logo, image, contact) de l'auto-école pour l'écran de connexion")
+    @Operation(summary = "Récupérer l'identité (nom, slogan, logo, image, contact) de l'auto-école pour l'écran de connexion")
     public ResponseEntity<IdentitePubliqueResponse> getIdentitePublique() {
         ConfigurationApplication configuration = repository.findById(1L).orElse(null);
         String nom = configuration != null ? configuration.getNomEtablissement() : null;
         if (nom == null || nom.isBlank()) {
             nom = nomEtablissementParDefaut;
         }
+        String slogan = configuration != null ? configuration.getSlogan() : null;
+        if (slogan == null || slogan.isBlank()) {
+            slogan = SLOGAN_PAR_DEFAUT;
+        }
         return ResponseEntity.ok(new IdentitePubliqueResponse(
                 nom,
+                slogan,
                 configuration != null ? configuration.getLogoData() : null,
                 configuration != null ? configuration.getImageConnexion() : null,
                 configuration != null ? configuration.getImageConnexionAjustement() : "cover",
@@ -52,6 +59,7 @@ public class PublicConfigurationController {
     @AllArgsConstructor
     public static class IdentitePubliqueResponse {
         private String nomEtablissement;
+        private String slogan;
         private String logoData;
         private String imageConnexion;
         private String imageConnexionAjustement;

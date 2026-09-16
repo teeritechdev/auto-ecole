@@ -291,6 +291,7 @@ export interface Identite {
   imageConnexion: string | null;
   imageConnexionAjustement: 'cover' | 'contain';
   nomEtablissement: string;
+  slogan: string;
   telephone: string | null;
   email: string | null;
   adresseSiege: string | null;
@@ -298,6 +299,7 @@ export interface Identite {
 
 export interface IdentitePublique {
   nomEtablissement: string;
+  slogan: string;
   logoData: string | null;
   imageConnexion: string | null;
   imageConnexionAjustement: 'cover' | 'contain';

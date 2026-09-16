@@ -786,12 +786,23 @@ export class ParametrageComponent implements OnInit {
     });
   }
 
+  /** Formats acceptés par le backend (voir ConfigurationController.validateImage) : un
+   *  fichier hors de cette liste (HEIC, GIF, capture d'écran exotique, etc.) est rejeté ici
+   *  avec un message clair, plutôt que de découvrir l'échec seulement à l'enregistrement. */
+  private readonly TYPES_IMAGE_ACCEPTES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+
   onLogoSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
+    if (!this.TYPES_IMAGE_ACCEPTES.includes(file.type)) {
+      this.identiteError = `Format d'image non pris en charge pour le logo (${file.type || 'inconnu'}). Utilisez un fichier JPG, PNG ou WebP.`;
+      input.value = '';
+      return;
+    }
     if (file.size > 2 * 1024 * 1024) {
       this.identiteError = 'Le logo ne doit pas dépasser 2 Mo.';
+      input.value = '';
       return;
     }
     const reader = new FileReader();
@@ -806,8 +817,14 @@ export class ParametrageComponent implements OnInit {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
+    if (!this.TYPES_IMAGE_ACCEPTES.includes(file.type)) {
+      this.identiteError = `Format d'image non pris en charge pour l'image de connexion (${file.type || 'inconnu'}). Utilisez un fichier JPG, PNG ou WebP.`;
+      input.value = '';
+      return;
+    }
     if (file.size > 3 * 1024 * 1024) {
       this.identiteError = "L'image de connexion ne doit pas dépasser 3 Mo. Compressez-la avant de la téléverser.";
+      input.value = '';
       return;
     }
     const reader = new FileReader();
@@ -834,7 +851,11 @@ export class ParametrageComponent implements OnInit {
       },
       error: (err) => {
         this.savingIdentite = false;
-        this.identiteError = extraireMessageErreur(err, "Erreur lors de l'enregistrement de l'identité.");
+        if (err.status === 0) {
+          this.identiteError = 'Impossible de contacter le serveur, ou les images sont trop volumineuses pour la connexion actuelle. Réessayez avec des images plus légères.';
+        } else {
+          this.identiteError = extraireMessageErreur(err, "Erreur lors de l'enregistrement de l'identité.");
+        }
       }
     });
   }

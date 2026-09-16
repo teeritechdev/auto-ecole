@@ -80,7 +80,10 @@ public class ConfigurationController {
 
     private void validateImage(String imageData, String libelleAvecArticle, int tailleMaxCaracteres) {
         if (imageData == null || imageData.isBlank()) return;
-        if (!imageData.matches("^data:image/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$")) {
+        // Insensible à la casse et tolérant sur "jpg" vs "jpeg" : certains navigateurs/OS
+        // déduisent un type MIME légèrement différent selon l'origine du fichier (capture
+        // d'écran, image transférée via une messagerie, etc.).
+        if (!imageData.matches("(?i)^data:image/(png|jpe?g|webp);base64,[A-Za-z0-9+/=]+$")) {
             throw new BadRequestException("Format d'image non pris en charge (" + libelleAvecArticle + ")");
         }
         if (imageData.length() > tailleMaxCaracteres) {

@@ -11,7 +11,8 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     imports: [FormsModule],
     template: `
     <div class="login-split">
-      <!-- PANNEAU IMAGE (gauche) : illustration configurable depuis Paramètres Généraux > Identité -->
+      <!-- IMAGE DE FOND : illustration configurable (Paramètres Généraux > Identité), pleine
+           page, ancrée à droite et estompée en diagonale vers la gauche derrière le formulaire. -->
       <div class="login-image-panel" [style.background-image]="imageConnexion ? 'url(' + imageConnexion + ')' : null">
         @if (!imageConnexion) {
           <div class="image-fallback">
@@ -23,26 +24,11 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
             </svg>
           </div>
         }
-        <div class="image-scrim"></div>
-        <div class="image-footer-caption">
-          <p class="caption-tagline">Apprenez à conduire en toute confiance.</p>
-          @if (telephone || adresseSiege) {
-            <div class="caption-contact">
-              @if (telephone) { <span>{{ telephone }}</span> }
-              @if (telephone && adresseSiege) { <span class="caption-dot">•</span> }
-              @if (adresseSiege) { <span>{{ adresseSiege }}</span> }
-            </div>
-          }
-        </div>
       </div>
+      <div class="login-image-blend"></div>
 
-      <!-- PANNEAU FORMULAIRE (droite) -->
+      <!-- FORMULAIRE : à gauche, sur la zone estompée -->
       <div class="login-wrapper">
-      <!-- Ambient Glow Orbs -->
-      <div class="glow-orb glow-orb-1"></div>
-      <div class="glow-orb glow-orb-2"></div>
-      <div class="glow-orb glow-orb-3"></div>
-
       <div class="login-container">
         <!-- Main Login Card -->
         <div class="login-card">
@@ -215,6 +201,13 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     
         <!-- Global Bottom Branding -->
         <div class="global-footer">
+          @if (telephone || adresseSiege) {
+            <p class="footer-contact">
+              @if (telephone) { <span>{{ telephone }}</span> }
+              @if (telephone && adresseSiege) { <span class="caption-dot">•</span> }
+              @if (adresseSiege) { <span>{{ adresseSiege }}</span> }
+            </p>
+          }
           <p>© {{ anneeCourante }} <strong>{{ nomEtablissement }}</strong>. Tous droits réservés.</p>
         </div>
       </div>
@@ -257,144 +250,65 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     styles: [`
     .login-split {
       min-height: 100vh;
-      display: flex;
+      position: relative;
+      overflow: hidden;
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: #090e1a;
     }
 
-    /* Panneau image : illustration configurable (Paramètres Généraux > Identité), avec un
-       dégradé de marque en repli tant qu'aucune image n'a été téléversée. */
+    /* Image de fond : illustration configurable (Paramètres Généraux > Identité), ancrée à
+       droite, avec un dégradé de marque en repli tant qu'aucune image n'a été téléversée. */
     .login-image-panel {
-      flex: 1 1 48%;
-      position: relative;
+      position: absolute;
+      inset: 0;
       background-size: cover;
-      background-position: center;
-      background-color: #1e40af;
-      display: flex;
-      align-items: flex-end;
-      overflow: hidden;
+      background-position: center right;
+      z-index: 0;
     }
 
     .image-fallback {
       position: absolute;
       inset: 0;
       background: linear-gradient(135deg, #1e40af 0%, #2563eb 55%, #38bdf8 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
     }
 
     .fallback-icon {
-      width: 30%;
-      height: 30%;
-      max-width: 180px;
-      max-height: 180px;
-      color: rgba(255, 255, 255, 0.3);
+      position: absolute;
+      right: 8%;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 32%;
+      max-width: 220px;
+      color: rgba(255, 255, 255, 0.25);
     }
 
-    .image-scrim {
+    /* Estompage diagonal : opaque à gauche (où repose le formulaire), transparent à droite
+       (où l'image domine) — c'est ce dégradé qui "fait apparaître" l'image vers la droite. */
+    .login-image-blend {
       position: absolute;
       inset: 0;
-      background: linear-gradient(to top, rgba(9, 14, 26, 0.88) 0%, rgba(9, 14, 26, 0.15) 45%, transparent 70%);
-    }
-
-    .image-footer-caption {
-      position: relative;
-      z-index: 2;
-      padding: 2.5rem;
-      color: #ffffff;
-    }
-
-    .caption-tagline {
-      font-size: 1.4rem;
-      font-weight: 700;
-      max-width: 380px;
-      line-height: 1.35;
-      margin: 0 0 0.75rem;
-      letter-spacing: -0.01em;
-    }
-
-    .caption-contact {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.85rem;
-      color: rgba(255, 255, 255, 0.85);
-      flex-wrap: wrap;
+      z-index: 1;
+      background: linear-gradient(100deg, #090e1a 0%, #090e1a 40%, rgba(9, 14, 26, 0.7) 54%, transparent 74%);
     }
 
     .caption-dot { opacity: 0.6; }
 
     @media (max-width: 900px) {
-      .login-image-panel { display: none; }
+      .login-image-blend { background: #090e1a; }
     }
 
     .login-wrapper {
-      flex: 1 1 52%;
+      position: relative;
+      z-index: 2;
       min-height: 100vh;
       display: flex;
       align-items: center;
-      justify-content: center;
-      position: relative;
-      background-color: #090e1a;
-      background-image:
-        radial-gradient(at 15% 15%, rgba(30, 64, 175, 0.45) 0px, transparent 50%),
-        radial-gradient(at 85% 85%, rgba(14, 165, 233, 0.25) 0px, transparent 50%),
-        radial-gradient(at 50% 50%, rgba(15, 23, 42, 0.9) 0px, transparent 100%);
-      overflow: hidden;
-      padding: 2rem 1.25rem;
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      justify-content: flex-start;
+      padding: 2rem 6vw;
     }
 
-    /* Ambient Background Orbs */
-    .glow-orb {
-      position: absolute;
-      border-radius: 50%;
-      filter: blur(80px);
-      pointer-events: none;
-      z-index: 0;
-      opacity: 0.6;
-      animation: orbFloat 14s ease-in-out infinite alternate;
-    }
-
-    .glow-orb-1 {
-      width: 450px;
-      height: 450px;
-      background: radial-gradient(circle, #2563eb 0%, rgba(37, 99, 235, 0) 70%);
-      top: -100px;
-      left: -100px;
-    }
-
-    .glow-orb-2 {
-      width: 400px;
-      height: 400px;
-      background: radial-gradient(circle, #0ea5e9 0%, rgba(14, 165, 233, 0) 70%);
-      bottom: -100px;
-      right: -80px;
-      animation-duration: 18s;
-      animation-delay: -5s;
-    }
-
-    .glow-orb-3 {
-      width: 300px;
-      height: 300px;
-      background: radial-gradient(circle, #4f46e5 0%, rgba(79, 70, 229, 0) 70%);
-      top: 40%;
-      left: 65%;
-      opacity: 0.35;
-      animation-duration: 20s;
-      animation-delay: -9s;
-    }
-
-    @keyframes orbFloat {
-      0% {
-        transform: translate(0, 0) scale(1);
-      }
-      50% {
-        transform: translate(30px, 40px) scale(1.08);
-      }
-      100% {
-        transform: translate(-20px, 20px) scale(0.95);
-      }
+    @media (max-width: 900px) {
+      .login-wrapper { justify-content: center; padding: 2rem 1.25rem; }
     }
 
     .login-container {
@@ -885,6 +799,16 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     .global-footer strong {
       color: #e2e8f0;
       font-weight: 600;
+    }
+
+    .footer-contact {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.35rem;
+      color: #cbd5e1;
     }
 
     /* Forgot Password Modal */

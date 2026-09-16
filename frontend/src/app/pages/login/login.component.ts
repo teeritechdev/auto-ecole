@@ -265,7 +265,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       position: absolute;
       inset: 0;
       z-index: 1;
-      background: linear-gradient(100deg, #ffffff 0%, #ffffff 40%, rgba(255, 255, 255, 0.75) 54%, transparent 74%);
+      background: linear-gradient(100deg, #ffffff 0%, #ffffff 30%, rgba(255, 255, 255, 0.45) 45%, rgba(255, 255, 255, 0.08) 58%, transparent 68%);
     }
 
     .caption-dot { opacity: 0.6; }

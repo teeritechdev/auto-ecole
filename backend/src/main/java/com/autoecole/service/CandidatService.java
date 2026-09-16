@@ -141,6 +141,15 @@ public class CandidatService {
         return mapToDTO(c);
     }
 
+    /** Cf. CandidatAccountService.reinitialiserMotDePasse : l'administrateur récupère un
+     *  nouveau mot de passe temporaire à communiquer lui-même au candidat qui l'a oublié. */
+    @Transactional
+    public IdentifiantsCompteDTO resetPasswordCompte(Long id) {
+        Candidat c = candidatRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Candidat non trouvé avec l'id: " + id));
+        return candidatAccountService.reinitialiserMotDePasse(c);
+    }
+
     public CandidatDTO getCandidatByNumeroDossier(String numeroDossier) {
         Candidat c = candidatRepository.findByNumeroDossier(numeroDossier)
                 .orElseThrow(() -> new ResourceNotFoundException("Candidat non trouvé avec le numéro de dossier: " + numeroDossier));

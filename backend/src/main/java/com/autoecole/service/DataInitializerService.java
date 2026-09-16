@@ -177,6 +177,7 @@ public class DataInitializerService implements CommandLineRunner {
                 new Def("UTILISATEURS_VOIR", "Utilisateurs", "Voir les comptes utilisateurs"),
                 new Def("UTILISATEURS_CREER", "Utilisateurs", "Créer un compte utilisateur"),
                 new Def("UTILISATEURS_MODIFIER", "Utilisateurs", "Modifier un compte utilisateur"),
+                new Def("UTILISATEURS_RESET_PASSWORD", "Utilisateurs", "Réinitialiser le mot de passe d'un compte candidat"),
                 new Def("CODE_PRATIQUER", "Code de la route", "Passer les tests d'entraînement au code"),
                 new Def("CODE_SUIVI", "Code de la route", "Suivre la progression au code d'un candidat"),
                 new Def("CODE_CONFIGURATION_GERER", "Code de la route", "Configurer le module Code de la route"),

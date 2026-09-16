@@ -86,7 +86,33 @@ public class CandidatAccountService {
                 .build();
     }
 
-    private String genererMotDePasseTemporaire() {
+    /**
+     * Réinitialise le mot de passe du compte de connexion d'un candidat qui l'a oublié : un
+     * nouveau mot de passe temporaire est généré et affiché une seule fois à l'administrateur
+     * (aucun mécanisme d'envoi d'email/SMS dans l'application), à charge pour lui de le
+     * communiquer au candidat. Celui-ci devra le changer à sa prochaine connexion.
+     */
+    @Transactional
+    public IdentifiantsCompteDTO reinitialiserMotDePasse(Candidat candidat) {
+        Utilisateur compte = utilisateurRepository.findByUsername(candidat.getNumeroDossier())
+                .orElseThrow(() -> new BadRequestException("Ce candidat n'a pas encore de compte de connexion"));
+
+        String motDePasseTemporaire = genererMotDePasseTemporaire();
+        compte.setPassword(passwordEncoder.encode(motDePasseTemporaire));
+        compte.setDoitChangerMotDePasse(true);
+        utilisateurRepository.save(compte);
+
+        auditService.logAction("REINITIALISATION_MOT_DE_PASSE", "Utilisateur", compte.getUsername(),
+                "Réinitialisation du mot de passe du candidat " + candidat.getNom() + " " + candidat.getPrenom()
+                        + " par l'administrateur", null);
+
+        return IdentifiantsCompteDTO.builder()
+                .username(compte.getUsername())
+                .motDePasseTemporaire(motDePasseTemporaire)
+                .build();
+    }
+
+    String genererMotDePasseTemporaire() {
         StringBuilder sb = new StringBuilder(10);
         for (int i = 0; i < 10; i++) {
             sb.append(ALPHABET_MOT_DE_PASSE.charAt(RANDOM.nextInt(ALPHABET_MOT_DE_PASSE.length())));

@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   Candidat,
+  IdentifiantsCompte,
   Paiement,
   Recu,
   PassageExamen,
@@ -100,6 +101,10 @@ export class ApiService {
 
   public reinscrireCandidat(id: number, data: any): Observable<Candidat> {
     return this.http.post<Candidat>(`${this.base}/candidats/${id}/reinscrire`, data);
+  }
+
+  public resetPasswordCandidat(id: number): Observable<IdentifiantsCompte> {
+    return this.http.patch<IdentifiantsCompte>(`${this.base}/candidats/${id}/reset-password`, {});
   }
 
   // ================= PAIEMENTS & REÇUS =================

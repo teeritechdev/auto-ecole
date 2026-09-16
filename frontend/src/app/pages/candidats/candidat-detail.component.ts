@@ -6,6 +6,7 @@ import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import {
   Candidat,
+  IdentifiantsCompte,
   Paiement,
   PassageExamen,
   BilanExamensCandidat,
@@ -46,6 +47,12 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
               <button class="btn btn-primary" (click)="openExamenModal()">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg>
                 Enregistrer un Examen
+              </button>
+            }
+            @if (canResetPassword) {
+              <button class="btn btn-outline" (click)="resetPassword()" [disabled]="resettingPassword">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                {{ resettingPassword ? 'Réinitialisation...' : 'Réinitialiser le mot de passe' }}
               </button>
             }
           </div>
@@ -478,6 +485,36 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
             </div>
           </div>
         }
+
+        <!-- MODAL MOT DE PASSE RÉINITIALISÉ (affichage unique) -->
+        @if (identifiantsCompteAAfficher) {
+          <div class="modal-backdrop">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h3 style="display:flex; align-items:center; gap:0.5rem;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  Mot de passe réinitialisé
+                </h3>
+                <button class="btn btn-outline btn-sm" (click)="identifiantsCompteAAfficher = null">✕</button>
+              </div>
+              <div class="modal-body">
+                <p>Un nouveau mot de passe temporaire a été généré pour ce candidat. Communiquez-le-lui dès maintenant : il ne sera plus jamais affiché.</p>
+                <div class="form-group mt-3">
+                  <label class="form-label">Identifiant</label>
+                  <input type="text" class="form-control" [value]="identifiantsCompteAAfficher.username" readonly />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Mot de passe temporaire</label>
+                  <input type="text" class="form-control" [value]="identifiantsCompteAAfficher.motDePasseTemporaire" readonly />
+                </div>
+                <p class="form-help">Le candidat devra changer ce mot de passe lors de sa prochaine connexion.</p>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-primary" (click)="identifiantsCompteAAfficher = null">J'ai noté les identifiants</button>
+              </div>
+            </div>
+          </div>
+        }
       </div>
     }
     `,
@@ -668,6 +705,9 @@ export class CandidatDetailComponent implements OnInit {
     observations: ''
   };
 
+  resettingPassword = false;
+  identifiantsCompteAAfficher: IdentifiantsCompte | null = null;
+
   constructor(
     private route: ActivatedRoute,
     private apiService: ApiService,
@@ -685,6 +725,10 @@ export class CandidatDetailComponent implements OnInit {
 
   get canAddExam(): boolean {
     return this.authService.hasPermission(['EXAMENS_PROGRAMMER']);
+  }
+
+  get canResetPassword(): boolean {
+    return this.authService.hasPermission(['UTILISATEURS_RESET_PASSWORD']);
   }
 
   get canSeeFinancialData(): boolean {
@@ -743,6 +787,23 @@ export class CandidatDetailComponent implements OnInit {
       error: (err) => {
         this.savingPaiement = false;
         this.paiementError = extraireMessageErreur(err, 'Erreur lors de l’encaissement.');
+      }
+    });
+  }
+
+  resetPassword(): void {
+    if (!confirm('Réinitialiser le mot de passe de ce candidat ? Son ancien mot de passe cessera immédiatement de fonctionner.')) {
+      return;
+    }
+    this.resettingPassword = true;
+    this.apiService.resetPasswordCandidat(this.candidatId).subscribe({
+      next: (identifiants) => {
+        this.resettingPassword = false;
+        this.identifiantsCompteAAfficher = identifiants;
+      },
+      error: (err) => {
+        this.resettingPassword = false;
+        alert(extraireMessageErreur(err, 'Erreur lors de la réinitialisation du mot de passe.'));
       }
     });
   }

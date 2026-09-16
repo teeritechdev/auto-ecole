@@ -89,6 +89,13 @@ public class CandidatController {
         return ResponseEntity.ok(candidatService.updateCandidat(id, request));
     }
 
+    @PatchMapping("/{id}/reset-password")
+    @PreAuthorize("hasAuthority('PERM_UTILISATEURS_RESET_PASSWORD')")
+    @Operation(summary = "Réinitialiser le mot de passe du compte de connexion d'un candidat qui l'a oublié")
+    public ResponseEntity<IdentifiantsCompteDTO> resetPassword(@PathVariable Long id) {
+        return ResponseEntity.ok(candidatService.resetPasswordCompte(id));
+    }
+
     @PostMapping("/{id}/reinscrire")
     @PreAuthorize("hasAuthority('PERM_CANDIDATS_CREER')")
     @Operation(summary = "Rattacher une nouvelle inscription (redoublant) à un candidat déjà connu, au lieu de créer un dossier en doublon")

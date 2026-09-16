@@ -241,11 +241,22 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
     .login-split {
-      min-height: 100vh;
+      height: 100vh;
       position: relative;
       overflow: hidden;
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
       background-color: #090e1a;
+    }
+
+    .login-split::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #1e40af, #3b82f6, #0ea5e9);
+      z-index: 5;
     }
 
     /* Sans image de connexion définie : simple dégradé blanc, pas de photo ni de zone sombre. */
@@ -280,15 +291,16 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     .login-wrapper {
       position: relative;
       z-index: 2;
-      min-height: 100vh;
+      height: 100vh;
       display: flex;
       align-items: center;
       justify-content: flex-start;
-      padding: 2rem 6vw;
+      padding: 1rem 6vw;
+      box-sizing: border-box;
     }
 
     @media (max-width: 900px) {
-      .login-wrapper { justify-content: center; padding: 2rem 1.25rem; }
+      .login-wrapper { justify-content: center; padding: 1rem 1.25rem; }
     }
 
     .login-container {
@@ -299,51 +311,30 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       display: flex;
       flex-direction: column;
       align-items: center;
+      max-height: 100%;
     }
 
-    /* Main Card */
+    /* Plus de carte : le formulaire repose directement sur la page (fond photo ou dégradé
+       blanc selon qu'une image de connexion est définie ou non). */
     .login-card {
       width: 100%;
-      background: #ffffff;
-      border-radius: 24px;
-      box-shadow: 
-        0 25px 60px -15px rgba(0, 0, 0, 0.45),
-        0 0 0 1px rgba(255, 255, 255, 0.15),
-        0 1px 2px 0 rgba(0, 0, 0, 0.05);
-      padding: 2.5rem 2.25rem 2rem;
-      transition: all 0.3s ease;
+      background: transparent;
+      box-shadow: none;
+      padding: 0;
       position: relative;
-      overflow: hidden;
-    }
-
-    .login-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 5px;
-      background: linear-gradient(90deg, #1e40af, #3b82f6, #0ea5e9, #3b82f6, #1e40af);
-      background-size: 200% 100%;
-      animation: gradientShift 6s linear infinite;
-    }
-
-    @keyframes gradientShift {
-      0% { background-position: 0% 50%; }
-      100% { background-position: 200% 50%; }
     }
 
     /* Header */
     .login-header {
       text-align: center;
-      margin-bottom: 2rem;
+      margin-bottom: 1.1rem;
     }
 
     .brand-logo-wrapper {
       position: relative;
-      width: 72px;
-      height: 72px;
-      margin: 0 auto 1.25rem;
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 0.75rem;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -394,14 +385,22 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       to { transform: rotate(360deg); }
     }
 
+    /* Sans carte, ce texte repose directement sur la page : les couleurs par défaut
+       supposent le fond sombre (image + estompage) ; l'override .no-image plus bas les
+       assombrit pour rester lisibles sur le dégradé blanc. */
     .brand-title {
       font-family: 'Outfit', sans-serif;
       font-size: 1.55rem;
       font-weight: 800;
-      color: #0f172a;
       letter-spacing: -0.025em;
       margin: 0;
       line-height: 1.25;
+      background: linear-gradient(135deg, #ffffff 0%, #bfdbfe 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .login-split.no-image .brand-title {
       background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
@@ -409,18 +408,20 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
 
     .brand-subtitle {
       font-size: 0.84rem;
-      color: #64748b;
+      color: #cbd5e1;
       margin-top: 0.35rem;
       font-weight: 500;
       letter-spacing: -0.01em;
     }
+
+    .login-split.no-image .brand-subtitle { color: #64748b; }
 
     .brand-divider {
       width: 44px;
       height: 3px;
       background: linear-gradient(90deg, #2563eb, #38bdf8);
       border-radius: 3px;
-      margin: 1.15rem auto 0;
+      margin: 0.75rem auto 0;
     }
 
     /* Alert */
@@ -490,7 +491,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     .login-form {
       display: flex;
       flex-direction: column;
-      gap: 1.25rem;
+      gap: 0.9rem;
     }
 
     .form-field {
@@ -508,9 +509,11 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     .field-label {
       font-size: 0.84rem;
       font-weight: 600;
-      color: #334155;
+      color: #e2e8f0;
       letter-spacing: -0.01em;
     }
+
+    .login-split.no-image .field-label { color: #334155; }
 
     .required-star {
       color: #ef4444;
@@ -617,9 +620,11 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       gap: 0.5rem;
       cursor: pointer;
       font-size: 0.82rem;
-      color: #475569;
+      color: #cbd5e1;
       user-select: none;
     }
+
+    .login-split.no-image .remember-me { color: #475569; }
 
     .remember-me input {
       position: absolute;
@@ -663,7 +668,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     .forgot-link {
       background: none;
       border: none;
-      color: #2563eb;
+      color: #60a5fa;
       font-size: 0.82rem;
       font-weight: 600;
       cursor: pointer;
@@ -671,8 +676,11 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       transition: color 0.15s;
     }
 
+    .login-split.no-image .forgot-link { color: #2563eb; }
+    .login-split.no-image .forgot-link:hover { color: #1d4ed8; }
+
     .forgot-link:hover {
-      color: #1d4ed8;
+      color: #93c5fd;
       text-decoration: underline;
     }
 
@@ -744,22 +752,26 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       to { transform: rotate(360deg); }
     }
 
-    /* Security Footer inside card */
+    /* Security Footer */
     .card-security-footer {
-      margin-top: 1.75rem;
-      padding-top: 1.25rem;
-      border-top: 1px solid #f1f5f9;
+      margin-top: 1rem;
+      padding-top: 0.85rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.15);
       text-align: center;
     }
+
+    .login-split.no-image .card-security-footer { border-top-color: #f1f5f9; }
 
     .security-badge {
       display: inline-flex;
       align-items: center;
       gap: 0.45rem;
       font-size: 0.74rem;
-      color: #64748b;
+      color: #cbd5e1;
       font-weight: 500;
     }
+
+    .login-split.no-image .security-badge { color: #64748b; }
 
     .security-badge svg {
       width: 14px;
@@ -770,7 +782,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
 
     /* Global Bottom */
     .global-footer {
-      margin-top: 1.5rem;
+      margin-top: 0.9rem;
       text-align: center;
       color: #94a3b8;
       font-size: 0.8rem;
@@ -893,11 +905,6 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     }
 
     @media (max-width: 480px) {
-      .login-card {
-        padding: 2rem 1.5rem 1.75rem;
-        border-radius: 20px;
-      }
-
       .brand-title {
         font-size: 1.35rem;
       }

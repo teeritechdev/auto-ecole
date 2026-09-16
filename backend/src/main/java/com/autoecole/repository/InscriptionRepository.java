@@ -1,6 +1,7 @@
 package com.autoecole.repository;
 
 import com.autoecole.entity.Inscription;
+import com.autoecole.entity.enums.Sexe;
 import com.autoecole.entity.enums.StatutDossier;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -26,6 +27,10 @@ public interface InscriptionRepository extends JpaRepository<Inscription, Long> 
 
     @Query("SELECT COUNT(i) FROM Inscription i WHERE i.active = true AND (:siteIds IS NULL OR i.site.id IN :siteIds)")
     long countByActiveTrueAndSite(@Param("siteIds") Collection<Long> siteIds);
+
+    @Query("SELECT COUNT(i) FROM Inscription i WHERE i.active = true AND i.candidat.sexe = :sexe " +
+           "AND (:siteIds IS NULL OR i.site.id IN :siteIds)")
+    long countByActiveTrueAndSexeAndSite(@Param("sexe") Sexe sexe, @Param("siteIds") Collection<Long> siteIds);
 
     @Query("SELECT COALESCE(SUM(i.totalVerse), 0) FROM Inscription i WHERE i.active = true " +
            "AND (:siteIds IS NULL OR i.site.id IN :siteIds)")

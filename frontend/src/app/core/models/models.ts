@@ -288,6 +288,8 @@ export interface DashboardStats {
   candidatsEnCours: number;
   candidatsSoldes: number;
   candidatsExpiresNonSoldes: number;
+  totalHommes: number;
+  totalFemmes: number;
   montantTotalEncaisse: number;
   montantGlobalRestantDu: number;
   soldeCaisseActuel: number;

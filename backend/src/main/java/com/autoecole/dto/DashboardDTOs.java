@@ -20,6 +20,8 @@ public class DashboardDTOs {
         private long candidatsEnCours;
         private long candidatsSoldes;
         private long candidatsExpiresNonSoldes;
+        private long totalHommes;
+        private long totalFemmes;
 
         // Financier KPIs
         private BigDecimal montantTotalEncaisse;

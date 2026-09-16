@@ -67,6 +67,9 @@ import { DashboardStats } from '../../core/models/models';
                 <span class="text-success">{{ stats?.candidatsSoldes || 0 }} soldés</span> •
                 <span class="text-danger">{{ stats?.candidatsExpiresNonSoldes || 0 }} expirés non soldés</span>
               </div>
+              <div class="stat-sub">
+                {{ stats?.totalHommes || 0 }} hommes • {{ stats?.totalFemmes || 0 }} femmes
+              </div>
             </div>
           </div>
         }

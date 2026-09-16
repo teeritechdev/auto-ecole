@@ -55,6 +55,8 @@ public class DashboardService {
         long candidatsEnCours = aucunSiteAssigne ? 0 : inscriptionRepository.countByActiveTrueAndStatutDossierAndSite(StatutDossier.EN_COURS, siteIds);
         long candidatsSoldes = aucunSiteAssigne ? 0 : inscriptionRepository.countByActiveTrueAndStatutDossierAndSite(StatutDossier.SOLDE, siteIds);
         long candidatsExpiresNonSoldes = aucunSiteAssigne ? 0 : inscriptionRepository.countByActiveTrueAndStatutDossierAndSite(StatutDossier.EXPIRE_NON_SOLDE, siteIds);
+        long totalHommes = aucunSiteAssigne ? 0 : inscriptionRepository.countByActiveTrueAndSexeAndSite(com.autoecole.entity.enums.Sexe.HOMME, siteIds);
+        long totalFemmes = aucunSiteAssigne ? 0 : inscriptionRepository.countByActiveTrueAndSexeAndSite(com.autoecole.entity.enums.Sexe.FEMME, siteIds);
 
         // Financier KPIs
         BigDecimal totalVerse = null;
@@ -89,6 +91,8 @@ public class DashboardService {
                 .candidatsEnCours(candidatsEnCours)
                 .candidatsSoldes(candidatsSoldes)
                 .candidatsExpiresNonSoldes(candidatsExpiresNonSoldes)
+                .totalHommes(totalHommes)
+                .totalFemmes(totalFemmes)
                 .montantTotalEncaisse(totalVerse)
                 .montantGlobalRestantDu(totalRestant)
                 .soldeCaisseActuel(recapCaisse != null ? recapCaisse.getSoldeCaisse() : null)

@@ -10,22 +10,14 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     selector: 'app-login',
     imports: [FormsModule],
     template: `
-    <div class="login-split">
+    <div class="login-split" [class.no-image]="!imageConnexion">
       <!-- IMAGE DE FOND : illustration configurable (Paramètres Généraux > Identité), pleine
-           page, ancrée à droite et estompée en diagonale vers la gauche derrière le formulaire. -->
-      <div class="login-image-panel" [style.background-image]="imageConnexion ? 'url(' + imageConnexion + ')' : null">
-        @if (!imageConnexion) {
-          <div class="image-fallback">
-            <svg class="fallback-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/>
-              <circle cx="7" cy="17" r="2"/>
-              <path d="M9 17h6"/>
-              <circle cx="17" cy="17" r="2"/>
-            </svg>
-          </div>
-        }
-      </div>
-      <div class="login-image-blend"></div>
+           page, ancrée à droite et estompée en diagonale vers la gauche derrière le formulaire.
+           Sans image définie, on affiche un simple dégradé blanc plutôt qu'un repli coloré. -->
+      @if (imageConnexion) {
+        <div class="login-image-panel" [style.background-image]="'url(' + imageConnexion + ')'"></div>
+        <div class="login-image-blend"></div>
+      }
 
       <!-- FORMULAIRE : à gauche, sur la zone estompée -->
       <div class="login-wrapper">
@@ -256,30 +248,18 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       background-color: #090e1a;
     }
 
-    /* Image de fond : illustration configurable (Paramètres Généraux > Identité), ancrée à
-       droite, avec un dégradé de marque en repli tant qu'aucune image n'a été téléversée. */
+    /* Sans image de connexion définie : simple dégradé blanc, pas de photo ni de zone sombre. */
+    .login-split.no-image {
+      background: linear-gradient(135deg, #ffffff 0%, #f3f7ff 55%, #e3ecfd 100%);
+    }
+
+    /* Image de fond : illustration configurable (Paramètres Généraux > Identité), ancrée à droite. */
     .login-image-panel {
       position: absolute;
       inset: 0;
       background-size: cover;
       background-position: center right;
       z-index: 0;
-    }
-
-    .image-fallback {
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(135deg, #1e40af 0%, #2563eb 55%, #38bdf8 100%);
-    }
-
-    .fallback-icon {
-      position: absolute;
-      right: 8%;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 32%;
-      max-width: 220px;
-      color: rgba(255, 255, 255, 0.25);
     }
 
     /* Estompage diagonal : opaque à gauche (où repose le formulaire), transparent à droite
@@ -810,6 +790,12 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       margin-bottom: 0.35rem;
       color: #cbd5e1;
     }
+
+    /* Sur fond blanc (pas d'image définie), le texte clair prévu pour un fond sombre
+       deviendrait illisible : on bascule vers des teintes foncées. */
+    .login-split.no-image .global-footer { color: #64748b; }
+    .login-split.no-image .global-footer strong { color: #1e293b; }
+    .login-split.no-image .footer-contact { color: #475569; }
 
     /* Forgot Password Modal */
     .modal-backdrop {

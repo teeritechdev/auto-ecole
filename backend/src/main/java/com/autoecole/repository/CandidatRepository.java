@@ -33,7 +33,15 @@ public interface CandidatRepository extends JpaRepository<Candidat, Long> {
            "AND (:categorieId IS NULL OR i.categoriePermis.id = :categorieId) " +
            "AND (:siteIds IS NULL OR i.site.id IN :siteIds) " +
            "AND (:statutInscription IS NULL OR i.statutInscription = :statutInscription) " +
-           "AND (:etapesAutorisees IS NULL OR i.etapeParcours IN :etapesAutorisees)")
+           "AND (:etapesAutorisees IS NULL OR i.etapeParcours IN :etapesAutorisees) " +
+           "AND (:siteFiltreId IS NULL OR i.site.id = :siteFiltreId) " +
+           "AND (:etapeFiltre IS NULL OR i.etapeParcours = :etapeFiltre) " +
+           "AND (:priseEnChargeExamens IS NULL OR i.priseEnChargeExamens = :priseEnChargeExamens) " +
+           "AND (:dateExamenProgramme IS NULL OR EXISTS (" +
+           "  SELECT 1 FROM PassageExamen pe WHERE pe.inscription = i " +
+           "  AND pe.resultat = com.autoecole.entity.enums.ResultatExamen.PROGRAMME " +
+           "  AND pe.datePassage = :dateExamenProgramme" +
+           "))")
     Page<Candidat> rechercherCandidats(
             @Param("recherche") String recherche,
             @Param("statut") StatutDossier statut,
@@ -41,6 +49,10 @@ public interface CandidatRepository extends JpaRepository<Candidat, Long> {
             @Param("siteIds") Collection<Long> siteIds,
             @Param("statutInscription") StatutInscription statutInscription,
             @Param("etapesAutorisees") Collection<EtapeParcours> etapesAutorisees,
+            @Param("siteFiltreId") Long siteFiltreId,
+            @Param("etapeFiltre") EtapeParcours etapeFiltre,
+            @Param("priseEnChargeExamens") Boolean priseEnChargeExamens,
+            @Param("dateExamenProgramme") java.time.LocalDate dateExamenProgramme,
             Pageable pageable
     );
 

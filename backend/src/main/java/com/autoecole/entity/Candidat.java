@@ -1,5 +1,6 @@
 package com.autoecole.entity;
 
+import com.autoecole.entity.enums.Sexe;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
@@ -37,6 +38,12 @@ public class Candidat {
 
     @Column(name = "lieu_naissance", length = 100)
     private String lieuNaissance;
+
+    // Nullable en base pour ne pas casser les dossiers déjà existants créés avant
+    // l'ajout de ce champ ; rendu obligatoire côté DTO pour les nouvelles créations.
+    @Enumerated(EnumType.STRING)
+    @Column(length = 10)
+    private Sexe sexe;
 
     @Column(length = 30, nullable = false)
     private String telephone;

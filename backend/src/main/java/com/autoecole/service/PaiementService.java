@@ -40,12 +40,12 @@ public class PaiementService {
 
     /** Une caissière/secrétaire restreinte à un site ne voit et n'encaisse que les paiements
      *  des candidats inscrits sur ce site (RG : gestion par site, comme pour un moniteur). */
-    public Page<PaiementDTO> filtrerPaiements(Long candidatId, StatutPaiement statut, LocalDateTime debut, LocalDateTime fin, Pageable pageable) {
+    public Page<PaiementDTO> filtrerPaiements(Long candidatId, StatutPaiement statut, LocalDateTime debut, LocalDateTime fin, Long siteFiltreId, Pageable pageable) {
         java.util.Set<Long> siteIds = siteAccessService.resoudreFiltreSitesPourListe();
         if (siteIds != null && siteIds.isEmpty()) {
             return Page.empty(pageable);
         }
-        return paiementRepository.filtrerPaiements(candidatId, statut, debut, fin, siteIds, pageable)
+        return paiementRepository.filtrerPaiements(candidatId, statut, debut, fin, siteIds, siteFiltreId, pageable)
                 .map(this::mapToDTO);
     }
 

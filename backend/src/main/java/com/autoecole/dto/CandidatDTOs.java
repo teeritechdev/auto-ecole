@@ -2,6 +2,7 @@ package com.autoecole.dto;
 
 import com.autoecole.entity.enums.EtapeParcours;
 import com.autoecole.entity.enums.ModeReglement;
+import com.autoecole.entity.enums.Sexe;
 import com.autoecole.entity.enums.StatutDossier;
 import com.autoecole.entity.enums.StatutInscription;
 import jakarta.validation.constraints.DecimalMin;
@@ -29,6 +30,7 @@ public class CandidatDTOs {
         private String prenom;
         private LocalDate dateNaissance;
         private String lieuNaissance;
+        private Sexe sexe;
         private String telephone;
         private String email;
         private String contactsUrgence;
@@ -98,6 +100,9 @@ public class CandidatDTOs {
         private LocalDate dateNaissance;
 
         private String lieuNaissance;
+
+        @NotNull(message = "Le sexe est obligatoire")
+        private Sexe sexe;
 
         @NotBlank(message = "Le numéro de téléphone est obligatoire")
         private String telephone;
@@ -172,6 +177,9 @@ public class CandidatDTOs {
         private LocalDate dateNaissance;
 
         private String lieuNaissance;
+
+        @NotNull(message = "Le sexe est obligatoire")
+        private Sexe sexe;
 
         @NotBlank(message = "Le numéro de téléphone est obligatoire")
         private String telephone;

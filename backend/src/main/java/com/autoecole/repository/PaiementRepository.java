@@ -26,13 +26,15 @@ public interface PaiementRepository extends JpaRepository<Paiement, Long> {
            "AND (:statut IS NULL OR p.statut = :statut) " +
            "AND (CAST(:debut AS timestamp) IS NULL OR p.datePaiement >= :debut) " +
            "AND (CAST(:fin AS timestamp) IS NULL OR p.datePaiement <= :fin) " +
-           "AND (:siteIds IS NULL OR p.inscription.site.id IN :siteIds)")
+           "AND (:siteIds IS NULL OR p.inscription.site.id IN :siteIds) " +
+           "AND (:siteFiltreId IS NULL OR p.inscription.site.id = :siteFiltreId)")
     Page<Paiement> filtrerPaiements(
             @Param("candidatId") Long candidatId,
             @Param("statut") StatutPaiement statut,
             @Param("debut") LocalDateTime debut,
             @Param("fin") LocalDateTime fin,
             @Param("siteIds") Collection<Long> siteIds,
+            @Param("siteFiltreId") Long siteFiltreId,
             Pageable pageable
     );
 

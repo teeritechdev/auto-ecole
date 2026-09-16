@@ -89,6 +89,42 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
           </div>
 
           <div>
+            <select class="form-control" [(ngModel)]="siteFiltre" (change)="loadCandidats()">
+              <option value="">Tous les sites</option>
+              @for (s of sites; track s) {
+                <option [value]="s.id">{{ s.nom }}</option>
+              }
+            </select>
+          </div>
+
+          <div>
+            <select class="form-control" [(ngModel)]="etapeFiltre" (change)="loadCandidats()">
+              <option value="">Toutes les étapes</option>
+              @for (e of etapesParcours; track e) {
+                <option [value]="e">{{ etapeLabel(e) }}</option>
+              }
+            </select>
+          </div>
+
+          <div>
+            <select class="form-control" [(ngModel)]="priseEnChargeExamensFiltre" (change)="loadCandidats()">
+              <option value="">Frais d'examen : tous</option>
+              <option value="true">Frais d'examen pris en charge</option>
+              <option value="false">Frais d'examen non pris en charge</option>
+            </select>
+          </div>
+
+          <div>
+            <input
+              type="date"
+              class="form-control"
+              [(ngModel)]="dateExamenProgrammeFiltre"
+              (change)="loadCandidats()"
+              title="Programmés pour un examen à cette date"
+              />
+          </div>
+
+          <div>
             <button class="btn btn-secondary btn-block" (click)="resetFiltres()">Réinitialiser</button>
           </div>
         </div>
@@ -320,6 +356,15 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                       <input type="email" class="form-control" [(ngModel)]="newCandidat.email" name="email" placeholder="candidat@email.com" />
                     </div>
                   </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="form-label">Sexe <span class="required">*</span></label>
+                      <select class="form-control" [(ngModel)]="newCandidat.sexe" name="sexe" required>
+                        <option value="HOMME">Homme</option>
+                        <option value="FEMME">Femme</option>
+                      </select>
+                    </div>
+                  </div>
                   <div class="form-group">
                     <label class="form-label">Autres contacts utiles / Personne à prévenir</label>
                     <input type="text" class="form-control" [(ngModel)]="newCandidat.contactsUrgence" name="contactsUrgence" placeholder="Nom et téléphone du contact d'urgence" />
@@ -373,23 +418,6 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                     <input type="checkbox" [(ngModel)]="newCandidat.priseEnChargeExamens" name="priseEnChargeExamens" />
                     Les frais de formation englobent la prise en charge totale des frais d'examen
                   </label>
-                </div>
-                <h4 class="section-title">3. Premier Versement (Optionnel à l'inscription — Règle RG02 : 35 000 à 50 000 FCFA)</h4>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label class="form-label">Montant du 1er versement (FCFA)</label>
-                    <input type="number" class="form-control" [(ngModel)]="newCandidat.montantPremierVersement" name="montantPremierVersement" placeholder="Ex: 40000" min="35000" max="50000" />
-                    <small class="text-muted">Si versé : doit être compris entre 35 000 et 50 000 FCFA.</small>
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label">Mode de règlement</label>
-                    <select class="form-control" [(ngModel)]="newCandidat.modeReglementPremierVersement" name="modeReglementPremierVersement">
-                      <option value="ESPECES">Espèces</option>
-                      <option value="MOBILE_MONEY">Mobile Money (Wave / Orange / MTN / Moov)</option>
-                      <option value="VIREMENT">Virement bancaire</option>
-                      <option value="CHEQUE">Chèque</option>
-                    </select>
-                  </div>
                 </div>
               </div>
               <div class="modal-footer">
@@ -451,6 +479,15 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   <div class="form-group">
                     <label class="form-label">Adresse Email</label>
                     <input type="email" class="form-control" [(ngModel)]="editCandidat.email" name="editEmail" />
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Sexe <span class="required">*</span></label>
+                    <select class="form-control" [(ngModel)]="editCandidat.sexe" name="editSexe" required>
+                      <option value="HOMME">Homme</option>
+                      <option value="FEMME">Femme</option>
+                    </select>
                   </div>
                 </div>
                 <div class="form-group">
@@ -657,7 +694,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
 
     .filter-grid {
       display: grid;
-      grid-template-columns: 2fr 1fr 1fr 1fr 0.8fr;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
       gap: 1rem;
     }
 
@@ -744,9 +781,15 @@ export class CandidatsComponent implements OnInit {
   statutFiltre = '';
   categorieFiltre = '';
   statutInscriptionFiltre = '';
+  siteFiltre = '';
+  etapeFiltre = '';
+  priseEnChargeExamensFiltre = '';
+  dateExamenProgrammeFiltre = '';
   page = 0;
   totalPages = 0;
   totalElements = 0;
+
+  etapesParcours = ['INSCRIPTION', 'CODE', 'EXAMEN_CODE', 'CRENEAU', 'EXAMEN_CRENEAU', 'CIRCULATION', 'EXAMEN_CIRCULATION', 'PERMIS_OBTENU', 'EXPIRE'];
 
   showCreateModal = false;
   showEditModal = false;
@@ -767,6 +810,7 @@ export class CandidatsComponent implements OnInit {
     prenom: '',
     dateNaissance: '',
     lieuNaissance: '',
+    sexe: 'HOMME',
     telephone: '',
     email: '',
     contactsUrgence: '',
@@ -774,9 +818,7 @@ export class CandidatsComponent implements OnInit {
     categoriePermisId: null,
     montant: null,
     siteId: null,
-    statutInscription: 'NOUVEAU',
-    montantPremierVersement: null,
-    modeReglementPremierVersement: 'ESPECES'
+    statutInscription: 'NOUVEAU'
   };
 
   constructor(private apiService: ApiService, private authService: AuthService) {}
@@ -925,7 +967,9 @@ export class CandidatsComponent implements OnInit {
   loadCandidats(): void {
     this.loading = true;
     const catId = this.categorieFiltre ? Number(this.categorieFiltre) : undefined;
-    this.apiService.getCandidats(this.recherche, this.statutFiltre, catId, this.page, 15, this.statutInscriptionFiltre || undefined).subscribe({
+    const siteId = this.siteFiltre ? Number(this.siteFiltre) : undefined;
+    const priseEnCharge = this.priseEnChargeExamensFiltre ? this.priseEnChargeExamensFiltre === 'true' : undefined;
+    this.apiService.getCandidats(this.recherche, this.statutFiltre, catId, this.page, 15, this.statutInscriptionFiltre || undefined, undefined, siteId, this.etapeFiltre || undefined, priseEnCharge, this.dateExamenProgrammeFiltre || undefined).subscribe({
       next: (res) => {
         this.candidats = res.content || [];
         this.totalPages = res.totalPages || 0;
@@ -949,8 +993,27 @@ export class CandidatsComponent implements OnInit {
     this.statutFiltre = '';
     this.categorieFiltre = '';
     this.statutInscriptionFiltre = '';
+    this.siteFiltre = '';
+    this.etapeFiltre = '';
+    this.priseEnChargeExamensFiltre = '';
+    this.dateExamenProgrammeFiltre = '';
     this.page = 0;
     this.loadCandidats();
+  }
+
+  etapeLabel(e: string): string {
+    const labels: Record<string, string> = {
+      INSCRIPTION: 'Inscription',
+      CODE: 'Code',
+      EXAMEN_CODE: 'Examen Code',
+      CRENEAU: 'Créneau',
+      EXAMEN_CRENEAU: 'Examen Créneau',
+      CIRCULATION: 'Circulation',
+      EXAMEN_CIRCULATION: 'Examen Circulation',
+      PERMIS_OBTENU: 'Permis obtenu',
+      EXPIRE: 'Expiré'
+    };
+    return labels[e] || e;
   }
 
   openCreateModal(): void {
@@ -963,6 +1026,7 @@ export class CandidatsComponent implements OnInit {
       prenom: '',
       dateNaissance: '',
       lieuNaissance: '',
+      sexe: 'HOMME',
       telephone: '',
       email: '',
       contactsUrgence: '',
@@ -971,8 +1035,6 @@ export class CandidatsComponent implements OnInit {
       montant: this.categories.length > 0 ? this.categories[0].montant : null,
       siteId: this.sitesAutorises.length > 0 ? this.sitesAutorises[0].id : null,
       statutInscription: 'NOUVEAU',
-      montantPremierVersement: null,
-      modeReglementPremierVersement: 'ESPECES',
       priseEnChargeExamens: false
     };
     this.showCreateModal = true;
@@ -986,6 +1048,7 @@ export class CandidatsComponent implements OnInit {
       prenom: c.prenom,
       dateNaissance: c.dateNaissance ? c.dateNaissance.substring(0, 10) : '',
       lieuNaissance: c.lieuNaissance || '',
+      sexe: c.sexe || 'HOMME',
       telephone: c.telephone,
       email: c.email || '',
       contactsUrgence: c.contactsUrgence || '',
@@ -1056,13 +1119,6 @@ export class CandidatsComponent implements OnInit {
   }
 
   saveCreateCandidat(): void {
-    if (this.newCandidat.montantPremierVersement) {
-      if (this.newCandidat.montantPremierVersement < 35000 || this.newCandidat.montantPremierVersement > 50000) {
-        this.modalError = 'Règle RG02 : Le 1er versement doit obligatoirement être compris entre 35 000 et 50 000 FCFA.';
-        return;
-      }
-    }
-
     this.saving = true;
     this.modalError = '';
 
@@ -1072,8 +1128,6 @@ export class CandidatsComponent implements OnInit {
         montant: this.newCandidat.montant,
         siteId: this.newCandidat.siteId,
         dateInscription: this.newCandidat.dateInscription,
-        montantPremierVersement: this.newCandidat.montantPremierVersement,
-        modeReglementPremierVersement: this.newCandidat.modeReglementPremierVersement,
         priseEnChargeExamens: this.newCandidat.priseEnChargeExamens
       };
       this.apiService.reinscrireCandidat(this.doublonDetecte.id, payload).subscribe({

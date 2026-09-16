@@ -1,6 +1,7 @@
 package com.autoecole.controller;
 
 import com.autoecole.dto.CandidatDTOs.*;
+import com.autoecole.entity.enums.EtapeParcours;
 import com.autoecole.entity.enums.StatutDossier;
 import com.autoecole.entity.enums.StatutInscription;
 import com.autoecole.service.CandidatService;
@@ -34,9 +35,13 @@ public class CandidatController {
             @RequestParam(required = false) Long categorieId,
             @RequestParam(required = false) StatutInscription statutInscription,
             @RequestParam(required = false, defaultValue = "false") boolean ignoreEtapeFilter,
+            @RequestParam(required = false) Long siteId,
+            @RequestParam(required = false) EtapeParcours etapeParcours,
+            @RequestParam(required = false) Boolean priseEnChargeExamens,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate dateExamenProgramme,
             @PageableDefault(size = 15, sort = "dateCreation", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        return ResponseEntity.ok(candidatService.rechercherCandidats(recherche, statut, categorieId, statutInscription, ignoreEtapeFilter, pageable));
+        return ResponseEntity.ok(candidatService.rechercherCandidats(recherche, statut, categorieId, statutInscription, ignoreEtapeFilter, siteId, etapeParcours, priseEnChargeExamens, dateExamenProgramme, pageable));
     }
 
     @GetMapping("/{id}")

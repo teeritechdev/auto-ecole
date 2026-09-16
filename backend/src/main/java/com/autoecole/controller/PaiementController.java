@@ -38,9 +38,10 @@ public class PaiementController {
             @RequestParam(required = false) StatutPaiement statut,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime debut,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fin,
+            @RequestParam(required = false) Long siteId,
             @PageableDefault(size = 15, sort = "datePaiement", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        return ResponseEntity.ok(paiementService.filtrerPaiements(candidatId, statut, debut, fin, pageable));
+        return ResponseEntity.ok(paiementService.filtrerPaiements(candidatId, statut, debut, fin, siteId, pageable));
     }
 
     @GetMapping("/candidat/{candidatId}")

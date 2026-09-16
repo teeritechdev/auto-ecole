@@ -42,13 +42,13 @@ public class CandidatService {
     private final SiteAccessService siteAccessService;
     private final CandidatAccountService candidatAccountService;
 
-    public Page<CandidatDTO> rechercherCandidats(String recherche, StatutDossier statut, Long categorieId, StatutInscription statutInscription, boolean ignoreEtapeFilter, Pageable pageable) {
+    public Page<CandidatDTO> rechercherCandidats(String recherche, StatutDossier statut, Long categorieId, StatutInscription statutInscription, boolean ignoreEtapeFilter, Long siteFiltreId, com.autoecole.entity.enums.EtapeParcours etapeFiltre, Boolean priseEnChargeExamens, java.time.LocalDate dateExamenProgramme, Pageable pageable) {
         java.util.Set<Long> siteIds = siteAccessService.resoudreFiltreSitesPourListe();
         java.util.Set<com.autoecole.entity.enums.EtapeParcours> etapesAutorisees = ignoreEtapeFilter ? null : siteAccessService.resoudreFiltreEtapesPourListe();
-        
+
         // Si ignoreEtapeFilter est true, on vérifie quand même si l'utilisateur est un moniteur.
         // Un moniteur spécialisé Code peut voir les candidats au-delà de l'étape Code.
-        // Mais un moniteur spécialisé UNIQUEMENT Créneau ne devrait pas voir le module Code... 
+        // Mais un moniteur spécialisé UNIQUEMENT Créneau ne devrait pas voir le module Code...
         // Toutefois, le frontend n'appelle avec ignoreEtapeFilter=true que sur la page CodeResultats
         // qui est elle-même protégée par le routing. Et on garde la restriction par site !
         if (ignoreEtapeFilter) {
@@ -62,7 +62,7 @@ public class CandidatService {
         if ((siteIds != null && siteIds.isEmpty()) || (etapesAutorisees != null && etapesAutorisees.isEmpty() && !ignoreEtapeFilter)) {
             return Page.empty(pageable);
         }
-        return candidatRepository.rechercherCandidats(recherche, statut, categorieId, siteIds, statutInscription, etapesAutorisees, pageable)
+        return candidatRepository.rechercherCandidats(recherche, statut, categorieId, siteIds, statutInscription, etapesAutorisees, siteFiltreId, etapeFiltre, priseEnChargeExamens, dateExamenProgramme, pageable)
                 .map(this::mapToDTO);
     }
 
@@ -108,6 +108,7 @@ public class CandidatService {
                 .prenom(request.getPrenom().trim())
                 .dateNaissance(request.getDateNaissance())
                 .lieuNaissance(request.getLieuNaissance())
+                .sexe(request.getSexe())
                 .telephone(request.getTelephone().trim())
                 .email(request.getEmail() != null ? request.getEmail().trim().toLowerCase() : null)
                 .contactsUrgence(request.getContactsUrgence())
@@ -225,6 +226,7 @@ public class CandidatService {
         candidat.setPrenom(request.getPrenom().trim());
         candidat.setDateNaissance(request.getDateNaissance());
         candidat.setLieuNaissance(request.getLieuNaissance());
+        candidat.setSexe(request.getSexe());
         candidat.setTelephone(request.getTelephone().trim());
         candidat.setEmail(request.getEmail() != null ? request.getEmail().trim().toLowerCase() : null);
         candidat.setContactsUrgence(request.getContactsUrgence());
@@ -310,6 +312,7 @@ public class CandidatService {
                 .prenom(c.getPrenom())
                 .dateNaissance(c.getDateNaissance())
                 .lieuNaissance(c.getLieuNaissance())
+                .sexe(c.getSexe())
                 .telephone(c.getTelephone())
                 .email(c.getEmail())
                 .contactsUrgence(c.getContactsUrgence())

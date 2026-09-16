@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
-import { Candidat, Paiement, Recu, ResumePaiements } from '../../core/models/models';
+import { Candidat, Paiement, Recu, ResumePaiements, Site } from '../../core/models/models';
 import { extraireMessageErreur } from '../../core/utils/error-utils';
 
 @Component({
@@ -60,6 +60,20 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
               <option value="MODIFIE">Modifié</option>
               <option value="ANNULE">Annulé</option>
             </select>
+          </div>
+          <div>
+            <select class="form-control" [(ngModel)]="siteFiltre" (change)="loadPaiements()">
+              <option value="">Tous les sites</option>
+              @for (s of sites; track s) {
+                <option [value]="s.id">{{ s.nom }}</option>
+              }
+            </select>
+          </div>
+          <div>
+            <input type="date" class="form-control" [(ngModel)]="dateDebutFiltre" (change)="loadPaiements()" title="Du" />
+          </div>
+          <div>
+            <input type="date" class="form-control" [(ngModel)]="dateFinFiltre" (change)="loadPaiements()" title="Au" />
           </div>
           <div>
             <button class="btn btn-secondary" (click)="resetFiltres()">Réinitialiser</button>
@@ -371,7 +385,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
 
     .filter-grid {
       display: grid;
-      grid-template-columns: 2fr 1fr;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
       gap: 1rem;
     }
 
@@ -422,6 +436,10 @@ export class PaiementsComponent implements OnInit {
   saving = false;
 
   statutFiltre = '';
+  siteFiltre = '';
+  dateDebutFiltre = '';
+  dateFinFiltre = '';
+  sites: Site[] = [];
   page = 0;
   totalPages = 0;
   totalElements = 0;
@@ -451,6 +469,21 @@ export class PaiementsComponent implements OnInit {
     this.loadPaiements();
     this.loadNonSoldesCandidats();
     this.loadResume();
+    this.apiService.getSites(true).subscribe({ next: (res) => this.sites = res });
+  }
+
+  /** Convertit les bornes de date (input HTML "date", sans heure) en horodatages couvrant
+   *  la journée entière, pour matcher les paramètres debut/fin (LocalDateTime) du backend. */
+  private get debutISO(): string | undefined {
+    return this.dateDebutFiltre ? `${this.dateDebutFiltre}T00:00:00` : undefined;
+  }
+
+  private get finISO(): string | undefined {
+    return this.dateFinFiltre ? `${this.dateFinFiltre}T23:59:59` : undefined;
+  }
+
+  private get siteFiltreId(): number | undefined {
+    return this.siteFiltre ? Number(this.siteFiltre) : undefined;
   }
 
   loadResume(): void {
@@ -470,7 +503,7 @@ export class PaiementsComponent implements OnInit {
     this.refreshing = true;
     let restants = 2;
     const termine = () => { if (--restants <= 0) this.refreshing = false; };
-    this.apiService.getPaiements(undefined, this.statutFiltre, this.page).subscribe({
+    this.apiService.getPaiements(undefined, this.statutFiltre, this.page, 15, this.debutISO, this.finISO, this.siteFiltreId).subscribe({
       next: (res) => {
         this.paiements = res.content || [];
         this.totalPages = res.totalPages || 0;
@@ -487,7 +520,7 @@ export class PaiementsComponent implements OnInit {
 
   loadPaiements(): void {
     this.loading = true;
-    this.apiService.getPaiements(undefined, this.statutFiltre, this.page).subscribe({
+    this.apiService.getPaiements(undefined, this.statutFiltre, this.page, 15, this.debutISO, this.finISO, this.siteFiltreId).subscribe({
       next: (res) => {
         this.paiements = res.content || [];
         this.totalPages = res.totalPages || 0;
@@ -514,6 +547,9 @@ export class PaiementsComponent implements OnInit {
 
   resetFiltres(): void {
     this.statutFiltre = '';
+    this.siteFiltre = '';
+    this.dateDebutFiltre = '';
+    this.dateFinFiltre = '';
     this.page = 0;
     this.loadPaiements();
   }

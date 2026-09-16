@@ -87,6 +87,7 @@ export interface Candidat {
   prenom: string;
   dateNaissance: string;
   lieuNaissance?: string;
+  sexe?: 'HOMME' | 'FEMME';
   telephone: string;
   email?: string;
   contactsUrgence?: string;

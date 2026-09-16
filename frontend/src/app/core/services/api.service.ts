@@ -44,13 +44,17 @@ export class ApiService {
   constructor(private http: HttpClient) {}
 
   // ================= CANDIDATS =================
-  public getCandidats(recherche?: string, statut?: string, categorieId?: number, page: number = 0, size: number = 15, statutInscription?: string, ignoreEtapeFilter?: boolean): Observable<any> {
+  public getCandidats(recherche?: string, statut?: string, categorieId?: number, page: number = 0, size: number = 15, statutInscription?: string, ignoreEtapeFilter?: boolean, siteId?: number, etapeParcours?: string, priseEnChargeExamens?: boolean, dateExamenProgramme?: string): Observable<any> {
     let params = new HttpParams().set('page', page).set('size', size);
     if (recherche) params = params.set('recherche', recherche);
     if (statut) params = params.set('statut', statut);
     if (categorieId) params = params.set('categorieId', categorieId);
     if (statutInscription) params = params.set('statutInscription', statutInscription);
     if (ignoreEtapeFilter) params = params.set('ignoreEtapeFilter', 'true');
+    if (siteId) params = params.set('siteId', siteId);
+    if (etapeParcours) params = params.set('etapeParcours', etapeParcours);
+    if (priseEnChargeExamens !== undefined) params = params.set('priseEnChargeExamens', priseEnChargeExamens);
+    if (dateExamenProgramme) params = params.set('dateExamenProgramme', dateExamenProgramme);
 
     return this.http.get<any>(`${this.base}/candidats`, { params });
   }
@@ -82,10 +86,13 @@ export class ApiService {
   }
 
   // ================= PAIEMENTS & REÇUS =================
-  public getPaiements(candidatId?: number, statut?: string, page: number = 0, size: number = 15): Observable<any> {
+  public getPaiements(candidatId?: number, statut?: string, page: number = 0, size: number = 15, debut?: string, fin?: string, siteId?: number): Observable<any> {
     let params = new HttpParams().set('page', page).set('size', size);
     if (candidatId) params = params.set('candidatId', candidatId);
     if (statut) params = params.set('statut', statut);
+    if (debut) params = params.set('debut', debut);
+    if (fin) params = params.set('fin', fin);
+    if (siteId) params = params.set('siteId', siteId);
 
     return this.http.get<any>(`${this.base}/paiements`, { params });
   }

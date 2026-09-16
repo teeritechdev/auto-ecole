@@ -46,6 +46,7 @@ public class ConfigurationController {
         ConfigurationApplication configuration = repository.findById(1L).orElse(null);
         return ResponseEntity.ok(new IdentiteResponse(
                 configuration != null ? configuration.getLogoData() : null,
+                configuration != null ? configuration.getImageConnexion() : null,
                 resoudreNom(configuration),
                 configuration != null ? configuration.getTelephone() : null,
                 configuration != null ? configuration.getEmail() : null,
@@ -57,9 +58,11 @@ public class ConfigurationController {
     @PreAuthorize("hasAuthority('PERM_CONFIGURATION_IDENTITE_MODIFIER')")
     @Operation(summary = "Modifier l'identité de l'auto-école (logo, nom, contact)")
     public ResponseEntity<IdentiteResponse> updateIdentite(@RequestBody IdentiteRequest request) {
-        validateLogo(request.getLogoData());
+        validateImage(request.getLogoData(), "Le logo", 2_800_000);
+        validateImage(request.getImageConnexion(), "L'image de connexion", 4_200_000);
         ConfigurationApplication configuration = repository.findById(1L).orElseGet(ConfigurationApplication::new);
         configuration.setLogoData(request.getLogoData());
+        configuration.setImageConnexion(request.getImageConnexion());
         configuration.setNomEtablissement(request.getNomEtablissement() != null ? request.getNomEtablissement().trim() : null);
         configuration.setTelephone(request.getTelephone());
         configuration.setEmail(request.getEmail());
@@ -67,6 +70,7 @@ public class ConfigurationController {
         repository.save(configuration);
         return ResponseEntity.ok(new IdentiteResponse(
                 configuration.getLogoData(),
+                configuration.getImageConnexion(),
                 resoudreNom(configuration),
                 configuration.getTelephone(),
                 configuration.getEmail(),
@@ -74,13 +78,13 @@ public class ConfigurationController {
         ));
     }
 
-    private void validateLogo(String logoData) {
-        if (logoData == null || logoData.isBlank()) return;
-        if (!logoData.matches("^data:image/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$")) {
-            throw new BadRequestException("Format de logo non pris en charge");
+    private void validateImage(String imageData, String libelleAvecArticle, int tailleMaxCaracteres) {
+        if (imageData == null || imageData.isBlank()) return;
+        if (!imageData.matches("^data:image/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$")) {
+            throw new BadRequestException("Format d'image non pris en charge (" + libelleAvecArticle + ")");
         }
-        if (logoData.length() > 2_800_000) {
-            throw new BadRequestException("Le logo ne doit pas dépasser 2 Mo");
+        if (imageData.length() > tailleMaxCaracteres) {
+            throw new BadRequestException(libelleAvecArticle + " ne doit pas dépasser " + (tailleMaxCaracteres / 1_400_000) + " Mo environ");
         }
     }
 
@@ -132,6 +136,7 @@ public class ConfigurationController {
     @Data
     public static class IdentiteRequest {
         private String logoData;
+        private String imageConnexion;
         private String nomEtablissement;
         private String telephone;
         private String email;
@@ -142,6 +147,7 @@ public class ConfigurationController {
     @RequiredArgsConstructor
     public static class IdentiteResponse {
         private final String logoData;
+        private final String imageConnexion;
         private final String nomEtablissement;
         private final String telephone;
         private final String email;

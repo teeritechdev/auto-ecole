@@ -14,9 +14,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Identité minimale (nom, logo) exposée SANS authentification pour l'écran de connexion :
+ * Identité minimale exposée SANS authentification pour l'écran de connexion (nom, logo,
+ * illustration, et coordonnées publiques déjà imprimées sur les documents officiels) :
  * ce point d'entrée reste volontairement en dehors de /api/configuration (réservé aux
- * utilisateurs authentifiés) et n'expose ni tarifs ni coordonnées de contact.
+ * utilisateurs authentifiés) et n'expose toujours pas les tarifs.
  */
 @RestController
 @RequestMapping("/api/public")
@@ -30,14 +31,20 @@ public class PublicConfigurationController {
     private String nomEtablissementParDefaut;
 
     @GetMapping("/identite")
-    @Operation(summary = "Récupérer le nom et le logo de l'auto-école pour l'écran de connexion")
+    @Operation(summary = "Récupérer l'identité (nom, logo, image, contact) de l'auto-école pour l'écran de connexion")
     public ResponseEntity<IdentitePubliqueResponse> getIdentitePublique() {
         ConfigurationApplication configuration = repository.findById(1L).orElse(null);
         String nom = configuration != null ? configuration.getNomEtablissement() : null;
         if (nom == null || nom.isBlank()) {
             nom = nomEtablissementParDefaut;
         }
-        return ResponseEntity.ok(new IdentitePubliqueResponse(nom, configuration != null ? configuration.getLogoData() : null));
+        return ResponseEntity.ok(new IdentitePubliqueResponse(
+                nom,
+                configuration != null ? configuration.getLogoData() : null,
+                configuration != null ? configuration.getImageConnexion() : null,
+                configuration != null ? configuration.getTelephone() : null,
+                configuration != null ? configuration.getAdresseSiege() : null
+        ));
     }
 
     @Data
@@ -45,5 +52,8 @@ public class PublicConfigurationController {
     public static class IdentitePubliqueResponse {
         private String nomEtablissement;
         private String logoData;
+        private String imageConnexion;
+        private String telephone;
+        private String adresseSiege;
     }
 }

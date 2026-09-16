@@ -288,6 +288,7 @@ export interface TarifsExamens {
 
 export interface Identite {
   logoData: string | null;
+  imageConnexion: string | null;
   nomEtablissement: string;
   telephone: string | null;
   email: string | null;
@@ -297,6 +298,9 @@ export interface Identite {
 export interface IdentitePublique {
   nomEtablissement: string;
   logoData: string | null;
+  imageConnexion: string | null;
+  telephone: string | null;
+  adresseSiege: string | null;
 }
 
 export interface DashboardStats {

@@ -23,6 +23,11 @@ public class ConfigurationApplication {
     @Column(name = "logo_data", columnDefinition = "TEXT")
     private String logoData;
 
+    /** Photo d'illustration affichée en pleine hauteur sur le panneau gauche de l'écran de
+     *  connexion (facultative : un dégradé de marque s'affiche tant qu'elle n'est pas définie). */
+    @Column(name = "image_connexion", columnDefinition = "TEXT")
+    private String imageConnexion;
+
     /** Identité affichée sur les documents officiels (reçus, PDF) et sur l'écran de
      *  connexion ; nullable en base, avec repli sur app.etablissement.nom (application.yml)
      *  tant qu'aucune valeur n'a été saisie par l'ADMIN (cf. ConfigurationController). */

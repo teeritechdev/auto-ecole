@@ -41,18 +41,36 @@ const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'tarifs'
               <div class="alert alert-success">Identité enregistrée.</div>
             }
             <div class="identite-layout">
-              <div class="logo-settings">
-                <div class="logo-preview">
-                  @if (identiteForm.logoData) {
-                    <img [src]="identiteForm.logoData" alt="Logo actuel" />
-                  } @else {
-                    <span>
-                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L19 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2"/><circle cx="6.5" cy="16.5" r="2.5"/><circle cx="16.5" cy="16.5" r="2.5"/></svg>
-                    </span>
+              <div class="images-column">
+                <div class="logo-settings">
+                  <div class="logo-preview">
+                    @if (identiteForm.logoData) {
+                      <img [src]="identiteForm.logoData" alt="Logo actuel" />
+                    } @else {
+                      <span>
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L19 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2"/><circle cx="6.5" cy="16.5" r="2.5"/><circle cx="16.5" cy="16.5" r="2.5"/></svg>
+                      </span>
+                    }
+                  </div>
+                  <input type="file" accept="image/png,image/jpeg,image/webp" (change)="onLogoSelected($event)" />
+                  <p class="form-help">Affiché sur toutes les pages et l'écran de connexion. JPG, PNG ou WebP, maximum 2 Mo.</p>
+                </div>
+                <div class="connexion-settings">
+                  <div class="connexion-preview">
+                    @if (identiteForm.imageConnexion) {
+                      <img [src]="identiteForm.imageConnexion" alt="Image de connexion actuelle" />
+                    } @else {
+                      <span>
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                      </span>
+                    }
+                  </div>
+                  <input type="file" accept="image/png,image/jpeg,image/webp" (change)="onImageConnexionSelected($event)" />
+                  <p class="form-help">Photo affichée à côté du formulaire de connexion. JPG, PNG ou WebP, maximum 3 Mo — compressez-la avant l'envoi pour un chargement rapide de l'écran de connexion.</p>
+                  @if (identiteForm.imageConnexion) {
+                    <button type="button" class="btn btn-outline btn-sm" (click)="retirerImageConnexion()">Retirer l'image</button>
                   }
                 </div>
-                <input type="file" accept="image/png,image/jpeg,image/webp" (change)="onLogoSelected($event)" />
-                <p class="form-help">Affiché sur toutes les pages et l'écran de connexion. JPG, PNG ou WebP, maximum 2 Mo.</p>
               </div>
               <div class="identite-fields">
                 <div class="form-group">
@@ -526,7 +544,15 @@ const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'tarifs'
       }
     }
 
-    .logo-settings {
+    .images-column {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      min-width: 0;
+      width: 100%;
+    }
+
+    .logo-settings, .connexion-settings {
       display: flex;
       flex-direction: column;
       align-items: flex-start;
@@ -536,9 +562,11 @@ const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'tarifs'
       min-width: 0;
       width: 100%;
     }
-    .logo-settings input[type="file"] { max-width: 100%; }
+    .logo-settings input[type="file"], .connexion-settings input[type="file"] { max-width: 100%; }
     .logo-preview { width: 7rem; height: 7rem; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 0.75rem; background: #eff6ff; color: #2563eb; font-size: 2.5rem; }
     .logo-preview img { width: 100%; height: 100%; object-fit: contain; }
+    .connexion-preview { width: 100%; max-width: 12rem; aspect-ratio: 3 / 4; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 0.75rem; background: #eff6ff; color: #2563eb; }
+    .connexion-preview img { width: 100%; height: 100%; object-fit: cover; }
     .form-help { color: var(--text-muted); font-size: 0.8rem; margin: 0; }
     .tarifs-examens-form { display: flex; flex-direction: column; gap: 0.85rem; margin-bottom: 0.75rem; }
 
@@ -586,7 +614,7 @@ export class ParametrageComponent implements OnInit {
   siteForm: any = { nom: '', adresse: '', actif: true };
   siteError = '';
 
-  identiteForm: Identite = { logoData: null, nomEtablissement: '', telephone: '', email: '', adresseSiege: '' };
+  identiteForm: Identite = { logoData: null, imageConnexion: null, nomEtablissement: '', telephone: '', email: '', adresseSiege: '' };
   identiteError = '';
   identiteSuccess = false;
   savingIdentite = false;
@@ -772,6 +800,26 @@ export class ParametrageComponent implements OnInit {
       this.identiteError = '';
     };
     reader.readAsDataURL(file);
+  }
+
+  onImageConnexionSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    if (file.size > 3 * 1024 * 1024) {
+      this.identiteError = "L'image de connexion ne doit pas dépasser 3 Mo. Compressez-la avant de la téléverser.";
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.identiteForm.imageConnexion = reader.result as string;
+      this.identiteError = '';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  retirerImageConnexion(): void {
+    this.identiteForm.imageConnexion = null;
   }
 
   saveIdentite(): void {

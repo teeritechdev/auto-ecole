@@ -10,12 +10,39 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     selector: 'app-login',
     imports: [FormsModule],
     template: `
-    <div class="login-wrapper">
+    <div class="login-split">
+      <!-- PANNEAU IMAGE (gauche) : illustration configurable depuis Paramètres Généraux > Identité -->
+      <div class="login-image-panel" [style.background-image]="imageConnexion ? 'url(' + imageConnexion + ')' : null">
+        @if (!imageConnexion) {
+          <div class="image-fallback">
+            <svg class="fallback-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/>
+              <circle cx="7" cy="17" r="2"/>
+              <path d="M9 17h6"/>
+              <circle cx="17" cy="17" r="2"/>
+            </svg>
+          </div>
+        }
+        <div class="image-scrim"></div>
+        <div class="image-footer-caption">
+          <p class="caption-tagline">Apprenez à conduire en toute confiance.</p>
+          @if (telephone || adresseSiege) {
+            <div class="caption-contact">
+              @if (telephone) { <span>{{ telephone }}</span> }
+              @if (telephone && adresseSiege) { <span class="caption-dot">•</span> }
+              @if (adresseSiege) { <span>{{ adresseSiege }}</span> }
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- PANNEAU FORMULAIRE (droite) -->
+      <div class="login-wrapper">
       <!-- Ambient Glow Orbs -->
       <div class="glow-orb glow-orb-1"></div>
       <div class="glow-orb glow-orb-2"></div>
       <div class="glow-orb glow-orb-3"></div>
-    
+
       <div class="login-container">
         <!-- Main Login Card -->
         <div class="login-card">
@@ -188,10 +215,10 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     
         <!-- Global Bottom Branding -->
         <div class="global-footer">
-          <p>© 2026 <strong>Nerwaya Auto-École</strong>. Tous droits réservés.</p>
+          <p>© {{ anneeCourante }} <strong>{{ nomEtablissement }}</strong>. Tous droits réservés.</p>
         </div>
       </div>
-    
+
       <!-- Forgot Password Modal -->
       @if (showForgotModal) {
         <div class="modal-backdrop" (click)="showForgotModal = false">
@@ -223,18 +250,93 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
           </div>
         </div>
       }
+      </div>
     </div>
     `,
     changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
+    .login-split {
+      min-height: 100vh;
+      display: flex;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    /* Panneau image : illustration configurable (Paramètres Généraux > Identité), avec un
+       dégradé de marque en repli tant qu'aucune image n'a été téléversée. */
+    .login-image-panel {
+      flex: 1 1 48%;
+      position: relative;
+      background-size: cover;
+      background-position: center;
+      background-color: #1e40af;
+      display: flex;
+      align-items: flex-end;
+      overflow: hidden;
+    }
+
+    .image-fallback {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, #1e40af 0%, #2563eb 55%, #38bdf8 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .fallback-icon {
+      width: 30%;
+      height: 30%;
+      max-width: 180px;
+      max-height: 180px;
+      color: rgba(255, 255, 255, 0.3);
+    }
+
+    .image-scrim {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(9, 14, 26, 0.88) 0%, rgba(9, 14, 26, 0.15) 45%, transparent 70%);
+    }
+
+    .image-footer-caption {
+      position: relative;
+      z-index: 2;
+      padding: 2.5rem;
+      color: #ffffff;
+    }
+
+    .caption-tagline {
+      font-size: 1.4rem;
+      font-weight: 700;
+      max-width: 380px;
+      line-height: 1.35;
+      margin: 0 0 0.75rem;
+      letter-spacing: -0.01em;
+    }
+
+    .caption-contact {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      color: rgba(255, 255, 255, 0.85);
+      flex-wrap: wrap;
+    }
+
+    .caption-dot { opacity: 0.6; }
+
+    @media (max-width: 900px) {
+      .login-image-panel { display: none; }
+    }
+
     .login-wrapper {
+      flex: 1 1 52%;
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
       position: relative;
       background-color: #090e1a;
-      background-image: 
+      background-image:
         radial-gradient(at 15% 15%, rgba(30, 64, 175, 0.45) 0px, transparent 50%),
         radial-gradient(at 85% 85%, rgba(14, 165, 233, 0.25) 0px, transparent 50%),
         radial-gradient(at 50% 50%, rgba(15, 23, 42, 0.9) 0px, transparent 100%);
@@ -903,6 +1005,10 @@ export class LoginComponent implements OnInit {
 
   nomEtablissement = 'Nerwaya Auto-École';
   logoData: string | null = null;
+  imageConnexion: string | null = null;
+  telephone: string | null = null;
+  adresseSiege: string | null = null;
+  anneeCourante = new Date().getFullYear();
 
   constructor(private authService: AuthService, private router: Router, private apiService: ApiService) {
     if (this.authService.isAuthenticated()) {
@@ -915,6 +1021,9 @@ export class LoginComponent implements OnInit {
       next: (id) => {
         this.nomEtablissement = id.nomEtablissement;
         this.logoData = id.logoData;
+        this.imageConnexion = id.imageConnexion;
+        this.telephone = id.telephone;
+        this.adresseSiege = id.adresseSiege;
       },
       error: () => {}
     });

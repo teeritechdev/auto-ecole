@@ -65,7 +65,7 @@ import { extraireMessageErreur } from './core/utils/error-utils';
               </a>
             }
             @if (showCandidatsSection) {
-              <div class="nav-section-title">Candidats & Scolarité</div>
+              <div class="nav-section-title">Candidats</div>
             }
             @if (hasPermission(['CANDIDATS_VOIR'])) {
               <a routerLink="/candidats" routerLinkActive="active" class="nav-item">

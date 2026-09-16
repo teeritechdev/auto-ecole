@@ -765,10 +765,11 @@ export class ExamensComponent implements OnInit {
     return this.sites;
   }
 
-  /** Seul le moniteur programme des examens : l'administrateur se contente de
-   *  valider ou retirer ce que les moniteurs ont proposé (cf. section dédiée). */
   get canAdd(): boolean {
     const user = this.authService.currentUserValue;
+    if (user?.role === 'ADMIN') {
+      return true;
+    }
     return user?.role === 'MONITEUR' && this.epreuvesAutorisees.length > 0;
   }
 

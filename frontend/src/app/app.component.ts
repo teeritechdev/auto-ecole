@@ -489,10 +489,16 @@ import { extraireMessageErreur } from './core/utils/error-utils';
       color: var(--text-main);
       font-size: 0.85rem;
       font-weight: 600;
+      transition: background var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
     }
 
+    /* Effet "carte" au survol : contrairement au simple aplat gris des boutons
+       principaux, un sous-onglet se détache légèrement (ombre + décalage) pour
+       bien le distinguer visuellement des onglets parents. */
     .submenu-item:hover {
-      background: var(--bg-sidebar-hover);
+      background: var(--bg-sidebar);
+      box-shadow: var(--shadow-md);
+      transform: translateX(2px);
       color: var(--text-main);
     }
 

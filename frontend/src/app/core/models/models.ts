@@ -146,7 +146,8 @@ export interface Paiement {
   candidatNomComplet: string;
   utilisateurId: number;
   utilisateurNomComplet: string;
-  typeVersement: 'PREMIER_VERSEMENT' | 'VERSEMENT_SUIVANT';
+  typeVersement: 'PREMIER_VERSEMENT' | 'VERSEMENT_SUIVANT' | 'FRAIS_EXAMEN';
+  typeEpreuve?: 'CODE' | 'CRENEAU' | 'CIRCULATION' | null;
   montant: number;
   datePaiement: string;
   modeReglement: 'ESPECES' | 'VIREMENT' | 'MOBILE_MONEY' | 'CHEQUE';

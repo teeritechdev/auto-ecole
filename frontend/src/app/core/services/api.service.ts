@@ -135,6 +135,10 @@ export class ApiService {
     return this.http.post<Paiement>(`${this.base}/paiements`, data);
   }
 
+  public enregistrerFraisExamen(data: { candidatId: number; typeEpreuve: string; montant: number; modeReglement: string }): Observable<Paiement> {
+    return this.http.post<Paiement>(`${this.base}/paiements/frais-examen`, data);
+  }
+
   public modifierPaiement(id: number, data: { montant: number; modeReglement: string; motif: string }): Observable<Paiement> {
     return this.http.put<Paiement>(`${this.base}/paiements/${id}`, data);
   }

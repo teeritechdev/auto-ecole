@@ -72,6 +72,13 @@ public class PaiementController {
         return new ResponseEntity<>(paiementService.enregistrerPaiement(request), HttpStatus.CREATED);
     }
 
+    @PostMapping("/frais-examen")
+    @PreAuthorize("hasAuthority('PERM_PAIEMENTS_CREER')")
+    @Operation(summary = "Encaisser les frais d'examen (Code/Créneau/Circulation) d'un candidat dont le forfait ne les inclut pas")
+    public ResponseEntity<PaiementDTO> enregistrerFraisExamen(@Valid @RequestBody CreateFraisExamenRequest request) {
+        return new ResponseEntity<>(paiementService.enregistrerFraisExamen(request), HttpStatus.CREATED);
+    }
+
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('PERM_PAIEMENTS_MODIFIER')")
     @Operation(summary = "Modifier un versement (avec motif obligatoire et traçabilité)")

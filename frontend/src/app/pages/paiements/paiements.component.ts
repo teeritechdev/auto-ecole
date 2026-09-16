@@ -118,8 +118,12 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                     <div class="sub-text">{{ p.candidatNumeroDossier }}</div>
                   </td>
                   <td>
-                    <span class="badge" [ngClass]="p.typeVersement === 'PREMIER_VERSEMENT' ? 'badge-programme' : 'badge-solde'">
-                      {{ p.typeVersement === 'PREMIER_VERSEMENT' ? '1er Versement' : 'Versement Suivant' }}
+                    <span class="badge" [ngClass]="{
+                      'badge-programme': p.typeVersement === 'PREMIER_VERSEMENT',
+                      'badge-solde': p.typeVersement === 'VERSEMENT_SUIVANT',
+                      'badge-en-cours': p.typeVersement === 'FRAIS_EXAMEN'
+                    }">
+                      {{ libelleTypeVersement(p) }}
                     </span>
                   </td>
                   <td><strong class="text-success">{{ p.montant | number }} FCFA</strong></td>
@@ -495,6 +499,15 @@ export class PaiementsComponent implements OnInit {
 
   get canAdd(): boolean {
     return this.authService.hasPermission(['PAIEMENTS_CREER']);
+  }
+
+  libelleTypeVersement(p: Paiement): string {
+    if (p.typeVersement === 'PREMIER_VERSEMENT') return '1er Versement';
+    if (p.typeVersement === 'FRAIS_EXAMEN') {
+      const labels: Record<string, string> = { CODE: 'Code', CRENEAU: 'Créneau', CIRCULATION: 'Circulation' };
+      return 'Frais d\'examen (' + (labels[p.typeEpreuve || ''] || p.typeEpreuve) + ')';
+    }
+    return 'Versement Suivant';
   }
 
   /** Rafraîchit la liste ET le résumé : un versement peut être enregistré par un autre

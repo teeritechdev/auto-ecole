@@ -2,6 +2,7 @@ package com.autoecole.dto;
 
 import com.autoecole.entity.enums.ModeReglement;
 import com.autoecole.entity.enums.StatutPaiement;
+import com.autoecole.entity.enums.TypeEpreuve;
 import com.autoecole.entity.enums.TypeVersement;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
@@ -28,6 +29,7 @@ public class PaiementDTOs {
         private Long utilisateurId;
         private String utilisateurNomComplet;
         private TypeVersement typeVersement;
+        private TypeEpreuve typeEpreuve;
         private BigDecimal montant;
         private LocalDateTime datePaiement;
         private ModeReglement modeReglement;
@@ -48,6 +50,25 @@ public class PaiementDTOs {
         private Long candidatId;
 
         private TypeVersement typeVersement; // Optionnel : déterminé automatiquement ou spécifié
+
+        @NotNull(message = "Le montant est obligatoire")
+        @DecimalMin(value = "1.0", message = "Le montant doit être supérieur à 0")
+        private BigDecimal montant;
+
+        @NotNull(message = "Le mode de règlement est obligatoire")
+        private ModeReglement modeReglement;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class CreateFraisExamenRequest {
+        @NotNull(message = "L'identifiant du candidat est obligatoire")
+        private Long candidatId;
+
+        @NotNull(message = "Le type d'épreuve est obligatoire")
+        private TypeEpreuve typeEpreuve;
 
         @NotNull(message = "Le montant est obligatoire")
         @DecimalMin(value = "1.0", message = "Le montant doit être supérieur à 0")

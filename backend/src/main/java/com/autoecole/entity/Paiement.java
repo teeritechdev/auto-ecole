@@ -2,6 +2,7 @@ package com.autoecole.entity;
 
 import com.autoecole.entity.enums.ModeReglement;
 import com.autoecole.entity.enums.StatutPaiement;
+import com.autoecole.entity.enums.TypeEpreuve;
 import com.autoecole.entity.enums.TypeVersement;
 import jakarta.persistence.*;
 import lombok.*;
@@ -36,6 +37,13 @@ public class Paiement {
     @Enumerated(EnumType.STRING)
     @Column(name = "type_versement", length = 30, nullable = false)
     private TypeVersement typeVersement;
+
+    /** Renseigné uniquement pour un versement de type FRAIS_EXAMEN : indique pour quelle
+     *  épreuve (Code/Créneau/Circulation) ce paiement, distinct du forfait de formation, a
+     *  été encaissé. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type_epreuve", length = 30)
+    private TypeEpreuve typeEpreuve;
 
     @Column(precision = 12, scale = 2, nullable = false)
     private BigDecimal montant;

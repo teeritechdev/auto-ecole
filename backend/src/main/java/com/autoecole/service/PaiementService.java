@@ -1,6 +1,7 @@
 package com.autoecole.service;
 
 import com.autoecole.dto.PaiementDTOs.AnnulerPaiementRequest;
+import com.autoecole.dto.PaiementDTOs.CreateFraisExamenRequest;
 import com.autoecole.dto.PaiementDTOs.CreatePaiementRequest;
 import com.autoecole.dto.PaiementDTOs.ModifierPaiementRequest;
 import com.autoecole.dto.PaiementDTOs.PaiementDTO;
@@ -152,6 +153,57 @@ public class PaiementService {
         return mapToDTO(savedPaiement);
     }
 
+    /** Encaissement des frais d'examen (Code/Créneau/Circulation) pour un candidat dont le
+     *  forfait de formation ne les inclut pas (Inscription.priseEnChargeExamens = false) :
+     *  distinct du versement de formation, ce paiement n'alimente jamais totalVerse/soldeRestant
+     *  de l'inscription, qui ne concernent que le forfait. */
+    @Transactional
+    public PaiementDTO enregistrerFraisExamen(CreateFraisExamenRequest request) {
+        Inscription inscription = inscriptionService.getInscriptionActive(request.getCandidatId());
+        Candidat candidat = inscription.getCandidat();
+
+        if (inscription.isPriseEnChargeExamens()) {
+            throw new BadRequestException("Les frais d'examen de ce candidat sont déjà inclus dans son forfait de formation");
+        }
+
+        BigDecimal montant = request.getMontant();
+        if (montant == null || montant.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BadRequestException("Le montant doit être supérieur à 0");
+        }
+
+        Utilisateur currentUser = auditService.getCurrentUser();
+
+        Paiement paiement = Paiement.builder()
+                .inscription(inscription)
+                .utilisateur(currentUser)
+                .typeVersement(TypeVersement.FRAIS_EXAMEN)
+                .typeEpreuve(request.getTypeEpreuve())
+                .montant(montant)
+                .datePaiement(LocalDateTime.now())
+                .modeReglement(request.getModeReglement() != null ? request.getModeReglement() : ModeReglement.ESPECES)
+                .statut(StatutPaiement.VALIDE)
+                .build();
+
+        Paiement savedPaiement = paiementRepository.save(paiement);
+
+        String numeroRecu = candidatService.genererNumeroRecuUnique(LocalDateTime.now().getYear());
+        Recu recu = Recu.builder()
+                .paiement(savedPaiement)
+                .numeroRecu(numeroRecu)
+                .nomClient(candidat.getNom() + " " + candidat.getPrenom())
+                .montant(montant)
+                .soldeRestant(inscription.getSoldeRestant())
+                .imprimePar(currentUser != null ? currentUser.getNom() + " " + currentUser.getPrenom() : "Caisse")
+                .build();
+        recuRepository.save(recu);
+
+        auditService.logAction("ENCAISSEMENT_FRAIS_EXAMEN", "Paiement", numeroRecu,
+                "Encaissement de " + montant + " FCFA pour les frais d'examen (" + request.getTypeEpreuve()
+                        + ") du candidat " + candidat.getNumeroDossier(), null);
+
+        return mapToDTO(savedPaiement);
+    }
+
     @Transactional
     public PaiementDTO modifierPaiement(Long paiementId, ModifierPaiementRequest request) {
         Paiement paiement = paiementRepository.findById(paiementId)
@@ -177,17 +229,20 @@ public class PaiementService {
 
         Utilisateur currentUser = auditService.getCurrentUser();
 
-        // Recalcul du total versé de l'inscription
-        BigDecimal difference = nouveauMontant.subtract(ancienMontant);
-        BigDecimal nouveauTotal = inscription.getTotalVerse().add(difference);
+        // Un versement FRAIS_EXAMEN est distinct du forfait de formation : il n'a jamais
+        // alimenté totalVerse/soldeRestant, donc sa modification ne les touche pas non plus.
+        if (paiement.getTypeVersement() != TypeVersement.FRAIS_EXAMEN) {
+            BigDecimal difference = nouveauMontant.subtract(ancienMontant);
+            BigDecimal nouveauTotal = inscription.getTotalVerse().add(difference);
 
-        if (nouveauTotal.compareTo(inscription.getMontantForfait()) > 0) {
-            throw new BadRequestException("La modification entraîne un dépassement du forfait");
+            if (nouveauTotal.compareTo(inscription.getMontantForfait()) > 0) {
+                throw new BadRequestException("La modification entraîne un dépassement du forfait");
+            }
+
+            inscription.setTotalVerse(nouveauTotal);
+            inscription.recalculerSoldeEtStatut();
+            inscriptionRepository.save(inscription);
         }
-
-        inscription.setTotalVerse(nouveauTotal);
-        inscription.recalculerSoldeEtStatut();
-        inscriptionRepository.save(inscription);
 
         // Mise à jour du paiement
         paiement.setMontant(nouveauMontant);
@@ -224,10 +279,13 @@ public class PaiementService {
         Utilisateur currentUser = auditService.getCurrentUser();
         Inscription inscription = paiement.getInscription();
 
-        // Déduire le montant de l'inscription
-        inscription.setTotalVerse(inscription.getTotalVerse().subtract(paiement.getMontant()));
-        inscription.recalculerSoldeEtStatut();
-        inscriptionRepository.save(inscription);
+        // Un versement FRAIS_EXAMEN n'a jamais alimenté totalVerse/soldeRestant (cf.
+        // enregistrerFraisExamen) : rien à déduire du forfait de formation ici.
+        if (paiement.getTypeVersement() != TypeVersement.FRAIS_EXAMEN) {
+            inscription.setTotalVerse(inscription.getTotalVerse().subtract(paiement.getMontant()));
+            inscription.recalculerSoldeEtStatut();
+            inscriptionRepository.save(inscription);
+        }
 
         paiement.setStatut(StatutPaiement.ANNULE);
         paiement.setMotifModification(request.getMotif());
@@ -254,6 +312,7 @@ public class PaiementService {
                 .utilisateurId(p.getUtilisateur() != null ? p.getUtilisateur().getId() : null)
                 .utilisateurNomComplet(p.getUtilisateur() != null ? p.getUtilisateur().getNom() + " " + p.getUtilisateur().getPrenom() : null)
                 .typeVersement(p.getTypeVersement())
+                .typeEpreuve(p.getTypeEpreuve())
                 .montant(p.getMontant())
                 .datePaiement(p.getDatePaiement())
                 .modeReglement(p.getModeReglement())

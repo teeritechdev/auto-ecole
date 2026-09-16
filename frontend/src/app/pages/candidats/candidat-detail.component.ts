@@ -10,7 +10,8 @@ import {
   Paiement,
   PassageExamen,
   BilanExamensCandidat,
-  Recu
+  Recu,
+  TarifsExamens
 } from '../../core/models/models';
 import { extraireMessageErreur } from '../../core/utils/error-utils';
 
@@ -41,6 +42,12 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
               <button class="btn btn-success" (click)="openPaiementModal()">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
                 Encaisser un Versement
+              </button>
+            }
+            @if (canPayFraisExamen) {
+              <button class="btn btn-outline" (click)="openFraisExamenModal()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/><line x1="12" y1="17" x2="12" y2="22"/></svg>
+                Frais d'examen
               </button>
             }
             @if (canAddExam) {
@@ -210,6 +217,12 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   Nouveau Versement
                 </button>
               }
+              @if (canPayFraisExamen) {
+                <button class="btn btn-outline btn-sm" (click)="openFraisExamenModal()">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                  Frais d'examen
+                </button>
+              }
             </div>
             @if (paiements.length === 0) {
               <div class="empty-state">
@@ -237,8 +250,12 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                         <td><strong class="dossier-code">{{ p.numeroRecu || '-' }}</strong></td>
                         <td>{{ p.datePaiement | date:'dd/MM/yyyy HH:mm' }}</td>
                         <td>
-                          <span class="badge" [ngClass]="p.typeVersement === 'PREMIER_VERSEMENT' ? 'badge-programme' : 'badge-solde'">
-                            {{ p.typeVersement === 'PREMIER_VERSEMENT' ? '1er Versement' : 'Versement Suivant' }}
+                          <span class="badge" [ngClass]="{
+                            'badge-programme': p.typeVersement === 'PREMIER_VERSEMENT',
+                            'badge-solde': p.typeVersement === 'VERSEMENT_SUIVANT',
+                            'badge-en-cours': p.typeVersement === 'FRAIS_EXAMEN'
+                          }">
+                            {{ libelleTypeVersement(p) }}
                           </span>
                         </td>
                         <td><strong class="text-success">{{ p.montant | number }} FCFA</strong></td>
@@ -425,6 +442,59 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   <button type="button" class="btn btn-secondary" (click)="showPaiementModal = false">Annuler</button>
                   <button type="submit" class="btn btn-success" [disabled]="savingPaiement || !newPaiement.montant">
                     {{ savingPaiement ? 'Validation...' : 'Valider & Émettre le Reçu' }}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        }
+        <!-- MODAL FRAIS D'EXAMEN -->
+        @if (showFraisExamenModal) {
+          <div class="modal-backdrop">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h3 style="display:flex; align-items:center; gap:0.5rem;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg>
+                  Encaisser les Frais d'Examen
+                </h3>
+                <button class="btn btn-outline btn-sm" (click)="showFraisExamenModal = false">✕</button>
+              </div>
+              <form (ngSubmit)="saveFraisExamen()">
+                <div class="modal-body">
+                  @if (fraisExamenError) {
+                    <div class="alert alert-danger">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                      {{ fraisExamenError }}
+                    </div>
+                  }
+                  <p class="form-help">Ce candidat n'a pas de prise en charge totale des frais d'examen : à utiliser lorsqu'il revient payer séparément une épreuve.</p>
+                  <div class="form-group">
+                    <label class="form-label">Type d'épreuve <span class="required">*</span></label>
+                    <select class="form-control" [(ngModel)]="newFraisExamen.typeEpreuve" name="typeEpreuve" required (change)="onFraisExamenTypeChange()">
+                      <option value="CODE">Code de la route</option>
+                      <option value="CRENEAU">Manœuvre / Créneau</option>
+                      <option value="CIRCULATION">Conduite en circulation</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Montant (FCFA) <span class="required">*</span></label>
+                    <input type="number" class="form-control" [(ngModel)]="newFraisExamen.montant" name="montantFraisExamen" required placeholder="Ex: 15000" />
+                    <p class="form-help">Pré-rempli selon le tarif configuré pour cette épreuve, modifiable si besoin.</p>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Mode de règlement <span class="required">*</span></label>
+                    <select class="form-control" [(ngModel)]="newFraisExamen.modeReglement" name="modeReglementFraisExamen" required>
+                      <option value="ESPECES">Espèces</option>
+                      <option value="MOBILE_MONEY">Mobile Money (Wave / Orange / MTN / Moov)</option>
+                      <option value="VIREMENT">Virement bancaire</option>
+                      <option value="CHEQUE">Chèque</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" (click)="showFraisExamenModal = false">Annuler</button>
+                  <button type="submit" class="btn btn-success" [disabled]="savingFraisExamen || !newFraisExamen.montant">
+                    {{ savingFraisExamen ? 'Validation...' : 'Valider & Émettre le Reçu' }}
                   </button>
                 </div>
               </form>
@@ -695,6 +765,16 @@ export class CandidatDetailComponent implements OnInit {
     modeReglement: 'ESPECES'
   };
 
+  showFraisExamenModal = false;
+  savingFraisExamen = false;
+  fraisExamenError = '';
+  tarifsExamens: TarifsExamens | null = null;
+  newFraisExamen = {
+    typeEpreuve: 'CODE',
+    montant: 0,
+    modeReglement: 'ESPECES'
+  };
+
   showExamenModal = false;
   savingExamen = false;
   examenError = '';
@@ -729,6 +809,23 @@ export class CandidatDetailComponent implements OnInit {
 
   get canResetPassword(): boolean {
     return this.authService.hasPermission(['UTILISATEURS_RESET_PASSWORD']);
+  }
+
+  get canPayFraisExamen(): boolean {
+    return this.authService.hasPermission(['PAIEMENTS_CREER']) && !!this.candidat && !this.candidat.priseEnChargeExamens;
+  }
+
+  libelleTypeVersement(p: Paiement): string {
+    if (p.typeVersement === 'PREMIER_VERSEMENT') return '1er Versement';
+    if (p.typeVersement === 'FRAIS_EXAMEN') return 'Frais d\'examen (' + this.epreuveLabel(p.typeEpreuve) + ')';
+    return 'Versement Suivant';
+  }
+
+  epreuveLabel(t?: string | null): string {
+    if (t === 'CODE') return 'Code';
+    if (t === 'CRENEAU') return 'Créneau';
+    if (t === 'CIRCULATION') return 'Circulation';
+    return t || '';
   }
 
   get canSeeFinancialData(): boolean {
@@ -787,6 +884,68 @@ export class CandidatDetailComponent implements OnInit {
       error: (err) => {
         this.savingPaiement = false;
         this.paiementError = extraireMessageErreur(err, 'Erreur lors de l’encaissement.');
+      }
+    });
+  }
+
+  openFraisExamenModal(): void {
+    this.fraisExamenError = '';
+    this.newFraisExamen = {
+      typeEpreuve: 'CODE',
+      montant: 0,
+      modeReglement: 'ESPECES'
+    };
+    this.showFraisExamenModal = true;
+    if (this.tarifsExamens) {
+      this.appliquerTarifExamen();
+    } else {
+      this.apiService.getTarifsExamens().subscribe({
+        next: (t) => {
+          this.tarifsExamens = t;
+          this.appliquerTarifExamen();
+        },
+        error: (err) => console.error(err)
+      });
+    }
+  }
+
+  onFraisExamenTypeChange(): void {
+    this.appliquerTarifExamen();
+  }
+
+  private appliquerTarifExamen(): void {
+    if (!this.tarifsExamens) return;
+    const tarifs: Record<string, number> = {
+      CODE: this.tarifsExamens.prixExamenCode,
+      CRENEAU: this.tarifsExamens.prixExamenCreneau,
+      CIRCULATION: this.tarifsExamens.prixExamenCirculation
+    };
+    this.newFraisExamen.montant = tarifs[this.newFraisExamen.typeEpreuve] || 0;
+  }
+
+  saveFraisExamen(): void {
+    if (!this.newFraisExamen.montant || this.newFraisExamen.montant <= 0) return;
+
+    this.savingFraisExamen = true;
+    this.fraisExamenError = '';
+
+    this.apiService.enregistrerFraisExamen({
+      candidatId: this.candidatId,
+      typeEpreuve: this.newFraisExamen.typeEpreuve,
+      montant: this.newFraisExamen.montant,
+      modeReglement: this.newFraisExamen.modeReglement
+    }).subscribe({
+      next: (res) => {
+        this.savingFraisExamen = false;
+        this.showFraisExamenModal = false;
+        this.loadAll();
+        if (res.recuId) {
+          this.imprimerRecu(res.recuId);
+        }
+      },
+      error: (err) => {
+        this.savingFraisExamen = false;
+        this.fraisExamenError = extraireMessageErreur(err, 'Erreur lors de l’encaissement des frais d’examen.');
       }
     });
   }

@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "configuration_application")
@@ -68,4 +69,40 @@ public class ConfigurationApplication {
 
     @Column(name = "prix_examen_circulation", precision = 12, scale = 2)
     private BigDecimal prixExamenCirculation = BigDecimal.ZERO;
+
+    /** Numéro d'agrément délivré par le Ministère des Transports (DGTTM) pour exploiter
+     *  l'auto-école, et sa date d'obtention/dernier renouvellement. */
+    @Column(name = "numero_agrement", length = 50)
+    private String numeroAgrement;
+
+    @Column(name = "date_agrement")
+    private LocalDate dateAgrement;
+
+    /** Identifiants légaux affichés sur les documents officiels (RCCM et IFU, espace OHADA
+     *  / Burkina Faso), plus le numéro de patente selon le régime fiscal de l'entreprise. */
+    @Column(name = "rccm", length = 100)
+    private String rccm;
+
+    @Column(name = "ifu", length = 50)
+    private String ifu;
+
+    @Column(name = "numero_patente", length = 50)
+    private String numeroPatente;
+
+    @Column(name = "boite_postale", length = 50)
+    private String boitePostale;
+
+    /** Nom du responsable légal, affiché en pied des reçus (ex: "Le Directeur, ..."). */
+    @Column(name = "nom_dirigeant", length = 150)
+    private String nomDirigeant;
+
+    /** Coordonnées de règlement affichées sur les documents officiels : compte bancaire
+     *  et/ou numéro Mobile Money (Orange Money, Moov Money). */
+    @Column(name = "compte_paiement", length = 255)
+    private String comptePaiement;
+
+    /** Mention légale libre affichée en pied de page des reçus/PDF (agrément, RCCM, IFU...),
+     *  pour éviter de recomposer ce texte en dur dans le code de génération des documents. */
+    @Column(name = "mention_legale_pied", length = 500)
+    private String mentionLegalePied;
 }

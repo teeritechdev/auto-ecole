@@ -17,7 +17,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       <div class="page-header-bar">
         <div>
           <h2>Suivi Pédagogique & Examens</h2>
-          <p>Épreuves de Code, Créneau et Circulation (Jusqu'à 5 passages par épreuve)</p>
+          <p>Épreuves de Code, Créneau et Circulation</p>
         </div>
         <div class="header-buttons">
           @if (canAdd) {

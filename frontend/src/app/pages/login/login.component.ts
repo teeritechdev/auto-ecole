@@ -18,6 +18,52 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       @if (imageConnexion) {
         <div class="login-image-panel" [style.background-image]="'url(' + imageConnexion + ')'" [style.background-size]="imageConnexionAjustement"></div>
         <div class="login-image-blend"></div>
+      } @else {
+        <!-- ILLUSTRATION PAR DÉFAUT : tant qu'aucune image de connexion n'a été téléversée
+             (Paramètres Généraux > Identité), affichée à la place d'un fond vide — dessinée
+             en SVG (pas de photo externe à fournir, poids négligeable, aucun droit d'auteur
+             à gérer). L'ADMIN peut la remplacer à tout moment par sa propre photo. -->
+        <div class="login-image-panel login-image-default">
+          <svg class="login-default-illustration" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#1e3a8a"/>
+                <stop offset="55%" stop-color="#2563eb"/>
+                <stop offset="100%" stop-color="#38bdf8"/>
+              </linearGradient>
+              <linearGradient id="roadGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#0f172a"/>
+                <stop offset="100%" stop-color="#1e293b"/>
+              </linearGradient>
+            </defs>
+            <rect width="1600" height="1000" fill="url(#skyGrad)"/>
+            <circle cx="1300" cy="190" r="140" fill="#ffffff" opacity="0.18"/>
+            <circle cx="1300" cy="190" r="100" fill="#ffffff" opacity="0.28"/>
+            <g fill="#ffffff" opacity="0.5">
+              <ellipse cx="320" cy="160" rx="95" ry="36"/>
+              <ellipse cx="400" cy="145" rx="72" ry="28"/>
+              <ellipse cx="240" cy="150" rx="60" ry="24"/>
+            </g>
+            <g fill="#ffffff" opacity="0.35">
+              <ellipse cx="1060" cy="290" rx="85" ry="30"/>
+              <ellipse cx="1140" cy="278" rx="62" ry="22"/>
+            </g>
+            <path d="M0 650 Q400 560 800 630 T1600 600 V1000 H0 Z" fill="#1d4ed8" opacity="0.35"/>
+            <path d="M0 720 Q450 640 900 690 T1600 670 V1000 H0 Z" fill="#1d4ed8" opacity="0.5"/>
+            <path d="M800 1000 L1000 620 L1040 620 L1230 1000 Z" fill="url(#roadGrad)"/>
+            <path d="M1016 1000 L1016 650" stroke="#ffffff" stroke-width="9" stroke-dasharray="28 24" opacity="0.85"/>
+            <g transform="translate(930 760)">
+              <path d="M18 42 Q32 8 70 8 Q108 8 122 42 Z" fill="#ffffff"/>
+              <rect x="0" y="42" width="140" height="50" rx="14" fill="#ffffff"/>
+              <rect x="38" y="18" width="64" height="26" rx="6" fill="#38bdf8" opacity="0.55"/>
+              <circle cx="32" cy="94" r="17" fill="#0f172a"/>
+              <circle cx="32" cy="94" r="7" fill="#94a3b8"/>
+              <circle cx="108" cy="94" r="17" fill="#0f172a"/>
+              <circle cx="108" cy="94" r="7" fill="#94a3b8"/>
+            </g>
+          </svg>
+        </div>
+        <div class="login-image-blend"></div>
       }
 
       <!-- FORMULAIRE : à gauche, sur la zone estompée -->
@@ -267,6 +313,16 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       inset: 0;
       z-index: 1;
       background: linear-gradient(100deg, #ffffff 0%, #ffffff 30%, rgba(255, 255, 255, 0.45) 45%, rgba(255, 255, 255, 0.08) 58%, transparent 68%);
+    }
+
+    .login-image-default {
+      background: none;
+    }
+
+    .login-default-illustration {
+      width: 100%;
+      height: 100%;
+      display: block;
     }
 
     .caption-dot { opacity: 0.6; }

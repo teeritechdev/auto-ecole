@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import com.autoecole.exception.BadRequestException;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/api/configuration")
@@ -41,10 +42,14 @@ public class ConfigurationController {
 
     @GetMapping("/logo")
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Récupérer le logo de l'entreprise (affiché dans la barre latérale)")
+    @Operation(summary = "Récupérer le logo, le nom et le slogan de l'entreprise (affichés dans la barre latérale et l'en-tête) — volontairement sans l'image de connexion ni les champs légaux, inutiles à cet endroit et lourds à transporter à chaque chargement de page")
     public ResponseEntity<LogoResponse> getLogo() {
         ConfigurationApplication configuration = repository.findById(1L).orElse(null);
-        return ResponseEntity.ok(new LogoResponse(configuration != null ? configuration.getLogoData() : null));
+        return ResponseEntity.ok(new LogoResponse(
+                configuration != null ? configuration.getLogoData() : null,
+                resoudreNom(configuration),
+                resoudreSlogan(configuration)
+        ));
     }
 
     @GetMapping("/identite")
@@ -52,16 +57,7 @@ public class ConfigurationController {
     @Operation(summary = "Récupérer l'identité complète de l'auto-école (logo, nom, contact)")
     public ResponseEntity<IdentiteResponse> getIdentite() {
         ConfigurationApplication configuration = repository.findById(1L).orElse(null);
-        return ResponseEntity.ok(new IdentiteResponse(
-                configuration != null ? configuration.getLogoData() : null,
-                configuration != null ? configuration.getImageConnexion() : null,
-                configuration != null ? configuration.getImageConnexionAjustement() : "cover",
-                resoudreNom(configuration),
-                resoudreSlogan(configuration),
-                configuration != null ? configuration.getTelephone() : null,
-                configuration != null ? configuration.getEmail() : null,
-                configuration != null ? configuration.getAdresseSiege() : null
-        ));
+        return ResponseEntity.ok(construireIdentiteResponse(configuration));
     }
 
     @PutMapping("/identite")
@@ -80,17 +76,39 @@ public class ConfigurationController {
         configuration.setTelephone(request.getTelephone());
         configuration.setEmail(request.getEmail());
         configuration.setAdresseSiege(request.getAdresseSiege());
+        configuration.setNumeroAgrement(request.getNumeroAgrement());
+        configuration.setDateAgrement(request.getDateAgrement());
+        configuration.setRccm(request.getRccm());
+        configuration.setIfu(request.getIfu());
+        configuration.setNumeroPatente(request.getNumeroPatente());
+        configuration.setBoitePostale(request.getBoitePostale());
+        configuration.setNomDirigeant(request.getNomDirigeant());
+        configuration.setComptePaiement(request.getComptePaiement());
+        configuration.setMentionLegalePied(request.getMentionLegalePied());
         repository.save(configuration);
-        return ResponseEntity.ok(new IdentiteResponse(
-                configuration.getLogoData(),
-                configuration.getImageConnexion(),
-                configuration.getImageConnexionAjustement(),
+        return ResponseEntity.ok(construireIdentiteResponse(configuration));
+    }
+
+    private IdentiteResponse construireIdentiteResponse(ConfigurationApplication configuration) {
+        return new IdentiteResponse(
+                configuration != null ? configuration.getLogoData() : null,
+                configuration != null ? configuration.getImageConnexion() : null,
+                configuration != null ? configuration.getImageConnexionAjustement() : "cover",
                 resoudreNom(configuration),
                 resoudreSlogan(configuration),
-                configuration.getTelephone(),
-                configuration.getEmail(),
-                configuration.getAdresseSiege()
-        ));
+                configuration != null ? configuration.getTelephone() : null,
+                configuration != null ? configuration.getEmail() : null,
+                configuration != null ? configuration.getAdresseSiege() : null,
+                configuration != null ? configuration.getNumeroAgrement() : null,
+                configuration != null ? configuration.getDateAgrement() : null,
+                configuration != null ? configuration.getRccm() : null,
+                configuration != null ? configuration.getIfu() : null,
+                configuration != null ? configuration.getNumeroPatente() : null,
+                configuration != null ? configuration.getBoitePostale() : null,
+                configuration != null ? configuration.getNomDirigeant() : null,
+                configuration != null ? configuration.getComptePaiement() : null,
+                configuration != null ? configuration.getMentionLegalePied() : null
+        );
     }
 
     private void validateImage(String imageData, String libelleAvecArticle, int tailleMaxCaracteres) {
@@ -155,6 +173,8 @@ public class ConfigurationController {
     @RequiredArgsConstructor
     public static class LogoResponse {
         private final String logoData;
+        private final String nomEtablissement;
+        private final String slogan;
     }
 
     @Data
@@ -167,6 +187,15 @@ public class ConfigurationController {
         private String telephone;
         private String email;
         private String adresseSiege;
+        private String numeroAgrement;
+        private LocalDate dateAgrement;
+        private String rccm;
+        private String ifu;
+        private String numeroPatente;
+        private String boitePostale;
+        private String nomDirigeant;
+        private String comptePaiement;
+        private String mentionLegalePied;
     }
 
     @Data
@@ -180,6 +209,15 @@ public class ConfigurationController {
         private final String telephone;
         private final String email;
         private final String adresseSiege;
+        private final String numeroAgrement;
+        private final LocalDate dateAgrement;
+        private final String rccm;
+        private final String ifu;
+        private final String numeroPatente;
+        private final String boitePostale;
+        private final String nomDirigeant;
+        private final String comptePaiement;
+        private final String mentionLegalePied;
     }
 
     @Data

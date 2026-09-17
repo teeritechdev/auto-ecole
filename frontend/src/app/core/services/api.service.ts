@@ -343,8 +343,8 @@ export class ApiService {
     return this.http.delete<void>(`${this.base}/profils/${id}`);
   }
 
-  public getLogo(): Observable<{ logoData: string | null }> {
-    return this.http.get<{ logoData: string | null }>(`${this.base}/configuration/logo`);
+  public getLogo(): Observable<{ logoData: string | null; nomEtablissement: string; slogan: string }> {
+    return this.http.get<{ logoData: string | null; nomEtablissement: string; slogan: string }>(`${this.base}/configuration/logo`);
   }
 
   public getIdentite(): Observable<Identite> {

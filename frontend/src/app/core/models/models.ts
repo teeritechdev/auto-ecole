@@ -296,6 +296,15 @@ export interface Identite {
   telephone: string | null;
   email: string | null;
   adresseSiege: string | null;
+  numeroAgrement: string | null;
+  dateAgrement: string | null;
+  rccm: string | null;
+  ifu: string | null;
+  numeroPatente: string | null;
+  boitePostale: string | null;
+  nomDirigeant: string | null;
+  comptePaiement: string | null;
+  mentionLegalePied: string | null;
 }
 
 export interface IdentitePublique {

@@ -83,30 +83,79 @@ const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'tarifs'
                 <div class="form-group">
                   <label class="form-label">Nom de l'auto-école <span class="required">*</span></label>
                   <input type="text" class="form-control" [(ngModel)]="identiteForm.nomEtablissement" name="nomEtablissement" required placeholder="Ex: Nerwaya Auto-École" />
-                  <p class="form-help">Affiché sur l'écran de connexion et les documents officiels (reçus, PDF).</p>
+                  <p class="form-help">Affiché sur l'écran de connexion, la barre latérale, l'en-tête et les documents officiels (reçus, PDF).</p>
                 </div>
                 <div class="form-group">
                   <label class="form-label">Slogan</label>
                   <input type="text" class="form-control" [(ngModel)]="identiteForm.slogan" name="slogan" placeholder="Ex: Plateforme Intégrée de Gestion & Formation" />
-                  <p class="form-help">Sous-titre affiché sous le nom sur l'écran de connexion.</p>
+                  <p class="form-help">Sous-titre affiché sous le nom sur l'écran de connexion et dans l'en-tête de l'application.</p>
                 </div>
                 <div class="form-row">
                   <div class="form-group">
                     <label class="form-label">Téléphone</label>
-                    <input type="tel" class="form-control" [(ngModel)]="identiteForm.telephone" name="telephone" placeholder="Ex: 0701020304" />
+                    <input type="tel" class="form-control" [(ngModel)]="identiteForm.telephone" name="telephone" placeholder="Ex: 70 12 34 56" />
                   </div>
                   <div class="form-group">
                     <label class="form-label">Email</label>
-                    <input type="email" class="form-control" [(ngModel)]="identiteForm.email" name="email" placeholder="Ex: contact@autoecole.ci" />
+                    <input type="email" class="form-control" [(ngModel)]="identiteForm.email" name="email" placeholder="Ex: contact@autoecole.bf" />
                   </div>
                 </div>
-                <div class="form-group">
-                  <label class="form-label">Adresse du siège</label>
-                  <textarea class="form-control" rows="2" [(ngModel)]="identiteForm.adresseSiege" name="adresseSiege" placeholder="Ex: Boulevard de France, Cocody, Abidjan"></textarea>
-                  <p class="form-help">Coordonnées du siège de l'entreprise, distinctes de l'adresse de chaque site de formation.</p>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Adresse du siège</label>
+                    <textarea class="form-control" rows="2" [(ngModel)]="identiteForm.adresseSiege" name="adresseSiege" placeholder="Ex: Secteur 15, Ouagadougou"></textarea>
+                    <p class="form-help">Coordonnées du siège de l'entreprise, distinctes de l'adresse de chaque site de formation.</p>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Boîte postale</label>
+                    <input type="text" class="form-control" [(ngModel)]="identiteForm.boitePostale" name="boitePostale" placeholder="Ex: 01 BP 1234 Ouagadougou 01" />
+                  </div>
                 </div>
               </div>
             </div>
+
+            <div class="identite-fields" style="margin-top: 1.5rem;">
+              <h4 style="margin: 0 0 0.75rem;">Informations légales</h4>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Numéro d'agrément</label>
+                  <input type="text" class="form-control" [(ngModel)]="identiteForm.numeroAgrement" name="numeroAgrement" placeholder="Agrément Ministère des Transports (DGTTM)" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Date d'obtention / de renouvellement</label>
+                  <input type="date" class="form-control" [(ngModel)]="identiteForm.dateAgrement" name="dateAgrement" />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Registre du Commerce et du Crédit Mobilier (RCCM)</label>
+                  <input type="text" class="form-control" [(ngModel)]="identiteForm.rccm" name="rccm" placeholder="Ex: BF OUA 2020 B 1234" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Identifiant Financier Unique (IFU)</label>
+                  <input type="text" class="form-control" [(ngModel)]="identiteForm.ifu" name="ifu" placeholder="Identifiant Financier Unique" />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Numéro de patente</label>
+                  <input type="text" class="form-control" [(ngModel)]="identiteForm.numeroPatente" name="numeroPatente" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Nom du directeur / gérant</label>
+                  <input type="text" class="form-control" [(ngModel)]="identiteForm.nomDirigeant" name="nomDirigeant" placeholder="Affiché en pied des reçus" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Compte de règlement (banque / Mobile Money)</label>
+                <input type="text" class="form-control" [(ngModel)]="identiteForm.comptePaiement" name="comptePaiement" placeholder="Ex: Orange Money 70 12 34 56 ou IBAN" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Mention légale (pied de page des reçus/PDF)</label>
+                <textarea class="form-control" rows="2" [(ngModel)]="identiteForm.mentionLegalePied" name="mentionLegalePied" placeholder="Ex: Auto-école agréée par le Ministère des Transports sous le n°... — RCCM ... — IFU ..."></textarea>
+              </div>
+            </div>
+
             <button type="submit" class="btn btn-primary btn-sm" [disabled]="savingIdentite">
               {{ savingIdentite ? 'Enregistrement...' : 'Enregistrer' }}
             </button>
@@ -626,7 +675,12 @@ export class ParametrageComponent implements OnInit {
   siteForm: any = { nom: '', adresse: '', actif: true };
   siteError = '';
 
-  identiteForm: Identite = { logoData: null, imageConnexion: null, imageConnexionAjustement: 'cover', nomEtablissement: '', slogan: '', telephone: '', email: '', adresseSiege: '' };
+  identiteForm: Identite = {
+    logoData: null, imageConnexion: null, imageConnexionAjustement: 'cover',
+    nomEtablissement: '', slogan: '', telephone: '', email: '', adresseSiege: '',
+    numeroAgrement: '', dateAgrement: null, rccm: '', ifu: '', numeroPatente: '',
+    boitePostale: '', nomDirigeant: '', comptePaiement: '', mentionLegalePied: ''
+  };
   identiteError = '';
   identiteSuccess = false;
   savingIdentite = false;

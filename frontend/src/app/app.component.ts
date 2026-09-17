@@ -41,8 +41,10 @@ import { extraireMessageErreur } from './core/utils/error-utils';
               }
             </div>
             <div class="brand-text">
-              <h2>Nerwaya</h2>
-              <span>Auto-École</span>
+              <h2>{{ brandNom }}</h2>
+              @if (brandCategorie) {
+                <span>{{ brandCategorie }}</span>
+              }
             </div>
           </div>
           <nav class="sidebar-nav" (click)="sidebarOpen = false">
@@ -209,13 +211,15 @@ import { extraireMessageErreur } from './core/utils/error-utils';
           <!-- TOPBAR -->
           <header class="topbar">
             <div style="display:flex; align-items:center; gap:0.85rem;">
-              <button class="sidebar-toggle-btn" (click)="sidebarOpen = !sidebarOpen" aria-label="Afficher/masquer le menu">
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+              <button class="sidebar-toggle-btn" (click)="sidebarOpen = !sidebarOpen" [attr.aria-label]="sidebarOpen ? 'Masquer le menu' : 'Afficher le menu'" [attr.aria-expanded]="sidebarOpen">
+                <svg class="sidebar-toggle-icon" [class.rotated]="!sidebarOpen" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
               </button>
-              <div class="page-title">
-                <h1>Nerwaya Auto-École</h1>
-                <p>Plateforme Web Centralisée • Gestion Administrative & Financière</p>
-              </div>
+              @if (!sidebarOpen) {
+                <div class="page-title">
+                  <h1>{{ nomEtablissement }}</h1>
+                  <p>{{ slogan }}</p>
+                </div>
+              }
             </div>
             <div class="topbar-actions">
               <button class="btn btn-outline btn-sm" (click)="showPasswordModal = true" title="Mot de passe">
@@ -329,8 +333,8 @@ import { extraireMessageErreur } from './core/utils/error-utils';
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 2.4rem;
-      height: 2.4rem;
+      width: 2.75rem;
+      height: 2.75rem;
       border: none;
       background: transparent;
       color: var(--text-main);
@@ -341,6 +345,14 @@ import { extraireMessageErreur } from './core/utils/error-utils';
 
     .sidebar-toggle-btn:hover {
       background: var(--bg-main);
+    }
+
+    .sidebar-toggle-icon {
+      transition: transform var(--transition-fast);
+    }
+
+    .sidebar-toggle-icon.rotated {
+      transform: rotate(180deg);
     }
 
     /* La barre latérale se replie hors champ dès qu'elle n'est pas ouverte,
@@ -547,6 +559,8 @@ export class AppComponent {
   pwdSuccess = false;
   profileError = '';
   logoData: string | null = null;
+  nomEtablissement = 'Nerwaya Auto-École';
+  slogan = 'Plateforme Web Centralisée • Gestion Administrative & Financière';
 
   /** Sous-menu de la barre latérale actuellement ouvert (survol souris ou bouton chevron
    *  tactile) : null = aucun. Un seul à la fois, mécanisme partagé par tous les liens qui
@@ -557,9 +571,26 @@ export class AppComponent {
   constructor(public authService: AuthService, private router: Router, private apiService: ApiService) {
     this.authService.currentUser$.subscribe(user => {
       if (user) {
-        this.apiService.getLogo().subscribe({ next: response => this.logoData = response.logoData });
+        this.apiService.getLogo().subscribe({
+          next: response => {
+            this.logoData = response.logoData;
+            this.nomEtablissement = response.nomEtablissement;
+            this.slogan = response.slogan;
+          }
+        });
       }
     });
+  }
+
+  /** Premier mot du nom de l'auto-école (ex: "Nerwaya" dans "Nerwaya Auto-École"),
+   *  affiché en évidence dans le bloc logo de la barre latérale. */
+  get brandNom(): string {
+    return this.nomEtablissement.split(' ')[0];
+  }
+
+  /** Reste du nom (ex: "Auto-École"), affiché en sous-titre du bloc logo. */
+  get brandCategorie(): string {
+    return this.nomEtablissement.split(' ').slice(1).join(' ');
   }
 
   get isAuthenticated(): boolean {

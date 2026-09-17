@@ -160,7 +160,7 @@ import { extraireMessageErreur } from './core/utils/error-utils';
                 </div>
                 @if (openFlyoutMenu === 'parametrage') {
                   <div class="submenu-inline">
-                    <a routerLink="/parametrage" [queryParams]="{tab: 'identite'}" class="submenu-item" (click)="closeFlyout()">Identité</a>
+                    <a routerLink="/parametrage" [queryParams]="{tab: 'identite'}" class="submenu-item" (click)="closeFlyout()">Gestion de profil</a>
                     <a routerLink="/parametrage" [queryParams]="{tab: 'categories'}" class="submenu-item" (click)="closeFlyout()">Catégories de Permis</a>
                     <a routerLink="/parametrage" [queryParams]="{tab: 'tarifs'}" class="submenu-item" (click)="closeFlyout()">Tarifs des Examens</a>
                     <a routerLink="/parametrage" [queryParams]="{tab: 'sites'}" class="submenu-item" (click)="closeFlyout()">Sites de Formation</a>

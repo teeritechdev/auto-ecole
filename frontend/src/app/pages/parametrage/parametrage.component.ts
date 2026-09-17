@@ -30,7 +30,7 @@ const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'tarifs'
           <div class="card-header">
             <div class="card-title" style="display:flex; align-items:center; gap:0.5rem;">
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 13.42 20.6a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82Z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-              Identité de l'auto-école
+              Gestion de profil de l'auto-école
             </div>
           </div>
           <form (ngSubmit)="saveIdentite()">
@@ -38,7 +38,7 @@ const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'tarifs'
               <div class="alert alert-danger">{{ identiteError }}</div>
             }
             @if (identiteSuccess) {
-              <div class="alert alert-success">Identité enregistrée.</div>
+              <div class="alert alert-success">Profil enregistré.</div>
             }
             <div class="identite-layout">
               <div class="images-column">
@@ -423,7 +423,7 @@ const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'tarifs'
 
               <div class="permissions-matrix">
                 @for (module of modulesPermissions; track module.nom) {
-                  <div class="permission-module">
+                  <div class="card permission-module">
                     <div class="permission-module-title">{{ module.nom }}</div>
                     <div class="permission-module-items">
                       @for (perm of module.items; track perm.code) {
@@ -652,10 +652,16 @@ const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'tarifs'
     .profil-tile:hover { background: var(--bg-sidebar-hover, #f1f5f9); border-color: #bfdbfe; }
     .profil-item-main { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; width: 100%; }
     .profil-detail-card .card-header { flex-wrap: wrap; gap: 0.75rem; }
-    .permissions-matrix { display: flex; flex-direction: column; gap: 1rem; }
-    .permission-module-title { font-weight: 600; margin-bottom: 0.4rem; color: var(--text-main); }
-    .permission-module-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.5rem 1rem; }
-    .permission-check { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; font-weight: 400; cursor: pointer; }
+    .permissions-matrix {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.25rem;
+      align-items: start;
+    }
+    .permission-module { padding: 1.1rem 1.3rem; }
+    .permission-module-title { font-weight: 700; margin-bottom: 0.85rem; color: var(--text-main); }
+    .permission-module-items { display: flex; flex-direction: column; gap: 0.65rem; }
+    .permission-check { display: flex; align-items: center; gap: 0.6rem; font-size: 0.9rem; font-weight: 400; cursor: pointer; }
   `]
 })
 export class ParametrageComponent implements OnInit {

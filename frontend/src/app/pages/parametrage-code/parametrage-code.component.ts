@@ -29,7 +29,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     @if (config) {
       <div class="card">
         <div class="card-header">
-          <div class="card-title">Banque de questions</div>
+          <div class="card-title">Quiz Exercice</div>
           <a routerLink="/code/questions" class="btn btn-outline btn-sm">Gérer les questions</a>
         </div>
         <p>{{ config.nombreQuestionsActives }} question(s) active(s) — {{ config.nombreDeCycles }} Cycle(s) au total.</p>

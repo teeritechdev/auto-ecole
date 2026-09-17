@@ -39,41 +39,18 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
 
         <p class="question-enonce">{{ enCours.question.enonce }}</p>
 
+        <p class="question-consigne">Cochez la ou les bonnes réponses.</p>
+
         <div class="options">
-          <button type="button" class="option"
-            [class.selected]="reponseSelectionnee === 'A' && !verrouille"
-            [class.correct]="verrouille && derniereCorrection?.bonneReponse === 'A'"
-            [class.incorrect]="verrouille && reponseSelectionnee === 'A' && !derniereCorrection?.correcte"
-            [disabled]="verrouille || envoi"
-            (click)="selectionner('A')">
-            <span>A. {{ enCours.question.reponseA }}</span>
-          </button>
-          <button type="button" class="option"
-            [class.selected]="reponseSelectionnee === 'B' && !verrouille"
-            [class.correct]="verrouille && derniereCorrection?.bonneReponse === 'B'"
-            [class.incorrect]="verrouille && reponseSelectionnee === 'B' && !derniereCorrection?.correcte"
-            [disabled]="verrouille || envoi"
-            (click)="selectionner('B')">
-            <span>B. {{ enCours.question.reponseB }}</span>
-          </button>
-          @if (enCours.question.reponseC) {
+          @for (lettre of lettresDisponibles; track lettre) {
             <button type="button" class="option"
-              [class.selected]="reponseSelectionnee === 'C' && !verrouille"
-              [class.correct]="verrouille && derniereCorrection?.bonneReponse === 'C'"
-              [class.incorrect]="verrouille && reponseSelectionnee === 'C' && !derniereCorrection?.correcte"
+              [class.selected]="estSelectionnee(lettre) && !verrouille"
+              [class.correct]="verrouille && estBonneReponse(lettre)"
+              [class.incorrect]="verrouille && estSelectionnee(lettre) && !estBonneReponse(lettre)"
               [disabled]="verrouille || envoi"
-              (click)="selectionner('C')">
-              <span>C. {{ enCours.question.reponseC }}</span>
-            </button>
-          }
-          @if (enCours.question.reponseD) {
-            <button type="button" class="option"
-              [class.selected]="reponseSelectionnee === 'D' && !verrouille"
-              [class.correct]="verrouille && derniereCorrection?.bonneReponse === 'D'"
-              [class.incorrect]="verrouille && reponseSelectionnee === 'D' && !derniereCorrection?.correcte"
-              [disabled]="verrouille || envoi"
-              (click)="selectionner('D')">
-              <span>D. {{ enCours.question.reponseD }}</span>
+              (click)="toggleReponse(lettre)">
+              <span class="option-check" [class.checked]="estSelectionnee(lettre)"></span>
+              <span>{{ lettre }}{{ texteReponse(lettre) ? ' . ' + texteReponse(lettre) : '' }}</span>
             </button>
           }
         </div>
@@ -107,6 +84,10 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
             <button type="button" class="btn btn-primary" (click)="continuer()">
               {{ estDerniereQuestion ? 'Voir le résultat' : 'Suivant' }}
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          } @else {
+            <button type="button" class="btn btn-primary" [disabled]="envoi" (click)="soumettre()">
+              Valider
             </button>
           }
         </div>
@@ -161,8 +142,15 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     .progress-fill { height: 100%; background: var(--primary); transition: width 0.2s; }
     .question-image { margin-bottom: 1rem; text-align: center; }
     .question-image img { max-width: 100%; max-height: 260px; border-radius: var(--radius-md); }
-    .question-enonce { font-size: 1.05rem; font-weight: 600; margin-bottom: 1rem; }
+    .question-enonce { font-size: 1.05rem; font-weight: 600; margin-bottom: 0.35rem; }
+    .question-consigne { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem; }
     .options { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1.25rem; }
+    .option-check {
+      width: 18px; height: 18px; flex-shrink: 0;
+      border-radius: 4px; border: 1.5px solid var(--border-color);
+      background: var(--bg-card);
+    }
+    .option-check.checked { background: var(--primary); border-color: var(--primary); }
     .option {
       display: flex;
       align-items: center;
@@ -203,7 +191,7 @@ export class CodeQuizComponent implements OnInit, OnDestroy {
   enCours: TentativeEnCours | null = null;
   resultat: EtatTentative['resultat'] | null = null;
   derniereCorrection: CorrectionReponse | null = null;
-  reponseSelectionnee: LettreReponse | null = null;
+  reponsesSelectionnees = new Set<LettreReponse>();
   /** true une fois qu'une réponse a été soumise et que sa correction est affichée
    *  en place, en attendant que le candidat clique sur "Suivant" pour avancer. */
   verrouille = false;
@@ -238,6 +226,34 @@ export class CodeQuizComponent implements OnInit, OnDestroy {
     return (this.enCours.indexQuestionCourante / this.enCours.totalQuestionsDuCycle) * 100;
   }
 
+  get lettresDisponibles(): LettreReponse[] {
+    const toutes: LettreReponse[] = ['A', 'B', 'C', 'D'];
+    return toutes.slice(0, this.enCours?.question.nombreOptions ?? 4);
+  }
+
+  texteReponse(lettre: LettreReponse): string | undefined {
+    const q = this.enCours?.question;
+    if (!q) return undefined;
+    return { A: q.reponseA, B: q.reponseB, C: q.reponseC, D: q.reponseD }[lettre];
+  }
+
+  estSelectionnee(lettre: LettreReponse): boolean {
+    return this.reponsesSelectionnees.has(lettre);
+  }
+
+  estBonneReponse(lettre: LettreReponse): boolean {
+    return !!this.derniereCorrection?.bonnesReponses?.includes(lettre);
+  }
+
+  toggleReponse(lettre: LettreReponse): void {
+    if (this.envoi || this.verrouille || !this.enCours) return;
+    if (this.reponsesSelectionnees.has(lettre)) {
+      this.reponsesSelectionnees.delete(lettre);
+    } else {
+      this.reponsesSelectionnees.add(lettre);
+    }
+  }
+
   private charger(): void {
     this.loading = true;
     this.apiService.getEtatTentativeCode(this.tentativeId).subscribe({
@@ -248,7 +264,7 @@ export class CodeQuizComponent implements OnInit, OnDestroy {
 
   private appliquerEtat(etat: EtatTentative): void {
     this.arreterMinuteur();
-    this.reponseSelectionnee = null;
+    this.reponsesSelectionnees = new Set();
     this.derniereCorrection = null;
     this.etatEnAttente = null;
     this.verrouille = false;
@@ -285,18 +301,11 @@ export class CodeQuizComponent implements OnInit, OnDestroy {
     }
   }
 
-  /** Sélectionner une réponse soumet immédiatement — pas de confirmation supplémentaire. */
-  selectionner(lettre: LettreReponse): void {
-    if (this.envoi || this.verrouille || !this.enCours) return;
-    this.reponseSelectionnee = lettre;
-    this.soumettre();
-  }
-
-  private soumettre(): void {
+  soumettre(): void {
     if (this.envoi || !this.enCours) return;
     this.envoi = true;
     this.arreterMinuteur();
-    this.apiService.repondreTentativeCode(this.tentativeId, this.reponseSelectionnee).subscribe({
+    this.apiService.repondreTentativeCode(this.tentativeId, Array.from(this.reponsesSelectionnees)).subscribe({
       next: (etat) => {
         this.envoi = false;
         // Le backend a déjà avancé à la question suivante (ou clos la tentative) ; si une

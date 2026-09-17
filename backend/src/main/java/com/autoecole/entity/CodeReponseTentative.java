@@ -1,6 +1,5 @@
 package com.autoecole.entity;
 
-import com.autoecole.entity.enums.LettreReponse;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -34,10 +33,10 @@ public class CodeReponseTentative {
     @Column(name = "ordre_dans_cycle", nullable = false)
     private int ordreDansCycle;
 
-    /** Nulle si le candidat n'a pas répondu à temps. */
-    @Enumerated(EnumType.STRING)
-    @Column(name = "reponse_donnee", length = 1)
-    private LettreReponse reponseDonnee;
+    /** CSV trié des lettres cochées par le candidat (ex: "A" ou "A,C", cf.
+     *  LettreReponse.toCsv/fromCsv). Vide si le candidat n'a pas répondu à temps. */
+    @Column(name = "reponse_donnee", length = 20)
+    private String reponsesDonnees;
 
     @Column(nullable = false)
     private boolean correcte;

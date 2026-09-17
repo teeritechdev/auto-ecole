@@ -24,6 +24,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -225,7 +226,7 @@ public class CodeService {
     // ============================= DÉROULEMENT =============================
 
     @Transactional
-    public EtatTentativeDTO repondre(Long tentativeId, LettreReponse reponseCandidat) {
+    public EtatTentativeDTO repondre(Long tentativeId, Set<LettreReponse> reponsesCandidat) {
         CodeTentative tentative = getTentativePossedee(tentativeId);
         if (tentative.getStatut() != StatutTentativeCode.EN_COURS) {
             return etatDepuisTentativeTerminee(tentative);
@@ -247,14 +248,20 @@ public class CodeService {
         long tempsEcouleQuestion = Duration.between(tentative.getDateAffichageQuestionCourante(), maintenant).getSeconds();
         // Le serveur revalide systématiquement le délai : une réponse hors délai est ignorée,
         // même si le client en a transmis une (cf. §18 du cahier des charges du module).
-        LettreReponse reponseRetenue = tempsEcouleQuestion > tentative.getSnapTempsParQuestionSecondes() ? null : reponseCandidat;
-        boolean correcte = reponseRetenue != null && reponseRetenue == question.getBonneReponse();
+        Set<LettreReponse> reponsesRetenues = tempsEcouleQuestion > tentative.getSnapTempsParQuestionSecondes() || reponsesCandidat == null
+                ? Set.of()
+                : reponsesCandidat;
+        Set<LettreReponse> bonnesReponses = LettreReponse.fromCsv(question.getBonneReponses());
+        // À choix multiples, la réponse n'est correcte que si l'ensemble coché correspond
+        // exactement à l'ensemble attendu (aucune bonne réponse manquante, aucune en trop) —
+        // même convention que les examens officiels du Code de la route.
+        boolean correcte = !reponsesRetenues.isEmpty() && reponsesRetenues.equals(bonnesReponses);
 
         reponseRepository.save(CodeReponseTentative.builder()
                 .tentative(tentative)
                 .question(question)
                 .ordreDansCycle(tentative.getIndexQuestionCourante())
-                .reponseDonnee(reponseRetenue)
+                .reponsesDonnees(LettreReponse.toCsv(reponsesRetenues))
                 .correcte(correcte)
                 .tempsReponseSecondes((int) Math.min(tempsEcouleQuestion, tentative.getSnapTempsParQuestionSecondes()))
                 .build());
@@ -270,7 +277,7 @@ public class CodeService {
         CorrectionReponseDTO correction = tentative.isSnapCorrectionImmediate()
                 ? CorrectionReponseDTO.builder()
                         .correcte(correcte)
-                        .bonneReponse(question.getBonneReponse())
+                        .bonnesReponses(bonnesReponses)
                         .explication(question.getExplication())
                         .build()
                 : null;
@@ -426,6 +433,7 @@ public class CodeService {
                 .reponseB(q.getReponseB())
                 .reponseC(q.getReponseC())
                 .reponseD(q.getReponseD())
+                .nombreOptions(q.getNombreOptionsEffectif())
                 .build();
     }
 

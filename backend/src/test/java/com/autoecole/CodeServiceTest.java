@@ -30,6 +30,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -81,7 +82,8 @@ class CodeServiceTest {
         return CodeQuestion.builder()
                 .id(id).ordre(ordre).enonce("Question " + ordre)
                 .reponseA("Bonne").reponseB("Mauvaise")
-                .bonneReponse(LettreReponse.A)
+                .nombreOptions(2)
+                .bonneReponses(LettreReponse.toCsv(Set.of(LettreReponse.A)))
                 .actif(true)
                 .build();
     }
@@ -217,10 +219,10 @@ class CodeServiceTest {
         stubSaveTentativePassThrough();
         when(tentativeRepository.countByCandidatIdAndNumeroCycle(1L, 1)).thenReturn(1L);
 
-        EtatTentativeDTO apres1 = codeService.repondre(100L, LettreReponse.A); // correcte
+        EtatTentativeDTO apres1 = codeService.repondre(100L, Set.of(LettreReponse.A)); // correcte
         assertNotNull(apres1.getEnCours());
 
-        EtatTentativeDTO apres2 = codeService.repondre(100L, LettreReponse.A); // correcte
+        EtatTentativeDTO apres2 = codeService.repondre(100L, Set.of(LettreReponse.A)); // correcte
         assertNotNull(apres2.getResultat());
         assertEquals(2, apres2.getResultat().getScore());
         assertEquals(StatutTentativeCode.REUSSI, apres2.getResultat().getStatut());
@@ -241,8 +243,8 @@ class CodeServiceTest {
         stubSaveTentativePassThrough();
         when(tentativeRepository.countByCandidatIdAndNumeroCycle(1L, 1)).thenReturn(1L);
 
-        codeService.repondre(100L, LettreReponse.A);  // correcte
-        EtatTentativeDTO resultat = codeService.repondre(100L, LettreReponse.B); // incorrecte (bonne réponse = A)
+        codeService.repondre(100L, Set.of(LettreReponse.A));  // correcte
+        EtatTentativeDTO resultat = codeService.repondre(100L, Set.of(LettreReponse.B)); // incorrecte (bonne réponse = A)
 
         assertNotNull(resultat.getResultat());
         assertEquals(1, resultat.getResultat().getScore());
@@ -382,12 +384,12 @@ class CodeServiceTest {
                 .thenReturn(List.of(question(1, 1), question(2, 2)));
         stubSaveTentativePassThrough();
 
-        codeService.repondre(100L, LettreReponse.A); // "A" est la bonne réponse, mais hors délai
+        codeService.repondre(100L, Set.of(LettreReponse.A)); // "A" est la bonne réponse, mais hors délai
 
         ArgumentCaptor<CodeReponseTentative> captor = ArgumentCaptor.forClass(CodeReponseTentative.class);
         verify(reponseRepository).save(captor.capture());
         assertFalse(captor.getValue().isCorrecte(), "Une réponse hors délai doit être comptée comme incorrecte, quelle que soit sa valeur");
-        assertNull(captor.getValue().getReponseDonnee(), "La réponse hors délai ne doit pas être enregistrée comme si elle avait été donnée à temps");
+        assertTrue(captor.getValue().getReponsesDonnees().isEmpty(), "La réponse hors délai ne doit pas être enregistrée comme si elle avait été donnée à temps");
     }
 
     // ========================= 12. Durée maximale du Cycle =========================
@@ -501,11 +503,11 @@ class CodeServiceTest {
         when(questionRepository.findByActifTrueOrderByOrdreAsc()).thenReturn(List.of(question, question(2, 2)));
         stubSaveTentativePassThrough();
 
-        EtatTentativeDTO etat = codeService.repondre(100L, LettreReponse.A);
+        EtatTentativeDTO etat = codeService.repondre(100L, Set.of(LettreReponse.A));
 
         assertNotNull(etat.getCorrection(), "La correction doit être renvoyée quand correctionImmediate est active pour cette tentative");
         assertTrue(etat.getCorrection().isCorrecte());
-        assertEquals(LettreReponse.A, etat.getCorrection().getBonneReponse());
+        assertEquals(Set.of(LettreReponse.A), etat.getCorrection().getBonnesReponses());
         assertEquals("Explication de la question 1", etat.getCorrection().getExplication());
     }
 
@@ -522,11 +524,11 @@ class CodeServiceTest {
         when(questionRepository.findByActifTrueOrderByOrdreAsc()).thenReturn(List.of(question, question(2, 2)));
         stubSaveTentativePassThrough();
 
-        EtatTentativeDTO etat = codeService.repondre(100L, LettreReponse.B); // bonne réponse = A
+        EtatTentativeDTO etat = codeService.repondre(100L, Set.of(LettreReponse.B)); // bonne réponse = A
 
         assertNotNull(etat.getCorrection());
         assertFalse(etat.getCorrection().isCorrecte());
-        assertEquals(LettreReponse.A, etat.getCorrection().getBonneReponse());
+        assertEquals(Set.of(LettreReponse.A), etat.getCorrection().getBonnesReponses());
         assertEquals("Explication de la question 1", etat.getCorrection().getExplication());
     }
 
@@ -543,7 +545,7 @@ class CodeServiceTest {
                 .thenReturn(List.of(question(1, 1), question(2, 2)));
         stubSaveTentativePassThrough();
 
-        EtatTentativeDTO etat = codeService.repondre(100L, LettreReponse.A);
+        EtatTentativeDTO etat = codeService.repondre(100L, Set.of(LettreReponse.A));
 
         assertNull(etat.getCorrection(), "Aucune correction ne doit être renvoyée si le paramètre est désactivé pour cette tentative");
     }
@@ -567,8 +569,8 @@ class CodeServiceTest {
                 .thenReturn(List.of(question(1, 1), question(2, 2)));
         stubSaveTentativePassThrough();
 
-        EtatTentativeDTO etatAvecCorrection = codeService.repondre(100L, LettreReponse.A);
-        EtatTentativeDTO etatSansCorrection = codeService.repondre(101L, LettreReponse.A);
+        EtatTentativeDTO etatAvecCorrection = codeService.repondre(100L, Set.of(LettreReponse.A));
+        EtatTentativeDTO etatSansCorrection = codeService.repondre(101L, Set.of(LettreReponse.A));
 
         assertNotNull(etatAvecCorrection.getCorrection(), "Snapshot figé à true pour cette tentative : la correction doit apparaître");
         assertNull(etatSansCorrection.getCorrection(), "Snapshot figé à false pour cette tentative : aucune correction, même config globale par ailleurs");
@@ -579,7 +581,8 @@ class CodeServiceTest {
         return CodeQuestion.builder()
                 .id((long) ordre).ordre(ordre).enonce("Question " + ordre)
                 .reponseA("Bonne").reponseB("Mauvaise")
-                .bonneReponse(LettreReponse.A)
+                .nombreOptions(2)
+                .bonneReponses(LettreReponse.toCsv(Set.of(LettreReponse.A)))
                 .explication(explication)
                 .actif(true)
                 .build();

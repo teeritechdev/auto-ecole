@@ -56,7 +56,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       </div>
 
       @if (progression.totalCycles === 0) {
-        <div class="card">La banque de questions n'est pas encore disponible. Revenez plus tard.</div>
+        <div class="card">Le Quiz Exercice n'est pas encore disponible. Revenez plus tard.</div>
       }
 
       <div class="cycles-grid">

@@ -479,8 +479,8 @@ export class ApiService {
     return this.http.get<EtatTentative>(`${this.base}/code/tentatives/${tentativeId}`);
   }
 
-  public repondreTentativeCode(tentativeId: number, reponse: LettreReponse | null): Observable<EtatTentative> {
-    return this.http.post<EtatTentative>(`${this.base}/code/tentatives/${tentativeId}/answer`, { reponse });
+  public repondreTentativeCode(tentativeId: number, reponses: LettreReponse[]): Observable<EtatTentative> {
+    return this.http.post<EtatTentative>(`${this.base}/code/tentatives/${tentativeId}/answer`, { reponses });
   }
 
   public revenirQuestionPrecedenteCode(tentativeId: number): Observable<EtatTentative> {

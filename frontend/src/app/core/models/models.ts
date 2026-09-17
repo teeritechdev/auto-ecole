@@ -377,11 +377,13 @@ export interface CodeQuestion {
   ordre: number;
   enonce: string;
   imageData?: string;
-  reponseA: string;
-  reponseB: string;
+  // Optionnels : une question "façon scan" affiche déjà les choix dans l'image.
+  reponseA?: string;
+  reponseB?: string;
   reponseC?: string;
   reponseD?: string;
-  bonneReponse: LettreReponse;
+  nombreOptions: number; // 2 à 4
+  bonnesReponses: LettreReponse[];
   explication?: string;
   actif: boolean;
 }
@@ -391,10 +393,11 @@ export interface CodeQuestionPourCandidat {
   ordre: number;
   enonce: string;
   imageData?: string;
-  reponseA: string;
-  reponseB: string;
+  reponseA?: string;
+  reponseB?: string;
   reponseC?: string;
   reponseD?: string;
+  nombreOptions: number;
 }
 
 export interface CodeCycleStatut {
@@ -444,7 +447,7 @@ export interface CodeResultatTentative {
 
 export interface CorrectionReponse {
   correcte: boolean;
-  bonneReponse: LettreReponse;
+  bonnesReponses: LettreReponse[];
   explication?: string;
 }
 

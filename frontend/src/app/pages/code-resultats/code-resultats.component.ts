@@ -169,7 +169,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   </tr>
                 }
                 @if (progression.cycles.length === 0) {
-                  <tr><td colspan="5" class="text-muted">Aucun Cycle disponible (banque de questions vide).</td></tr>
+                  <tr><td colspan="5" class="text-muted">Aucun Cycle disponible (Quiz Exercice vide).</td></tr>
                 }
               </tbody>
             </table>

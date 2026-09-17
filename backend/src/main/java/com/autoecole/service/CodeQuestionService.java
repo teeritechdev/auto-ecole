@@ -4,6 +4,7 @@ import com.autoecole.dto.CodeDTOs.CodeQuestionDTO;
 import com.autoecole.dto.CodeDTOs.CreateCodeQuestionRequest;
 import com.autoecole.dto.CodeDTOs.UpdateCodeQuestionRequest;
 import com.autoecole.entity.CodeQuestion;
+import com.autoecole.entity.enums.LettreReponse;
 import com.autoecole.exception.BadRequestException;
 import com.autoecole.exception.ResourceNotFoundException;
 import com.autoecole.repository.CodeQuestionRepository;
@@ -11,7 +12,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -33,7 +36,7 @@ public class CodeQuestionService {
 
     @Transactional
     public CodeQuestionDTO createQuestion(CreateCodeQuestionRequest request) {
-        validerReponse(request.getBonneReponse().name(), request.getReponseA(), request.getReponseB(), request.getReponseC(), request.getReponseD());
+        validerReponse(request.getBonnesReponses(), request.getNombreOptions());
         validateImage(request.getImageData());
 
         int ordre = request.getOrdre() != null
@@ -48,11 +51,12 @@ public class CodeQuestionService {
                 .ordre(ordre)
                 .enonce(request.getEnonce().trim())
                 .imageData(request.getImageData())
-                .reponseA(request.getReponseA().trim())
-                .reponseB(request.getReponseB().trim())
-                .reponseC(request.getReponseC() != null ? request.getReponseC().trim() : null)
-                .reponseD(request.getReponseD() != null ? request.getReponseD().trim() : null)
-                .bonneReponse(request.getBonneReponse())
+                .reponseA(texteOuNull(request.getReponseA()))
+                .reponseB(texteOuNull(request.getReponseB()))
+                .reponseC(texteOuNull(request.getReponseC()))
+                .reponseD(texteOuNull(request.getReponseD()))
+                .nombreOptions(request.getNombreOptions())
+                .bonneReponses(LettreReponse.toCsv(request.getBonnesReponses()))
                 .explication(request.getExplication())
                 .actif(request.getActif() == null || request.getActif())
                 .build();
@@ -65,7 +69,7 @@ public class CodeQuestionService {
         CodeQuestion question = questionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Question introuvable avec l'id: " + id));
 
-        validerReponse(request.getBonneReponse().name(), request.getReponseA(), request.getReponseB(), request.getReponseC(), request.getReponseD());
+        validerReponse(request.getBonnesReponses(), request.getNombreOptions());
         validateImage(request.getImageData());
 
         if (questionRepository.existsByOrdreAndIdNot(request.getOrdre(), id)) {
@@ -75,15 +79,20 @@ public class CodeQuestionService {
         question.setOrdre(request.getOrdre());
         question.setEnonce(request.getEnonce().trim());
         question.setImageData(request.getImageData());
-        question.setReponseA(request.getReponseA().trim());
-        question.setReponseB(request.getReponseB().trim());
-        question.setReponseC(request.getReponseC() != null ? request.getReponseC().trim() : null);
-        question.setReponseD(request.getReponseD() != null ? request.getReponseD().trim() : null);
-        question.setBonneReponse(request.getBonneReponse());
+        question.setReponseA(texteOuNull(request.getReponseA()));
+        question.setReponseB(texteOuNull(request.getReponseB()));
+        question.setReponseC(texteOuNull(request.getReponseC()));
+        question.setReponseD(texteOuNull(request.getReponseD()));
+        question.setNombreOptions(request.getNombreOptions());
+        question.setBonneReponses(LettreReponse.toCsv(request.getBonnesReponses()));
         question.setExplication(request.getExplication());
         question.setActif(request.isActif());
 
         return mapToDTO(questionRepository.save(question));
+    }
+
+    private String texteOuNull(String texte) {
+        return texte != null && !texte.isBlank() ? texte.trim() : null;
     }
 
     @Transactional
@@ -94,17 +103,22 @@ public class CodeQuestionService {
         questionRepository.deleteById(id);
     }
 
-    private void validerReponse(String bonneReponse, String a, String b, String c, String d) {
-        boolean valide = switch (bonneReponse) {
-            case "A" -> a != null && !a.isBlank();
-            case "B" -> b != null && !b.isBlank();
-            case "C" -> c != null && !c.isBlank();
-            case "D" -> d != null && !d.isBlank();
-            default -> false;
-        };
-        if (!valide) {
-            throw new BadRequestException("La bonne réponse désignée (" + bonneReponse + ") doit correspondre à une réponse renseignée");
+    private void validerReponse(Set<LettreReponse> bonnesReponses, int nombreOptions) {
+        Set<LettreReponse> optionsDisponibles = optionsDisponibles(nombreOptions);
+        for (LettreReponse lettre : bonnesReponses) {
+            if (!optionsDisponibles.contains(lettre)) {
+                throw new BadRequestException("La bonne réponse " + lettre + " ne correspond à aucun choix disponible (" + nombreOptions + " choix)");
+            }
         }
+    }
+
+    private Set<LettreReponse> optionsDisponibles(int nombreOptions) {
+        return switch (nombreOptions) {
+            case 2 -> EnumSet.of(LettreReponse.A, LettreReponse.B);
+            case 3 -> EnumSet.of(LettreReponse.A, LettreReponse.B, LettreReponse.C);
+            case 4 -> EnumSet.of(LettreReponse.A, LettreReponse.B, LettreReponse.C, LettreReponse.D);
+            default -> throw new BadRequestException("Le nombre de choix doit être entre 2 et 4");
+        };
     }
 
     private void validateImage(String imageData) {
@@ -127,7 +141,8 @@ public class CodeQuestionService {
                 .reponseB(q.getReponseB())
                 .reponseC(q.getReponseC())
                 .reponseD(q.getReponseD())
-                .bonneReponse(q.getBonneReponse())
+                .nombreOptions(q.getNombreOptionsEffectif())
+                .bonnesReponses(LettreReponse.fromCsv(q.getBonneReponses()))
                 .explication(q.getExplication())
                 .actif(q.isActif())
                 .build();

@@ -2,8 +2,10 @@ package com.autoecole.dto;
 
 import com.autoecole.entity.enums.LettreReponse;
 import com.autoecole.entity.enums.StatutTentativeCode;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,6 +14,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 public class CodeDTOs {
 
@@ -77,7 +80,8 @@ public class CodeDTOs {
         private String reponseB;
         private String reponseC;
         private String reponseD;
-        private LettreReponse bonneReponse;
+        private int nombreOptions;
+        private Set<LettreReponse> bonnesReponses;
         private String explication;
         private boolean actif;
     }
@@ -94,17 +98,19 @@ public class CodeDTOs {
 
         private String imageData;
 
-        @NotBlank(message = "La réponse A est obligatoire")
+        // Optionnels : une question "façon scan" affiche déjà les choix dans l'image
         private String reponseA;
-
-        @NotBlank(message = "La réponse B est obligatoire")
         private String reponseB;
-
         private String reponseC;
         private String reponseD;
 
-        @NotNull(message = "La bonne réponse est obligatoire")
-        private LettreReponse bonneReponse;
+        @NotNull(message = "Le nombre de choix est obligatoire")
+        @Min(value = 2, message = "Le nombre de choix doit être entre 2 et 4")
+        @Max(value = 4, message = "Le nombre de choix doit être entre 2 et 4")
+        private Integer nombreOptions;
+
+        @NotEmpty(message = "Au moins une bonne réponse doit être désignée")
+        private Set<LettreReponse> bonnesReponses;
 
         private String explication;
         private Boolean actif;
@@ -122,17 +128,19 @@ public class CodeDTOs {
 
         private String imageData;
 
-        @NotBlank(message = "La réponse A est obligatoire")
+        // Optionnels : une question "façon scan" affiche déjà les choix dans l'image
         private String reponseA;
-
-        @NotBlank(message = "La réponse B est obligatoire")
         private String reponseB;
-
         private String reponseC;
         private String reponseD;
 
-        @NotNull(message = "La bonne réponse est obligatoire")
-        private LettreReponse bonneReponse;
+        @NotNull(message = "Le nombre de choix est obligatoire")
+        @Min(value = 2, message = "Le nombre de choix doit être entre 2 et 4")
+        @Max(value = 4, message = "Le nombre de choix doit être entre 2 et 4")
+        private Integer nombreOptions;
+
+        @NotEmpty(message = "Au moins une bonne réponse doit être désignée")
+        private Set<LettreReponse> bonnesReponses;
 
         private String explication;
         private boolean actif;
@@ -154,6 +162,7 @@ public class CodeDTOs {
         private String reponseB;
         private String reponseC;
         private String reponseD;
+        private int nombreOptions;
     }
 
     public enum StatutCycle {
@@ -212,9 +221,9 @@ public class CodeDTOs {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class RepondreQuestionRequest {
-        // Nulle si le candidat n'a pas eu le temps de répondre (le frontend l'envoie
+        // Vide/nul si le candidat n'a pas eu le temps de répondre (le frontend l'envoie
         // à l'expiration locale du minuteur ; le serveur revérifie de toute façon le délai).
-        private LettreReponse reponse;
+        private Set<LettreReponse> reponses;
     }
 
     /** Correction de la question qui vient d'être répondue, renseignée uniquement par
@@ -227,7 +236,7 @@ public class CodeDTOs {
     @Builder
     public static class CorrectionReponseDTO {
         private boolean correcte;
-        private LettreReponse bonneReponse;
+        private Set<LettreReponse> bonnesReponses;
         private String explication;
     }
 

@@ -2,7 +2,7 @@ import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
-import { CodeQuestion } from '../../core/models/models';
+import { CodeQuestion, LettreReponse } from '../../core/models/models';
 import { extraireMessageErreur } from '../../core/utils/error-utils';
 
 @Component({
@@ -11,7 +11,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
   template: `
     <div class="page-header">
       <div>
-        <h2>Banque de questions — Code de la route</h2>
+        <h2>Quiz Exercice — Code de la route</h2>
         <p>{{ questions.length }} question(s). L'ordre est fixe et jamais mélangé : il détermine le découpage en Cycles.</p>
       </div>
       <button class="btn btn-primary" (click)="ouvrirCreation()">
@@ -31,7 +31,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
             <tr>
               <th>Ordre</th>
               <th>Énoncé</th>
-              <th>Bonne réponse</th>
+              <th>Bonne(s) réponse(s)</th>
               <th>Statut</th>
               <th>Actions</th>
             </tr>
@@ -41,7 +41,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
               <tr>
                 <td>{{ q.ordre }}</td>
                 <td>{{ q.enonce }}</td>
-                <td>{{ q.bonneReponse }}</td>
+                <td>{{ q.bonnesReponses.join(', ') }}</td>
                 <td><span class="badge" [ngClass]="q.actif ? 'badge-solde' : 'badge-expire'">{{ q.actif ? 'Active' : 'Inactive' }}</span></td>
                 <td>
                   <button class="btn btn-sm btn-outline" (click)="ouvrirEdition(q)">Modifier</button>
@@ -92,35 +92,52 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 @if (form.imageData) {
                   <img [src]="form.imageData" alt="Aperçu" class="apercu-image" />
                 }
-              </div>
-              <div class="form-row">
-                <div class="form-group">
-                  <label class="form-label">Réponse A <span class="required">*</span></label>
-                  <input type="text" class="form-control" [(ngModel)]="form.reponseA" name="reponseA" required />
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Réponse B <span class="required">*</span></label>
-                  <input type="text" class="form-control" [(ngModel)]="form.reponseB" name="reponseB" required />
-                </div>
-              </div>
-              <div class="form-row">
-                <div class="form-group">
-                  <label class="form-label">Réponse C</label>
-                  <input type="text" class="form-control" [(ngModel)]="form.reponseC" name="reponseC" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Réponse D</label>
-                  <input type="text" class="form-control" [(ngModel)]="form.reponseD" name="reponseD" />
-                </div>
+                <p class="form-help">Si l'image contient déjà l'énoncé et les choix (question scannée), inutile de retaper le texte des réponses ci-dessous.</p>
               </div>
               <div class="form-group">
-                <label class="form-label">Bonne réponse <span class="required">*</span></label>
-                <select class="form-control" [(ngModel)]="form.bonneReponse" name="bonneReponse" required>
-                  <option value="A">A</option>
-                  <option value="B">B</option>
-                  <option value="C">C</option>
-                  <option value="D">D</option>
+                <label class="form-label">Nombre de choix <span class="required">*</span></label>
+                <select class="form-control" [(ngModel)]="form.nombreOptions" name="nombreOptions" required (ngModelChange)="onNombreOptionsChange()">
+                  <option [ngValue]="2">2 (ex : Oui / Non)</option>
+                  <option [ngValue]="3">3 (A / B / C)</option>
+                  <option [ngValue]="4">4 (A / B / C / D)</option>
                 </select>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Texte réponse A (optionnel)</label>
+                  <input type="text" class="form-control" [(ngModel)]="form.reponseA" name="reponseA" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Texte réponse B (optionnel)</label>
+                  <input type="text" class="form-control" [(ngModel)]="form.reponseB" name="reponseB" />
+                </div>
+              </div>
+              @if (form.nombreOptions >= 3) {
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Texte réponse C (optionnel)</label>
+                    <input type="text" class="form-control" [(ngModel)]="form.reponseC" name="reponseC" />
+                  </div>
+                  @if (form.nombreOptions >= 4) {
+                    <div class="form-group">
+                      <label class="form-label">Texte réponse D (optionnel)</label>
+                      <input type="text" class="form-control" [(ngModel)]="form.reponseD" name="reponseD" />
+                    </div>
+                  }
+                </div>
+              }
+              <div class="form-group">
+                <label class="form-label">Bonne(s) réponse(s) <span class="required">*</span></label>
+                <div class="bonnes-reponses-check">
+                  @for (lettre of lettresPourNombreOptions(form.nombreOptions); track lettre) {
+                    <label class="reponse-check">
+                      <input type="checkbox"
+                             [checked]="form.bonnesReponses.includes(lettre)"
+                             (change)="toggleBonneReponse(lettre)" />
+                      {{ lettre }}
+                    </label>
+                  }
+                </div>
               </div>
               <div class="form-group">
                 <label class="form-label">Explication / correction (optionnelle)</label>
@@ -141,6 +158,8 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     .page-header p { color: var(--text-muted); }
     .text-muted { color: var(--text-muted); text-align: center; }
     .apercu-image { max-width: 200px; max-height: 140px; margin-top: 0.5rem; border-radius: var(--radius-md); display: block; }
+    .bonnes-reponses-check { display: flex; gap: 1.25rem; flex-wrap: wrap; }
+    .reponse-check { display: flex; align-items: center; gap: 0.4rem; font-weight: 400; cursor: pointer; }
   `],
   changeDetection: ChangeDetectionStrategy.Eager
 })
@@ -162,12 +181,12 @@ export class CodeQuestionsComponent implements OnInit {
   private charger(): void {
     this.apiService.getCodeQuestions().subscribe({
       next: (res) => { this.questions = res; },
-      error: (err) => { this.error = extraireMessageErreur(err, 'Impossible de charger la banque de questions.'); }
+      error: (err) => { this.error = extraireMessageErreur(err, 'Impossible de charger le Quiz Exercice.'); }
     });
   }
 
   private formVierge(): any {
-    return { ordre: null, enonce: '', imageData: '', reponseA: '', reponseB: '', reponseC: '', reponseD: '', bonneReponse: 'A', explication: '', actif: true };
+    return { ordre: null, enonce: '', imageData: '', reponseA: '', reponseB: '', reponseC: '', reponseD: '', nombreOptions: 4, bonnesReponses: [] as LettreReponse[], explication: '', actif: true };
   }
 
   ouvrirCreation(): void {
@@ -179,9 +198,27 @@ export class CodeQuestionsComponent implements OnInit {
 
   ouvrirEdition(q: CodeQuestion): void {
     this.editingId = q.id;
-    this.form = { ...q };
+    this.form = { ...q, bonnesReponses: [...q.bonnesReponses] };
     this.formError = '';
     this.showModal = true;
+  }
+
+  lettresPourNombreOptions(n: number): LettreReponse[] {
+    return (['A', 'B', 'C', 'D'] as LettreReponse[]).slice(0, n);
+  }
+
+  onNombreOptionsChange(): void {
+    const lettresValides = this.lettresPourNombreOptions(this.form.nombreOptions);
+    this.form.bonnesReponses = this.form.bonnesReponses.filter((l: LettreReponse) => lettresValides.includes(l));
+  }
+
+  toggleBonneReponse(lettre: LettreReponse): void {
+    const idx = this.form.bonnesReponses.indexOf(lettre);
+    if (idx >= 0) {
+      this.form.bonnesReponses.splice(idx, 1);
+    } else {
+      this.form.bonnesReponses.push(lettre);
+    }
   }
 
   onImageSelected(event: Event): void {
@@ -198,6 +235,10 @@ export class CodeQuestionsComponent implements OnInit {
   }
 
   enregistrer(): void {
+    if (this.form.bonnesReponses.length === 0) {
+      this.formError = 'Sélectionnez au moins une bonne réponse.';
+      return;
+    }
     this.saving = true;
     this.formError = '';
     const requete = this.editingId

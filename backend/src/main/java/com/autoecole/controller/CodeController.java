@@ -52,7 +52,7 @@ public class CodeController {
     @PreAuthorize("hasAuthority('PERM_CODE_PRATIQUER')")
     @Operation(summary = "Répondre à la question courante d'une tentative")
     public ResponseEntity<EtatTentativeDTO> repondre(@PathVariable Long id, @RequestBody RepondreQuestionRequest request) {
-        return ResponseEntity.ok(codeService.repondre(id, request.getReponse()));
+        return ResponseEntity.ok(codeService.repondre(id, request.getReponses()));
     }
 
     @PostMapping("/tentatives/{id}/precedente")

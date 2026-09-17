@@ -37,6 +37,10 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                 Télécharger Relevé Financier PDF
               </button>
+              <button class="btn btn-outline btn-sm" (click)="imprimerReleveDirectement()" title="Imprimer directement">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                Imprimer
+              </button>
             }
             @if (canAddPayment && candidat.soldeRestant > 0) {
               <button class="btn btn-success" (click)="openPaiementModal()">
@@ -1003,6 +1007,10 @@ export class CandidatDetailComponent implements OnInit {
       this.apiService.getRelevePaiementPdfUrl(this.candidatId),
       `releve_paiement_${this.candidat?.numeroDossier}.pdf`
     );
+  }
+
+  imprimerReleveDirectement(): void {
+    this.apiService.printBlob(this.apiService.getRelevePaiementPdfUrl(this.candidatId));
   }
 
   imprimerRecu(recuId: number): void {

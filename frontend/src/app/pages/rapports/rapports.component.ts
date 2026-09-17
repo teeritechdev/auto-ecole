@@ -29,6 +29,10 @@ import { ApiService } from '../../core/services/api.service';
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                 Télécharger PDF
               </button>
+              <button class="btn btn-outline btn-sm" (click)="imprimerCandidats()" title="Imprimer directement">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                Imprimer
+              </button>
               <button class="btn btn-success btn-sm" (click)="telechargerCandidatsExcel()">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
                 Télécharger Excel
@@ -59,6 +63,10 @@ import { ApiService } from '../../core/services/api.service';
               <button class="btn btn-primary btn-sm" (click)="telechargerCaissePdf()">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                 Relevé Caisse PDF
+              </button>
+              <button class="btn btn-outline btn-sm" (click)="imprimerCaisse()" title="Imprimer directement">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                Imprimer
               </button>
               <button class="btn btn-success btn-sm" (click)="telechargerCaisseExcel()">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
@@ -158,6 +166,10 @@ export class RapportsComponent {
     this.apiService.downloadBlob(this.apiService.getCandidatsExcelUrl(), 'candidats_auto_ecole.xlsx');
   }
 
+  imprimerCandidats(): void {
+    this.apiService.printBlob(this.apiService.getCandidatsPdfUrl());
+  }
+
   telechargerCaissePdf(): void {
     const [debut, fin] = this.buildPeriode();
     this.apiService.downloadBlob(this.apiService.getCaissePdfUrl(debut, fin), 'journal_caisse.pdf');
@@ -166,6 +178,11 @@ export class RapportsComponent {
   telechargerCaisseExcel(): void {
     const [debut, fin] = this.buildPeriode();
     this.apiService.downloadBlob(this.apiService.getCaisseExcelUrl(debut, fin), 'journal_caisse.xlsx');
+  }
+
+  imprimerCaisse(): void {
+    const [debut, fin] = this.buildPeriode();
+    this.apiService.printBlob(this.apiService.getCaissePdfUrl(debut, fin));
   }
 
   private buildPeriode(): [string | undefined, string | undefined] {

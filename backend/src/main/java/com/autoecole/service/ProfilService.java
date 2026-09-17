@@ -36,10 +36,12 @@ public class ProfilService {
     private final AuditService auditService;
 
     public List<PermissionDTO> getCatalogue() {
+        // Trié par id (= ordre logique métier défini dans DataInitializerService : modules
+        // regroupés dans un ordre de workflow, actions Voir/Créer/Modifier/Supprimer dans
+        // cet ordre au sein d'un module), plutôt qu'alphabétique qui mélangerait par ex.
+        // "Annuler un versement" avant "Voir les versements".
         return permissionRepository.findAll().stream()
-                .sorted((a, b) -> a.getModule().equalsIgnoreCase(b.getModule())
-                        ? a.getLibelle().compareToIgnoreCase(b.getLibelle())
-                        : a.getModule().compareToIgnoreCase(b.getModule()))
+                .sorted((a, b) -> Long.compare(a.getId(), b.getId()))
                 .map(this::mapPermission)
                 .collect(Collectors.toList());
     }

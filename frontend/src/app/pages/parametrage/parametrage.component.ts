@@ -80,6 +80,7 @@ const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'tarifs'
                 </div>
               </div>
               <div class="identite-fields">
+                <h4 style="margin: 0 0 0.75rem;">Informations générales</h4>
                 <div class="form-group">
                   <label class="form-label">Nom de l'auto-école <span class="required">*</span></label>
                   <input type="text" class="form-control" [(ngModel)]="identiteForm.nomEtablissement" name="nomEtablissement" required placeholder="Ex: Nerwaya Auto-École" />
@@ -90,6 +91,8 @@ const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'tarifs'
                   <input type="text" class="form-control" [(ngModel)]="identiteForm.slogan" name="slogan" placeholder="Ex: Plateforme Intégrée de Gestion & Formation" />
                   <p class="form-help">Sous-titre affiché sous le nom sur l'écran de connexion et dans l'en-tête de l'application.</p>
                 </div>
+
+                <h4 style="margin: 1.25rem 0 0.75rem;">Coordonnées</h4>
                 <div class="form-row">
                   <div class="form-group">
                     <label class="form-label">Téléphone</label>
@@ -136,19 +139,21 @@ const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'tarifs'
                   <input type="text" class="form-control" [(ngModel)]="identiteForm.ifu" name="ifu" placeholder="Identifiant Financier Unique" />
                 </div>
               </div>
+              <div class="form-group">
+                <label class="form-label">Numéro de patente</label>
+                <input type="text" class="form-control" [(ngModel)]="identiteForm.numeroPatente" name="numeroPatente" />
+              </div>
+
+              <h4 style="margin: 1.25rem 0 0.75rem;">Direction &amp; paiement</h4>
               <div class="form-row">
-                <div class="form-group">
-                  <label class="form-label">Numéro de patente</label>
-                  <input type="text" class="form-control" [(ngModel)]="identiteForm.numeroPatente" name="numeroPatente" />
-                </div>
                 <div class="form-group">
                   <label class="form-label">Nom du directeur / gérant</label>
                   <input type="text" class="form-control" [(ngModel)]="identiteForm.nomDirigeant" name="nomDirigeant" placeholder="Affiché en pied des reçus" />
                 </div>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Compte de règlement (banque / Mobile Money)</label>
-                <input type="text" class="form-control" [(ngModel)]="identiteForm.comptePaiement" name="comptePaiement" placeholder="Ex: Orange Money 70 12 34 56 ou IBAN" />
+                <div class="form-group">
+                  <label class="form-label">Compte de règlement (banque / Mobile Money)</label>
+                  <input type="text" class="form-control" [(ngModel)]="identiteForm.comptePaiement" name="comptePaiement" placeholder="Ex: Orange Money 70 12 34 56 ou IBAN" />
+                </div>
               </div>
               <div class="form-group">
                 <label class="form-label">Mention légale (pied de page des reçus/PDF)</label>
@@ -345,8 +350,8 @@ const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'tarifs'
 
       <!-- ===================== ONGLET PERMISSIONS ===================== -->
       @if (activeTab === 'permissions') {
-        <div class="permissions-layout">
-          <div class="card profils-list-card">
+        @if (!selectedProfil) {
+          <div class="card profils-grid-card">
             <div class="card-header">
               <div class="card-title" style="display:flex; align-items:center; gap:0.5rem;">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 7.3 12 12l-8.5-4.7"/><path d="M12 22V12"/><path d="m20.5 16.7-8.5 4.7-8.5-4.7"/><path d="m3.5 7.3 8.5-4.7 8.5 4.7-8.5 4.7-8.5-4.7Z"/></svg>
@@ -357,25 +362,27 @@ const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'tarifs'
                 Nouveau Profil
               </button>
             </div>
-            <ul class="profils-list">
+            <div class="profils-grid">
               @for (p of profils; track p.id) {
-                <li [class.active]="selectedProfil?.id === p.id" (click)="selectProfil(p)">
+                <button type="button" class="profil-tile" (click)="selectProfil(p)">
                   <div class="profil-item-main">
                     <strong>{{ p.nom }}</strong>
                     @if (p.systeme) { <span class="badge badge-programme">Système</span> }
                   </div>
                   <small class="text-muted">{{ p.nombreUtilisateurs }} compte(s)</small>
-                </li>
+                </button>
               }
-            </ul>
+            </div>
           </div>
+        }
 
+        @if (selectedProfil) {
           <div class="card profil-detail-card">
-            @if (!selectedProfil) {
-              <div class="empty-state-inline">Sélectionnez un profil à gauche pour voir ou modifier ses permissions.</div>
-            }
-            @if (selectedProfil) {
               <div class="card-header">
+                <button type="button" class="btn btn-outline btn-sm" (click)="deselectProfil()" style="display:flex; align-items:center; gap:0.4rem;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                  Retour aux profils
+                </button>
                 <div class="card-title" style="display:flex; align-items:center; gap:0.5rem;">
                   <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                   {{ selectedProfil.nom }}
@@ -438,9 +445,8 @@ const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'tarifs'
                   {{ savingProfil ? 'Enregistrement...' : 'Enregistrer les permissions' }}
                 </button>
               }
-            }
           </div>
-        </div>
+        }
       }
 
       <!-- MODAL NOUVEAU PROFIL -->
@@ -631,25 +637,21 @@ const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'tarifs'
     .form-help { color: var(--text-muted); font-size: 0.8rem; margin: 0; }
     .tarifs-examens-form { display: flex; flex-direction: column; gap: 0.85rem; margin-bottom: 0.75rem; }
 
-    .permissions-layout {
+    .profils-grid {
       display: grid;
-      grid-template-columns: minmax(200px, 280px) 1fr;
-      gap: 1.25rem;
-      align-items: start;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1rem;
     }
-    @media (max-width: 720px) {
-      .permissions-layout { grid-template-columns: 1fr; }
+    .profil-tile {
+      display: flex; flex-direction: column; align-items: flex-start; gap: 0.35rem;
+      padding: 1rem 1.1rem; border-radius: var(--radius-sm, 8px); cursor: pointer;
+      border: 1px solid var(--border-color, #e2e8f0);
+      background: var(--bg-card, #fff);
+      font: inherit; text-align: left; width: 100%;
     }
-    .profils-list { list-style: none; margin: 0; padding: 0; }
-    .profils-list li {
-      display: flex; flex-direction: column; gap: 0.15rem;
-      padding: 0.65rem 0.9rem; border-radius: var(--radius-sm, 6px); cursor: pointer;
-      border: 1px solid transparent;
-    }
-    .profils-list li:hover { background: var(--bg-sidebar-hover, #f1f5f9); }
-    .profils-list li.active { background: #eff6ff; border-color: #bfdbfe; }
-    .profil-item-main { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
-    .empty-state-inline { padding: 2rem 1rem; text-align: center; color: var(--text-muted); }
+    .profil-tile:hover { background: var(--bg-sidebar-hover, #f1f5f9); border-color: #bfdbfe; }
+    .profil-item-main { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; width: 100%; }
+    .profil-detail-card .card-header { flex-wrap: wrap; gap: 0.75rem; }
     .permissions-matrix { display: flex; flex-direction: column; gap: 1rem; }
     .permission-module-title { font-weight: 600; margin-bottom: 0.4rem; color: var(--text-main); }
     .permission-module-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.5rem 1rem; }
@@ -772,6 +774,10 @@ export class ParametrageComponent implements OnInit {
     this.profilForm = { nom: p.nom, description: p.description || '' };
     this.profilError = '';
     this.profilSuccess = false;
+  }
+
+  deselectProfil(): void {
+    this.selectedProfil = null;
   }
 
   togglePermission(code: string): void {

@@ -236,7 +236,13 @@ const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'sites',
             </button>
           </div>
           <div class="table-responsive">
-            <table class="table">
+            <table class="custom-table">
+              <colgroup>
+                <col style="width: 35%;">
+                <col style="width: 35%;">
+                <col style="width: 15%;">
+                <col style="width: 15%;">
+              </colgroup>
               <thead>
                 <tr>
                   <th>Nom du Site</th>
@@ -248,15 +254,22 @@ const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'sites',
               <tbody>
                 @for (s of sites; track s.id) {
                   <tr>
-                    <td><strong>{{ s.nom }}</strong></td>
-                    <td>{{ s.adresse || '—' }}</td>
+                    <td>
+                      <div style="display: flex; align-items: center; gap: 0.65rem;">
+                        <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: #eef4ff; color: #103778; flex-shrink: 0;">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                        </span>
+                        <strong>{{ s.nom }}</strong>
+                      </div>
+                    </td>
+                    <td><span class="text-muted">{{ s.adresse || '—' }}</span></td>
                     <td>
                       <span class="badge" [class.badge-success]="s.actif" [class.badge-secondary]="!s.actif">
                         {{ s.actif ? 'Actif' : 'Inactif' }}
                       </span>
                     </td>
                     <td class="text-right">
-                      <div class="action-flex" style="justify-content: flex-end; gap: 0.35rem;">
+                      <div class="action-flex" style="justify-content: flex-end; gap: 0.4rem;">
                         <button class="btn btn-outline btn-xs" (click)="editSite(s)" title="Modifier">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
                         </button>

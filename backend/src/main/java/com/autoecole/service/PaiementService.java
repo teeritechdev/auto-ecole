@@ -97,20 +97,7 @@ public class PaiementService {
 
         // Vérifier s'il s'agit du premier versement de ce cycle d'inscription
         long nbPaiementsValides = paiementRepository.countByInscriptionIdAndStatut(inscription.getId(), StatutPaiement.VALIDE);
-        TypeVersement typeVersement;
-
-        if (nbPaiementsValides == 0) {
-            // RG02 : Premier versement obligatoire entre 35 000 et 50 000 FCFA
-            typeVersement = TypeVersement.PREMIER_VERSEMENT;
-            BigDecimal min1er = new BigDecimal("35000");
-            BigDecimal max1er = new BigDecimal("50000");
-            if (montant.compareTo(min1er) < 0 || montant.compareTo(max1er) > 0) {
-                throw new BadRequestException("Le premier versement doit obligatoirement être compris entre 35 000 et 50 000 FCFA (RG02). Montant saisi: " + montant + " FCFA");
-            }
-        } else {
-            // RG03 : Versements suivants libres
-            typeVersement = TypeVersement.VERSEMENT_SUIVANT;
-        }
+        TypeVersement typeVersement = (nbPaiementsValides == 0) ? TypeVersement.PREMIER_VERSEMENT : TypeVersement.VERSEMENT_SUIVANT;
 
         Utilisateur currentUser = auditService.getCurrentUser();
 
@@ -218,14 +205,7 @@ public class PaiementService {
 
         Inscription inscription = paiement.getInscription();
 
-        // Validation si c'est le 1er versement
-        if (paiement.getTypeVersement() == TypeVersement.PREMIER_VERSEMENT) {
-            BigDecimal min1er = new BigDecimal("35000");
-            BigDecimal max1er = new BigDecimal("50000");
-            if (nouveauMontant.compareTo(min1er) < 0 || nouveauMontant.compareTo(max1er) > 0) {
-                throw new BadRequestException("Le premier versement doit obligatoirement rester compris entre 35 000 et 50 000 FCFA (RG02)");
-            }
-        }
+
 
         Utilisateur currentUser = auditService.getCurrentUser();
 

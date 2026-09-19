@@ -239,12 +239,8 @@ public class CandidatService {
     }
 
     private void validerPremierVersement(BigDecimal premierVersement) {
-        if (premierVersement != null && premierVersement.compareTo(BigDecimal.ZERO) > 0) {
-            BigDecimal min1er = new BigDecimal("35000");
-            BigDecimal max1er = new BigDecimal("50000");
-            if (premierVersement.compareTo(min1er) < 0 || premierVersement.compareTo(max1er) > 0) {
-                throw new BadRequestException("Le premier versement doit obligatoirement être compris entre 35 000 et 50 000 FCFA (RG02). Valeur fournie: " + premierVersement + " FCFA");
-            }
+        if (premierVersement != null && premierVersement.compareTo(BigDecimal.ZERO) < 0) {
+            throw new BadRequestException("Le montant du versement ne peut pas être négatif");
         }
     }
 

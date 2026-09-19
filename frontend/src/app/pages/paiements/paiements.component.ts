@@ -201,7 +201,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   </div>
                 }
                 <div class="form-group">
-                  <label class="form-label">Sélectionner le candidat <span class="required">*</span></label>
+                  <label class="form-label">Sélectionner le candidat</label>
                   <select class="form-control" [(ngModel)]="selectedCandidatId" name="candidatId" (change)="onCandidatSelect()" required>
                     <option [ngValue]="null">-- Sélectionner un candidat --</option>
                     @for (c of nonSoldesCandidats; track c) {
@@ -219,7 +219,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   </div>
                 }
                 <div class="form-group">
-                  <label class="form-label">Montant à encaisser (FCFA) <span class="required">*</span></label>
+                  <label class="form-label">Montant à encaisser (FCFA)</label>
                   <input
                     type="number"
                     class="form-control"
@@ -227,11 +227,11 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                     name="montant"
                     [max]="selectedCandidat?.soldeRestant || 999999"
                     required
-                    placeholder="Ex: 35000"
+                    placeholder="Montant libre (ex: 50000, solde total...)"
                     />
                 </div>
                 <div class="form-group">
-                  <label class="form-label">Mode de règlement <span class="required">*</span></label>
+                  <label class="form-label">Mode de règlement</label>
                   <select class="form-control" [(ngModel)]="newMode" name="mode" required>
                     <option value="ESPECES">Espèces</option>
                     <option value="MOBILE_MONEY">Mobile Money (Wave / Orange / MTN / Moov)</option>

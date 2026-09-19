@@ -168,12 +168,19 @@ public class ExamenService {
     }
 
     /**
-     * Résout le site de la session à créer : si le moniteur n'est affecté qu'à un seul
-     * site, celui-ci est utilisé automatiquement (aucun choix à faire, comme pour la
-     * spécialité) ; s'il en a plusieurs, le site est obligatoire et doit être l'un des
-     * siens.
+     * Résout le site de la session à créer : si l'utilisateur est un ADMIN (ou non restreint
+     * par site), il peut choisir n'importe quel site existant. S'il s'agit d'un utilisateur
+     * restreint (ex: moniteur), il doit être affecté à ce site.
      */
     private Site resoudreSiteSession(Long siteIdFourni) {
+        if (!siteAccessService.estRestreintParSite()) {
+            if (siteIdFourni == null) {
+                throw new BadRequestException("Veuillez sélectionner un site de formation pour la session");
+            }
+            return siteRepository.findById(siteIdFourni)
+                    .orElseThrow(() -> new ResourceNotFoundException("Site de formation introuvable"));
+        }
+
         Set<Long> sitesAutorises = siteAccessService.getSiteIdsMoniteurCourant();
         Long siteId = siteIdFourni;
         if (siteId == null) {

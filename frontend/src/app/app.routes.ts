@@ -8,7 +8,6 @@ import { CandidatDetailComponent } from './pages/candidats/candidat-detail.compo
 import { PaiementsComponent } from './pages/paiements/paiements.component';
 import { ExamensComponent } from './pages/examens/examens.component';
 import { CaisseComponent } from './pages/caisse/caisse.component';
-import { RapportsComponent } from './pages/rapports/rapports.component';
 import { UtilisateursComponent } from './pages/utilisateurs/utilisateurs.component';
 import { ParametrageComponent } from './pages/parametrage/parametrage.component';
 import { AuditComponent } from './pages/audit/audit.component';
@@ -60,12 +59,6 @@ export const routes: Routes = [
     component: CaisseComponent,
     canActivate: [authGuard, roleGuard],
     data: { roles: ['ADMIN', 'CAISSIERE'] }
-  },
-  {
-    path: 'rapports',
-    component: RapportsComponent,
-    canActivate: [authGuard, roleGuard],
-    data: { roles: ['ADMIN', 'SECRETAIRE', 'CAISSIERE'] }
   },
   {
     path: 'utilisateurs',

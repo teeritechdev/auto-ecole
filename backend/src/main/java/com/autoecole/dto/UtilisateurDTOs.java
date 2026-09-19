@@ -47,7 +47,6 @@ public class UtilisateurDTOs {
         @NotBlank(message = "L'identifiant est obligatoire")
         private String username;
 
-        @NotBlank(message = "L'email est obligatoire")
         @Email(message = "Format d'email invalide")
         private String email;
 
@@ -82,7 +81,6 @@ public class UtilisateurDTOs {
     @AllArgsConstructor
     @Builder
     public static class UpdateUtilisateurRequest {
-        @NotBlank(message = "L'email est obligatoire")
         @Email(message = "Format d'email invalide")
         private String email;
 

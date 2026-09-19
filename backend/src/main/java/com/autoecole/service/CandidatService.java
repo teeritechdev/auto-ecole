@@ -190,7 +190,7 @@ public class CandidatService {
         Candidat savedCandidat = candidatRepository.save(candidat);
 
         BigDecimal totalVerse = (premierVersement != null) ? premierVersement : BigDecimal.ZERO;
-        Inscription inscription = inscriptionService.creerInscriptionInitiale(savedCandidat, categorie, site, dateInsc, request.getMontant(), totalVerse, request.getStatutInscription(), request.isPriseEnChargeExamens());
+        Inscription inscription = inscriptionService.creerInscriptionInitiale(savedCandidat, categorie, site, dateInsc, request.getMontant(), totalVerse, request.getStatutInscription(), request.isPriseEnChargeExamens(), request.getFraisExamen(), request.getEtapeParcours());
 
         enregistrerPremierVersementSiFourni(savedCandidat, inscription, premierVersement, request.getModeReglementPremierVersement());
 
@@ -228,7 +228,7 @@ public class CandidatService {
         validerPremierVersement(premierVersement);
 
         BigDecimal totalVerse = (premierVersement != null) ? premierVersement : BigDecimal.ZERO;
-        Inscription inscription = inscriptionService.creerNouveauCycle(candidat, categorie, site, request.getDateInscription(), request.getMontant(), totalVerse, request.isPriseEnChargeExamens());
+        Inscription inscription = inscriptionService.creerNouveauCycle(candidat, categorie, site, request.getDateInscription(), request.getMontant(), totalVerse, request.isPriseEnChargeExamens(), request.getFraisExamen());
 
         enregistrerPremierVersementSiFourni(candidat, inscription, premierVersement, request.getModeReglementPremierVersement());
 
@@ -305,7 +305,7 @@ public class CandidatService {
         candidat.setDateDepotDossier(request.getDateDepotDossier());
 
         Candidat updated = candidatRepository.save(candidat);
-        Inscription active = inscriptionService.mettreAJourCategorieEtMontant(id, categorie, request.getMontant(), site, request.isPriseEnChargeExamens());
+        Inscription active = inscriptionService.mettreAJourCategorieEtMontant(id, categorie, request.getMontant(), site, request.isPriseEnChargeExamens(), request.getFraisExamen());
 
         auditService.logAction("MODIFICATION_CANDIDAT", "Candidat", updated.getNumeroDossier(), "Mise à jour fiche candidat", null);
 
@@ -411,6 +411,7 @@ public class CandidatService {
                 .creneauReussi(passageRepository.existsByInscriptionIdAndTypeEpreuveAndResultat(i.getId(), TypeEpreuve.CRENEAU, ResultatExamen.REUSSI))
                 .circulationReussi(passageRepository.existsByInscriptionIdAndTypeEpreuveAndResultat(i.getId(), TypeEpreuve.CIRCULATION, ResultatExamen.REUSSI))
                 .priseEnChargeExamens(i.isPriseEnChargeExamens())
+                .fraisExamen(i.getFraisExamen())
                 .build();
     }
 }

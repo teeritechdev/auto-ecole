@@ -68,6 +68,7 @@ public class CandidatDTOs {
         // Indique si les frais de formation englobent la prise en charge totale
         // des frais d'examen par l'auto-école.
         private boolean priseEnChargeExamens;
+        private BigDecimal fraisExamen;
 
         // Renseigné UNE SEULE FOIS, uniquement dans la réponse de création d'un candidat
         // dont le compte de connexion vient d'être généré automatiquement (jamais
@@ -157,12 +158,16 @@ public class CandidatDTOs {
         // Nouveau par défaut si non précisé
         private StatutInscription statutInscription;
 
+        // Étape du parcours (INSCRIPTION par défaut si non renseigné)
+        private EtapeParcours etapeParcours;
+
         // Premier versement optionnel/intégré
         private BigDecimal montantPremierVersement;
         private ModeReglement modeReglementPremierVersement;
 
         // Les frais de formation englobent-ils la prise en charge totale des frais d'examen ?
         private boolean priseEnChargeExamens;
+        private BigDecimal fraisExamen;
     }
 
     @Data
@@ -188,6 +193,7 @@ public class CandidatDTOs {
 
         // Les frais de formation englobent-ils la prise en charge totale des frais d'examen ?
         private boolean priseEnChargeExamens;
+        private BigDecimal fraisExamen;
     }
 
     @Data
@@ -229,5 +235,6 @@ public class CandidatDTOs {
 
         // Les frais de formation englobent-ils la prise en charge totale des frais d'examen ?
         private boolean priseEnChargeExamens;
+        private BigDecimal fraisExamen;
     }
 }

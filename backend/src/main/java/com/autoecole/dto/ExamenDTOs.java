@@ -69,7 +69,6 @@ public class ExamenDTOs {
     @AllArgsConstructor
     @Builder
     public static class CreatePassageBulkRequest {
-        @NotNull(message = "La liste des candidats est obligatoire")
         private java.util.List<Long> candidatIds;
 
         @NotNull(message = "Le type d'épreuve est obligatoire (CODE, CRENEAU, CIRCULATION)")

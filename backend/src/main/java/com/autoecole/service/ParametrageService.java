@@ -61,6 +61,7 @@ public class ParametrageService {
                 .code(dto.getCode().trim().toUpperCase())
                 .libelle(dto.getLibelle().trim())
                 .montant(dto.getMontant())
+                .fraisExamen(dto.getFraisExamen())
                 .description(dto.getDescription())
                 .actif(true)
                 .build();
@@ -77,6 +78,7 @@ public class ParametrageService {
 
         c.setLibelle(dto.getLibelle().trim());
         c.setMontant(dto.getMontant());
+        c.setFraisExamen(dto.getFraisExamen());
         c.setDescription(dto.getDescription());
         c.setActif(dto.isActif());
 
@@ -85,12 +87,26 @@ public class ParametrageService {
         return mapToCategorieDTO(updated);
     }
 
+    @Transactional
+    public void deleteCategorie(Long id) {
+        CategoriePermis c = categorieRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Catégorie de permis non trouvée avec l'id: " + id));
+
+        if (inscriptionRepository.existsByCategoriePermisId(id)) {
+            throw new BadRequestException("Impossible de supprimer cette catégorie car des candidats y sont déjà inscrits. Vous pouvez la désactiver à la place.");
+        }
+
+        categorieRepository.delete(c);
+        auditService.logAction("SUPPRESSION_CATEGORIE", "CategoriePermis", c.getCode(), "Suppression de la catégorie " + c.getLibelle(), null);
+    }
+
     private CategoriePermisDTO mapToCategorieDTO(CategoriePermis c) {
         return CategoriePermisDTO.builder()
                 .id(c.getId())
                 .code(c.getCode())
                 .libelle(c.getLibelle())
                 .montant(c.getMontant())
+                .fraisExamen(c.getFraisExamen())
                 .description(c.getDescription())
                 .actif(c.isActif())
                 .build();
@@ -137,6 +153,19 @@ public class ParametrageService {
         Site updated = siteRepository.save(s);
         auditService.logAction("MODIFICATION_SITE", "Site", updated.getNom(), "Mise à jour site de formation " + updated.getNom(), null);
         return mapToSiteDTO(updated);
+    }
+
+    @Transactional
+    public void deleteSite(Long id) {
+        Site s = siteRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Site de formation non trouvé avec l'id: " + id));
+
+        if (inscriptionRepository.existsBySiteId(id)) {
+            throw new BadRequestException("Impossible de supprimer ce site car des inscriptions y sont rattachées. Vous pouvez le désactiver à la place.");
+        }
+
+        siteRepository.delete(s);
+        auditService.logAction("SUPPRESSION_SITE", "Site", s.getNom(), "Suppression du site de formation " + s.getNom(), null);
     }
 
     public List<SiteStatDTO> getStatistiquesSites() {

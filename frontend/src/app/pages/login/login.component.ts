@@ -11,8 +11,12 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     imports: [FormsModule],
     template: `
     <div class="login-page">
-      <div class="login-container">
-        <h1 class="brand-title">{{ nomEtablissement }}</h1>
+      <div class="login-card">
+        <div class="brand-header">
+          <img src="/assets/logo-sira.png" alt="SIRA Logo" class="login-logo" />
+          <h1 class="brand-title">{{ nomEtablissement }}</h1>
+          <p class="brand-subtitle">Solution intégrée de gestion et de suivi</p>
+        </div>
 
         @if (errorMessage) {
           <div class="alert-box alert-error">
@@ -101,7 +105,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
           </button>
         </form>
 
-        <p class="copyright">© {{ anneeCourante }} {{ nomEtablissement }}. Tous droits réservés.</p>
+        <p class="copyright">© {{ anneeCourante }} {{ nomEtablissement }}. Solution SIRA.</p>
       </div>
 
       @if (showForgotModal) {
@@ -132,7 +136,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     styles: [`
     .login-page {
       min-height: 100vh;
-      background: #ffffff;
+      background: radial-gradient(circle at 50% 10%, #f1f5f9, #e2e8f0 90%);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -141,18 +145,43 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
     }
 
-    .login-container {
+    .login-card {
       width: 100%;
-      max-width: 380px;
+      max-width: 420px;
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 2.5rem 2.25rem;
+      box-shadow: 0 20px 40px -15px rgba(16, 55, 120, 0.12), 0 0 1px 1px rgba(16, 55, 120, 0.05);
+      border: 1px solid rgba(226, 232, 240, 0.8);
+    }
+
+    .brand-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .login-logo {
+      height: 70px;
+      width: auto;
+      max-width: 220px;
+      object-fit: contain;
+      margin-bottom: 1rem;
     }
 
     .brand-title {
       font-family: 'Outfit', sans-serif;
-      font-size: 1.4rem;
-      font-weight: 700;
-      color: #0f172a;
-      text-align: center;
-      margin: 0 0 1.5rem;
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #103778;
+      margin: 0 0 0.25rem;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-subtitle {
+      font-size: 0.82rem;
+      color: #64748b;
+      margin: 0;
+      font-weight: 500;
     }
 
     .alert-box {
@@ -160,9 +189,9 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       align-items: flex-start;
       gap: 0.75rem;
       padding: 0.85rem 1rem;
-      border-radius: 10px;
-      font-size: 0.84rem;
-      margin-bottom: 1.25rem;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      margin-bottom: 1.5rem;
     }
 
     .alert-error {
@@ -188,13 +217,13 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     .login-form {
       display: flex;
       flex-direction: column;
-      gap: 1rem;
+      gap: 1.15rem;
     }
 
     .form-field {
       display: flex;
       flex-direction: column;
-      gap: 0.4rem;
+      gap: 0.45rem;
     }
 
     .field-label {
@@ -207,30 +236,31 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
 
     .custom-input {
       width: 100%;
-      height: 46px;
-      padding: 0 1rem;
+      height: 48px;
+      padding: 0 1.1rem;
       background: #ffffff;
       border: 1.5px solid #e2e8f0;
-      border-radius: 10px;
+      border-radius: 12px;
       font-size: 0.92rem;
       color: #0f172a;
       font-family: inherit;
       box-sizing: border-box;
+      transition: all 0.2s ease;
     }
 
-    .custom-input.has-action { padding-right: 2.75rem; }
+    .custom-input.has-action { padding-right: 2.85rem; }
 
     .custom-input:focus {
       outline: none;
-      border-color: #2563eb;
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+      border-color: #1d5cc7;
+      box-shadow: 0 0 0 3.5px rgba(29, 92, 199, 0.12);
     }
 
     .custom-input::placeholder { color: #94a3b8; }
 
     .input-toggle-btn {
       position: absolute;
-      right: 0.65rem;
+      right: 0.75rem;
       background: transparent;
       border: none;
       color: #94a3b8;
@@ -249,12 +279,13 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       display: flex;
       align-items: center;
       justify-content: space-between;
+      margin: 0.25rem 0;
     }
 
     .remember-me {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.55rem;
       cursor: pointer;
       font-size: 0.82rem;
       color: #475569;
@@ -264,19 +295,20 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     .remember-me input { position: absolute; opacity: 0; height: 0; width: 0; }
 
     .custom-checkbox {
-      width: 17px;
-      height: 17px;
+      width: 18px;
+      height: 18px;
       border: 1.5px solid #cbd5e1;
-      border-radius: 5px;
+      border-radius: 6px;
       background: #ffffff;
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      transition: all 0.15s ease;
     }
 
     .remember-me input:checked ~ .custom-checkbox {
-      background-color: #2563eb;
-      border-color: #2563eb;
+      background-color: #103778;
+      border-color: #103778;
     }
 
     .remember-me input:checked ~ .custom-checkbox::after {
@@ -292,42 +324,51 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     .forgot-link {
       background: none;
       border: none;
-      color: #2563eb;
+      color: #1d5cc7;
       font-size: 0.82rem;
       font-weight: 600;
       cursor: pointer;
       padding: 0;
+      transition: color 0.15s;
     }
 
-    .forgot-link:hover { text-decoration: underline; }
+    .forgot-link:hover { color: #103778; text-decoration: underline; }
 
     .btn-submit {
       width: 100%;
-      height: 46px;
-      background: #2563eb;
+      height: 48px;
+      background: linear-gradient(135deg, #103778, #1d5cc7);
       color: #ffffff;
       border: none;
-      border-radius: 10px;
+      border-radius: 12px;
       font-size: 0.95rem;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 0.5rem;
-      margin-top: 0.25rem;
+      margin-top: 0.5rem;
+      box-shadow: 0 4px 12px rgba(16, 55, 120, 0.25);
+      transition: all 0.2s ease;
     }
 
-    .btn-submit:hover:not(:disabled) { background: #1d4ed8; }
+    .btn-submit:hover:not(:disabled) {
+      background: linear-gradient(135deg, #0c2b5e, #174bb0);
+      box-shadow: 0 6px 16px rgba(16, 55, 120, 0.35);
+      transform: translateY(-1px);
+    }
 
     .btn-submit:disabled {
       background: #cbd5e1;
       color: #94a3b8;
       cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
     }
 
     .copyright {
-      margin: 1.5rem 0 0;
+      margin: 1.75rem 0 0;
       text-align: center;
       font-size: 0.78rem;
       color: #94a3b8;

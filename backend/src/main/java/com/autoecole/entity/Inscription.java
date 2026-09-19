@@ -120,6 +120,13 @@ public class Inscription {
     private boolean priseEnChargeExamens = false;
 
     /**
+     * Montant spécifique des frais d'examen pour cette inscription (pré-rempli selon la
+     * catégorie choisie, ou personnalisé par le secrétariat).
+     */
+    @Column(name = "frais_examen", precision = 12, scale = 2)
+    private BigDecimal fraisExamen;
+
+    /**
      * Méthode utilitaire de recalcul du statut et du solde de ce cycle d'inscription.
      */
     public void recalculerSoldeEtStatut() {

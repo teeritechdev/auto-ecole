@@ -37,7 +37,7 @@ import { extraireMessageErreur } from './core/utils/error-utils';
                 <img [src]="logoData" alt="Logo de l'entreprise" />
               }
               @if (!logoData) {
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h1.5l1-3.5h9l1 3.5H19M5 17v2a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1h8v1a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-2M5 17V11l2-5h10l2 5v6"/><circle cx="7.5" cy="14.5" r="0.6" fill="#ffffff" stroke="none"/><circle cx="16.5" cy="14.5" r="0.6" fill="#ffffff" stroke="none"/></svg>
+                <img src="/assets/logo-sira.png" alt="SIRA Auto-École" style="width: 100%; height: 100%; object-fit: contain; background: white;" />
               }
             </div>
             <div class="brand-text">
@@ -110,12 +110,6 @@ import { extraireMessageErreur } from './core/utils/error-utils';
                 }
               </div>
             }
-            @if (hasPermission(['RAPPORTS_CANDIDATS', 'RAPPORTS_CAISSE'])) {
-              <a routerLink="/rapports" routerLinkActive="active" class="nav-item">
-                <svg class="nav-icon icon-indigo" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                <span>Rapports & Exports</span>
-              </a>
-            }
             @if (showCodeSection) {
               <div class="nav-section-title">Code de la Route</div>
             }
@@ -162,9 +156,7 @@ import { extraireMessageErreur } from './core/utils/error-utils';
                   <div class="submenu-inline">
                     <a routerLink="/parametrage" [queryParams]="{tab: 'identite'}" class="submenu-item" (click)="closeFlyout()">Gestion de profil</a>
                     <a routerLink="/parametrage" [queryParams]="{tab: 'categories'}" class="submenu-item" (click)="closeFlyout()">Catégories de Permis</a>
-                    <a routerLink="/parametrage" [queryParams]="{tab: 'tarifs'}" class="submenu-item" (click)="closeFlyout()">Tarifs des Examens</a>
                     <a routerLink="/parametrage" [queryParams]="{tab: 'sites'}" class="submenu-item" (click)="closeFlyout()">Sites de Formation</a>
-                    <a routerLink="/parametrage" [queryParams]="{tab: 'stats'}" class="submenu-item" (click)="closeFlyout()">Statistiques par Site</a>
                   </div>
                 }
               </div>
@@ -429,9 +421,22 @@ import { extraireMessageErreur } from './core/utils/error-utils';
     }
 
     .nav-item.active {
-      background: linear-gradient(90deg, #1e40af, #2563eb);
+      background: linear-gradient(135deg, #103778 0%, #1d5cc7 100%);
       color: #ffffff;
-      font-weight: 600;
+      font-weight: 700;
+      box-shadow: 0 4px 12px rgba(16, 55, 120, 0.25);
+      position: relative;
+    }
+
+    .nav-item.active::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 18%;
+      height: 64%;
+      width: 4px;
+      background: linear-gradient(to bottom, #fbbf24, #d97706);
+      border-radius: 0 4px 4px 0;
     }
 
     /* Sous-menu de liens (Paramètres Généraux, Caisse Ménu Dépense...) : un dépliage EN
@@ -534,9 +539,10 @@ import { extraireMessageErreur } from './core/utils/error-utils';
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #2563eb;
+      background: linear-gradient(135deg, #103778, #1d5cc7);
       color: #fff;
       font-weight: 700;
+      border: 1.5px solid #fbbf24;
     }
 
     .user-avatar { width: 2.4rem; height: 2.4rem; }

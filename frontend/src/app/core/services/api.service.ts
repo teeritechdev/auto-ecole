@@ -273,6 +273,10 @@ export class ApiService {
     return this.http.put<CategoriePermis>(`${this.base}/parametrage/categories/${id}`, data);
   }
 
+  public deleteCategorie(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/parametrage/categories/${id}`);
+  }
+
   public getSites(onlyActive: boolean = false): Observable<Site[]> {
     return this.http.get<Site[]>(`${this.base}/parametrage/sites?onlyActive=${onlyActive}`);
   }
@@ -283,6 +287,10 @@ export class ApiService {
 
   public updateSite(id: number, data: any): Observable<Site> {
     return this.http.put<Site>(`${this.base}/parametrage/sites/${id}`, data);
+  }
+
+  public deleteSite(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/parametrage/sites/${id}`);
   }
 
   public getStatistiquesSites(): Observable<SiteStat[]> {

@@ -19,6 +19,10 @@ public interface InscriptionRepository extends JpaRepository<Inscription, Long> 
 
     Optional<Inscription> findByCandidatIdAndActiveTrue(Long candidatId);
 
+    boolean existsByCategoriePermisId(Long categoriePermisId);
+
+    boolean existsBySiteId(Long siteId);
+
     List<Inscription> findByCandidatIdOrderByNumeroCycleDesc(Long candidatId);
 
     @Query("SELECT COUNT(i) FROM Inscription i WHERE i.active = true AND i.statutDossier = :statutDossier " +

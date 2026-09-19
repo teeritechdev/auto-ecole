@@ -6,8 +6,8 @@ import { ApiService } from '../../core/services/api.service';
 import { CategoriePermis, Identite, Site, SiteStat, Profil, PermissionCatalogue } from '../../core/models/models';
 import { extraireMessageErreur } from '../../core/utils/error-utils';
 
-type OngletParametrage = 'identite' | 'categories' | 'tarifs' | 'sites' | 'stats' | 'permissions';
-const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'tarifs', 'sites', 'stats', 'permissions'];
+type OngletParametrage = 'identite' | 'categories' | 'sites' | 'permissions';
+const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'sites', 'permissions'];
 
 @Component({
     selector: 'app-parametrage',
@@ -188,7 +188,8 @@ const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'tarifs'
                 <tr>
                   <th>Code</th>
                   <th>Libellé Officiel</th>
-                  <th>Montant</th>
+                  <th>Montant Formation</th>
+                  <th>Frais d'Examen</th>
                   <th>Description</th>
                   <th class="text-right">Action</th>
                 </tr>
@@ -199,11 +200,17 @@ const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'tarifs'
                     <td><span class="badge badge-programme">{{ cat.code }}</span></td>
                     <td><strong>{{ cat.libelle }}</strong></td>
                     <td><strong class="text-success">{{ cat.montant | number }} FCFA</strong></td>
+                    <td><strong class="text-primary">{{ (cat.fraisExamen || 0) | number }} FCFA</strong></td>
                     <td><small class="text-muted">{{ cat.description || '—' }}</small></td>
                     <td class="text-right">
-                      <button class="btn btn-outline btn-sm" (click)="editCat(cat)">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
-                      </button>
+                      <div class="action-flex" style="justify-content: flex-end; gap: 0.35rem;">
+                        <button class="btn btn-outline btn-xs" (click)="editCat(cat)" title="Modifier">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+                        </button>
+                        <button class="btn btn-danger btn-xs" (click)="deleteCat(cat)" title="Supprimer la catégorie">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 }
@@ -213,50 +220,14 @@ const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'tarifs'
         </div>
       }
 
-      <!-- ===================== ONGLET TARIFS DES EXAMENS ===================== -->
-      @if (activeTab === 'tarifs') {
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title" style="display:flex; align-items:center; gap:0.5rem;">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg>
-              Tarifs des examens
-            </div>
-          </div>
-          <form (ngSubmit)="saveTarifsExamens()">
-            <div class="tarifs-examens-form">
-              <div class="form-group">
-                <label class="form-label">Prix examen Code (FCFA)</label>
-                <input type="number" class="form-control" [(ngModel)]="tarifsForm.prixExamenCode" name="prixExamenCode" min="0" required />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Prix examen Créneau (FCFA)</label>
-                <input type="number" class="form-control" [(ngModel)]="tarifsForm.prixExamenCreneau" name="prixExamenCreneau" min="0" required />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Prix examen Circulation (FCFA)</label>
-                <input type="number" class="form-control" [(ngModel)]="tarifsForm.prixExamenCirculation" name="prixExamenCirculation" min="0" required />
-              </div>
-            </div>
-            <p class="form-help">Utilisés par Caisse Ménu Dépense pour calculer automatiquement le montant à décaisser lors d'une prise en charge des frais d'examen.</p>
-            @if (tarifsError) {
-              <div class="alert alert-danger">{{ tarifsError }}</div>
-            }
-            @if (tarifsSuccess) {
-              <div class="alert alert-success">Tarifs enregistrés.</div>
-            }
-            <button type="submit" class="btn btn-primary btn-sm" [disabled]="savingTarifs">
-              {{ savingTarifs ? 'Enregistrement...' : 'Enregistrer les tarifs' }}
-            </button>
-          </form>
-        </div>
-      }
 
-      <!-- ===================== ONGLET SITES DE FORMATION ===================== -->
+
+      <!-- ===================== ONGLET SITES ===================== -->
       @if (activeTab === 'sites') {
         <div class="card">
           <div class="card-header">
             <div class="card-title" style="display:flex; align-items:center; gap:0.5rem;">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><line x1="9" y1="9" x2="9" y2="9.01"/><line x1="9" y1="12" x2="9" y2="12.01"/><line x1="9" y1="15" x2="9" y2="15.01"/><line x1="9" y1="18" x2="9" y2="18.01"/></svg>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
               Sites de Formation
             </div>
             <button class="btn btn-primary btn-sm" (click)="openSiteModal()">
@@ -264,9 +235,8 @@ const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'tarifs'
               Nouveau Site
             </button>
           </div>
-
           <div class="table-responsive">
-            <table class="custom-table">
+            <table class="table">
               <thead>
                 <tr>
                   <th>Nom du Site</th>
@@ -276,70 +246,25 @@ const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'tarifs'
                 </tr>
               </thead>
               <tbody>
-                @for (s of sites; track s) {
+                @for (s of sites; track s.id) {
                   <tr>
                     <td><strong>{{ s.nom }}</strong></td>
-                    <td><small class="text-muted">{{ s.adresse || '—' }}</small></td>
+                    <td>{{ s.adresse || '—' }}</td>
                     <td>
-                      @if (s.actif) {
-                        <span class="badge badge-solde">Actif</span>
-                      } @else {
-                        <span class="badge badge-expire">Inactif</span>
-                      }
+                      <span class="badge" [class.badge-success]="s.actif" [class.badge-secondary]="!s.actif">
+                        {{ s.actif ? 'Actif' : 'Inactif' }}
+                      </span>
                     </td>
                     <td class="text-right">
-                      <button class="btn btn-outline btn-sm" (click)="editSite(s)">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
-                      </button>
+                      <div class="action-flex" style="justify-content: flex-end; gap: 0.35rem;">
+                        <button class="btn btn-outline btn-xs" (click)="editSite(s)" title="Modifier">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+                        </button>
+                        <button class="btn btn-danger btn-xs" (click)="deleteSite(s)" title="Supprimer le site">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                        </button>
+                      </div>
                     </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        </div>
-      }
-
-      <!-- ===================== ONGLET STATISTIQUES PAR SITE ===================== -->
-      @if (activeTab === 'stats') {
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title" style="display:flex; align-items:center; gap:0.5rem;">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-              Statistiques par Site
-            </div>
-          </div>
-
-          <div class="table-responsive">
-            <table class="custom-table">
-              <thead>
-                <tr>
-                  <th>Site</th>
-                  <th class="text-right">Personnel Affecté</th>
-                  <th class="text-right">Candidats Actifs</th>
-                  <th class="text-right">Inscriptions Créées</th>
-                  <th class="text-right">Paiements Encaissés</th>
-                  <th class="text-right">Montant Encaissé</th>
-                  <th class="text-right">Solde Restant Dû</th>
-                  <th class="text-right">Solde Caisse</th>
-                </tr>
-              </thead>
-              <tbody>
-                @if (statsSites.length === 0) {
-                  <tr>
-                    <td colspan="8" class="text-center py-4 text-muted">Aucune donnée pour l'instant.</td>
-                  </tr>
-                }
-                @for (stat of statsSites; track stat) {
-                  <tr>
-                    <td><strong>{{ stat.siteNom }}</strong></td>
-                    <td class="text-right">{{ stat.nombrePersonnel }}</td>
-                    <td class="text-right">{{ stat.nombreCandidatsActifs }}</td>
-                    <td class="text-right">{{ stat.nombreInscriptions }}</td>
-                    <td class="text-right">{{ stat.nombrePaiements }} <small class="text-muted">({{ stat.montantPaiements | number }} FCFA)</small></td>
-                    <td class="text-right text-success">{{ stat.montantEncaisse | number }} FCFA</td>
-                    <td class="text-right">{{ stat.montantRestantDu | number }} FCFA</td>
-                    <td class="text-right" [ngClass]="stat.soldeCaisse >= 0 ? 'text-success' : 'text-danger'">{{ stat.soldeCaisse | number }} FCFA</td>
                   </tr>
                 }
               </tbody>
@@ -351,27 +276,53 @@ const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'tarifs'
       <!-- ===================== ONGLET PERMISSIONS ===================== -->
       @if (activeTab === 'permissions') {
         @if (!selectedProfil) {
-          <div class="card profils-grid-card">
+          <div class="card">
             <div class="card-header">
               <div class="card-title" style="display:flex; align-items:center; gap:0.5rem;">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 7.3 12 12l-8.5-4.7"/><path d="M12 22V12"/><path d="m20.5 16.7-8.5 4.7-8.5-4.7"/><path d="m3.5 7.3 8.5-4.7 8.5 4.7-8.5 4.7-8.5-4.7Z"/></svg>
-                Profils
+                Profils de Permissions
               </div>
               <button class="btn btn-primary btn-sm" (click)="openCreateProfilModal()">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
                 Nouveau Profil
               </button>
             </div>
-            <div class="profils-grid">
-              @for (p of profils; track p.id) {
-                <button type="button" class="profil-tile" (click)="selectProfil(p)">
-                  <div class="profil-item-main">
-                    <strong>{{ p.nom }}</strong>
-                    @if (p.systeme) { <span class="badge badge-programme">Système</span> }
-                  </div>
-                  <small class="text-muted">{{ p.nombreUtilisateurs }} compte(s)</small>
-                </button>
-              }
+            <div class="table-responsive">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Nom du Profil</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                    <th>Utilisateurs associés</th>
+                    <th class="text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (p of profils; track p.id) {
+                    <tr>
+                      <td><strong>{{ p.nom }}</strong></td>
+                      <td>
+                        @if (p.systeme) {
+                          <span class="badge badge-programme">Système</span>
+                        } @else {
+                          <span class="badge badge-secondary">Personnalisé</span>
+                        }
+                      </td>
+                      <td><small class="text-muted">{{ p.description || '—' }}</small></td>
+                      <td>
+                        <span class="badge badge-solde">{{ p.nombreUtilisateurs }} compte(s)</span>
+                      </td>
+                      <td class="text-right">
+                        <button class="btn btn-outline btn-xs" (click)="selectProfil(p)" title="Configurer les permissions">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                          Gérer
+                        </button>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
             </div>
           </div>
         }
@@ -513,8 +464,13 @@ const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'tarifs'
                   <input type="text" class="form-control" [(ngModel)]="catForm.libelle" name="libelle" required placeholder="Ex: Permis D Transport en commun" />
                 </div>
                 <div class="form-group">
-                  <label class="form-label">Montant (FCFA) <span class="required">*</span></label>
+                  <label class="form-label">Montant Formation (FCFA) <span class="required">*</span></label>
                   <input type="number" class="form-control" [(ngModel)]="catForm.montant" name="montant" required placeholder="Ex: 100000" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Frais d'examen (FCFA)</label>
+                  <input type="number" class="form-control" [(ngModel)]="catForm.fraisExamen" name="fraisExamen" placeholder="Ex: 25000" />
+                  <p class="form-help">Frais forfaitaires pour les épreuves d'examen associées à ce permis.</p>
                 </div>
                 <div class="form-group">
                   <label class="form-label">Description</label>
@@ -741,9 +697,7 @@ export class ParametrageComponent implements OnInit {
     switch (this.activeTab) {
       case 'identite': return "Logo, nom et coordonnées de l'auto-école";
       case 'categories': return 'Catégories de permis proposées et leur tarif';
-      case 'tarifs': return 'Tarifs unitaires des épreuves d\'examen';
       case 'sites': return 'Sites de formation de l\'auto-école';
-      case 'stats': return 'Activité et finances de chaque site';
       case 'permissions': return "Permissions accordées à chaque profil d'utilisateur";
     }
   }
@@ -941,7 +895,7 @@ export class ParametrageComponent implements OnInit {
   openCatModal(): void {
     this.isEditCat = false;
     this.selectedCatId = null;
-    this.catForm = { code: '', libelle: '', montant: null, description: '', actif: true };
+    this.catForm = { code: '', libelle: '', montant: null, fraisExamen: null, description: '', actif: true };
     this.catError = '';
     this.showCatModal = true;
   }
@@ -949,7 +903,7 @@ export class ParametrageComponent implements OnInit {
   editCat(c: CategoriePermis): void {
     this.isEditCat = true;
     this.selectedCatId = c.id;
-    this.catForm = { code: c.code, libelle: c.libelle, montant: c.montant, description: c.description, actif: c.actif };
+    this.catForm = { code: c.code, libelle: c.libelle, montant: c.montant, fraisExamen: c.fraisExamen, description: c.description, actif: c.actif };
     this.catError = '';
     this.showCatModal = true;
   }
@@ -1010,5 +964,21 @@ export class ParametrageComponent implements OnInit {
         error: (err) => this.siteError = extraireMessageErreur(err, 'Erreur lors de l’enregistrement du site.')
       });
     }
+  }
+
+  deleteCat(c: CategoriePermis): void {
+    if (!confirm(`Supprimer définitivement la catégorie de permis "${c.code} - ${c.libelle}" ?`)) return;
+    this.apiService.deleteCategorie(c.id).subscribe({
+      next: () => this.loadData(),
+      error: (err) => alert(extraireMessageErreur(err, 'Erreur lors de la suppression de la catégorie.'))
+    });
+  }
+
+  deleteSite(s: Site): void {
+    if (!confirm(`Supprimer définitivement le site de formation "${s.nom}" ?`)) return;
+    this.apiService.deleteSite(s.id).subscribe({
+      next: () => this.loadData(),
+      error: (err) => alert(extraireMessageErreur(err, 'Erreur lors de la suppression du site.'))
+    });
   }
 }

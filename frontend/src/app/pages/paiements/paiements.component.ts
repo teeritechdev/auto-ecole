@@ -16,7 +16,6 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       <div class="page-header-bar">
         <div>
           <h2>Gestion des Paiements & Reçus</h2>
-          <p>Enregistrez les versements, imprimez les reçus officiels et contrôlez les soldes</p>
         </div>
         <div class="header-buttons">
           <button class="btn btn-outline btn-sm" [disabled]="refreshing" (click)="actualiser()">
@@ -142,22 +141,20 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   <td class="text-right">
                     <div class="action-flex">
                       @if (p.recuId) {
-                        <button class="btn btn-outline btn-sm" (click)="imprimerRecu(p.recuId)" title="Télécharger Reçu PDF">
+                        <button class="btn btn-outline btn-xs" (click)="imprimerRecu(p.recuId)" title="Télécharger Reçu PDF">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                          Reçu PDF
                         </button>
-                        <button class="btn btn-outline btn-sm" (click)="imprimerDirectement(p.recuId)" title="Imprimer directement">
+                        <button class="btn btn-outline btn-xs" (click)="imprimerDirectement(p.recuId)" title="Imprimer directement">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-                          Imprimer
                         </button>
                       }
                       @if (canAdd && p.statut !== 'ANNULE') {
-                        <button class="btn btn-outline btn-sm" (click)="openEditModal(p)" title="Modifier">
+                        <button class="btn btn-outline btn-xs" (click)="openEditModal(p)" title="Modifier">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
                         </button>
                       }
                       @if (canAdd && p.statut !== 'ANNULE') {
-                        <button class="btn btn-danger btn-sm" (click)="openCancelModal(p)" title="Annuler">
+                        <button class="btn btn-danger btn-xs" (click)="openCancelModal(p)" title="Annuler ce versement">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
                         </button>
                       }
@@ -332,6 +329,40 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
           </div>
         </div>
       }
+
+      <!-- MODAL SUCCÈS ENCAISSEMENT — téléchargement du reçu optionnel -->
+      @if (showSuccessModal) {
+        <div class="modal-backdrop">
+          <div class="modal-content" style="max-width: 440px; text-align: center;">
+            <div class="modal-header" style="justify-content: flex-end;">
+              <button class="btn btn-outline btn-sm" (click)="showSuccessModal = false">✕</button>
+            </div>
+            <div class="modal-body" style="padding: 1.5rem 2rem;">
+              <div style="font-size: 3rem; margin-bottom: 0.75rem;">✅</div>
+              <h3 style="margin-bottom: 0.5rem; color: var(--success, #16a34a);">Paiement enregistré !</h3>
+              <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.95rem;">
+                Le versement a été validé avec succès et le reçu est prêt.
+                Vous pouvez le télécharger ou l'imprimer maintenant, ou le retrouver plus tard dans la liste.
+              </p>
+              @if (dernierRecuId) {
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                  <button class="btn btn-primary" (click)="imprimerRecu(dernierRecuId!); showSuccessModal = false">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="margin-right:0.4rem"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    Télécharger le Reçu PDF
+                  </button>
+                  <button class="btn btn-outline" (click)="imprimerDirectement(dernierRecuId!); showSuccessModal = false">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="margin-right:0.4rem"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                    Imprimer directement
+                  </button>
+                </div>
+              }
+            </div>
+            <div class="modal-footer" style="justify-content: center;">
+              <button class="btn btn-secondary" (click)="showSuccessModal = false">Fermer sans télécharger</button>
+            </div>
+          </div>
+        </div>
+      }
     </div>
     `,
     changeDetection: ChangeDetectionStrategy.Eager,
@@ -345,46 +376,66 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       margin-bottom: 1.5rem;
     }
 
+    .page-header-bar h2 {
+      color: var(--primary);
+      font-size: 1.4rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.25rem;
+    }
+
     .resume-bar {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 1rem;
-      margin-bottom: 1.5rem;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 2rem;
     }
 
     .resume-box {
       background: #fff;
       border: 1px solid var(--border-color);
-      border-radius: 0.75rem;
-      padding: 1rem 1.25rem;
+      border-radius: var(--radius-md);
+      padding: 1.25rem 1.5rem;
+      box-shadow: var(--shadow-sm);
+      transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    .resume-box:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
     }
 
     .resume-encaisse {
-      border-left: 4px solid var(--success, #16a34a);
+      border-left: 4px solid var(--success);
     }
 
     .resume-reste {
-      border-left: 4px solid var(--danger, #dc2626);
+      border-left: 4px solid var(--accent);
     }
 
     .resume-label {
       display: flex;
       align-items: center;
       gap: 0.4rem;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
       color: var(--text-muted);
       margin-bottom: 0.35rem;
     }
 
     .resume-value {
-      font-size: 1.4rem;
-      font-weight: 700;
-      color: var(--text-main);
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: var(--primary);
+      letter-spacing: -0.02em;
     }
 
     .filter-card {
-      margin-bottom: 1.5rem;
-      padding: 1.25rem;
+      margin-bottom: 2rem;
+      padding: 1.5rem;
     }
 
     .filter-grid {
@@ -466,6 +517,12 @@ export class PaiementsComponent implements OnInit {
 
   showCancelModal = false;
   cancelMotif = '';
+
+  /** Reçu du dernier encaissement validé : null si aucun reçu disponible.
+   *  Affiché dans le modal de succès pour laisser l'utilisateur choisir
+   *  de télécharger ou d'imprimer — sans téléchargement automatique. */
+  showSuccessModal = false;
+  dernierRecuId: number | null = null;
 
   constructor(private apiService: ApiService, private authService: AuthService) {}
 
@@ -604,11 +661,14 @@ export class PaiementsComponent implements OnInit {
         this.loadPaiements();
         this.loadNonSoldesCandidats();
         this.loadResume();
-        if (res.recuId) this.imprimerRecu(res.recuId);
+        // Mémoriser le recuId et ouvrir le modal de succès — le téléchargement
+        // reste un choix de l'utilisateur (bouton "Télécharger" ou "Imprimer").
+        this.dernierRecuId = res.recuId || null;
+        this.showSuccessModal = true;
       },
       error: (err) => {
         this.saving = false;
-        this.formError = extraireMessageErreur(err, 'Erreur lors de l’enregistrement.');
+        this.formError = extraireMessageErreur(err, 'Erreur lors de l\'enregistrement.');
       }
     });
   }

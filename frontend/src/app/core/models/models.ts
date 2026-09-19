@@ -56,6 +56,7 @@ export interface CategoriePermis {
   code: string;
   libelle: string;
   montant: number;
+  fraisExamen?: number;
   description?: string;
   actif: boolean;
 }
@@ -113,6 +114,7 @@ export interface Candidat {
   creneauReussi: boolean;
   circulationReussi: boolean;
   priseEnChargeExamens: boolean;
+  fraisExamen?: number;
   // Renseigné une seule fois, uniquement dans la réponse de création d'un candidat dont
   // le compte de connexion vient d'être généré automatiquement.
   identifiantsCompte?: IdentifiantsCompte;

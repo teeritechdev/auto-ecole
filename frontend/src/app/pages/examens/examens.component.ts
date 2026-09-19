@@ -253,10 +253,14 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                     {{ formError }}
                   </div>
                 }
-                @if (currentWizardStep === 'site') {
-                  <div class="step-indicator">Étape {{ programmerStepIndex + 1 }} sur {{ wizardSteps.length }}</div>
+
+                <div class="form-row">
                   <div class="form-group">
-                    <label class="form-label">Choisir le site <span class="required">*</span></label>
+                    <label class="form-label">Date de la session <span class="required">*</span></label>
+                    <input type="date" class="form-control" [(ngModel)]="newPassage.datePassage" name="datePassage" required />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Lieu / Site <span class="required">*</span></label>
                     <select class="form-control" [(ngModel)]="newPassage.siteId" name="siteId" (change)="onSiteChange()" required>
                       <option [ngValue]="null" disabled>Sélectionner un site</option>
                       @for (s of sitesAutorises; track s.id) {
@@ -264,82 +268,69 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                       }
                     </select>
                   </div>
-                  <p class="form-help">Le site sera appliqué à tous les candidats sélectionnés (ils doivent y être inscrits).</p>
-                } @else if (currentWizardStep === 'epreuve') {
-                  <div class="step-indicator">Étape {{ programmerStepIndex + 1 }} sur {{ wizardSteps.length }}</div>
+                </div>
+
+                <div class="form-row">
                   <div class="form-group">
-                    <label class="form-label">Choisir l'épreuve à programmer <span class="required">*</span></label>
+                    <label class="form-label">Type d'épreuve <span class="required">*</span></label>
                     <select class="form-control" [(ngModel)]="newPassage.typeEpreuve" name="typeEpreuve" (change)="onTypeEpreuveChange()" required>
                       @for (t of epreuvesAutorisees; track t) {
                         <option [value]="t">{{ epreuveLabel(t) }}</option>
                       }
                     </select>
                   </div>
-                  <p class="form-help">Le type d'épreuve sera appliqué à tous les candidats sélectionnés à l'étape suivante.</p>
-                } @else {
-                  <div class="step-indicator">
-                    {{ wizardSteps.length > 1 ? 'Étape ' + wizardSteps.length + ' sur ' + wizardSteps.length + ' · ' : '' }}{{ epreuveLabel(newPassage.typeEpreuve) }}
-                  </div>
                   <div class="form-group">
-                    <label class="form-label">Candidats <span class="required">*</span></label>
-                    <div class="candidats-list">
-                      @for (c of eligibleCandidats; track c) {
-                        <label class="candidat-option">
-                          <input
-                            type="checkbox"
-                            [checked]="isCandidatSelected(c.id)"
-                            (change)="toggleCandidat(c.id)"
-                            />
-                          <span class="candidat-option-text">
-                            <strong>{{ c.numeroDossier }}</strong>
-                            <span>{{ c.nom }} {{ c.prenom }} ({{ c.categoriePermisCode }})</span>
-                          </span>
-                        </label>
-                      }
-                    </div>
+                    <label class="form-label">Statut initial</label>
+                    <select class="form-control" [(ngModel)]="newPassage.resultat" name="resultat">
+                      <option value="PROGRAMME">Programmé (En attente)</option>
+                      <option value="EN_COURS">En cours</option>
+                      <option value="TERMINE">Terminé</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">
+                    Candidats à inscrire immédiatement
+                    <small class="text-muted" style="font-weight: normal;">(facultatif - vous pouvez créer la session et ajouter les candidats plus tard)</small>
+                  </label>
+                  <div class="candidats-list" style="max-height: 180px;">
+                    @for (c of eligibleCandidats; track c.id) {
+                      <label class="candidat-option">
+                        <input
+                          type="checkbox"
+                          [checked]="isCandidatSelected(c.id)"
+                          (change)="toggleCandidat(c.id)"
+                          />
+                        <span class="candidat-option-text">
+                          <strong>{{ c.numeroDossier }}</strong>
+                          <span>{{ c.nom }} {{ c.prenom }} ({{ c.categoriePermisCode }})</span>
+                        </span>
+                      </label>
+                    }
                     @if (eligibleCandidats.length === 0) {
-                      <div class="form-help">
+                      <div class="form-help" style="padding: 0.75rem;">
                         Aucun candidat n'est actuellement éligible pour cette épreuve{{ newPassage.siteId ? ' sur ce site' : '' }}.
                       </div>
                     }
-                    <div class="form-help">Cochez les candidats concernés par cette programmation.</div>
-                    @if (selectedCandidatIds.length > 0) {
-                      <div class="selection-count">
-                        {{ selectedCandidatIds.length }} candidat(s) sélectionné(s)
-                      </div>
-                    }
                   </div>
-                  <div class="form-group">
-                    <label class="form-label">Date du passage <span class="required">*</span></label>
-                    <input type="date" class="form-control" [(ngModel)]="newPassage.datePassage" name="datePassage" required />
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label">Résultat initial</label>
-                    <select class="form-control" [(ngModel)]="newPassage.resultat" name="resultat">
-                      <option value="PROGRAMME">PROGRAMMÉ (En attente)</option>
-                      <option value="REUSSI">RÉUSSI (Admis)</option>
-                      <option value="AJOURNE">AJOURNÉ</option>
-                    </select>
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label">Observations</label>
-                    <textarea class="form-control" rows="2" [(ngModel)]="newPassage.observations" name="observations" placeholder="Remarques éventuelles..."></textarea>
-                  </div>
-                }
+                  @if (selectedCandidatIds.length > 0) {
+                    <div class="selection-count" style="margin-top: 0.4rem;">
+                      {{ selectedCandidatIds.length }} candidat(s) sélectionné(s)
+                    </div>
+                  }
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Observations</label>
+                  <textarea class="form-control" rows="2" [(ngModel)]="newPassage.observations" name="observations" placeholder="Remarques éventuelles..."></textarea>
+                </div>
               </div>
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" (click)="showProgrammerModal = false">Annuler</button>
-                @if (programmerStepIndex > 0) {
-                  <button type="button" class="btn btn-secondary" (click)="programmerStepIndex = programmerStepIndex - 1" [disabled]="saving">Retour</button>
-                }
-                @if (programmerStepIndex < wizardSteps.length - 1) {
-                  <button type="button" class="btn btn-primary" [disabled]="currentWizardStep === 'site' && !newPassage.siteId" (click)="programmerStepIndex = programmerStepIndex + 1">Continuer</button>
-                }
-                @if (programmerStepIndex === wizardSteps.length - 1) {
-                  <button type="submit" class="btn btn-primary" [disabled]="saving || selectedCandidatIds.length === 0 || !newPassage.datePassage">
-                    {{ saving ? 'Enregistrement...' : 'Confirmer la Programmation' }}
-                  </button>
-                }
+                <button type="submit" class="btn btn-primary" [disabled]="saving || !newPassage.datePassage || !newPassage.siteId || !newPassage.typeEpreuve">
+                  {{ saving ? 'Enregistrement...' : 'Créer la Session' }}
+                </button>
               </div>
             </form>
           </div>
@@ -870,8 +861,6 @@ export class ExamensComponent implements OnInit {
   }
 
   saveProgrammer(): void {
-    if (this.selectedCandidatIds.length === 0) return;
-
     this.saving = true;
     this.formError = '';
 

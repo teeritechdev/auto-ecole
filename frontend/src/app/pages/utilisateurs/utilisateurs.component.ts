@@ -13,13 +13,53 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       <div class="page-header-bar">
         <div>
           <h2>Gestion des Utilisateurs & Droits</h2>
-          <p>Administration des comptes (Administrateur, Secrétaire, Caissière, Moniteur)</p>
         </div>
         <div class="header-buttons">
           <button class="btn btn-primary" (click)="openCreateModal()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="17" y1="11" x2="23" y2="11"/></svg>
             Nouvel Utilisateur
           </button>
+        </div>
+      </div>
+
+      <!-- FILTER BAR -->
+      <div class="card filter-card">
+        <div class="filter-grid">
+          <div class="search-box">
+            <input
+              type="text"
+              class="form-control"
+              placeholder="Rechercher par identifiant, nom, prénom, email..."
+              [(ngModel)]="rechercheFiltre"
+            />
+          </div>
+          <div>
+            <select class="form-control" [(ngModel)]="roleFiltre">
+              <option value="">Tous les rôles</option>
+              <option value="ADMIN">Administrateur</option>
+              <option value="SECRETAIRE">Secrétaire</option>
+              <option value="CAISSIERE">Caissière</option>
+              <option value="MONITEUR">Moniteur</option>
+            </select>
+          </div>
+          <div>
+            <select class="form-control" [(ngModel)]="siteFiltre">
+              <option value="">Tous les sites</option>
+              @for (s of sites; track s.id) {
+                <option [value]="s.id">{{ s.nom }}</option>
+              }
+            </select>
+          </div>
+          <div>
+            <select class="form-control" [(ngModel)]="statutFiltre">
+              <option value="">Tous les statuts</option>
+              <option value="ACTIF">Actifs</option>
+              <option value="INACTIF">Désactivés</option>
+            </select>
+          </div>
+          <div>
+            <button class="btn btn-secondary btn-block" (click)="resetFiltres()">Réinitialiser</button>
+          </div>
         </div>
       </div>
     
@@ -29,25 +69,27 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
             <thead>
               <tr>
                 <th>Photo</th>
-                <th>Identifiant</th>
-                <th>Nom & Prénom</th>
-                <th>Email</th>
-                <th>Téléphone</th>
-                <th>Rôle Attribué</th>
+                <th>Utilisateur</th>
+                <th>Contact</th>
                 <th>Profil</th>
-                <th>Site(s)</th>
+                <th>Rôle Attribué</th>
+                <th>Site d'affectation</th>
                 <th>Statut</th>
-                <th>Date Création</th>
                 <th class="text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
               @if (loading) {
                 <tr>
-                  <td colspan="11" class="text-center py-4">Chargement des utilisateurs...</td>
+                  <td colspan="8" class="text-center py-4">Chargement des utilisateurs...</td>
                 </tr>
               }
-              @for (u of utilisateurs; track u) {
+              @if (!loading && utilisateursFiltres.length === 0) {
+                <tr>
+                  <td colspan="8" class="text-center py-4">Aucun utilisateur trouvé pour ces critères.</td>
+                </tr>
+              }
+              @for (u of utilisateursFiltres; track u.id) {
                 <tr>
                   <td>
                     <div class="user-photo-small">
@@ -59,22 +101,30 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                       }
                     </div>
                   </td>
-                  <td><strong>{{ u.username }}</strong></td>
-                  <td>{{ u.nom }} {{ u.prenom }}</td>
-                  <td>{{ u.email }}</td>
-                  <td>{{ u.telephone || '—' }}</td>
                   <td>
-                  <span class="badge" [ngClass]="{
-                    'badge-expire': u.role === 'ADMIN',
-                    'badge-programme': u.role === 'SECRETAIRE',
-                    'badge-solde': u.role === 'CAISSIERE',
-                    'badge-ajourne': u.role === 'MONITEUR'
-                  }">{{ u.roleLibelle }}</span>
+                    <strong>{{ u.nom }} {{ u.prenom }}</strong>
+                    <div class="sub-text" style="color: var(--text-muted); font-size: 0.8rem;">{{ u.username }}</div>
                   </td>
-                  <td><small class="text-muted">{{ u.profilNom || '—' }}</small></td>
+                  <td>
+                    <div>{{ u.email || '—' }}</div>
+                    @if (u.telephone) {
+                      <small class="text-muted">{{ u.telephone }}</small>
+                    }
+                  </td>
+                  <td>
+                    <span class="badge badge-programme">{{ u.profilNom || '—' }}</span>
+                  </td>
+                  <td>
+                    <span class="badge" [ngClass]="{
+                      'badge-expire': u.role === 'ADMIN',
+                      'badge-programme': u.role === 'SECRETAIRE',
+                      'badge-solde': u.role === 'CAISSIERE',
+                      'badge-ajourne': u.role === 'MONITEUR'
+                    }">{{ u.roleLibelle }}</span>
+                  </td>
                   <td>
                     @if (u.siteNoms && u.siteNoms.length > 0) {
-                      {{ u.siteNoms.join(', ') }}
+                      <span class="badge badge-secondary">{{ u.siteNoms.join(', ') }}</span>
                     } @else {
                       <span class="text-muted">—</span>
                     }
@@ -84,17 +134,20 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                       {{ u.actif ? 'ACTIF' : 'DÉSACTIVÉ' }}
                     </span>
                   </td>
-                  <td>{{ u.dateCreation | date:'dd/MM/yyyy' }}</td>
                   <td class="text-right">
                     <div class="table-actions">
-                      <button class="btn btn-outline btn-sm" (click)="openEditModal(u)" title="Modifier">
+                      <button class="btn btn-outline btn-xs" (click)="openEditModal(u)" title="Modifier">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
                       </button>
-                      <button class="btn btn-outline btn-sm" (click)="resetPassword(u)" title="Réinitialiser le mot de passe">
+                      <button class="btn btn-outline btn-xs" (click)="resetPassword(u)" title="Réinitialiser le mot de passe">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                       </button>
-                      <button class="btn btn-sm" [ngClass]="u.actif ? 'btn-danger' : 'btn-success'" (click)="toggleActif(u)">
-                        {{ u.actif ? 'Désactiver' : 'Activer' }}
+                      <button class="btn btn-xs" [ngClass]="u.actif ? 'btn-danger' : 'btn-success'" [title]="u.actif ? 'Désactiver le compte' : 'Activer le compte'" (click)="toggleActif(u)">
+                        @if (u.actif) {
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                        } @else {
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        }
                       </button>
                     </div>
                   </td>
@@ -152,13 +205,22 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 </div>
                 <div class="form-row">
                   <div class="form-group">
-                    <label class="form-label">Email <span class="required">*</span></label>
-                    <input type="email" class="form-control" [(ngModel)]="currentUserForm.email" name="email" required placeholder="user@autoecole.ci" />
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-control" [(ngModel)]="currentUserForm.email" name="email" placeholder="user@autoecole.ci (optionnel)" />
                   </div>
                   <div class="form-group">
                     <label class="form-label">Téléphone</label>
                     <input type="tel" class="form-control" [(ngModel)]="currentUserForm.telephone" name="telephone" placeholder="0701020304" />
                   </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Profil <span class="required">*</span></label>
+                  <select class="form-control" [(ngModel)]="currentUserForm.profilId" name="profilId" (change)="onProfilChange()">
+                    @for (p of profils; track p.id) {
+                      <option [ngValue]="p.id">{{ p.nom }}{{ p.systeme ? ' (Système)' : '' }}</option>
+                    }
+                  </select>
+                  <div class="form-help">Détermine précisément les fonctionnalités accessibles à ce compte (cf. Paramètres Généraux &gt; Permissions).</div>
                 </div>
                 <div class="form-group">
                   <label class="form-label">Rôle attribué <span class="required">*</span></label>
@@ -169,26 +231,16 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                     <option value="MONITEUR">Moniteur (Suivi pédagogique & examens)</option>
                   </select>
                 </div>
-                <div class="form-group">
-                  <label class="form-label">Profil de permissions</label>
-                  <select class="form-control" [(ngModel)]="currentUserForm.profilId" name="profilId">
-                    @for (p of profils; track p.id) {
-                      <option [ngValue]="p.id">{{ p.nom }}{{ p.systeme ? ' (Système)' : '' }}</option>
-                    }
-                  </select>
-                  <div class="form-help">Détermine précisément les fonctionnalités accessibles à ce compte (cf. Paramètres Généraux &gt; Permissions). Présélectionné selon le rôle, modifiable librement.</div>
-                </div>
                 @if (['MONITEUR', 'SECRETAIRE', 'CAISSIERE'].includes(currentUserForm.role)) {
                   <div class="form-group">
-                    <label class="form-label">Sites de formation <span class="required">*</span></label>
-                    <div class="specialites-group">
+                    <label class="form-label">Site d'affectation</label>
+                    <select class="form-control" [ngModel]="singleSelectedSiteId" (ngModelChange)="onSingleSiteChange($event)" name="siteAffectation">
+                      <option [ngValue]="null">-- Aucun site spécifique (tous les sites) --</option>
                       @for (s of sites; track s.id) {
-                        <label class="checkbox-label">
-                          <input type="checkbox" [checked]="hasSite(s.id)" (change)="toggleSite(s.id)" /> {{ s.nom }}
-                        </label>
+                        <option [ngValue]="s.id">{{ s.nom }}</option>
                       }
-                    </div>
-                    <div class="form-help">Cette personne ne pourra voir et gérer que les candidats, paiements et examens de ces sites.</div>
+                    </select>
+                    <div class="form-help">Sélectionnez le site auquel cet agent est rattaché.</div>
                   </div>
                 }
                 @if (currentUserForm.role === 'MONITEUR') {
@@ -298,6 +350,12 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     .form-help { color: var(--text-muted); font-size: 0.8rem; margin-top: 0.35rem; }
     .specialites-group { display: flex; gap: 1.25rem; flex-wrap: wrap; }
     .checkbox-label { display: flex; align-items: center; gap: 0.4rem; font-weight: 500; }
+    .filter-card { margin-bottom: 1.5rem; padding: 1.25rem; }
+    .filter-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1rem;
+    }
   `]
 })
 export class UtilisateursComponent implements OnInit {
@@ -306,6 +364,12 @@ export class UtilisateursComponent implements OnInit {
   profils: Profil[] = [];
   loading = false;
   saving = false;
+
+  // Filtres
+  rechercheFiltre = '';
+  roleFiltre = '';
+  siteFiltre: string | number = '';
+  statutFiltre = '';
 
   showModal = false;
   isEdit = false;
@@ -322,9 +386,51 @@ export class UtilisateursComponent implements OnInit {
     email: '',
     telephone: '',
     role: 'SECRETAIRE',
+    profilId: null,
     siteIds: [],
     specialites: []
   };
+
+  get singleSelectedSiteId(): number | null {
+    return this.currentUserForm.siteIds && this.currentUserForm.siteIds.length > 0
+      ? this.currentUserForm.siteIds[0]
+      : null;
+  }
+
+  onSingleSiteChange(siteId: number | null): void {
+    this.currentUserForm.siteIds = siteId != null ? [siteId] : [];
+  }
+
+  get utilisateursFiltres(): UtilisateurDTO[] {
+    return this.utilisateurs.filter(u => {
+      if (this.rechercheFiltre) {
+        const q = this.rechercheFiltre.trim().toLowerCase();
+        const matchUsername = u.username?.toLowerCase().includes(q);
+        const matchNom = u.nom?.toLowerCase().includes(q);
+        const matchPrenom = u.prenom?.toLowerCase().includes(q);
+        const matchEmail = u.email?.toLowerCase().includes(q);
+        const matchTel = u.telephone?.toLowerCase().includes(q);
+        if (!matchUsername && !matchNom && !matchPrenom && !matchEmail && !matchTel) return false;
+      }
+      if (this.roleFiltre && u.role !== this.roleFiltre) return false;
+      if (this.siteFiltre) {
+        const sId = Number(this.siteFiltre);
+        if (!u.siteIds || !u.siteIds.includes(sId)) return false;
+      }
+      if (this.statutFiltre) {
+        if (this.statutFiltre === 'ACTIF' && !u.actif) return false;
+        if (this.statutFiltre === 'INACTIF' && u.actif) return false;
+      }
+      return true;
+    });
+  }
+
+  resetFiltres(): void {
+    this.rechercheFiltre = '';
+    this.roleFiltre = '';
+    this.siteFiltre = '';
+    this.statutFiltre = '';
+  }
 
   constructor(private apiService: ApiService) {}
 
@@ -334,12 +440,19 @@ export class UtilisateursComponent implements OnInit {
     this.apiService.getProfils().subscribe({ next: (res) => this.profils = res });
   }
 
-  /** Présélectionne le profil système du rôle choisi (l'administrateur reste libre d'en
-   *  choisir un autre, y compris un profil personnalisé, juste après). */
+  /** Présélectionne le profil système du rôle choisi */
   onRoleChange(): void {
     const profilSysteme = this.profils.find(p => p.roleSysteme === this.currentUserForm.role);
     if (profilSysteme) {
       this.currentUserForm.profilId = profilSysteme.id;
+    }
+  }
+
+  /** Met à jour le rôle si le profil sélectionné est un profil système spécifique */
+  onProfilChange(): void {
+    const profil = this.profils.find(p => p.id === this.currentUserForm.profilId);
+    if (profil && profil.roleSysteme) {
+      this.currentUserForm.role = profil.roleSysteme;
     }
   }
 

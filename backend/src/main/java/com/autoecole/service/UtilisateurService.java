@@ -59,8 +59,13 @@ public class UtilisateurService {
         if (utilisateurRepository.existsByUsername(request.getUsername())) {
             throw new BadRequestException("Un compte avec cet identifiant existe déjà: " + request.getUsername());
         }
-        if (utilisateurRepository.existsByEmail(request.getEmail())) {
-            throw new BadRequestException("Un compte avec cet email existe déjà: " + request.getEmail());
+
+        String email = (request.getEmail() != null && !request.getEmail().trim().isEmpty())
+                ? request.getEmail().trim().toLowerCase()
+                : null;
+
+        if (email != null && utilisateurRepository.existsByEmail(email)) {
+            throw new BadRequestException("Un compte avec cet email existe déjà: " + email);
         }
 
         Role role = roleRepository.findByCode(request.getRole())
@@ -71,7 +76,7 @@ public class UtilisateurService {
 
         Utilisateur user = Utilisateur.builder()
                 .username(request.getUsername().trim())
-                .email(request.getEmail().trim().toLowerCase())
+                .email(email)
                 .password(passwordEncoder.encode(request.getPassword()))
                 .nom(request.getNom().trim())
                 .prenom(request.getPrenom().trim())
@@ -96,8 +101,12 @@ public class UtilisateurService {
         Utilisateur user = utilisateurRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Utilisateur non trouvé avec l'id: " + id));
 
-        if (!request.getEmail().equalsIgnoreCase(user.getEmail()) && utilisateurRepository.existsByEmail(request.getEmail())) {
-            throw new BadRequestException("Un compte avec cet email existe déjà: " + request.getEmail());
+        String email = (request.getEmail() != null && !request.getEmail().trim().isEmpty())
+                ? request.getEmail().trim().toLowerCase()
+                : null;
+
+        if (email != null && !email.equalsIgnoreCase(user.getEmail()) && utilisateurRepository.existsByEmail(email)) {
+            throw new BadRequestException("Un compte avec cet email existe déjà: " + email);
         }
 
         Role role = roleRepository.findByCode(request.getRole())
@@ -106,7 +115,7 @@ public class UtilisateurService {
         Set<Site> sites = resoudreSitesPourRole(request.getRole(), request.getSiteIds());
         Profil profil = resoudreProfil(request.getProfilId(), request.getRole());
 
-        user.setEmail(request.getEmail().trim().toLowerCase());
+        user.setEmail(email);
         user.setNom(request.getNom().trim());
         user.setPrenom(request.getPrenom().trim());
         user.setTelephone(request.getTelephone());

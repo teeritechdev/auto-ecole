@@ -44,6 +44,14 @@ public class ParametrageController {
         return ResponseEntity.ok(parametrageService.updateCategorie(id, dto));
     }
 
+    @DeleteMapping("/categories/{id}")
+    @PreAuthorize("hasAuthority('PERM_PARAMETRAGE_CATEGORIES_GERER')")
+    @Operation(summary = "Supprimer une catégorie de permis")
+    public ResponseEntity<Void> deleteCategorie(@PathVariable Long id) {
+        parametrageService.deleteCategorie(id);
+        return ResponseEntity.noContent().build();
+    }
+
     // --- Sites de formation ---
     @GetMapping("/sites")
     @Operation(summary = "Lister les sites de formation")
@@ -63,6 +71,14 @@ public class ParametrageController {
     @Operation(summary = "Modifier un site de formation")
     public ResponseEntity<SiteDTO> updateSite(@PathVariable Long id, @Valid @RequestBody SiteDTO dto) {
         return ResponseEntity.ok(parametrageService.updateSite(id, dto));
+    }
+
+    @DeleteMapping("/sites/{id}")
+    @PreAuthorize("hasAuthority('PERM_PARAMETRAGE_SITES_GERER')")
+    @Operation(summary = "Supprimer un site de formation")
+    public ResponseEntity<Void> deleteSite(@PathVariable Long id) {
+        parametrageService.deleteSite(id);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/sites/statistiques")

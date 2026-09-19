@@ -10,11 +10,11 @@ import { DashboardStats } from '../../core/models/models';
     imports: [CommonModule, RouterModule],
     template: `
     <div class="dashboard-page">
-      <!-- HEADER BANNER -->
-      <div class="welcome-banner">
+      <!-- HEADER DISCRET -->
+      <div class="dashboard-header-bar">
         <div>
-          <h2>Bonjour, {{ currentUser?.nom }} {{ currentUser?.prenom }}</h2>
-          <p>Bienvenue sur votre espace de gestion <strong>Nerwaya Auto-École</strong> (Profil : <span class="role-badge">{{ currentUser?.role }}</span>)</p>
+          <h2 class="dashboard-title">Bienvenue sur votre espace de gestion</h2>
+          <p class="dashboard-subtitle">{{ currentUser?.nom }} {{ currentUser?.prenom }} • Profil : <span class="role-badge">{{ currentUser?.role }}</span></p>
         </div>
         <button class="refresh-btn" [class.spinning]="loadingStats" [disabled]="loadingStats" (click)="loadStats()" title="Actualiser les statistiques">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
@@ -56,9 +56,6 @@ import { DashboardStats } from '../../core/models/models';
         @if (isStatVisible('candidats')) {
           <div class="stat-card primary">
             <button type="button" class="stat-remove-btn" (click)="hideStat('candidats')" title="Masquer cette statistique">✕</button>
-            <div class="stat-icon primary">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            </div>
             <div class="stat-info">
               <div class="stat-label">Total Candidats</div>
               <div class="stat-value">{{ stats?.totalCandidats || 0 }}</div>
@@ -78,9 +75,6 @@ import { DashboardStats } from '../../core/models/models';
         @if (isStatVisible('financier')) {
           <div class="stat-card success">
             <button type="button" class="stat-remove-btn" (click)="hideStat('financier')" title="Masquer cette statistique">✕</button>
-            <div class="stat-icon success">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
-            </div>
             <div class="stat-info">
               <div class="stat-label">Total Encaissé</div>
               <div class="stat-value">{{ (stats?.montantTotalEncaisse || 0) | number }} <small>FCFA</small></div>
@@ -95,9 +89,6 @@ import { DashboardStats } from '../../core/models/models';
         @if (isStatVisible('caisse')) {
           <div class="stat-card info">
             <button type="button" class="stat-remove-btn" (click)="hideStat('caisse')" title="Masquer cette statistique">✕</button>
-            <div class="stat-icon info">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 21 8 3 8"/><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/></svg>
-            </div>
             <div class="stat-info">
               <div class="stat-label">Solde de Caisse</div>
               <div class="stat-value">{{ (stats?.soldeCaisseActuel || 0) | number }} <small>FCFA</small></div>
@@ -113,9 +104,6 @@ import { DashboardStats } from '../../core/models/models';
         @if (isStatVisible('examens')) {
           <div class="stat-card warning">
             <button type="button" class="stat-remove-btn" (click)="hideStat('examens')" title="Masquer cette statistique">✕</button>
-            <div class="stat-icon warning">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg>
-            </div>
             <div class="stat-info">
               <div class="stat-label">Examens Pédagogiques</div>
               <div class="stat-value">{{ stats?.totalExamensReussis || 0 }} <small>réussis</small></div>
@@ -285,61 +273,67 @@ import { DashboardStats } from '../../core/models/models';
     `,
     changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
-    .welcome-banner {
-      background: linear-gradient(135deg, #1e3a8a, #2563eb);
-      color: white;
-      border-radius: var(--radius-lg);
-      padding: 1.5rem 1.75rem;
-      margin-bottom: 1.5rem;
+    .dashboard-header-bar {
       display: flex;
       align-items: center;
       justify-content: space-between;
       flex-wrap: wrap;
       gap: 1rem;
-      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.25);
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border-color);
     }
 
-    .welcome-banner h2 {
-      color: white;
+    .dashboard-title {
+      color: var(--primary);
       font-size: 1.35rem;
-      margin-bottom: 0.25rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.2rem;
     }
 
-    .welcome-banner p {
-      color: #bfdbfe;
-      font-size: 0.9rem;
+    .dashboard-subtitle {
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      font-weight: 500;
     }
 
     .role-badge {
-      background: rgba(255, 255, 255, 0.2);
+      background: #fef3c7;
+      color: #b45309;
       padding: 0.15rem 0.5rem;
-      border-radius: 4px;
+      border-radius: var(--radius-sm);
       font-weight: 700;
-      color: #ffffff;
+      font-size: 0.75rem;
+      border: 1px solid #fde68a;
     }
 
     .refresh-btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 2.75rem;
-      height: 2.75rem;
+      width: 2.4rem;
+      height: 2.4rem;
       flex-shrink: 0;
-      border-radius: var(--radius-full);
-      border: 1px solid rgba(255, 255, 255, 0.35);
-      background: rgba(255, 255, 255, 0.12);
-      color: #ffffff;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+      background: #ffffff;
+      color: var(--primary);
       cursor: pointer;
-      transition: background var(--transition-fast), transform var(--transition-fast);
+      box-shadow: var(--shadow-sm);
+      transition: all var(--transition-fast);
     }
 
     .refresh-btn:hover:not(:disabled) {
-      background: rgba(255, 255, 255, 0.24);
+      background: #f8fafc;
+      color: #d97706;
+      border-color: #cbd5e1;
       transform: translateY(-1px);
     }
 
     .refresh-btn:disabled {
       cursor: not-allowed;
+      opacity: 0.6;
     }
 
     .refresh-btn.spinning svg {

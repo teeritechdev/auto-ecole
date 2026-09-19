@@ -5,6 +5,7 @@ import com.autoecole.entity.Candidat;
 import com.autoecole.entity.CategoriePermis;
 import com.autoecole.entity.Inscription;
 import com.autoecole.entity.Site;
+import com.autoecole.entity.enums.EtapeParcours;
 import com.autoecole.entity.enums.StatutDossier;
 import com.autoecole.entity.enums.StatutInscription;
 import com.autoecole.exception.ResourceNotFoundException;
@@ -35,11 +36,12 @@ public class InscriptionService {
     @Transactional
     public Inscription creerInscriptionInitiale(Candidat candidat, CategoriePermis categorie, Site site,
                                                  LocalDate dateInscription, BigDecimal montant, BigDecimal totalVerse, StatutInscription statutInscription,
-                                                 boolean priseEnChargeExamens) {
+                                                 boolean priseEnChargeExamens, BigDecimal fraisExamen, EtapeParcours etapeParcours) {
         LocalDate dateInsc = dateInscription != null ? dateInscription : LocalDate.now();
         LocalDate dateEcheance = dateInsc.plusMonths(dureeValiditeMois); // RG07 : durée de validité configurable
 
         BigDecimal verse = totalVerse != null ? totalVerse : BigDecimal.ZERO;
+        BigDecimal fExamen = fraisExamen != null ? fraisExamen : (categorie != null ? categorie.getFraisExamen() : null);
 
         Inscription inscription = Inscription.builder()
                 .candidat(candidat)
@@ -50,11 +52,13 @@ public class InscriptionService {
                 .dateEcheance(dateEcheance)
                 .statutDossier(StatutDossier.EN_COURS)
                 .statutInscription(statutInscription != null ? statutInscription : StatutInscription.NOUVEAU)
+                .etapeParcours(etapeParcours != null ? etapeParcours : EtapeParcours.INSCRIPTION)
                 .totalVerse(verse)
                 .soldeRestant(montant.subtract(verse))
                 .numeroCycle(1)
                 .active(true)
                 .priseEnChargeExamens(priseEnChargeExamens)
+                .fraisExamen(fExamen)
                 .build();
 
         inscription.recalculerSoldeEtStatut();
@@ -68,7 +72,7 @@ public class InscriptionService {
      */
     @Transactional
     public Inscription creerNouveauCycle(Candidat candidat, CategoriePermis categorie, Site site,
-                                          LocalDate dateInscription, BigDecimal montant, BigDecimal totalVerse, boolean priseEnChargeExamens) {
+                                          LocalDate dateInscription, BigDecimal montant, BigDecimal totalVerse, boolean priseEnChargeExamens, BigDecimal fraisExamen) {
         Inscription ancienneActive = inscriptionRepository.findByCandidatIdAndActiveTrue(candidat.getId()).orElse(null);
         if (ancienneActive != null) {
             ancienneActive.setActive(false);
@@ -79,6 +83,7 @@ public class InscriptionService {
         LocalDate dateEcheance = dateInsc.plusMonths(dureeValiditeMois);
         BigDecimal verse = totalVerse != null ? totalVerse : BigDecimal.ZERO;
         int nouveauCycle = ancienneActive != null ? ancienneActive.getNumeroCycle() + 1 : 1;
+        BigDecimal fExamen = fraisExamen != null ? fraisExamen : (categorie != null ? categorie.getFraisExamen() : null);
 
         Inscription inscription = Inscription.builder()
                 .candidat(candidat)
@@ -95,6 +100,7 @@ public class InscriptionService {
                 .active(true)
                 .inscriptionPrecedente(ancienneActive)
                 .priseEnChargeExamens(priseEnChargeExamens)
+                .fraisExamen(fExamen)
                 .build();
 
         inscription.recalculerSoldeEtStatut();
@@ -123,11 +129,12 @@ public class InscriptionService {
     }
 
     @Transactional
-    public Inscription mettreAJourCategorieEtMontant(Long candidatId, CategoriePermis categorie, BigDecimal montant, Site site, boolean priseEnChargeExamens) {
+    public Inscription mettreAJourCategorieEtMontant(Long candidatId, CategoriePermis categorie, BigDecimal montant, Site site, boolean priseEnChargeExamens, BigDecimal fraisExamen) {
         Inscription active = getInscriptionActive(candidatId);
         active.setCategoriePermis(categorie);
         active.setSite(site);
         active.setPriseEnChargeExamens(priseEnChargeExamens);
+        active.setFraisExamen(fraisExamen != null ? fraisExamen : (categorie != null ? categorie.getFraisExamen() : null));
         if (active.getMontantForfait().compareTo(montant) != 0) {
             active.setMontantForfait(montant);
             active.recalculerSoldeEtStatut();
@@ -157,6 +164,7 @@ public class InscriptionService {
                 .inscriptionPrecedenteId(i.getInscriptionPrecedente() != null ? i.getInscriptionPrecedente().getId() : null)
                 .dateCreation(i.getDateCreation())
                 .priseEnChargeExamens(i.isPriseEnChargeExamens())
+                .fraisExamen(i.getFraisExamen())
                 .build();
     }
 }

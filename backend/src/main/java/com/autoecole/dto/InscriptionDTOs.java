@@ -38,5 +38,6 @@ public class InscriptionDTOs {
         private Long inscriptionPrecedenteId;
         private LocalDateTime dateCreation;
         private boolean priseEnChargeExamens;
+        private BigDecimal fraisExamen;
     }
 }

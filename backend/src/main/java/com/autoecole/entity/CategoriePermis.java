@@ -27,6 +27,9 @@ public class CategoriePermis {
     @Column(name = "montant", precision = 12, scale = 2, nullable = false)
     private BigDecimal montant;
 
+    @Column(name = "frais_examen", precision = 12, scale = 2)
+    private BigDecimal fraisExamen;
+
     @Column(length = 255)
     private String description;
 

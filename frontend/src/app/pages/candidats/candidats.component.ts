@@ -16,7 +16,6 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       <div class="page-header-bar">
         <div>
           <h2>Gestion des Candidats</h2>
-          <p>Consultez, enregistrez et suivez les parcours administratifs et les tarifs de formation</p>
         </div>
         <div class="header-buttons">
           @if (canSeeFinancialData) {
@@ -50,22 +49,18 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
         </div>
       </div>
 
-      <!-- STATISTIQUES HOMME / FEMME (suivent les filtres actifs ci-dessous) -->
+      <!-- CARTE STATISTIQUE UNIQUE "INSCRITS" -->
       <div class="stats-sexe-bar">
-        <div class="stats-sexe-box hommes">
-          <span class="stats-sexe-value">{{ statsSexe?.totalHommes || 0 }}</span>
-          <span class="stats-sexe-label">Hommes</span>
-        </div>
-        <div class="stats-sexe-box femmes">
-          <span class="stats-sexe-value">{{ statsSexe?.totalFemmes || 0 }}</span>
-          <span class="stats-sexe-label">Femmes</span>
-        </div>
-        @if (statsSexe && statsSexe.totalNonRenseigne > 0) {
-          <div class="stats-sexe-box non-renseigne">
-            <span class="stats-sexe-value">{{ statsSexe.totalNonRenseigne }}</span>
-            <span class="stats-sexe-label">Sexe non renseigné</span>
+        <div class="stats-sexe-box inscrits">
+          <span class="stats-sexe-label">Inscrits</span>
+          <span class="stats-sexe-value">{{ (statsSexe?.totalHommes || 0) + (statsSexe?.totalFemmes || 0) + (statsSexe?.totalNonRenseigne || 0) }}</span>
+          <div class="stats-sexe-details">
+            {{ statsSexe?.totalHommes || 0 }} hommes • {{ statsSexe?.totalFemmes || 0 }} femmes
+            @if (statsSexe && statsSexe.totalNonRenseigne > 0) {
+              • {{ statsSexe.totalNonRenseigne }} non renseigné(s)
+            }
           </div>
-        }
+        </div>
         @if (statsSexe && statsSexe.parSite.length > 1) {
           <div class="stats-sexe-par-site">
             <table class="stats-site-table">
@@ -195,13 +190,10 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 <th>Candidat</th>
                 <th>Contact</th>
                 <th>Permis</th>
-                <th>Site</th>
                 @if (canProgramExams) {
                   <th>Programmé</th>
                 }
                 @if (canSeeFinancialData) {
-                  <th>Montant</th>
-                  <th>Versé / Reste</th>
                   <th>Statut</th>
                   <th>Échéance</th>
                 }
@@ -211,12 +203,12 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
             <tbody>
               @if (loading) {
                 <tr>
-                  <td colspan="11" class="text-center py-4">Chargement des candidats...</td>
+                  <td colspan="8" class="text-center py-4">Chargement des candidats...</td>
                 </tr>
               }
               @if (!loading && candidats.length === 0) {
                 <tr>
-                  <td colspan="11" class="text-center py-4">Aucun candidat trouvé pour ces critères.</td>
+                  <td colspan="8" class="text-center py-4">Aucun candidat trouvé pour ces critères.</td>
                 </tr>
               }
               @for (c of candidats; track c) {
@@ -236,6 +228,9 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                       {{ c.nom }} {{ c.prenom }}
                       @if (c.statutInscription === 'REDOUBLANT') {
                         <span class="badge badge-ajourne redoublant-badge">Redoublant</span>
+                      }
+                      @if (c.siteNom) {
+                        <span class="badge badge-secondary" style="font-size: 0.75rem; margin-left: 0.25rem;">{{ c.siteNom }}</span>
                       }
                     </div>
                     <small class="text-muted">Inscrit le {{ c.dateInscription | date:'dd/MM/yyyy' }}</small>
@@ -258,7 +253,6 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                       <div class="forfait-sub">{{ c.categoriePermisLibelle }}</div>
                     }
                   </td>
-                  <td>{{ c.siteNom || '—' }}</td>
                   @if (canProgramExams) {
                     <td>
                       <span class="badge" [ngClass]="estProgramme(c) ? 'badge-programme' : 'badge-solde'">
@@ -267,15 +261,6 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                     </td>
                   }
                   @if (canSeeFinancialData) {
-                    <td>
-                      <strong>{{ c.montantForfait | number }} FCFA</strong>
-                    </td>
-                    <td>
-                      <div class="text-success font-semibold">{{ c.totalVerse | number }} FCFA</div>
-                      <small [ngClass]="c.soldeRestant > 0 ? 'text-danger' : 'text-muted'">
-                        Reste : {{ c.soldeRestant | number }} FCFA
-                      </small>
-                    </td>
                     <td>
                       <span class="badge" [ngClass]="{
                         'badge-solde': c.statutDossier === 'SOLDE',
@@ -296,23 +281,22 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   }
                   <td class="text-right">
                     <div class="table-actions">
-                      <a [routerLink]="['/candidats', c.id]" class="btn btn-outline btn-sm" title="Fiche complète">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>
-                        Détails
+                      <a [routerLink]="['/candidats', c.id]" class="btn btn-outline btn-xs" title="Fiche complète">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>
                       </a>
                       @if (canEdit) {
-                        <button class="btn btn-outline btn-sm" (click)="openEditModal(c)" title="Modifier">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+                        <button class="btn btn-outline btn-xs" (click)="openEditModal(c)" title="Modifier">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
                         </button>
                       }
                       @if (canResetPassword) {
-                        <button class="btn btn-outline btn-sm" (click)="resetPassword(c)" title="Réinitialiser le mot de passe">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        <button class="btn btn-outline btn-xs" (click)="resetPassword(c)" title="Réinitialiser le mot de passe">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                         </button>
                       }
                       @if (isAdmin) {
-                        <button class="btn btn-danger btn-sm" (click)="openDeleteModal(c)" title="Supprimer">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                        <button class="btn btn-danger btn-xs" (click)="openDeleteModal(c)" title="Supprimer">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                         </button>
                       }
                     </div>
@@ -385,7 +369,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   <h4 class="section-title">1. Informations Personnelles</h4>
                   <div class="form-row">
                     <div class="form-group">
-                      <label class="form-label">Nom de famille <span class="required">*</span></label>
+                      <label class="form-label">Nom <span class="required">*</span></label>
                       <input type="text" class="form-control" [(ngModel)]="newCandidat.nom" name="nom" required placeholder="Ex: KOUADIO" />
                     </div>
                     <div class="form-group">
@@ -421,6 +405,14 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                         <option value="FEMME">Femme</option>
                       </select>
                     </div>
+                    <div class="form-group">
+                      <label class="form-label">Étape du parcours</label>
+                      <select class="form-control" [(ngModel)]="newCandidat.etapeParcours" name="etapeParcours">
+                        @for (e of etapesParcours; track e) {
+                          <option [value]="e">{{ etapeLabel(e) }}</option>
+                        }
+                      </select>
+                    </div>
                   </div>
                   <div class="form-group">
                     <label class="form-label">Autres contacts utiles / Personne à prévenir</label>
@@ -445,7 +437,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                     </select>
                   </div>
                   <div class="form-group">
-                    <label class="form-label">Montant (FCFA) <span class="required">*</span></label>
+                    <label class="form-label">Montant de formation (FCFA) <span class="required">*</span></label>
                     <input type="number" class="form-control" [(ngModel)]="newCandidat.montant" name="montant" required placeholder="Ex: 100000" />
                     <small class="text-muted">Pré-rempli selon la catégorie choisie, modifiable si besoin.</small>
                   </div>
@@ -469,11 +461,16 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                     <label class="form-label">Date de réception dossier</label>
                     <input type="date" class="form-control" [(ngModel)]="newCandidat.dateReceptionDossier" name="dateReceptionDossier" />
                   </div>
+                  <div class="form-group">
+                    <label class="form-label">Frais d'examen (FCFA)</label>
+                    <input type="number" class="form-control" [(ngModel)]="newCandidat.fraisExamen" name="fraisExamen" placeholder="Ex: 25000" />
+                    <small class="text-muted">Pré-rempli selon la catégorie, modifiable.</small>
+                  </div>
                 </div>
-                <div class="form-group form-check">
+                <div class="form-group form-check" style="margin-top: 4px;">
                   <label class="checkbox-label">
                     <input type="checkbox" [(ngModel)]="newCandidat.priseEnChargeExamens" name="priseEnChargeExamens" />
-                    Les frais de formation englobent la prise en charge totale des frais d'examen
+                    Inclus dans les frais (prise en charge totale des frais d'examen)
                   </label>
                 </div>
               </div>
@@ -580,7 +577,14 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                     <input type="date" class="form-control" [(ngModel)]="editCandidat.dateReceptionDossier" name="editDateReceptionDossier" />
                   </div>
                 </div>
-                <div class="form-group form-check">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Frais d'examen (FCFA)</label>
+                    <input type="number" class="form-control" [(ngModel)]="editCandidat.fraisExamen" name="editFraisExamen" placeholder="Ex: 25000" />
+                    <small class="text-muted">Pré-rempli selon la catégorie, modifiable.</small>
+                  </div>
+                </div>
+                <div class="form-group form-check" style="margin-top: 4px;">
                   <label class="checkbox-label">
                     <input type="checkbox" [(ngModel)]="editCandidat.priseEnChargeExamens" name="editPriseEnChargeExamens" />
                     Les frais de formation englobent la prise en charge totale des frais d'examen
@@ -723,17 +727,25 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     styles: [`
     .page-header-bar {
       display: flex;
-      align-items: center;
       justify-content: space-between;
+      align-items: center;
       flex-wrap: wrap;
-      gap: 1rem;
-      margin-bottom: 1.5rem;
+      gap: 1.25rem;
+      margin-bottom: 2rem;
+    }
+
+    .page-header-bar h2 {
+      color: var(--primary);
+      font-size: 1.4rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.25rem;
     }
 
     .header-buttons {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.5rem;
+      gap: 0.65rem;
     }
 
     .checkbox-label {
@@ -748,32 +760,52 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       display: flex;
       flex-wrap: wrap;
       align-items: stretch;
-      gap: 1rem;
-      margin-bottom: 1.5rem;
+      gap: 1.25rem;
+      margin-bottom: 2rem;
     }
 
     .stats-sexe-box {
       background: #fff;
       border: 1px solid var(--border-color);
-      border-radius: 0.75rem;
-      padding: 0.85rem 1.25rem;
+      border-radius: var(--radius-md);
+      padding: 1rem 1.4rem;
       min-width: 140px;
       display: flex;
       flex-direction: column;
+      box-shadow: var(--shadow-sm);
+      transition: transform var(--transition-fast), box-shadow var(--transition-fast);
     }
 
-    .stats-sexe-box.hommes { border-left: 4px solid #2563eb; }
-    .stats-sexe-box.femmes { border-left: 4px solid #ec4899; }
+    .stats-sexe-box:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .stats-sexe-box.inscrits { border-left: 4px solid var(--accent); min-width: 220px; }
+    .stats-sexe-box.hommes { border-left: 4px solid var(--cobalt); }
+    .stats-sexe-box.femmes { border-left: 4px solid var(--accent); }
     .stats-sexe-box.non-renseigne { border-left: 4px solid var(--text-muted); }
 
+    .stats-sexe-details {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 0.35rem;
+      font-weight: 500;
+    }
+
     .stats-sexe-value {
-      font-size: 1.4rem;
-      font-weight: 700;
-      color: var(--text-main);
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: var(--primary);
+      letter-spacing: -0.02em;
     }
 
     .stats-sexe-label {
-      font-size: 0.8rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
       color: var(--text-muted);
       margin-top: 0.15rem;
     }
@@ -944,7 +976,10 @@ export class CandidatsComponent implements OnInit {
     categoriePermisId: null,
     montant: null,
     siteId: null,
-    statutInscription: 'NOUVEAU'
+    statutInscription: 'NOUVEAU',
+    etapeParcours: 'INSCRIPTION',
+    priseEnChargeExamens: false,
+    fraisExamen: null
   };
 
   constructor(private apiService: ApiService, private authService: AuthService) {}
@@ -1176,8 +1211,10 @@ export class CandidatsComponent implements OnInit {
       dateInscription: new Date().toISOString().substring(0, 10),
       categoriePermisId: this.categories.length > 0 ? this.categories[0].id : null,
       montant: this.categories.length > 0 ? this.categories[0].montant : null,
+      fraisExamen: this.categories.length > 0 ? (this.categories[0].fraisExamen || null) : null,
       siteId: this.sitesAutorises.length > 0 ? this.sitesAutorises[0].id : null,
       statutInscription: 'NOUVEAU',
+      etapeParcours: 'INSCRIPTION',
       priseEnChargeExamens: false
     };
     this.showCreateModal = true;
@@ -1198,6 +1235,7 @@ export class CandidatsComponent implements OnInit {
       dateReceptionDossier: c.dateReceptionDossier ? c.dateReceptionDossier.substring(0, 10) : '',
       categoriePermisId: c.categoriePermisId,
       montant: c.montantForfait,
+      fraisExamen: c.fraisExamen || null,
       siteId: c.siteId ?? (this.sitesAutorises.length > 0 ? this.sitesAutorises[0].id : null),
       priseEnChargeExamens: c.priseEnChargeExamens
     };
@@ -1206,7 +1244,10 @@ export class CandidatsComponent implements OnInit {
 
   onEditCategorieChange(): void {
     const cat = this.categories.find(cat => cat.id === Number(this.editCandidat.categoriePermisId));
-    if (cat) this.editCandidat.montant = cat.montant;
+    if (cat) {
+      this.editCandidat.montant = cat.montant;
+      this.editCandidat.fraisExamen = cat.fraisExamen || null;
+    }
   }
 
   saveEditCandidat(): void {
@@ -1228,7 +1269,10 @@ export class CandidatsComponent implements OnInit {
 
   onCategorieChange(): void {
     const cat = this.categories.find(c => c.id === Number(this.newCandidat.categoriePermisId));
-    if (cat) this.newCandidat.montant = cat.montant;
+    if (cat) {
+      this.newCandidat.montant = cat.montant;
+      this.newCandidat.fraisExamen = cat.fraisExamen || null;
+    }
   }
 
   verifierDoublon(): void {
@@ -1269,6 +1313,7 @@ export class CandidatsComponent implements OnInit {
       const payload = {
         categoriePermisId: this.newCandidat.categoriePermisId,
         montant: this.newCandidat.montant,
+        fraisExamen: this.newCandidat.fraisExamen,
         siteId: this.newCandidat.siteId,
         dateInscription: this.newCandidat.dateInscription,
         priseEnChargeExamens: this.newCandidat.priseEnChargeExamens

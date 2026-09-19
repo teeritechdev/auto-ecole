@@ -274,11 +274,10 @@ public class ExamenService {
 
     @Transactional
     public SessionExamenDTO creerSession(CreatePassageBulkRequest request) {
-        if (request.getCandidatIds() == null || request.getCandidatIds().isEmpty()) {
-            throw new BadRequestException("Aucun candidat sélectionné");
-        }
         SessionExamen session = creerSessionEntite(request.getTypeEpreuve(), request.getDatePassage(), request.getObservations(), request.getSiteId());
-        request.getCandidatIds().forEach(candidatId -> creerPassagePourCandidat(session, candidatId));
+        if (request.getCandidatIds() != null && !request.getCandidatIds().isEmpty()) {
+            request.getCandidatIds().forEach(candidatId -> creerPassagePourCandidat(session, candidatId));
+        }
         return mapSessionToDTO(session);
     }
 

@@ -753,6 +753,29 @@ button, input, select, textarea {
   padding: 0.65rem 1rem;
 }
 
+/* Actions de tableau garanties sur UNE SEULE LIGNE */
+.custom-table td:last-child,
+.custom-table th:last-child {
+  white-space: nowrap;
+}
+
+.action-flex,
+.table-actions {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+
+.action-flex .btn,
+.table-actions .btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
 /* =========================================================
    BADGES & STATUS PILLS
    ========================================================= */

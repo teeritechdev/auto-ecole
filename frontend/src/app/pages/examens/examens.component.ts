@@ -152,7 +152,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       <!-- MODAL DÉTAIL SESSION -->
       @if (showSessionModal && sessionDetail) {
         <div class="modal-backdrop">
-          <div class="modal-content">
+          <div class="modal-content modal-lg">
             <div class="modal-header">
               <h3>Session du {{ sessionDetail.datePassage | date:'dd/MM/yyyy' }} — {{ epreuveLabel(sessionDetail.typeEpreuve) }}</h3>
               <button class="btn btn-outline btn-sm" (click)="closeSessionModal()">✕</button>
@@ -196,14 +196,17 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 <thead>
                   <tr>
                     <th>Candidat</th>
-                    <th>Résultat</th>
+                    <th>Résultat actuel</th>
                     <th>Tentatives</th>
+                    @if (peutNoter(sessionDetail)) {
+                      <th style="text-align: center; min-width: 190px;">Notation rapide</th>
+                    }
                     <th class="text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   @if (sessionDetail.candidats.length === 0) {
-                    <tr><td colspan="4" class="text-center py-4">Aucun candidat dans cette session.</td></tr>
+                    <tr><td [attr.colspan]="peutNoter(sessionDetail) ? 5 : 4" class="text-center py-4">Aucun candidat dans cette session.</td></tr>
                   }
                   @for (p of sessionDetail.candidats; track p.id) {
                     <tr>
@@ -213,18 +216,48 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                       </td>
                       <td><span class="badge" [ngClass]="getBadgeClass(p.resultat)">{{ p.resultat }}</span></td>
                       <td>{{ p.nombreEchecs }}/5</td>
+
+                      @if (peutNoter(sessionDetail)) {
+                        <td style="text-align: center;">
+                          <div class="notation-cases">
+                            <!-- CASE VALIDER -->
+                            <button type="button" 
+                                    class="btn-case btn-case-valider"
+                                    [class.selected]="p.resultat === 'REUSSI'"
+                                    [disabled]="notingPassageId === p.id"
+                                    (click)="noterPassageDirect(p, 'REUSSI')"
+                                    title="Marquer comme Validé / Réussi">
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                              <span>Validé</span>
+                            </button>
+
+                            <!-- CASE AJOURNER -->
+                            <button type="button" 
+                                    class="btn-case btn-case-ajourner"
+                                    [class.selected]="p.resultat === 'AJOURNE'"
+                                    [disabled]="notingPassageId === p.id"
+                                    (click)="noterPassageDirect(p, 'AJOURNE')"
+                                    title="Marquer comme Ajourné">
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                              <span>Ajourné</span>
+                            </button>
+                          </div>
+                        </td>
+                      }
+
                       <td class="text-right">
-                        @if (peutNoter(sessionDetail)) {
-                          <button class="btn btn-outline btn-sm" (click)="openUpdateModal(p)">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
-                            Noter
-                          </button>
-                        }
-                        @if (peutRetirer(sessionDetail)) {
-                          <button class="btn btn-danger btn-sm" style="margin-left: 0.25rem" (click)="retirerDeSession(p.id)">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-                          </button>
-                        }
+                        <div class="action-flex">
+                          @if (peutNoter(sessionDetail)) {
+                            <button class="btn btn-outline btn-xs" (click)="openUpdateModal(p)" title="Modifier avec observations">
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+                            </button>
+                          }
+                          @if (peutRetirer(sessionDetail)) {
+                            <button class="btn btn-danger btn-xs" (click)="retirerDeSession(p.id)" title="Retirer de la session">
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                            </button>
+                          }
+                        </div>
                       </td>
                     </tr>
                   }
@@ -666,6 +699,69 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       font-size: 0.85rem;
       font-weight: 600;
     }
+
+    .notation-cases {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      white-space: nowrap;
+    }
+
+    .btn-case {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.35rem 0.65rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.8rem;
+      font-weight: 600;
+      border: 1.5px solid transparent;
+      cursor: pointer;
+      background: #ffffff;
+      transition: all var(--transition-fast);
+      white-space: nowrap;
+    }
+
+    .btn-case-valider {
+      color: #15803d;
+      border-color: #86efac;
+      background: #f0fdf4;
+    }
+    .btn-case-valider:hover:not(:disabled) {
+      background: #dcfce7;
+      border-color: #22c55e;
+      transform: translateY(-1px);
+    }
+    .btn-case-valider.selected {
+      background: #16a34a;
+      color: #ffffff;
+      border-color: #15803d;
+      box-shadow: 0 2px 6px rgba(22, 163, 74, 0.3);
+    }
+
+    .btn-case-ajourner {
+      color: #b91c1c;
+      border-color: #fca5a5;
+      background: #fef2f2;
+    }
+    .btn-case-ajourner:hover:not(:disabled) {
+      background: #fee2e2;
+      border-color: #ef4444;
+      transform: translateY(-1px);
+    }
+    .btn-case-ajourner.selected {
+      background: #dc2626;
+      color: #ffffff;
+      border-color: #b91c1c;
+      box-shadow: 0 2px 6px rgba(220, 38, 38, 0.3);
+    }
+
+    .btn-case:disabled {
+      opacity: 0.6;
+      cursor: wait;
+      transform: none !important;
+    }
   `]
 })
 export class ExamensComponent implements OnInit {
@@ -701,6 +797,7 @@ export class ExamensComponent implements OnInit {
 
   showUpdateModal = false;
   targetPassage: PassageExamen | null = null;
+  notingPassageId: number | null = null;
   updateData: any = {
     datePassage: '',
     resultat: '',
@@ -1092,6 +1189,41 @@ export class ExamensComponent implements OnInit {
       error: (err) => {
         this.saving = false;
         this.formError = extraireMessageErreur(err, 'Erreur lors de la mise à jour.');
+      }
+    });
+  }
+
+  /** Notation directe et instantanée en 1 clic ("Validé" ou "Ajourné") sans ouvrir le modal */
+  noterPassageDirect(p: PassageExamen, nouveauResultat: 'REUSSI' | 'AJOURNE'): void {
+    if (this.notingPassageId === p.id) return;
+    this.notingPassageId = p.id;
+    this.sessionError = '';
+
+    const payload = {
+      datePassage: p.datePassage || this.sessionDetail?.datePassage || new Date().toISOString().substring(0, 10),
+      resultat: nouveauResultat,
+      observations: p.observations || ''
+    };
+
+    this.apiService.updateResultatPassage(p.id, payload).subscribe({
+      next: (updated) => {
+        this.notingPassageId = null;
+        p.resultat = updated.resultat;
+        // Recharger en arrière-plan la session et la liste pour mettre à jour les statuts dynamiques
+        if (this.sessionDetail) {
+          this.apiService.getSessionDetail(this.sessionDetail.id).subscribe({
+            next: (data) => {
+              this.sessionDetail = data;
+              this.loadSessions();
+            }
+          });
+        } else {
+          this.loadSessions();
+        }
+      },
+      error: (err) => {
+        this.notingPassageId = null;
+        this.sessionError = extraireMessageErreur(err, 'Erreur lors de la notation.');
       }
     });
   }

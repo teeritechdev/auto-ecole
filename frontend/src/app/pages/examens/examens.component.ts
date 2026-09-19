@@ -67,12 +67,12 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
           <table class="custom-table">
             <thead>
               <tr>
-                <th>Date</th>
-                <th>Épreuve</th>
-                <th>Moniteur</th>
-                <th>Candidats</th>
-                <th>Statut</th>
-                <th class="text-right">Action</th>
+                <th style="width: 15%;">Date</th>
+                <th style="width: 22%;">Lieu / Site</th>
+                <th style="width: 18%;">Épreuve</th>
+                <th style="width: 15%;">Candidats</th>
+                <th style="width: 15%;">Statut</th>
+                <th class="text-right" style="width: 15%;">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -90,21 +90,57 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 <tr>
                   <td><strong>{{ s.datePassage | date:'dd/MM/yyyy' }}</strong></td>
                   <td>
-                  <span class="badge" [ngClass]="{
-                    'badge-programme': s.typeEpreuve === 'CODE',
-                    'badge-solde': s.typeEpreuve === 'CRENEAU',
-                    'badge-en-cours': s.typeEpreuve === 'CIRCULATION'
-                  }">{{ s.typeEpreuve }}</span>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                      <span>{{ s.siteNom || 'Non défini' }}</span>
+                    </div>
                   </td>
-                  <td>{{ s.moniteurNomComplet || 'Non affecté' }}</td>
-                  <td>{{ s.candidats.length }}</td>
                   <td>
-                    <span class="badge" [ngClass]="s.terminee ? 'badge-reussi' : 'badge-programme'">
-                      {{ s.terminee ? 'Terminé' : 'En cours' }}
+                    <span class="badge" [ngClass]="{
+                      'badge-programme': s.typeEpreuve === 'CODE',
+                      'badge-solde': s.typeEpreuve === 'CRENEAU',
+                      'badge-en-cours': s.typeEpreuve === 'CIRCULATION'
+                    }">{{ epreuveLabel(s.typeEpreuve) }}</span>
+                  </td>
+                  <td>
+                    <span class="badge" style="background:#eef4ff; color:#103778; font-weight:600;">
+                      {{ s.candidats.length }} candidat(s)
+                    </span>
+                  </td>
+                  <td>
+                    <span class="badge" [ngClass]="{
+                      'badge-reussi': (s.statut || (s.terminee ? 'TERMINE' : 'PROGRAMME')) === 'TERMINE',
+                      'badge-warning': (s.statut || (s.terminee ? 'TERMINE' : 'PROGRAMME')) === 'EN_COURS',
+                      'badge-programme': (s.statut || (s.terminee ? 'TERMINE' : 'PROGRAMME')) === 'PROGRAMME'
+                    }">
+                      {{ formatStatut(s.statut || (s.terminee ? 'TERMINE' : (s.datePassee ? 'EN_COURS' : 'PROGRAMME'))) }}
                     </span>
                   </td>
                   <td class="text-right">
-                    <button class="btn btn-outline btn-sm" (click)="openSessionDetail(s.id)">Voir</button>
+                    <div class="action-flex" style="justify-content: flex-end; gap: 0.35rem;">
+                      <!-- VOIR -->
+                      <button class="btn btn-outline btn-xs" (click)="openSessionDetail(s.id)" title="Voir le détail et noter">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                      </button>
+                      <!-- AFFECTER CANDIDATS -->
+                      @if (peutGererSession(s)) {
+                        <button class="btn btn-primary btn-xs" (click)="openQuickAffecterModal(s)" title="Affecter des candidats">
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                        </button>
+                      }
+                      <!-- MODIFIER -->
+                      @if (peutGererSession(s)) {
+                        <button class="btn btn-secondary btn-xs" (click)="openEditSessionModal(s)" title="Modifier la session">
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+                        </button>
+                      }
+                      <!-- SUPPRIMER -->
+                      @if (peutGererSession(s)) {
+                        <button class="btn btn-danger btn-xs" (click)="supprimerSession(s)" title="Supprimer la session">
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                        </button>
+                      }
+                    </div>
                   </td>
                 </tr>
               }
@@ -254,6 +290,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   </div>
                 }
 
+                <!-- Ordre des champs conforme : 1. Date, 2. Lieu / Site, 3. Épreuve, 4. Statut -->
                 <div class="form-row">
                   <div class="form-group">
                     <label class="form-label">Date de la session <span class="required">*</span></label>
@@ -261,7 +298,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   </div>
                   <div class="form-group">
                     <label class="form-label">Lieu / Site <span class="required">*</span></label>
-                    <select class="form-control" [(ngModel)]="newPassage.siteId" name="siteId" (change)="onSiteChange()" required>
+                    <select class="form-control" [(ngModel)]="newPassage.siteId" name="siteId" required>
                       <option [ngValue]="null" disabled>Sélectionner un site</option>
                       @for (s of sitesAutorises; track s.id) {
                         <option [ngValue]="s.id">{{ s.nom }}</option>
@@ -273,52 +310,24 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 <div class="form-row">
                   <div class="form-group">
                     <label class="form-label">Type d'épreuve <span class="required">*</span></label>
-                    <select class="form-control" [(ngModel)]="newPassage.typeEpreuve" name="typeEpreuve" (change)="onTypeEpreuveChange()" required>
+                    <select class="form-control" [(ngModel)]="newPassage.typeEpreuve" name="typeEpreuve" required>
                       @for (t of epreuvesAutorisees; track t) {
                         <option [value]="t">{{ epreuveLabel(t) }}</option>
                       }
                     </select>
                   </div>
                   <div class="form-group">
-                    <label class="form-label">Statut initial</label>
-                    <select class="form-control" [(ngModel)]="newPassage.resultat" name="resultat">
-                      <option value="PROGRAMME">Programmé (En attente)</option>
-                      <option value="EN_COURS">En cours</option>
-                      <option value="TERMINE">Terminé</option>
+                    <label class="form-label">Statut</label>
+                    <select class="form-control" [(ngModel)]="newPassage.statut" name="statut">
+                      <option value="PROGRAMME">Programmé (Par défaut)</option>
+                      <option value="EN_COURS">En cours (Date du jour)</option>
+                      <option value="TERMINE">Terminé (Résultats affectés)</option>
                     </select>
                   </div>
                 </div>
 
-                <div class="form-group">
-                  <label class="form-label">
-                    Candidats à inscrire immédiatement
-                    <small class="text-muted" style="font-weight: normal;">(facultatif - vous pouvez créer la session et ajouter les candidats plus tard)</small>
-                  </label>
-                  <div class="candidats-list" style="max-height: 180px;">
-                    @for (c of eligibleCandidats; track c.id) {
-                      <label class="candidat-option">
-                        <input
-                          type="checkbox"
-                          [checked]="isCandidatSelected(c.id)"
-                          (change)="toggleCandidat(c.id)"
-                          />
-                        <span class="candidat-option-text">
-                          <strong>{{ c.numeroDossier }}</strong>
-                          <span>{{ c.nom }} {{ c.prenom }} ({{ c.categoriePermisCode }})</span>
-                        </span>
-                      </label>
-                    }
-                    @if (eligibleCandidats.length === 0) {
-                      <div class="form-help" style="padding: 0.75rem;">
-                        Aucun candidat n'est actuellement éligible pour cette épreuve{{ newPassage.siteId ? ' sur ce site' : '' }}.
-                      </div>
-                    }
-                  </div>
-                  @if (selectedCandidatIds.length > 0) {
-                    <div class="selection-count" style="margin-top: 0.4rem;">
-                      {{ selectedCandidatIds.length }} candidat(s) sélectionné(s)
-                    </div>
-                  }
+                <div class="alert alert-info" style="font-size: 0.85rem; margin-bottom: 1rem;">
+                  ℹ️ <em>La session sera créée d'abord. Vous pourrez affecter les candidats du site à tout moment via l'icône dédiée 👤➕.</em>
                 </div>
 
                 <div class="form-group">
@@ -330,6 +339,116 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 <button type="button" class="btn btn-secondary" (click)="showProgrammerModal = false">Annuler</button>
                 <button type="submit" class="btn btn-primary" [disabled]="saving || !newPassage.datePassage || !newPassage.siteId || !newPassage.typeEpreuve">
                   {{ saving ? 'Enregistrement...' : 'Créer la Session' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      }
+
+      <!-- MODAL AFFECTER DES CANDIDATS (ACTION RAPIDE 👤➕) -->
+      @if (showQuickAffecterModal && quickTargetSession) {
+        <div class="modal-backdrop">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3 style="display:flex; align-items:center; gap:0.5rem;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                Affecter des candidats — Session {{ epreuveLabel(quickTargetSession.typeEpreuve) }}
+              </h3>
+              <button class="btn btn-outline btn-sm" (click)="showQuickAffecterModal = false">✕</button>
+            </div>
+            <div class="modal-body">
+              @if (quickAffecterError) {
+                <div class="alert alert-danger">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                  {{ quickAffecterError }}
+                </div>
+              }
+              <div class="alert alert-info">
+                Site : <strong>{{ quickTargetSession.siteNom || 'Non défini' }}</strong> | 
+                Date : <strong>{{ quickTargetSession.datePassage | date:'dd/MM/yyyy' }}</strong> |
+                Inscrits : <strong>{{ quickTargetSession.candidats.length }} candidat(s)</strong>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">
+                  Sélectionner les candidats du site éligibles pour cette épreuve :
+                </label>
+                <div class="candidats-list" style="max-height: 220px;">
+                  @for (c of quickEligibleCandidats; track c.id) {
+                    <label class="candidat-option">
+                      <input type="checkbox" [checked]="isQuickSelected(c.id)" (change)="toggleQuickCandidat(c.id)" />
+                      <span class="candidat-option-text">
+                        <strong>{{ c.numeroDossier }}</strong>
+                        <span>{{ c.nom }} {{ c.prenom }} ({{ c.categoriePermisCode }}) - {{ c.siteNom }}</span>
+                      </span>
+                    </label>
+                  }
+                  @if (quickEligibleCandidats.length === 0) {
+                    <div class="form-help" style="padding: 1rem; text-align: center;">
+                      Aucun candidat éligible disponible pour cette épreuve sur ce site.
+                    </div>
+                  }
+                </div>
+                @if (quickSelectionIds.length > 0) {
+                  <div class="selection-count">
+                    {{ quickSelectionIds.length }} candidat(s) sélectionné(s)
+                  </div>
+                }
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" (click)="showQuickAffecterModal = false">Fermer</button>
+              <button type="button" class="btn btn-primary" [disabled]="quickSelectionIds.length === 0 || savingQuickAffecter" (click)="confirmerQuickAffecter()">
+                {{ savingQuickAffecter ? 'Affectation...' : 'Affecter (' + quickSelectionIds.length + ') candidat(s)' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- MODAL MODIFIER SESSION ✏️ -->
+      @if (showEditSessionModal && editTargetSession) {
+        <div class="modal-backdrop">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3 style="display:flex; align-items:center; gap:0.5rem;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+                Modifier la Session d'Examen
+              </h3>
+              <button class="btn btn-outline btn-sm" (click)="showEditSessionModal = false">✕</button>
+            </div>
+            <form (ngSubmit)="saveEditSession()">
+              <div class="modal-body">
+                @if (editSessionError) {
+                  <div class="alert alert-danger">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    {{ editSessionError }}
+                  </div>
+                }
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Date de la session <span class="required">*</span></label>
+                    <input type="date" class="form-control" [(ngModel)]="editSessionForm.datePassage" name="datePassage" required />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Lieu / Site <span class="required">*</span></label>
+                    <select class="form-control" [(ngModel)]="editSessionForm.siteId" name="siteId" required>
+                      @for (s of sitesAutorises; track s.id) {
+                        <option [ngValue]="s.id">{{ s.nom }}</option>
+                      }
+                    </select>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Observations</label>
+                  <textarea class="form-control" rows="2" [(ngModel)]="editSessionForm.observations" name="observations" placeholder="Remarques éventuelles..."></textarea>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" (click)="showEditSessionModal = false">Annuler</button>
+                <button type="submit" class="btn btn-primary" [disabled]="savingEditSession || !editSessionForm.datePassage || !editSessionForm.siteId">
+                  {{ savingEditSession ? 'Enregistrement...' : 'Mettre à jour' }}
                 </button>
               </div>
             </form>
@@ -568,6 +687,24 @@ export class ExamensComponent implements OnInit {
   editingSessionDate = false;
   editSessionDateValue = '';
   savingSessionDate = false;
+
+  // Modals : Affectation Rapide & Modification Session
+  showQuickAffecterModal = false;
+  quickTargetSession: SessionExamen | null = null;
+  quickEligibleCandidats: Candidat[] = [];
+  quickSelectionIds: number[] = [];
+  savingQuickAffecter = false;
+  quickAffecterError = '';
+
+  showEditSessionModal = false;
+  editTargetSession: SessionExamen | null = null;
+  editSessionForm: { datePassage: string; siteId: number | null; observations: string } = {
+    datePassage: '',
+    siteId: null,
+    observations: ''
+  };
+  savingEditSession = false;
+  editSessionError = '';
 
   constructor(private apiService: ApiService, private authService: AuthService) {}
 
@@ -914,6 +1051,104 @@ export class ExamensComponent implements OnInit {
       error: (err) => {
         this.saving = false;
         this.formError = extraireMessageErreur(err, 'Erreur lors de la mise à jour.');
+      }
+    });
+  }
+
+  formatStatut(statut?: string): string {
+    switch (statut) {
+      case 'EN_COURS': return 'En cours';
+      case 'TERMINE': return 'Terminé';
+      case 'PROGRAMME':
+      default: return 'Programmé';
+    }
+  }
+
+  // --- ACTIONS RAPIDES SESSION (ICÔNES DU TABLEAU) ---
+
+  openQuickAffecterModal(s: SessionExamen): void {
+    this.quickTargetSession = s;
+    this.quickSelectionIds = [];
+    this.quickAffecterError = '';
+
+    const idsExistants = new Set(s.candidats.map(p => p.candidatId));
+    this.quickEligibleCandidats = this.allCandidats.filter(c =>
+      !idsExistants.has(c.id) && this.estEligiblePour(c, s.typeEpreuve, s.siteId ?? null)
+    );
+    this.showQuickAffecterModal = true;
+  }
+
+  isQuickSelected(candidatId: number): boolean {
+    return this.quickSelectionIds.includes(candidatId);
+  }
+
+  toggleQuickCandidat(candidatId: number): void {
+    this.quickSelectionIds = this.isQuickSelected(candidatId)
+      ? this.quickSelectionIds.filter(id => id !== candidatId)
+      : [...this.quickSelectionIds, candidatId];
+  }
+
+  confirmerQuickAffecter(): void {
+    if (!this.quickTargetSession || this.quickSelectionIds.length === 0) return;
+    const sessionId = this.quickTargetSession.id;
+    this.savingQuickAffecter = true;
+    this.quickAffecterError = '';
+
+    this.apiService.ajouterCandidatsASession(sessionId, this.quickSelectionIds).subscribe({
+      next: () => {
+        this.savingQuickAffecter = false;
+        this.showQuickAffecterModal = false;
+        this.loadSessions();
+        this.loadCandidats();
+      },
+      error: (err) => {
+        this.savingQuickAffecter = false;
+        this.quickAffecterError = extraireMessageErreur(err, "Erreur lors de l'affectation des candidats.");
+      }
+    });
+  }
+
+  openEditSessionModal(s: SessionExamen): void {
+    this.editTargetSession = s;
+    this.editSessionError = '';
+    this.editSessionForm = {
+      datePassage: s.datePassage,
+      siteId: s.siteId,
+      observations: s.observations || ''
+    };
+    this.showEditSessionModal = true;
+  }
+
+  saveEditSession(): void {
+    if (!this.editTargetSession || !this.editSessionForm.datePassage || !this.editSessionForm.siteId) return;
+    this.savingEditSession = true;
+    this.editSessionError = '';
+
+    this.apiService.modifierSession(this.editTargetSession.id, this.editSessionForm).subscribe({
+      next: () => {
+        this.savingEditSession = false;
+        this.showEditSessionModal = false;
+        this.loadSessions();
+      },
+      error: (err) => {
+        this.savingEditSession = false;
+        this.editSessionError = extraireMessageErreur(err, 'Erreur lors de la modification de la session.');
+      }
+    });
+  }
+
+  supprimerSession(s: SessionExamen): void {
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer la session du ${s.datePassage} (${this.epreuveLabel(s.typeEpreuve)}) ?\nLes candidats inscrits seront libérés.`)) {
+      return;
+    }
+
+    this.apiService.deleteSession(s.id).subscribe({
+      next: () => {
+        this.loadSessions();
+        this.loadCandidats();
+      },
+      error: (err) => {
+        alert(extraireMessageErreur(err, 'Erreur lors de la suppression de la session.'));
       }
     });
   }

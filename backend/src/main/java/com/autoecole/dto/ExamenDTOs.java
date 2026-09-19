@@ -115,6 +115,7 @@ public class ExamenDTOs {
         private String observations;
         private boolean datePassee;
         private boolean terminee;
+        private String statut; // PROGRAMME, EN_COURS, TERMINE
         private java.util.List<PassageExamenDTO> candidats;
     }
 
@@ -127,9 +128,14 @@ public class ExamenDTOs {
 
     @Data
     @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
     public static class UpdateSessionRequest {
         @NotNull(message = "La date de l'examen est obligatoire")
         private LocalDate datePassage;
+
+        private Long siteId;
+        private String observations;
     }
 
     @Data

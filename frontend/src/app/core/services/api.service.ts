@@ -205,6 +205,14 @@ export class ApiService {
     return this.http.put<SessionExamen>(`${this.base}/examens/sessions/${sessionId}`, { datePassage });
   }
 
+  public modifierSession(sessionId: number, data: { datePassage: string; siteId?: number; observations?: string }): Observable<SessionExamen> {
+    return this.http.put<SessionExamen>(`${this.base}/examens/sessions/${sessionId}`, data);
+  }
+
+  public deleteSession(sessionId: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/examens/sessions/${sessionId}`);
+  }
+
   public updateResultatPassage(id: number, data: { datePassage: string; resultat: string; observations?: string }): Observable<PassageExamen> {
     return this.http.put<PassageExamen>(`${this.base}/examens/${id}/resultat`, data);
   }

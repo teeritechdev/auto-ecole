@@ -207,6 +207,7 @@ export interface SessionExamen {
   observations?: string;
   datePassee: boolean;
   terminee: boolean;
+  statut?: 'PROGRAMME' | 'EN_COURS' | 'TERMINE';
   candidats: PassageExamen[];
 }
 

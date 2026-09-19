@@ -116,6 +116,14 @@ public class ExamenController {
         return ResponseEntity.ok(examenService.modifierDateSession(id, request));
     }
 
+    @DeleteMapping("/sessions/{id}")
+    @PreAuthorize("hasAuthority('PERM_EXAMENS_GERER_SESSION') or hasAuthority('PERM_EXAMENS_SUPPRIMER')")
+    @Operation(summary = "Supprimer une session d'examen et libérer ses candidats")
+    public ResponseEntity<Void> deleteSession(@PathVariable Long id) {
+        examenService.deleteSession(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @PutMapping("/{id}/resultat")
     @PreAuthorize("hasAuthority('PERM_EXAMENS_GERER_SESSION')")
     @Operation(summary = "Mettre à jour le résultat d'un passage (Réussi, Échec, Ajourné)")

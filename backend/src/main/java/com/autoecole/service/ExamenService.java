@@ -343,6 +343,14 @@ public class ExamenService {
         verifierSessionModifiable(session, "modifier la date de");
 
         session.setDatePassage(request.getDatePassage());
+        if (request.getSiteId() != null && !request.getSiteId().equals(session.getSite() != null ? session.getSite().getId() : null)) {
+            Site newSite = siteRepository.findById(request.getSiteId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Site introuvable"));
+            session.setSite(newSite);
+        }
+        if (request.getObservations() != null) {
+            session.setObservations(request.getObservations());
+        }
         sessionRepository.save(session);
 
         List<PassageExamen> candidatsActifs = passageRepository.findBySessionIdOrderByDateEnregistrementAsc(sessionId);
@@ -354,9 +362,38 @@ public class ExamenService {
         }
 
         auditService.logAction("MODIFICATION_SESSION", "SessionExamen", sessionId.toString(),
-                "Date de la session déplacée au " + request.getDatePassage(), null);
+                "Session modifiée (Date: " + request.getDatePassage() + ")", null);
 
         return mapSessionToDTO(session);
+    }
+
+    @Transactional
+    public void deleteSession(Long sessionId) {
+        SessionExamen session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Session d'examen introuvable"));
+        siteAccessService.verifierAccesEpreuve(session.getTypeEpreuve());
+        siteAccessService.verifierAccesSite(session.getSite() != null ? session.getSite().getId() : null);
+
+        List<PassageExamen> passages = passageRepository.findBySessionIdOrderByDateEnregistrementAsc(sessionId);
+        // Si un des candidats a déjà un résultat définitif (REUSSI ou AJOURNE), on bloque la suppression
+        boolean aResultatsDefinitifs = passages.stream().anyMatch(p -> p.getResultat() != ResultatExamen.PROGRAMME);
+        if (aResultatsDefinitifs) {
+            throw new BadRequestException("Impossible de supprimer une session dont certains candidats ont déjà un résultat proclamé");
+        }
+
+        // Libérer les candidats : remettre leur étape à l'étape préalable
+        for (PassageExamen p : passages) {
+            Inscription inscription = p.getInscription();
+            if (inscription != null) {
+                inscription.setEtapeParcours(etapeAvantExamen(session.getTypeEpreuve()));
+                inscriptionRepository.save(inscription);
+            }
+            passageRepository.delete(p);
+        }
+
+        sessionRepository.delete(session);
+        auditService.logAction("SUPPRESSION_SESSION", "SessionExamen", sessionId.toString(),
+                "Suppression session " + session.getTypeEpreuve() + " du " + session.getDatePassage(), null);
     }
 
     public List<SessionExamenDTO> listerSessions() {
@@ -381,10 +418,26 @@ public class ExamenService {
     private SessionExamenDTO mapSessionToDTO(SessionExamen session) {
         List<PassageExamenDTO> candidats = passageRepository.findBySessionIdOrderByDateEnregistrementAsc(session.getId())
                 .stream().map(this::mapToDTO).collect(Collectors.toList());
-        // Terminée dès que tous les candidats actifs de la session ont reçu un résultat
-        // définitif (plus aucun en attente) ; en cours tant qu'il en reste au moins un,
-        // que la date soit passée ou non.
-        boolean terminee = candidats.stream().noneMatch(c -> c.getResultat() == ResultatExamen.PROGRAMME);
+
+        LocalDate today = LocalDate.now();
+        LocalDate datePassage = session.getDatePassage();
+        boolean dateArriveeOuPassee = !datePassage.isAfter(today);
+
+        // Détermination du statut dynamique :
+        // 1. TERMINE si candidats non vide et aucun candidat n'est PROGRAMME
+        // 2. EN_COURS si datePassage <= today et (pas encore tous notés)
+        // 3. PROGRAMME par défaut
+        String statut = "PROGRAMME";
+        boolean terminee = false;
+        if (!candidats.isEmpty() && candidats.stream().noneMatch(c -> c.getResultat() == ResultatExamen.PROGRAMME)) {
+            statut = "TERMINE";
+            terminee = true;
+        } else if (dateArriveeOuPassee) {
+            statut = "EN_COURS";
+        } else {
+            statut = "PROGRAMME";
+        }
+
         return SessionExamenDTO.builder()
                 .id(session.getId())
                 .typeEpreuve(session.getTypeEpreuve())
@@ -395,8 +448,9 @@ public class ExamenService {
                 .moniteurNomComplet(session.getMoniteur() != null ? session.getMoniteur().getNom() + " " + session.getMoniteur().getPrenom() : null)
                 .moniteurSpecialites(session.getMoniteur() != null ? session.getMoniteur().getSpecialites() : null)
                 .observations(session.getObservations())
-                .datePassee(session.getDatePassage().isBefore(LocalDate.now()))
+                .datePassee(session.getDatePassage().isBefore(today))
                 .terminee(terminee)
+                .statut(statut)
                 .candidats(candidats)
                 .build();
     }

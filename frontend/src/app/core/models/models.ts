@@ -199,6 +199,7 @@ export interface SessionExamen {
   id: number;
   typeEpreuve: 'CODE' | 'CRENEAU' | 'CIRCULATION';
   datePassage: string;
+  lieu?: string;
   siteId?: number;
   siteNom?: string;
   moniteurId?: number;

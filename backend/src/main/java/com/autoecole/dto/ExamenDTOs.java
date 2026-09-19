@@ -77,11 +77,12 @@ public class ExamenDTOs {
         @NotNull(message = "La date du passage est obligatoire")
         private LocalDate datePassage;
 
+        private String lieu;
+
         private Long moniteurId;
         private String observations;
 
-        // Obligatoire seulement si le moniteur est affecté à plusieurs sites (sinon déduit
-        // automatiquement de son unique site de rattachement).
+        // Optionnel
         private Long siteId;
     }
 
@@ -107,6 +108,7 @@ public class ExamenDTOs {
         private Long id;
         private TypeEpreuve typeEpreuve;
         private LocalDate datePassage;
+        private String lieu;
         private Long siteId;
         private String siteNom;
         private Long moniteurId;
@@ -134,6 +136,7 @@ public class ExamenDTOs {
         @NotNull(message = "La date de l'examen est obligatoire")
         private LocalDate datePassage;
 
+        private String lieu;
         private Long siteId;
         private String observations;
     }

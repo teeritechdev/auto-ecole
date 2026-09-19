@@ -200,14 +200,15 @@ public class ExamenService {
 
     /**
      * Crée l'entité session (le moniteur courant en est propriétaire) sans encore y
-     * attacher de candidat.
+     * attacher de candidat. Le champ lieu est autonome (texte libre).
      */
-    private SessionExamen creerSessionEntite(TypeEpreuve typeEpreuve, LocalDate datePassage, String observations, Long siteId) {
+    private SessionExamen creerSessionEntite(TypeEpreuve typeEpreuve, LocalDate datePassage, String lieu, String observations, Long siteId) {
         Utilisateur currentUser = auditService.getCurrentUser();
-        Site site = resoudreSiteSession(siteId);
+        Site site = (siteId != null) ? siteRepository.findById(siteId).orElse(null) : null;
         SessionExamen session = SessionExamen.builder()
                 .typeEpreuve(typeEpreuve)
                 .datePassage(datePassage)
+                .lieu(lieu)
                 .site(site)
                 .moniteur(currentUser)
                 .observations(observations)
@@ -222,15 +223,6 @@ public class ExamenService {
     private PassageExamen creerPassagePourCandidat(SessionExamen session, Long candidatId) {
         inscriptionService.verifierAccesCandidat(candidatId);
         Inscription inscription = inscriptionService.getInscriptionActive(candidatId);
-
-        // Un moniteur affecté à plusieurs sites pourrait sinon regrouper dans une même
-        // session des candidats de sites différents : la session est déclarée sur un site
-        // précis, tous ses candidats doivent y être inscrits.
-        Long siteSession = session.getSite() != null ? session.getSite().getId() : null;
-        Long siteCandidat = inscription.getSite() != null ? inscription.getSite().getId() : null;
-        if (siteSession != null && !siteSession.equals(siteCandidat)) {
-            throw new BadRequestException("Ce candidat n'est pas inscrit sur le site de cette session");
-        }
 
         verifierPrerequisEtEligibilite(inscription, session.getTypeEpreuve());
 
@@ -274,14 +266,14 @@ public class ExamenService {
 
     @Transactional
     public PassageExamenDTO programmerOuEnregistrerPassage(CreatePassageRequest request) {
-        SessionExamen session = creerSessionEntite(request.getTypeEpreuve(), request.getDatePassage(), request.getObservations(), request.getSiteId());
+        SessionExamen session = creerSessionEntite(request.getTypeEpreuve(), request.getDatePassage(), null, request.getObservations(), request.getSiteId());
         PassageExamen saved = creerPassagePourCandidat(session, request.getCandidatId());
         return mapToDTO(saved);
     }
 
     @Transactional
     public SessionExamenDTO creerSession(CreatePassageBulkRequest request) {
-        SessionExamen session = creerSessionEntite(request.getTypeEpreuve(), request.getDatePassage(), request.getObservations(), request.getSiteId());
+        SessionExamen session = creerSessionEntite(request.getTypeEpreuve(), request.getDatePassage(), request.getLieu(), request.getObservations(), request.getSiteId());
         if (request.getCandidatIds() != null && !request.getCandidatIds().isEmpty()) {
             request.getCandidatIds().forEach(candidatId -> creerPassagePourCandidat(session, candidatId));
         }
@@ -293,7 +285,6 @@ public class ExamenService {
         SessionExamen session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Session d'examen introuvable"));
         siteAccessService.verifierAccesEpreuve(session.getTypeEpreuve());
-        siteAccessService.verifierAccesSite(session.getSite() != null ? session.getSite().getId() : null);
         verifierSessionModifiable(session, "ajouter un candidat");
 
         if (request.getCandidatIds() == null || request.getCandidatIds().isEmpty()) {
@@ -315,7 +306,6 @@ public class ExamenService {
         PassageExamen passage = passageRepository.findBySessionIdAndId(sessionId, passageId)
                 .orElseThrow(() -> new ResourceNotFoundException("Ce candidat n'appartient pas à cette session"));
         siteAccessService.verifierAccesEpreuve(session.getTypeEpreuve());
-        siteAccessService.verifierAccesSite(session.getSite() != null ? session.getSite().getId() : null);
         verifierSessionModifiable(session, "retirer un candidat");
 
         Inscription inscription = passage.getInscription();
@@ -331,7 +321,7 @@ public class ExamenService {
     }
 
     /**
-     * Modifie la date d'une session : répercutée sur tous ses candidats encore en
+     * Modifie la date et le lieu d'une session : répercutée sur tous ses candidats encore en
      * attente de résultat, pas sur ceux déjà notés.
      */
     @Transactional
@@ -339,10 +329,12 @@ public class ExamenService {
         SessionExamen session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Session d'examen introuvable"));
         siteAccessService.verifierAccesEpreuve(session.getTypeEpreuve());
-        siteAccessService.verifierAccesSite(session.getSite() != null ? session.getSite().getId() : null);
         verifierSessionModifiable(session, "modifier la date de");
 
         session.setDatePassage(request.getDatePassage());
+        if (request.getLieu() != null) {
+            session.setLieu(request.getLieu());
+        }
         if (request.getSiteId() != null && !request.getSiteId().equals(session.getSite() != null ? session.getSite().getId() : null)) {
             Site newSite = siteRepository.findById(request.getSiteId())
                     .orElseThrow(() -> new ResourceNotFoundException("Site introuvable"));
@@ -372,7 +364,6 @@ public class ExamenService {
         SessionExamen session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Session d'examen introuvable"));
         siteAccessService.verifierAccesEpreuve(session.getTypeEpreuve());
-        siteAccessService.verifierAccesSite(session.getSite() != null ? session.getSite().getId() : null);
 
         List<PassageExamen> passages = passageRepository.findBySessionIdOrderByDateEnregistrementAsc(sessionId);
         // Si un des candidats a déjà un résultat définitif (REUSSI ou AJOURNE), on bloque la suppression
@@ -397,12 +388,11 @@ public class ExamenService {
     }
 
     public List<SessionExamenDTO> listerSessions() {
-        Set<Long> siteIds = siteAccessService.resoudreFiltreSitesPourListe();
         Set<TypeEpreuve> typesAutorises = siteAccessService.resoudreFiltreEpreuvesPourListe();
-        if ((siteIds != null && siteIds.isEmpty()) || (typesAutorises != null && typesAutorises.isEmpty())) {
+        if (typesAutorises != null && typesAutorises.isEmpty()) {
             return List.of();
         }
-        return sessionRepository.listerSessions(siteIds, typesAutorises).stream()
+        return sessionRepository.listerSessions(typesAutorises).stream()
                 .map(this::mapSessionToDTO)
                 .collect(Collectors.toList());
     }
@@ -411,7 +401,6 @@ public class ExamenService {
         SessionExamen session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Session d'examen introuvable"));
         siteAccessService.verifierAccesEpreuve(session.getTypeEpreuve());
-        siteAccessService.verifierAccesSite(session.getSite() != null ? session.getSite().getId() : null);
         return mapSessionToDTO(session);
     }
 
@@ -442,6 +431,7 @@ public class ExamenService {
                 .id(session.getId())
                 .typeEpreuve(session.getTypeEpreuve())
                 .datePassage(session.getDatePassage())
+                .lieu(session.getLieu())
                 .siteId(session.getSite() != null ? session.getSite().getId() : null)
                 .siteNom(session.getSite() != null ? session.getSite().getNom() : null)
                 .moniteurId(session.getMoniteur() != null ? session.getMoniteur().getId() : null)

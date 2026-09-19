@@ -205,7 +205,7 @@ export class ApiService {
     return this.http.put<SessionExamen>(`${this.base}/examens/sessions/${sessionId}`, { datePassage });
   }
 
-  public modifierSession(sessionId: number, data: { datePassage: string; siteId?: number; observations?: string }): Observable<SessionExamen> {
+  public modifierSession(sessionId: number, data: { datePassage: string; lieu?: string; siteId?: number; observations?: string }): Observable<SessionExamen> {
     return this.http.put<SessionExamen>(`${this.base}/examens/sessions/${sessionId}`, data);
   }
 

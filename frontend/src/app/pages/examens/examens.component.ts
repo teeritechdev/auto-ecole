@@ -68,11 +68,11 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
             <thead>
               <tr>
                 <th style="width: 15%;">Date</th>
-                <th style="width: 22%;">Lieu / Site</th>
+                <th style="width: 25%;">Lieu</th>
                 <th style="width: 18%;">Épreuve</th>
-                <th style="width: 15%;">Candidats</th>
-                <th style="width: 15%;">Statut</th>
-                <th class="text-right" style="width: 15%;">Action</th>
+                <th style="width: 14%;">Candidats</th>
+                <th style="width: 14%;">Statut</th>
+                <th class="text-right" style="width: 14%;">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -92,7 +92,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   <td>
                     <div style="display: flex; align-items: center; gap: 0.5rem;">
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-                      <span>{{ s.siteNom || 'Non défini' }}</span>
+                      <span>{{ s.lieu || s.siteNom || 'Non spécifié' }}</span>
                     </div>
                   </td>
                   <td>
@@ -166,7 +166,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
               }
               <div class="alert alert-info session-info">
                 <div class="session-info-text">
-                  <div>Site : <strong>{{ sessionDetail.siteNom || 'Non défini' }}</strong></div>
+                  <div>Lieu : <strong>{{ sessionDetail.lieu || sessionDetail.siteNom || 'Non spécifié' }}</strong></div>
                   <div>
                     Moniteur : <strong>{{ sessionDetail.moniteurNomComplet || 'Non affecté' }}</strong>
                     @if (sessionDetail.moniteurSpecialites?.length) {
@@ -240,31 +240,52 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                     </button>
                   } @else {
                     <div class="form-group">
+                      @if (sitesAutorises.length > 1) {
+                        <div style="margin-bottom: 0.75rem;">
+                          <label class="form-label">Filtrer les candidats par site :</label>
+                          <select class="form-control" [(ngModel)]="ajoutFilterSiteId" (change)="onAjoutFilterSiteChange()">
+                            <option value="">Tous mes sites</option>
+                            @for (s of sitesAutorises; track s.id) {
+                              <option [value]="s.id">{{ s.nom }}</option>
+                            }
+                          </select>
+                        </div>
+                      }
                       <label class="form-label">Candidats éligibles pour cette épreuve</label>
                       <div class="candidats-list">
-                        @for (c of candidatsAjoutables; track c.id) {
+                        @for (c of candidatsAjoutablesFiltres; track c.id) {
                           <label class="candidat-option">
                             <input type="checkbox" [checked]="isAjoutSelected(c.id)" (change)="toggleAjoutCandidat(c.id)" />
                             <span class="candidat-option-text">
                               <strong>{{ c.numeroDossier }}</strong>
-                              <span>{{ c.nom }} {{ c.prenom }} ({{ c.categoriePermisCode }})</span>
+                              <span>{{ c.nom }} {{ c.prenom }} ({{ c.categoriePermisCode }}) - {{ c.siteNom }}</span>
                             </span>
                           </label>
                         }
-                        @if (candidatsAjoutables.length === 0) {
-                          <div class="form-help" style="padding: 0.7rem;">Aucun candidat supplémentaire éligible.</div>
+                        @if (candidatsAjoutablesFiltres.length === 0) {
+                          <div class="form-help" style="padding: 1rem; text-align: center;">
+                            Aucun candidat éligible disponible pour cette épreuve.
+                          </div>
                         }
                       </div>
-                      <div class="modal-footer" style="padding: 0.75rem 0 0; border-top: none;">
-                        <button type="button" class="btn btn-secondary btn-sm" (click)="showAjoutCandidats = false">Annuler</button>
-                        <button type="button" class="btn btn-primary btn-sm" [disabled]="ajoutSelectionIds.length === 0 || savingAjout" (click)="confirmerAjout()">
-                          {{ savingAjout ? 'Ajout...' : 'Ajouter (' + ajoutSelectionIds.length + ')' }}
-                        </button>
-                      </div>
+                      @if (ajoutSelectionIds.length > 0) {
+                        <div class="selection-count">
+                          {{ ajoutSelectionIds.length }} candidat(s) sélectionné(s)
+                        </div>
+                      }
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem;">
+                      <button class="btn btn-secondary btn-sm" (click)="showAjoutCandidats = false">Annuler</button>
+                      <button class="btn btn-primary btn-sm" [disabled]="ajoutSelectionIds.length === 0 || savingAjout" (click)="confirmerAjout()">
+                        {{ savingAjout ? 'Enregistrement...' : 'Confirmer l\'ajout (' + ajoutSelectionIds.length + ')' }}
+                      </button>
                     </div>
                   }
                 </div>
               }
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-secondary" (click)="closeSessionModal()">Fermer</button>
             </div>
           </div>
         </div>
@@ -290,20 +311,15 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   </div>
                 }
 
-                <!-- Ordre des champs conforme : 1. Date, 2. Lieu / Site, 3. Épreuve, 4. Statut -->
+                <!-- Ordre des champs conforme : 1. Date, 2. Lieu (saisissable), 3. Épreuve, 4. Statut -->
                 <div class="form-row">
                   <div class="form-group">
                     <label class="form-label">Date de la session <span class="required">*</span></label>
                     <input type="date" class="form-control" [(ngModel)]="newPassage.datePassage" name="datePassage" required />
                   </div>
                   <div class="form-group">
-                    <label class="form-label">Lieu / Site <span class="required">*</span></label>
-                    <select class="form-control" [(ngModel)]="newPassage.siteId" name="siteId" required>
-                      <option [ngValue]="null" disabled>Sélectionner un site</option>
-                      @for (s of sitesAutorises; track s.id) {
-                        <option [ngValue]="s.id">{{ s.nom }}</option>
-                      }
-                    </select>
+                    <label class="form-label">Lieu <span class="required">*</span></label>
+                    <input type="text" class="form-control" [(ngModel)]="newPassage.lieu" name="lieu" placeholder="Ex: Centre Ouaga 2000, Piste Song-Naba..." required />
                   </div>
                 </div>
 
@@ -327,7 +343,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 </div>
 
                 <div class="alert alert-info" style="font-size: 0.85rem; margin-bottom: 1rem;">
-                  ℹ️ <em>La session sera créée d'abord. Vous pourrez affecter les candidats du site à tout moment via l'icône dédiée 👤➕.</em>
+                  ℹ️ <em>La session sera créée d'abord. Vous pourrez affecter les candidats à tout moment via l'icône dédiée 👤➕.</em>
                 </div>
 
                 <div class="form-group">
@@ -337,7 +353,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
               </div>
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" (click)="showProgrammerModal = false">Annuler</button>
-                <button type="submit" class="btn btn-primary" [disabled]="saving || !newPassage.datePassage || !newPassage.siteId || !newPassage.typeEpreuve">
+                <button type="submit" class="btn btn-primary" [disabled]="saving || !newPassage.datePassage || !newPassage.lieu || !newPassage.typeEpreuve">
                   {{ saving ? 'Enregistrement...' : 'Créer la Session' }}
                 </button>
               </div>
@@ -365,17 +381,30 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 </div>
               }
               <div class="alert alert-info">
-                Site : <strong>{{ quickTargetSession.siteNom || 'Non défini' }}</strong> | 
+                Lieu : <strong>{{ quickTargetSession.lieu || quickTargetSession.siteNom || 'Non spécifié' }}</strong> | 
                 Date : <strong>{{ quickTargetSession.datePassage | date:'dd/MM/yyyy' }}</strong> |
                 Inscrits : <strong>{{ quickTargetSession.candidats.length }} candidat(s)</strong>
               </div>
 
+              <!-- FILTRE PAR SITE POUR L'UTILISATEUR GÉRANT PLUSIEURS SITES -->
+              @if (sitesAutorises.length > 1) {
+                <div class="form-group" style="margin-bottom: 0.85rem;">
+                  <label class="form-label" style="font-weight: 600;">Filtrer les candidats par site :</label>
+                  <select class="form-control" [(ngModel)]="quickFilterSiteId" (change)="onQuickFilterSiteChange()">
+                    <option value="">Tous mes sites</option>
+                    @for (site of sitesAutorises; track site.id) {
+                      <option [value]="site.id">{{ site.nom }}</option>
+                    }
+                  </select>
+                </div>
+              }
+
               <div class="form-group">
                 <label class="form-label">
-                  Sélectionner les candidats du site éligibles pour cette épreuve :
+                  Sélectionner les candidats éligibles pour cette épreuve :
                 </label>
                 <div class="candidats-list" style="max-height: 220px;">
-                  @for (c of quickEligibleCandidats; track c.id) {
+                  @for (c of quickEligibleCandidatsFiltres; track c.id) {
                     <label class="candidat-option">
                       <input type="checkbox" [checked]="isQuickSelected(c.id)" (change)="toggleQuickCandidat(c.id)" />
                       <span class="candidat-option-text">
@@ -384,9 +413,9 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                       </span>
                     </label>
                   }
-                  @if (quickEligibleCandidats.length === 0) {
+                  @if (quickEligibleCandidatsFiltres.length === 0) {
                     <div class="form-help" style="padding: 1rem; text-align: center;">
-                      Aucun candidat éligible disponible pour cette épreuve sur ce site.
+                      Aucun candidat éligible disponible pour cette épreuve.
                     </div>
                   }
                 </div>
@@ -432,12 +461,8 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                     <input type="date" class="form-control" [(ngModel)]="editSessionForm.datePassage" name="datePassage" required />
                   </div>
                   <div class="form-group">
-                    <label class="form-label">Lieu / Site <span class="required">*</span></label>
-                    <select class="form-control" [(ngModel)]="editSessionForm.siteId" name="siteId" required>
-                      @for (s of sitesAutorises; track s.id) {
-                        <option [ngValue]="s.id">{{ s.nom }}</option>
-                      }
-                    </select>
+                    <label class="form-label">Lieu <span class="required">*</span></label>
+                    <input type="text" class="form-control" [(ngModel)]="editSessionForm.lieu" name="lieu" placeholder="Ex: Centre Ouaga 2000, Piste Song-Naba..." required />
                   </div>
                 </div>
                 <div class="form-group">
@@ -447,7 +472,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
               </div>
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" (click)="showEditSessionModal = false">Annuler</button>
-                <button type="submit" class="btn btn-primary" [disabled]="savingEditSession || !editSessionForm.datePassage || !editSessionForm.siteId">
+                <button type="submit" class="btn btn-primary" [disabled]="savingEditSession || !editSessionForm.datePassage || !editSessionForm.lieu">
                   {{ savingEditSession ? 'Enregistrement...' : 'Mettre à jour' }}
                 </button>
               </div>
@@ -692,14 +717,18 @@ export class ExamensComponent implements OnInit {
   showQuickAffecterModal = false;
   quickTargetSession: SessionExamen | null = null;
   quickEligibleCandidats: Candidat[] = [];
+  quickFilterSiteId = '';
   quickSelectionIds: number[] = [];
   savingQuickAffecter = false;
   quickAffecterError = '';
 
+  ajoutFilterSiteId = '';
+
   showEditSessionModal = false;
   editTargetSession: SessionExamen | null = null;
-  editSessionForm: { datePassage: string; siteId: number | null; observations: string } = {
+  editSessionForm: { datePassage: string; lieu: string; siteId: number | null; observations: string } = {
     datePassage: '',
+    lieu: '',
     siteId: null,
     observations: ''
   };
@@ -791,11 +820,23 @@ export class ExamensComponent implements OnInit {
   openAjoutCandidats(): void {
     if (!this.sessionDetail) return;
     this.ajoutSelectionIds = [];
+    this.ajoutFilterSiteId = '';
     const idsExistants = new Set(this.sessionDetail.candidats.map(p => p.candidatId));
     this.candidatsAjoutables = this.allCandidats.filter(c =>
-      !idsExistants.has(c.id) && this.estEligiblePour(c, this.sessionDetail!.typeEpreuve, this.sessionDetail!.siteId ?? null)
+      !idsExistants.has(c.id) && this.estEligiblePour(c, this.sessionDetail!.typeEpreuve, null)
     );
     this.showAjoutCandidats = true;
+  }
+
+  get candidatsAjoutablesFiltres(): Candidat[] {
+    if (!this.ajoutFilterSiteId) {
+      return this.candidatsAjoutables;
+    }
+    return this.candidatsAjoutables.filter(c => String(c.siteId) === this.ajoutFilterSiteId);
+  }
+
+  onAjoutFilterSiteChange(): void {
+    // Filtrage réactif via le getter candidatsAjoutablesFiltres
   }
 
   isAjoutSelected(candidatId: number): boolean {
@@ -1004,8 +1045,8 @@ export class ExamensComponent implements OnInit {
     const payload = {
       candidatIds: this.selectedCandidatIds,
       typeEpreuve: this.newPassage.typeEpreuve,
-      siteId: this.newPassage.siteId,
       datePassage: this.newPassage.datePassage,
+      lieu: this.newPassage.lieu,
       observations: this.newPassage.observations
     };
 
@@ -1070,12 +1111,24 @@ export class ExamensComponent implements OnInit {
     this.quickTargetSession = s;
     this.quickSelectionIds = [];
     this.quickAffecterError = '';
+    this.quickFilterSiteId = '';
 
     const idsExistants = new Set(s.candidats.map(p => p.candidatId));
     this.quickEligibleCandidats = this.allCandidats.filter(c =>
-      !idsExistants.has(c.id) && this.estEligiblePour(c, s.typeEpreuve, s.siteId ?? null)
+      !idsExistants.has(c.id) && this.estEligiblePour(c, s.typeEpreuve, null)
     );
     this.showQuickAffecterModal = true;
+  }
+
+  get quickEligibleCandidatsFiltres(): Candidat[] {
+    if (!this.quickFilterSiteId) {
+      return this.quickEligibleCandidats;
+    }
+    return this.quickEligibleCandidats.filter(c => String(c.siteId) === this.quickFilterSiteId);
+  }
+
+  onQuickFilterSiteChange(): void {
+    // La liste se met à jour réactivement via le getter quickEligibleCandidatsFiltres
   }
 
   isQuickSelected(candidatId: number): boolean {
@@ -1113,14 +1166,15 @@ export class ExamensComponent implements OnInit {
     this.editSessionError = '';
     this.editSessionForm = {
       datePassage: s.datePassage,
-      siteId: s.siteId,
+      lieu: s.lieu || '',
+      siteId: s.siteId ?? null,
       observations: s.observations || ''
     };
     this.showEditSessionModal = true;
   }
 
   saveEditSession(): void {
-    if (!this.editTargetSession || !this.editSessionForm.datePassage || !this.editSessionForm.siteId) return;
+    if (!this.editTargetSession || !this.editSessionForm.datePassage || !this.editSessionForm.lieu) return;
     this.savingEditSession = true;
     this.editSessionError = '';
 

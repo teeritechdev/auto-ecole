@@ -34,6 +34,9 @@ public class SessionExamen {
     @Column(name = "date_passage", nullable = false)
     private LocalDate datePassage;
 
+    @Column(name = "lieu", length = 150)
+    private String lieu;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "site_id")
     private Site site;

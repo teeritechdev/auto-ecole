@@ -745,6 +745,14 @@ button, input, select, textarea {
   background-color: #f8faff;
 }
 
+.custom-table.table-compact th {
+  padding: 0.7rem 1rem;
+}
+
+.custom-table.table-compact td {
+  padding: 0.65rem 1rem;
+}
+
 /* =========================================================
    BADGES & STATUS PILLS
    ========================================================= */

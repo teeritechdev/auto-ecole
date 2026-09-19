@@ -235,20 +235,14 @@ const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'sites',
               Nouveau Site
             </button>
           </div>
-          <div class="table-responsive">
-            <table class="custom-table">
-              <colgroup>
-                <col style="width: 35%;">
-                <col style="width: 35%;">
-                <col style="width: 15%;">
-                <col style="width: 15%;">
-              </colgroup>
+          <div class="table-responsive" style="max-width: 850px;">
+            <table class="custom-table table-compact">
               <thead>
                 <tr>
-                  <th>Nom du Site</th>
-                  <th>Adresse</th>
-                  <th>Statut</th>
-                  <th class="text-right">Action</th>
+                  <th style="width: 32%;">Nom du Site</th>
+                  <th style="width: 38%;">Adresse</th>
+                  <th style="width: 15%;">Statut</th>
+                  <th class="text-right" style="width: 15%;">Action</th>
                 </tr>
               </thead>
               <tbody>

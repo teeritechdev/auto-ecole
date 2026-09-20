@@ -31,42 +31,6 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
             <h2>Fiche Candidat : {{ candidat.nom }} {{ candidat.prenom }}</h2>
             <span class="dossier-pill">N° Dossier : {{ candidat.numeroDossier }}</span>
           </div>
-          <div class="action-buttons">
-            @if (canSeeFinancialData) {
-              <button class="btn btn-outline btn-sm" (click)="imprimerReleve()">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                Télécharger Relevé Financier PDF
-              </button>
-              <button class="btn btn-outline btn-sm" (click)="imprimerReleveDirectement()" title="Imprimer directement">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-                Imprimer
-              </button>
-            }
-            @if (canAddPayment && candidat.soldeRestant > 0) {
-              <button class="btn btn-success" (click)="openPaiementModal()">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-                Encaisser un Versement
-              </button>
-            }
-            @if (canPayFraisExamen) {
-              <button class="btn btn-outline" (click)="openFraisExamenModal()">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/><line x1="12" y1="17" x2="12" y2="22"/></svg>
-                Frais d'examen
-              </button>
-            }
-            @if (canAddExam) {
-              <button class="btn btn-primary" (click)="openExamenModal()">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg>
-                Enregistrer un Examen
-              </button>
-            }
-            @if (canResetPassword) {
-              <button class="btn btn-outline" (click)="resetPassword()" [disabled]="resettingPassword">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                {{ resettingPassword ? 'Réinitialisation...' : 'Réinitialiser le mot de passe' }}
-              </button>
-            }
-          </div>
         </div>
         <!-- ALERTE EXPIRATION SI APPLICABLE -->
         @if (candidat.procheExpiration) {
@@ -215,18 +179,6 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
           <div class="card tab-content">
             <div class="card-header">
               <div class="card-title">Détail des Versements Enregistrés</div>
-              @if (canAddPayment && candidat.soldeRestant > 0) {
-                <button class="btn btn-success btn-sm" (click)="openPaiementModal()">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                  Nouveau Versement
-                </button>
-              }
-              @if (canPayFraisExamen) {
-                <button class="btn btn-outline btn-sm" (click)="openFraisExamenModal()">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                  Frais d'examen
-                </button>
-              }
             </div>
             @if (paiements.length === 0) {
               <div class="empty-state">
@@ -240,12 +192,10 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                     <tr>
                       <th>N° Reçu</th>
                       <th>Date Paiement</th>
-                      <th>Type de Versement</th>
                       <th>Montant</th>
+                      <th>Reste à payer</th>
                       <th>Mode Règlement</th>
                       <th>Encaissé par</th>
-                      <th>Statut</th>
-                      <th class="text-right">Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -253,37 +203,10 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                       <tr>
                         <td><strong class="dossier-code">{{ p.numeroRecu || '-' }}</strong></td>
                         <td>{{ p.datePaiement | date:'dd/MM/yyyy HH:mm' }}</td>
-                        <td>
-                          <span class="badge" [ngClass]="{
-                            'badge-programme': p.typeVersement === 'PREMIER_VERSEMENT',
-                            'badge-solde': p.typeVersement === 'VERSEMENT_SUIVANT',
-                            'badge-en-cours': p.typeVersement === 'FRAIS_EXAMEN'
-                          }">
-                            {{ libelleTypeVersement(p) }}
-                          </span>
-                        </td>
                         <td><strong class="text-success">{{ p.montant | number }} FCFA</strong></td>
+                        <td><strong class="text-danger">{{ (p.soldeRestant || 0) | number }} FCFA</strong></td>
                         <td>{{ p.modeReglement }}</td>
                         <td>{{ p.utilisateurNomComplet }}</td>
-                        <td>
-                  <span class="badge" [ngClass]="{
-                    'badge-solde': p.statut === 'VALIDE',
-                    'badge-expire': p.statut === 'ANNULE',
-                    'badge-ajourne': p.statut === 'MODIFIE'
-                  }">{{ p.statut }}</span>
-                        </td>
-                        <td class="text-right">
-                          @if (p.recuId) {
-                            <button class="btn btn-outline btn-sm" (click)="imprimerRecu(p.recuId)" title="Télécharger Reçu PDF">
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                              Reçu PDF
-                            </button>
-                            <button class="btn btn-outline btn-sm" (click)="imprimerDirectement(p.recuId)" title="Imprimer directement">
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-                              Imprimer
-                            </button>
-                          }
-                        </td>
                       </tr>
                     }
                   </tbody>
@@ -297,12 +220,6 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
           <div class="card tab-content">
             <div class="card-header">
               <div class="card-title">Épreuves Pédagogiques (Jusqu'à 5 passages autorisés par épreuve)</div>
-              @if (canAddExam) {
-                <button class="btn btn-primary btn-sm" (click)="openExamenModal()">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                  Nouveau Passage
-                </button>
-              }
             </div>
             <div class="exam-grid">
               <!-- 1. CODE -->
@@ -394,197 +311,6 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                     </div>
                   }
                 </div>
-              </div>
-            </div>
-          </div>
-        }
-        <!-- MODAL VERSEMENT -->
-        @if (showPaiementModal) {
-          <div class="modal-backdrop">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h3 style="display:flex; align-items:center; gap:0.5rem;">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-                  Enregistrer un Versement
-                </h3>
-                <button class="btn btn-outline btn-sm" (click)="showPaiementModal = false">✕</button>
-              </div>
-              <form (ngSubmit)="savePaiement()">
-                <div class="modal-body">
-                  @if (paiementError) {
-                    <div class="alert alert-danger">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                      {{ paiementError }}
-                    </div>
-                  }
-                  <div class="alert alert-info">
-                    Solde actuel restant dû : <strong>{{ candidat.soldeRestant | number }} FCFA</strong>
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label">Montant du versement (FCFA) <span class="required">*</span></label>
-                    <input
-                      type="number"
-                      class="form-control"
-                      [(ngModel)]="newPaiement.montant"
-                      name="montant"
-                      [max]="candidat.soldeRestant"
-                      required
-                      placeholder="Ex: 25000"
-                      />
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label">Mode de règlement <span class="required">*</span></label>
-                    <select class="form-control" [(ngModel)]="newPaiement.modeReglement" name="modeReglement" required>
-                      <option value="ESPECES">Espèces</option>
-                      <option value="MOBILE_MONEY">Mobile Money (Wave / Orange / MTN / Moov)</option>
-                      <option value="VIREMENT">Virement bancaire</option>
-                      <option value="CHEQUE">Chèque</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="modal-footer">
-                  <button type="button" class="btn btn-secondary" (click)="showPaiementModal = false">Annuler</button>
-                  <button type="submit" class="btn btn-success" [disabled]="savingPaiement || !newPaiement.montant">
-                    {{ savingPaiement ? 'Validation...' : 'Valider & Émettre le Reçu' }}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        }
-        <!-- MODAL FRAIS D'EXAMEN -->
-        @if (showFraisExamenModal) {
-          <div class="modal-backdrop">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h3 style="display:flex; align-items:center; gap:0.5rem;">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg>
-                  Encaisser les Frais d'Examen
-                </h3>
-                <button class="btn btn-outline btn-sm" (click)="showFraisExamenModal = false">✕</button>
-              </div>
-              <form (ngSubmit)="saveFraisExamen()">
-                <div class="modal-body">
-                  @if (fraisExamenError) {
-                    <div class="alert alert-danger">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                      {{ fraisExamenError }}
-                    </div>
-                  }
-                  <p class="form-help">Ce candidat n'a pas de prise en charge totale des frais d'examen : à utiliser lorsqu'il revient payer séparément une épreuve.</p>
-                  <div class="form-group">
-                    <label class="form-label">Type d'épreuve <span class="required">*</span></label>
-                    <select class="form-control" [(ngModel)]="newFraisExamen.typeEpreuve" name="typeEpreuve" required (change)="onFraisExamenTypeChange()">
-                      <option value="CODE">Code de la route</option>
-                      <option value="CRENEAU">Manœuvre / Créneau</option>
-                      <option value="CIRCULATION">Conduite en circulation</option>
-                    </select>
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label">Montant (FCFA) <span class="required">*</span></label>
-                    <input type="number" class="form-control" [(ngModel)]="newFraisExamen.montant" name="montantFraisExamen" required placeholder="Ex: 15000" />
-                    <p class="form-help">Pré-rempli selon le tarif configuré pour cette épreuve, modifiable si besoin.</p>
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label">Mode de règlement <span class="required">*</span></label>
-                    <select class="form-control" [(ngModel)]="newFraisExamen.modeReglement" name="modeReglementFraisExamen" required>
-                      <option value="ESPECES">Espèces</option>
-                      <option value="MOBILE_MONEY">Mobile Money (Wave / Orange / MTN / Moov)</option>
-                      <option value="VIREMENT">Virement bancaire</option>
-                      <option value="CHEQUE">Chèque</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="modal-footer">
-                  <button type="button" class="btn btn-secondary" (click)="showFraisExamenModal = false">Annuler</button>
-                  <button type="submit" class="btn btn-success" [disabled]="savingFraisExamen || !newFraisExamen.montant">
-                    {{ savingFraisExamen ? 'Validation...' : 'Valider & Émettre le Reçu' }}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        }
-        <!-- MODAL EXAMEN -->
-        @if (showExamenModal) {
-          <div class="modal-backdrop">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h3 style="display:flex; align-items:center; gap:0.5rem;">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg>
-                  Programmer / Enregistrer un Examen
-                </h3>
-                <button class="btn btn-outline btn-sm" (click)="showExamenModal = false">✕</button>
-              </div>
-              <form (ngSubmit)="saveExamen()">
-                <div class="modal-body">
-                  @if (examenError) {
-                    <div class="alert alert-danger">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                      {{ examenError }}
-                    </div>
-                  }
-                  <div class="form-group">
-                    <label class="form-label">Type d'épreuve <span class="required">*</span></label>
-                    <select class="form-control" [(ngModel)]="newPassage.typeEpreuve" name="typeEpreuve" required>
-                      <option value="CODE">1. Code de la route</option>
-                      <option value="CRENEAU">2. Manœuvre / Créneau</option>
-                      <option value="CIRCULATION">3. Conduite en circulation</option>
-                    </select>
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label">Date du passage <span class="required">*</span></label>
-                    <input type="date" class="form-control" [(ngModel)]="newPassage.datePassage" name="datePassage" required />
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label">Résultat <span class="required">*</span></label>
-                    <select class="form-control" [(ngModel)]="newPassage.resultat" name="resultat" required>
-                      <option value="PROGRAMME">PROGRAMMÉ (En attente)</option>
-                      <option value="REUSSI">RÉUSSI (Admis)</option>
-                      <option value="AJOURNE">AJOURNÉ</option>
-                    </select>
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label">Observations / Notes du moniteur</label>
-                    <textarea class="form-control" rows="3" [(ngModel)]="newPassage.observations" name="observations" placeholder="Remarques pédagogiques, fautes éventuelles..."></textarea>
-                  </div>
-                </div>
-                <div class="modal-footer">
-                  <button type="button" class="btn btn-secondary" (click)="showExamenModal = false">Annuler</button>
-                  <button type="submit" class="btn btn-primary" [disabled]="savingExamen">
-                    {{ savingExamen ? 'Enregistrement...' : 'Enregistrer le Passage' }}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        }
-
-        <!-- MODAL MOT DE PASSE RÉINITIALISÉ (affichage unique) -->
-        @if (identifiantsCompteAAfficher) {
-          <div class="modal-backdrop">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h3 style="display:flex; align-items:center; gap:0.5rem;">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                  Mot de passe réinitialisé
-                </h3>
-                <button class="btn btn-outline btn-sm" (click)="identifiantsCompteAAfficher = null">✕</button>
-              </div>
-              <div class="modal-body">
-                <p>Un nouveau mot de passe temporaire a été généré pour ce candidat. Communiquez-le-lui dès maintenant : il ne sera plus jamais affiché.</p>
-                <div class="form-group mt-3">
-                  <label class="form-label">Identifiant</label>
-                  <input type="text" class="form-control" [value]="identifiantsCompteAAfficher.username" readonly />
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Mot de passe temporaire</label>
-                  <input type="text" class="form-control" [value]="identifiantsCompteAAfficher.motDePasseTemporaire" readonly />
-                </div>
-                <p class="form-help">Le candidat devra changer ce mot de passe lors de sa prochaine connexion.</p>
-              </div>
-              <div class="modal-footer">
-                <button type="button" class="btn btn-primary" (click)="identifiantsCompteAAfficher = null">J'ai noté les identifiants</button>
               </div>
             </div>
           </div>
@@ -860,7 +586,7 @@ export class CandidatDetailComponent implements OnInit {
   openPaiementModal(): void {
     this.paiementError = '';
     this.newPaiement = {
-      montant: this.candidat?.soldeRestant || 0,
+      montant: null as any,
       modeReglement: 'ESPECES'
     };
     this.showPaiementModal = true;

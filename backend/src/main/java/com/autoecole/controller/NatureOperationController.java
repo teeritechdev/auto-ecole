@@ -50,4 +50,12 @@ public class NatureOperationController {
     public ResponseEntity<NatureOperationDTO> modifier(@PathVariable Long id, @Valid @RequestBody UpdateNatureOperationRequest request) {
         return ResponseEntity.ok(natureOperationService.modifier(id, request));
     }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('PERM_CAISSE_NATURES_GERER')")
+    @Operation(summary = "Supprimer une nature d'opération (réservé ADMIN)")
+    public ResponseEntity<Void> supprimer(@PathVariable Long id) {
+        natureOperationService.supprimer(id);
+        return ResponseEntity.noContent().build();
+    }
 }

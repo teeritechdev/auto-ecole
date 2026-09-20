@@ -53,14 +53,6 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       <div class="card filter-card">
         <div class="filter-grid">
           <div>
-            <select class="form-control" [(ngModel)]="statutFiltre" (change)="loadPaiements()">
-              <option value="">Tous les statuts</option>
-              <option value="VALIDE">Valide</option>
-              <option value="MODIFIE">Modifié</option>
-              <option value="ANNULE">Annulé</option>
-            </select>
-          </div>
-          <div>
             <select class="form-control" [(ngModel)]="siteFiltre" (change)="loadPaiements()">
               <option value="">Tous les sites</option>
               @for (s of sites; track s) {
@@ -89,23 +81,21 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 <th>N° Reçu</th>
                 <th>Date & Heure</th>
                 <th>Candidat (N° Dossier)</th>
-                <th>Type de Versement</th>
                 <th>Montant</th>
+                <th>Reste à payer</th>
                 <th>Mode Règlement</th>
-                <th>Agent</th>
-                <th>Statut</th>
                 <th class="text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
               @if (loading) {
                 <tr>
-                  <td colspan="9" class="text-center py-4">Chargement des versements...</td>
+                  <td colspan="7" class="text-center py-4">Chargement des versements...</td>
                 </tr>
               }
               @if (!loading && paiements.length === 0) {
                 <tr>
-                  <td colspan="9" class="text-center py-4">Aucun versement trouvé.</td>
+                  <td colspan="7" class="text-center py-4">Aucun versement trouvé.</td>
                 </tr>
               }
               @for (p of paiements; track p) {
@@ -116,28 +106,9 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                     <strong>{{ p.candidatNomComplet }}</strong>
                     <div class="sub-text">{{ p.candidatNumeroDossier }}</div>
                   </td>
-                  <td>
-                    <span class="badge" [ngClass]="{
-                      'badge-programme': p.typeVersement === 'PREMIER_VERSEMENT',
-                      'badge-solde': p.typeVersement === 'VERSEMENT_SUIVANT',
-                      'badge-en-cours': p.typeVersement === 'FRAIS_EXAMEN'
-                    }">
-                      {{ libelleTypeVersement(p) }}
-                    </span>
-                  </td>
                   <td><strong class="text-success">{{ p.montant | number }} FCFA</strong></td>
+                  <td><strong class="text-danger">{{ (p.soldeRestant || 0) | number }} FCFA</strong></td>
                   <td>{{ p.modeReglement }}</td>
-                  <td>{{ p.utilisateurNomComplet }}</td>
-                  <td>
-                  <span class="badge" [ngClass]="{
-                    'badge-solde': p.statut === 'VALIDE',
-                    'badge-expire': p.statut === 'ANNULE',
-                    'badge-ajourne': p.statut === 'MODIFIE'
-                  }">{{ p.statut }}</span>
-                    @if (p.motifModification) {
-                      <div class="motif-text">Motif : {{ p.motifModification }}</div>
-                    }
-                  </td>
                   <td class="text-right">
                     <div class="action-flex">
                       @if (p.recuId) {
@@ -148,12 +119,12 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
                         </button>
                       }
-                      @if (canAdd && p.statut !== 'ANNULE') {
+                      @if (canAdd) {
                         <button class="btn btn-outline btn-xs" (click)="openEditModal(p)" title="Modifier">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
                         </button>
                       }
-                      @if (canAdd && p.statut !== 'ANNULE') {
+                      @if (canAdd) {
                         <button class="btn btn-danger btn-xs" (click)="openCancelModal(p)" title="Annuler ce versement">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
                         </button>
@@ -212,10 +183,19 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   </select>
                 </div>
                 @if (selectedCandidat) {
-                  <div class="alert alert-info">
-                    Catégorie : <strong>{{ selectedCandidat.categoriePermisLibelle }} ({{ selectedCandidat.montantForfait | number }} FCFA)</strong><br>
-                    Déjà versé : <strong>{{ selectedCandidat.totalVerse | number }} FCFA</strong><br>
-                    Reste à payer : <strong class="text-danger">{{ selectedCandidat.soldeRestant | number }} FCFA</strong>
+                  <div class="financial-summary-card">
+                    <div class="summary-col">
+                      <span class="summary-label">Total à payer</span>
+                      <span class="summary-value value-total">{{ (selectedCandidat.montantForfait || 0) | number }} FCFA</span>
+                    </div>
+                    <div class="summary-col">
+                      <span class="summary-label">Versé</span>
+                      <span class="summary-value value-verse">{{ (selectedCandidat.totalVerse || 0) | number }} FCFA</span>
+                    </div>
+                    <div class="summary-col">
+                      <span class="summary-label">Reste</span>
+                      <span class="summary-value value-reste">{{ (selectedCandidat.soldeRestant || 0) | number }} FCFA</span>
+                    </div>
                   </div>
                 }
                 <div class="form-group">
@@ -242,7 +222,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
               </div>
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" (click)="showNewModal = false">Annuler</button>
-                <button type="submit" class="btn btn-success" [disabled]="saving || !selectedCandidatId || !newMontant">
+                <button type="submit" class="btn btn-success" [disabled]="saving || !selectedCandidatId || !newMontant || newMontant <= 0">
                   {{ saving ? 'Validation...' : 'Valider & Générer Reçu' }}
                 </button>
               </div>
@@ -312,7 +292,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
             </div>
             <form (ngSubmit)="confirmCancelPaiement()">
               <div class="modal-body">
-                <p>Êtes-vous certain de vouloir annuler le versement de <strong>{{ $safeNavigationMigration(targetPaiement?.montant) | number }} FCFA</strong> pour <strong>{{ targetPaiement?.candidatNomComplet }}</strong> ?</p>
+                <p>Êtes-vous certain de vouloir annuler le versement de <strong>{{ targetPaiement?.montant | number }} FCFA</strong> pour <strong>{{ targetPaiement?.candidatNomComplet }}</strong> ?</p>
                 <p class="text-danger mt-2"><small>Cette action déduira automatiquement le montant du solde du candidat et créera un mouvement compensatoire de caisse.</small></p>
                 <div class="form-group mt-3">
                   <label class="form-label">Motif d'annulation obligatoire <span class="required">*</span></label>
@@ -482,6 +462,55 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     .text-right { text-align: right; }
     .text-success { color: #15803d; }
     .text-danger { color: #b91c1c; }
+
+    .financial-summary-card {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 0.75rem;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 0.85rem 1rem;
+      margin-bottom: 1.25rem;
+      text-align: center;
+    }
+
+    .summary-col {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .summary-col:not(:last-child) {
+      border-right: 1px solid #e2e8f0;
+      padding-right: 0.5rem;
+    }
+
+    .summary-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #64748b;
+    }
+
+    .summary-value {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+
+    .value-total {
+      color: #0f172a;
+    }
+
+    .value-verse {
+      color: #15803d;
+    }
+
+    .value-reste {
+      color: #b91c1c;
+    }
   `]
 })
 export class PaiementsComponent implements OnInit {
@@ -490,7 +519,6 @@ export class PaiementsComponent implements OnInit {
   loading = false;
   saving = false;
 
-  statutFiltre = '';
   siteFiltre = '';
   dateDebutFiltre = '';
   dateFinFiltre = '';
@@ -505,7 +533,7 @@ export class PaiementsComponent implements OnInit {
   showNewModal = false;
   selectedCandidatId: number | null = null;
   selectedCandidat: Candidat | null = null;
-  newMontant = 0;
+  newMontant: number | null = null;
   newMode = 'ESPECES';
   formError = '';
 
@@ -558,22 +586,13 @@ export class PaiementsComponent implements OnInit {
     return this.authService.hasPermission(['PAIEMENTS_CREER']);
   }
 
-  libelleTypeVersement(p: Paiement): string {
-    if (p.typeVersement === 'PREMIER_VERSEMENT') return '1er Versement';
-    if (p.typeVersement === 'FRAIS_EXAMEN') {
-      const labels: Record<string, string> = { CODE: 'Code', CRENEAU: 'Créneau', CIRCULATION: 'Circulation' };
-      return 'Frais d\'examen (' + (labels[p.typeEpreuve || ''] || p.typeEpreuve) + ')';
-    }
-    return 'Versement Suivant';
-  }
-
   /** Rafraîchit la liste ET le résumé : un versement peut être enregistré par un autre
    *  utilisateur (autre poste Caisse/Secrétariat) sans que cet écran ne le sache. */
   actualiser(): void {
     this.refreshing = true;
     let restants = 2;
     const termine = () => { if (--restants <= 0) this.refreshing = false; };
-    this.apiService.getPaiements(undefined, this.statutFiltre, this.page, 15, this.debutISO, this.finISO, this.siteFiltreId).subscribe({
+    this.apiService.getPaiements(undefined, this.page, 15, this.debutISO, this.finISO, this.siteFiltreId).subscribe({
       next: (res) => {
         this.paiements = res.content || [];
         this.totalPages = res.totalPages || 0;
@@ -590,7 +609,7 @@ export class PaiementsComponent implements OnInit {
 
   loadPaiements(): void {
     this.loading = true;
-    this.apiService.getPaiements(undefined, this.statutFiltre, this.page, 15, this.debutISO, this.finISO, this.siteFiltreId).subscribe({
+    this.apiService.getPaiements(undefined, this.page, 15, this.debutISO, this.finISO, this.siteFiltreId).subscribe({
       next: (res) => {
         this.paiements = res.content || [];
         this.totalPages = res.totalPages || 0;
@@ -616,7 +635,6 @@ export class PaiementsComponent implements OnInit {
   }
 
   resetFiltres(): void {
-    this.statutFiltre = '';
     this.siteFiltre = '';
     this.dateDebutFiltre = '';
     this.dateFinFiltre = '';
@@ -628,7 +646,7 @@ export class PaiementsComponent implements OnInit {
     this.formError = '';
     this.selectedCandidatId = null;
     this.selectedCandidat = null;
-    this.newMontant = 0;
+    this.newMontant = null;
     this.newMode = 'ESPECES';
     this.showNewModal = true;
   }
@@ -636,16 +654,13 @@ export class PaiementsComponent implements OnInit {
   onCandidatSelect(): void {
     if (this.selectedCandidatId) {
       this.selectedCandidat = this.nonSoldesCandidats.find(c => c.id == this.selectedCandidatId) || null;
-      if (this.selectedCandidat) {
-        this.newMontant = this.selectedCandidat.soldeRestant;
-      }
     } else {
       this.selectedCandidat = null;
     }
   }
 
   saveNewPaiement(): void {
-    if (!this.selectedCandidatId || !this.newMontant) return;
+    if (!this.selectedCandidatId || !this.newMontant || this.newMontant <= 0) return;
 
     this.saving = true;
     this.formError = '';

@@ -307,11 +307,9 @@ public class DataInitializerService implements CommandLineRunner {
         Paiement p1 = Paiement.builder()
                 .inscription(i1)
                 .utilisateur(admin)
-                .typeVersement(TypeVersement.PREMIER_VERSEMENT)
                 .montant(new BigDecimal("40000"))
                 .datePaiement(LocalDateTime.now().minusMonths(1))
                 .modeReglement(ModeReglement.ESPECES)
-                .statut(StatutPaiement.VALIDE)
                 .build();
         p1 = paiementRepository.save(p1);
 
@@ -368,11 +366,9 @@ public class DataInitializerService implements CommandLineRunner {
         Paiement p2_1 = paiementRepository.save(Paiement.builder()
                 .inscription(i2)
                 .utilisateur(admin)
-                .typeVersement(TypeVersement.PREMIER_VERSEMENT)
                 .montant(new BigDecimal("50000"))
                 .datePaiement(LocalDateTime.now().minusMonths(2))
                 .modeReglement(ModeReglement.MOBILE_MONEY)
-                .statut(StatutPaiement.VALIDE)
                 .build());
         recuRepository.save(Recu.builder()
                 .paiement(p2_1)
@@ -386,11 +382,9 @@ public class DataInitializerService implements CommandLineRunner {
         Paiement p2_2 = paiementRepository.save(Paiement.builder()
                 .inscription(i2)
                 .utilisateur(admin)
-                .typeVersement(TypeVersement.VERSEMENT_SUIVANT)
                 .montant(new BigDecimal("75000"))
                 .datePaiement(LocalDateTime.now().minusDays(10))
                 .modeReglement(ModeReglement.ESPECES)
-                .statut(StatutPaiement.VALIDE)
                 .build());
         recuRepository.save(Recu.builder()
                 .paiement(p2_2)

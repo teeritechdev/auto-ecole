@@ -68,4 +68,6 @@ public interface TransactionCaisseRepository extends JpaRepository<TransactionCa
            "COALESCE(SUM(CASE WHEN tc.typeMouvement = 'SORTIE' THEN tc.montant ELSE 0 END), 0) " +
            "FROM TransactionCaisse tc WHERE tc.site IS NOT NULL GROUP BY tc.site.id")
     List<Object[]> statistiquesCaisseParSite();
+
+    boolean existsByNatureOperationId(Long natureOperationId);
 }

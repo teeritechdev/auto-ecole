@@ -295,7 +295,14 @@ const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'sites',
               </button>
             </div>
             <div class="table-responsive">
-              <table class="table">
+              <table class="custom-table profils-table">
+                <colgroup>
+                  <col style="width: 16%;">
+                  <col style="width: 11%;">
+                  <col style="width: 38%;">
+                  <col style="width: 17%;">
+                  <col style="width: 18%;">
+                </colgroup>
                 <thead>
                   <tr>
                     <th>Nom du Profil</th>
@@ -316,7 +323,7 @@ const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'sites',
                           <span class="badge badge-secondary">Personnalisé</span>
                         }
                       </td>
-                      <td><small class="text-muted">{{ p.description || '—' }}</small></td>
+                      <td class="text-muted">{{ p.description || '—' }}</td>
                       <td>
                         <span class="badge badge-solde">{{ p.nombreUtilisateurs }} compte(s)</span>
                       </td>
@@ -551,6 +558,21 @@ const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'sites',
     .text-right { text-align: right; }
     .text-success { color: #15803d; }
     .text-danger { color: #b91c1c; }
+
+    /* Largeurs fixes par colonne (cf. colgroup) : empêche le tableau de dépasser la
+       largeur de la carte et d'imposer un défilement horizontal, en laissant la
+       colonne Description passer à la ligne plutôt que de s'étirer. */
+    .profils-table {
+      table-layout: fixed;
+    }
+
+    .profils-table td {
+      word-break: break-word;
+    }
+
+    .profils-table td:last-child {
+      white-space: normal;
+    }
 
     .identite-layout {
       display: grid;

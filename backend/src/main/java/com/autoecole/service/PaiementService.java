@@ -41,12 +41,12 @@ public class PaiementService {
 
     /** Une caissière/secrétaire restreinte à un site ne voit et n'encaisse que les paiements
      *  des candidats inscrits sur ce site (RG : gestion par site, comme pour un moniteur). */
-    public Page<PaiementDTO> filtrerPaiements(Long candidatId, StatutPaiement statut, LocalDateTime debut, LocalDateTime fin, Long siteFiltreId, Pageable pageable) {
+    public Page<PaiementDTO> filtrerPaiements(Long candidatId, LocalDateTime debut, LocalDateTime fin, Long siteFiltreId, Pageable pageable) {
         java.util.Set<Long> siteIds = siteAccessService.resoudreFiltreSitesPourListe();
         if (siteIds != null && siteIds.isEmpty()) {
             return Page.empty(pageable);
         }
-        return paiementRepository.filtrerPaiements(candidatId, statut, debut, fin, siteIds, siteFiltreId, pageable)
+        return paiementRepository.filtrerPaiements(candidatId, debut, fin, siteIds, siteFiltreId, pageable)
                 .map(this::mapToDTO);
     }
 
@@ -59,7 +59,18 @@ public class PaiementService {
     public PaiementDTO getPaiementById(Long id) {
         Paiement p = paiementRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Paiement non trouvé avec l'id: " + id));
+        verifierAccesPaiement(p);
         return mapToDTO(p);
+    }
+
+    /** Un utilisateur restreint par site (caissière/secrétaire/moniteur) ne peut consulter,
+     *  modifier ou annuler que les paiements des candidats inscrits sur l'un de ses sites
+     *  (même règle que filtrerPaiements) : sans ce contrôle, l'id numérique du paiement
+     *  suffirait à agir sur les dossiers d'un autre site (IDOR). */
+    private void verifierAccesPaiement(Paiement paiement) {
+        Inscription inscription = paiement.getInscription();
+        Long siteId = inscription != null && inscription.getSite() != null ? inscription.getSite().getId() : null;
+        siteAccessService.verifierAccesSite(siteId);
     }
 
     /** Total encaissé et reste à payer, sur les dossiers actifs du/des site(s) de l'utilisateur
@@ -95,21 +106,15 @@ public class PaiementService {
             throw new BadRequestException("Le montant versé (" + montant + " FCFA) dépasse le solde restant dû (" + inscription.getSoldeRestant() + " FCFA)");
         }
 
-        // Vérifier s'il s'agit du premier versement de ce cycle d'inscription
-        long nbPaiementsValides = paiementRepository.countByInscriptionIdAndStatut(inscription.getId(), StatutPaiement.VALIDE);
-        TypeVersement typeVersement = (nbPaiementsValides == 0) ? TypeVersement.PREMIER_VERSEMENT : TypeVersement.VERSEMENT_SUIVANT;
-
         Utilisateur currentUser = auditService.getCurrentUser();
 
         // 1. Enregistrement du paiement
         Paiement paiement = Paiement.builder()
                 .inscription(inscription)
                 .utilisateur(currentUser)
-                .typeVersement(typeVersement)
                 .montant(montant)
                 .datePaiement(LocalDateTime.now())
                 .modeReglement(request.getModeReglement() != null ? request.getModeReglement() : ModeReglement.ESPECES)
-                .statut(StatutPaiement.VALIDE)
                 .build();
 
         Paiement savedPaiement = paiementRepository.save(paiement);
@@ -163,12 +168,10 @@ public class PaiementService {
         Paiement paiement = Paiement.builder()
                 .inscription(inscription)
                 .utilisateur(currentUser)
-                .typeVersement(TypeVersement.FRAIS_EXAMEN)
                 .typeEpreuve(request.getTypeEpreuve())
                 .montant(montant)
                 .datePaiement(LocalDateTime.now())
                 .modeReglement(request.getModeReglement() != null ? request.getModeReglement() : ModeReglement.ESPECES)
-                .statut(StatutPaiement.VALIDE)
                 .build();
 
         Paiement savedPaiement = paiementRepository.save(paiement);
@@ -195,23 +198,17 @@ public class PaiementService {
     public PaiementDTO modifierPaiement(Long paiementId, ModifierPaiementRequest request) {
         Paiement paiement = paiementRepository.findById(paiementId)
                 .orElseThrow(() -> new ResourceNotFoundException("Paiement introuvable"));
-
-        if (paiement.getStatut() == StatutPaiement.ANNULE) {
-            throw new BadRequestException("Impossible de modifier un paiement déjà annulé");
-        }
+        verifierAccesPaiement(paiement);
 
         BigDecimal ancienMontant = paiement.getMontant();
         BigDecimal nouveauMontant = request.getMontant();
 
         Inscription inscription = paiement.getInscription();
 
-
-
         Utilisateur currentUser = auditService.getCurrentUser();
 
-        // Un versement FRAIS_EXAMEN est distinct du forfait de formation : il n'a jamais
-        // alimenté totalVerse/soldeRestant, donc sa modification ne les touche pas non plus.
-        if (paiement.getTypeVersement() != TypeVersement.FRAIS_EXAMEN) {
+        // Un versement avec typeEpreuve non nul correspond aux frais d'examen distincts du forfait
+        if (paiement.getTypeEpreuve() == null) {
             BigDecimal difference = nouveauMontant.subtract(ancienMontant);
             BigDecimal nouveauTotal = inscription.getTotalVerse().add(difference);
 
@@ -227,7 +224,6 @@ public class PaiementService {
         // Mise à jour du paiement
         paiement.setMontant(nouveauMontant);
         paiement.setModeReglement(request.getModeReglement());
-        paiement.setStatut(StatutPaiement.MODIFIE);
         paiement.setMotifModification(request.getMotif());
         paiement.setDateModification(LocalDateTime.now());
         paiement.setUtilisateurModif(currentUser);
@@ -251,38 +247,40 @@ public class PaiementService {
     public PaiementDTO annulerPaiement(Long paiementId, AnnulerPaiementRequest request) {
         Paiement paiement = paiementRepository.findById(paiementId)
                 .orElseThrow(() -> new ResourceNotFoundException("Paiement introuvable"));
-
-        if (paiement.getStatut() == StatutPaiement.ANNULE) {
-            throw new BadRequestException("Ce paiement est déjà annulé");
-        }
+        verifierAccesPaiement(paiement);
 
         Utilisateur currentUser = auditService.getCurrentUser();
         Inscription inscription = paiement.getInscription();
 
-        // Un versement FRAIS_EXAMEN n'a jamais alimenté totalVerse/soldeRestant (cf.
-        // enregistrerFraisExamen) : rien à déduire du forfait de formation ici.
-        if (paiement.getTypeVersement() != TypeVersement.FRAIS_EXAMEN) {
-            inscription.setTotalVerse(inscription.getTotalVerse().subtract(paiement.getMontant()));
+        // Si le versement était lié au forfait de formation, déduire son montant
+        if (paiement.getTypeEpreuve() == null) {
+            BigDecimal nouveauTotal = inscription.getTotalVerse().subtract(paiement.getMontant());
+            if (nouveauTotal.compareTo(BigDecimal.ZERO) < 0) {
+                nouveauTotal = BigDecimal.ZERO;
+            }
+            inscription.setTotalVerse(nouveauTotal);
             inscription.recalculerSoldeEtStatut();
             inscriptionRepository.save(inscription);
         }
 
-        paiement.setStatut(StatutPaiement.ANNULE);
-        paiement.setMotifModification(request.getMotif());
-        paiement.setDateModification(LocalDateTime.now());
-        paiement.setUtilisateurModif(currentUser);
-
-        Paiement updated = paiementRepository.save(paiement);
-
         auditService.logAction("ANNULATION_PAIEMENT", "Paiement", paiement.getId().toString(),
-                "Annulation versement de " + paiement.getMontant() + " FCFA", request.getMotif());
+                "Suppression versement de " + paiement.getMontant() + " FCFA", request.getMotif());
 
-        return mapToDTO(updated);
+        // Suppression en cascade du reçu et du paiement
+        recuRepository.findByPaiementId(paiementId).ifPresent(recuRepository::delete);
+        paiementRepository.delete(paiement);
+
+        return null;
     }
 
     public PaiementDTO mapToDTO(Paiement p) {
+        if (p == null) return null;
         Recu recu = p.getRecu() != null ? p.getRecu() : recuRepository.findByPaiementId(p.getId()).orElse(null);
-        Candidat candidat = p.getInscription() != null ? p.getInscription().getCandidat() : null;
+        Inscription inscription = p.getInscription();
+        Candidat candidat = inscription != null ? inscription.getCandidat() : null;
+        BigDecimal soldeRestant = recu != null && recu.getSoldeRestant() != null 
+                ? recu.getSoldeRestant() 
+                : (inscription != null ? inscription.getSoldeRestant() : null);
 
         return PaiementDTO.builder()
                 .id(p.getId())
@@ -291,12 +289,11 @@ public class PaiementService {
                 .candidatNomComplet(candidat != null ? candidat.getNom() + " " + candidat.getPrenom() : null)
                 .utilisateurId(p.getUtilisateur() != null ? p.getUtilisateur().getId() : null)
                 .utilisateurNomComplet(p.getUtilisateur() != null ? p.getUtilisateur().getNom() + " " + p.getUtilisateur().getPrenom() : null)
-                .typeVersement(p.getTypeVersement())
                 .typeEpreuve(p.getTypeEpreuve())
                 .montant(p.getMontant())
+                .soldeRestant(soldeRestant)
                 .datePaiement(p.getDatePaiement())
                 .modeReglement(p.getModeReglement())
-                .statut(p.getStatut())
                 .motifModification(p.getMotifModification())
                 .dateModification(p.getDateModification())
                 .utilisateurModifNom(p.getUtilisateurModif() != null ? p.getUtilisateurModif().getNom() + " " + p.getUtilisateurModif().getPrenom() : null)

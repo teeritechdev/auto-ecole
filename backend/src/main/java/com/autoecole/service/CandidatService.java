@@ -254,11 +254,9 @@ public class CandidatService {
         Paiement paiement = Paiement.builder()
                 .inscription(inscription)
                 .utilisateur(currentUser)
-                .typeVersement(TypeVersement.PREMIER_VERSEMENT)
                 .montant(premierVersement)
                 .datePaiement(LocalDateTime.now())
                 .modeReglement(modeReglement != null ? modeReglement : ModeReglement.ESPECES)
-                .statut(StatutPaiement.VALIDE)
                 .build();
 
         Paiement savedPaiement = paiementRepository.save(paiement);

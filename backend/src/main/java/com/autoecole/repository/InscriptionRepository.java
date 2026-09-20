@@ -58,6 +58,10 @@ public interface InscriptionRepository extends JpaRepository<Inscription, Long> 
     @Query("SELECT i.site.id, COUNT(i.id) FROM Inscription i WHERE i.site IS NOT NULL GROUP BY i.site.id")
     List<Object[]> compterInscriptionsParSite();
 
+    @Query("SELECT i.site.id, i.statutDossier, COUNT(i.id) FROM Inscription i " +
+           "WHERE i.active = true AND i.site IS NOT NULL GROUP BY i.site.id, i.statutDossier")
+    List<Object[]> compterInscriptionsActivesParSiteEtStatut();
+
     @Query("SELECT i FROM Inscription i WHERE i.active = true " +
            "AND i.dateEcheance < :dateRef AND i.statutDossier = 'EN_COURS'")
     List<Inscription> findInscriptionsActivesAExpirer(@Param("dateRef") LocalDate dateRef);

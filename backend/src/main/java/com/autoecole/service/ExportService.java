@@ -262,9 +262,9 @@ public class ExportService {
 
             PdfPTable table = new PdfPTable(5);
             table.setWidthPercentage(100);
-            table.setWidths(new float[]{3f, 3f, 3f, 2.5f, 2.5f});
+            table.setWidths(new float[]{3f, 3f, 2.5f, 2.5f, 3f});
 
-            String[] heads = {"Date", "N° Reçu", "Type", "Montant", "Statut"};
+            String[] heads = {"Date", "N° Reçu", "Montant", "Reste à payer", "Mode Règlement"};
             for (String h : heads) {
                 PdfPCell cell = new PdfPCell(new Phrase(h, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, Color.WHITE)));
                 cell.setBackgroundColor(PRIMARY_COLOR);
@@ -276,9 +276,9 @@ public class ExportService {
             for (PaiementDTO p : paiements) {
                 table.addCell(new Phrase(p.getDatePaiement() != null ? p.getDatePaiement().format(dtf) : "", regFont));
                 table.addCell(new Phrase(p.getNumeroRecu() != null ? p.getNumeroRecu() : "-", regFont));
-                table.addCell(new Phrase(p.getTypeVersement() != null ? p.getTypeVersement().name() : "", regFont));
                 table.addCell(new Phrase(p.getMontant() + " FCFA", regFont));
-                table.addCell(new Phrase(p.getStatut() != null ? p.getStatut().name() : "", regFont));
+                table.addCell(new Phrase(p.getSoldeRestant() != null ? p.getSoldeRestant() + " FCFA" : "-", regFont));
+                table.addCell(new Phrase(p.getModeReglement() != null ? p.getModeReglement().name() : "", regFont));
             }
 
             document.add(table);

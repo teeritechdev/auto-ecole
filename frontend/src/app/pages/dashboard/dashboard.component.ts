@@ -40,22 +40,14 @@ import { DashboardStats } from '../../core/models/models';
         </div>
       }
     
-      <!-- STATISTIQUES MASQUÉES : REMISE EN PLACE -->
-      @if (statsCachees.length > 0) {
-        <div class="hidden-stats-bar">
-          <span class="hidden-stats-label">Statistiques masquées :</span>
-          @for (h of statsCachees; track h.id) {
-            <button type="button" class="chip-add" (click)="showStat(h.id)" title="Remettre cette statistique">+ {{ h.label }}</button>
-          }
-        </div>
-      }
-
       <!-- KPI STATS CARDS -->
       <div class="stats-grid">
         <!-- 1. Total Candidats -->
         @if (isStatVisible('candidats')) {
           <div class="stat-card primary">
-            <button type="button" class="stat-remove-btn" (click)="hideStat('candidats')" title="Masquer cette statistique">✕</button>
+            <button type="button" class="stat-action-btn" (click)="openSiteModal('candidats')" title="Voir détail par site">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
             <div class="stat-info">
               <div class="stat-label">Total Candidats</div>
               <div class="stat-value">{{ stats?.totalCandidats || 0 }}</div>
@@ -74,7 +66,9 @@ import { DashboardStats } from '../../core/models/models';
         <!-- 2. Montant Total Encaissé -->
         @if (isStatVisible('financier')) {
           <div class="stat-card success">
-            <button type="button" class="stat-remove-btn" (click)="hideStat('financier')" title="Masquer cette statistique">✕</button>
+            <button type="button" class="stat-action-btn" (click)="openSiteModal('financier')" title="Voir détail par site">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
             <div class="stat-info">
               <div class="stat-label">Total Encaissé</div>
               <div class="stat-value">{{ (stats?.montantTotalEncaisse || 0) | number }} <small>FCFA</small></div>
@@ -88,7 +82,9 @@ import { DashboardStats } from '../../core/models/models';
         <!-- 3. Solde Caisse Actuel -->
         @if (isStatVisible('caisse')) {
           <div class="stat-card info">
-            <button type="button" class="stat-remove-btn" (click)="hideStat('caisse')" title="Masquer cette statistique">✕</button>
+            <button type="button" class="stat-action-btn" (click)="openSiteModal('caisse')" title="Voir détail par site">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
             <div class="stat-info">
               <div class="stat-label">Solde de Caisse</div>
               <div class="stat-value">{{ (stats?.soldeCaisseActuel || 0) | number }} <small>FCFA</small></div>
@@ -103,7 +99,9 @@ import { DashboardStats } from '../../core/models/models';
         <!-- 4. Réussite Examens -->
         @if (isStatVisible('examens')) {
           <div class="stat-card warning">
-            <button type="button" class="stat-remove-btn" (click)="hideStat('examens')" title="Masquer cette statistique">✕</button>
+            <button type="button" class="stat-action-btn" (click)="openSiteModal('examens')" title="Voir détail par site">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
             <div class="stat-info">
               <div class="stat-label">Examens Pédagogiques</div>
               <div class="stat-value">{{ stats?.totalExamensReussis || 0 }} <small>réussis</small></div>
@@ -138,27 +136,18 @@ import { DashboardStats } from '../../core/models/models';
               <table class="custom-table">
                 <thead>
                   <tr>
-                    <th>Date</th>
                     <th>Candidat</th>
                     <th>Épreuve</th>
-                    <th>Passage</th>
-                    <th>Statut</th>
                   </tr>
                 </thead>
                 <tbody>
-                  @for (ex of stats!.prochainsExamens; track ex) {
+                  @for (ex of (stats!.prochainsExamens | slice:0:3); track ex) {
                     <tr>
-                      <td><strong>{{ ex.datePassage | date:'dd/MM/yyyy' }}</strong></td>
-                      <td>{{ ex.candidatNomComplet }} ({{ ex.candidatNumeroDossier }})</td>
-                      <td><span class="badge badge-programme">{{ ex.typeEpreuve }}</span></td>
-                      <td>Passage n°{{ ex.numeroPassage }}/5</td>
                       <td>
-                    <span class="badge" [ngClass]="{
-                      'badge-programme': ex.resultat === 'PROGRAMME',
-                      'badge-reussi': ex.resultat === 'REUSSI',
-                      'badge-ajourne': ex.resultat === 'AJOURNE'
-                    }">{{ ex.resultat }}</span>
+                        <strong>{{ ex.candidatNomComplet }}</strong>
+                        <div class="sub-text">{{ ex.datePassage | date:'dd/MM/yyyy' }}</div>
                       </td>
+                      <td><span class="badge badge-programme">{{ ex.typeEpreuve }}</span></td>
                     </tr>
                   }
                 </tbody>
@@ -187,27 +176,18 @@ import { DashboardStats } from '../../core/models/models';
                 <table class="custom-table">
                   <thead>
                     <tr>
-                      <th>N° Reçu</th>
                       <th>Candidat</th>
                       <th>Montant</th>
-                      <th>Mode</th>
-                      <th>Statut</th>
                     </tr>
                   </thead>
                   <tbody>
-                    @for (p of stats!.derniersPaiements; track p) {
+                    @for (p of (stats!.derniersPaiements | slice:0:3); track p) {
                       <tr>
-                        <td><strong>{{ p.numeroRecu || '-' }}</strong></td>
-                        <td>{{ p.candidatNomComplet }}</td>
-                        <td><strong class="text-success">{{ p.montant | number }} FCFA</strong></td>
-                        <td>{{ p.modeReglement }}</td>
                         <td>
-                    <span class="badge" [ngClass]="{
-                      'badge-solde': p.statut === 'VALIDE',
-                      'badge-expire': p.statut === 'ANNULE',
-                      'badge-ajourne': p.statut === 'MODIFIE'
-                    }">{{ p.statut }}</span>
+                          <strong>{{ p.candidatNomComplet }}</strong>
+                          <div class="sub-text">{{ p.numeroRecu || '-' }}</div>
                         </td>
+                        <td><strong class="text-success">{{ p.montant | number }} FCFA</strong></td>
                       </tr>
                     }
                   </tbody>
@@ -237,29 +217,22 @@ import { DashboardStats } from '../../core/models/models';
                 <table class="custom-table">
                   <thead>
                     <tr>
-                      <th>Date</th>
                       <th>Libellé</th>
-                      <th>Type</th>
                       <th>Montant</th>
-                      <th>Agent</th>
                     </tr>
                   </thead>
                   <tbody>
-                    @for (t of stats!.dernieresTransactionsCaisse; track t) {
+                    @for (t of (stats!.dernieresTransactionsCaisse | slice:0:3); track t) {
                       <tr>
-                        <td>{{ t.dateTransaction | date:'dd/MM/yyyy' }}</td>
-                        <td>{{ t.libelle }}</td>
                         <td>
-                          <span class="badge" [ngClass]="t.typeMouvement === 'ENTREE' ? 'badge-solde' : 'badge-expire'">
-                            {{ t.typeMouvement === 'ENTREE' ? 'Entrée' : 'Sortie' }}
-                          </span>
+                          <strong>{{ t.libelle }}</strong>
+                          <div class="sub-text">{{ t.dateTransaction | date:'dd/MM/yyyy' }}</div>
                         </td>
                         <td>
                           <strong [ngClass]="t.typeMouvement === 'ENTREE' ? 'text-success' : 'text-danger'">
-                            {{ t.montant | number }} FCFA
+                            {{ t.typeMouvement === 'ENTREE' ? '+' : '-' }} {{ t.montant | number }} FCFA
                           </strong>
                         </td>
-                        <td>{{ t.utilisateurNomComplet }}</td>
                       </tr>
                     }
                   </tbody>
@@ -269,6 +242,93 @@ import { DashboardStats } from '../../core/models/models';
           </div>
         }
       </div>
+
+      <!-- MODALE DÉTAILS TOTAUX PAR SITE -->
+      @if (activeSiteModal) {
+        <div class="modal-backdrop">
+          <div class="modal-content modal-lg">
+            <div class="modal-header">
+              <h3 style="display:flex; align-items:center; gap:0.5rem;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                Détail par Site — {{ modalTitle }}
+              </h3>
+              <button class="btn btn-outline btn-sm" (click)="closeSiteModal()">✕</button>
+            </div>
+            <div class="modal-body">
+              @if (!stats?.statsParSite || stats!.statsParSite!.length === 0) {
+                <div class="empty-state">
+                  Aucune donnée par site disponible.
+                </div>
+              }
+              @if (stats?.statsParSite && stats!.statsParSite!.length > 0) {
+                <div class="table-responsive">
+                  <table class="custom-table">
+                    <thead>
+                      <tr>
+                        <th>Site</th>
+                        @if (activeSiteModal === 'candidats') {
+                          <th>Total Candidats</th>
+                          <th>En cours</th>
+                          <th>Soldés</th>
+                          <th>Expirés non soldés</th>
+                        }
+                        @if (activeSiteModal === 'financier') {
+                          <th>Total Encaissé</th>
+                          <th>Reste Dû</th>
+                        }
+                        @if (activeSiteModal === 'caisse') {
+                          <th>Entrées</th>
+                          <th>Sorties</th>
+                          <th>Solde Caisse</th>
+                        }
+                        @if (activeSiteModal === 'examens') {
+                          <th>Réussis</th>
+                          <th>Ajournés</th>
+                          <th>Programmés</th>
+                        }
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (s of stats!.statsParSite; track s.siteId) {
+                        <tr>
+                          <td><strong>{{ s.siteNom }}</strong></td>
+                          @if (activeSiteModal === 'candidats') {
+                            <td><strong>{{ s.totalCandidats }}</strong></td>
+                            <td>{{ s.candidatsEnCours }}</td>
+                            <td><span class="text-success font-weight-bold">{{ s.candidatsSoldes }}</span></td>
+                            <td><span class="text-danger">{{ s.candidatsExpiresNonSoldes }}</span></td>
+                          }
+                          @if (activeSiteModal === 'financier') {
+                            <td><strong class="text-success">{{ s.montantEncaisse | number }} FCFA</strong></td>
+                            <td><strong class="text-danger">{{ s.montantRestant | number }} FCFA</strong></td>
+                          }
+                          @if (activeSiteModal === 'caisse') {
+                            <td class="text-success">+ {{ s.totalEntreesCaisse | number }} FCFA</td>
+                            <td class="text-danger">- {{ s.totalSortiesCaisse | number }} FCFA</td>
+                            <td>
+                              <strong [ngClass]="s.soldeCaisse >= 0 ? 'text-success' : 'text-danger'">
+                                {{ s.soldeCaisse | number }} FCFA
+                              </strong>
+                            </td>
+                          }
+                          @if (activeSiteModal === 'examens') {
+                            <td><span class="badge badge-reussi">{{ s.examensReussis }}</span></td>
+                            <td><span class="badge badge-ajourne">{{ s.examensEchecs }}</span></td>
+                            <td><span class="badge badge-programme">{{ s.examensProgrammes }}</span></td>
+                          }
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" (click)="closeSiteModal()">Fermer</button>
+            </div>
+          </div>
+        </div>
+      }
     </div>
     `,
     changeDetection: ChangeDetectionStrategy.Eager,
@@ -371,76 +431,51 @@ import { DashboardStats } from '../../core/models/models';
       position: relative;
     }
 
-    .stat-remove-btn {
+    .stat-action-btn {
       position: absolute;
-      top: 0.5rem;
-      right: 0.5rem;
-      width: 1.5rem;
-      height: 1.5rem;
+      top: 0.6rem;
+      right: 0.6rem;
+      width: 1.8rem;
+      height: 1.8rem;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      border: none;
+      border: 1px solid rgba(0, 0, 0, 0.08);
       border-radius: var(--radius-full);
-      background: transparent;
-      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.85);
+      color: var(--text-dark, #334155);
       cursor: pointer;
-      font-size: 0.75rem;
-      line-height: 1;
-      opacity: 0;
-      transition: opacity var(--transition-fast), background var(--transition-fast);
+      opacity: 0.85;
+      transition: all var(--transition-fast);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      z-index: 2;
     }
 
-    .stat-card:hover .stat-remove-btn {
+    .stat-card:hover .stat-action-btn {
       opacity: 1;
     }
 
-    .stat-remove-btn:hover {
-      background: rgba(0, 0, 0, 0.08);
-      color: var(--text-main);
-    }
-
-    .hidden-stats-bar {
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-    }
-
-    .hidden-stats-label {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-    }
-
-    .chip-add {
-      border: 1px dashed var(--border-color);
-      background: transparent;
-      border-radius: var(--radius-full);
-      padding: 0.25rem 0.75rem;
-      font-size: 0.78rem;
+    .stat-action-btn:hover {
+      background: #ffffff;
       color: var(--primary);
-      cursor: pointer;
-      transition: background var(--transition-fast);
+      transform: scale(1.08);
+      border-color: var(--primary);
     }
 
-    .chip-add:hover {
-      background: rgba(37, 99, 235, 0.08);
+    .sub-text {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.15rem;
+      font-weight: 500;
     }
 
     .dashboard-grid {
       display: grid;
-      /* 450px de minimum dépassait la largeur de nombreux téléphones (l'override global
-         @media qui force 1fr sur cette classe n'est pas fiable ici) : on descend le seuil
-         sous la largeur des petits téléphones plutôt que de dépendre de cet override. */
       grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
       gap: 1.5rem;
     }
 
     .dashboard-grid > .card {
-      /* Comme pour un flex item, un item de grille refuse par défaut de rétrécir sous la
-         largeur intrinsèque de son contenu (ici le card-header) : sans ça, la colonne
-         "1fr" s'élargit quand même au-delà de l'écran sur petit téléphone. */
       min-width: 0;
     }
 
@@ -453,6 +488,79 @@ import { DashboardStats } from '../../core/models/models';
 
     .text-success { color: #15803d; }
     .text-danger { color: #b91c1c; }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 1050;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      animation: fadeIn 0.15s ease-out;
+    }
+
+    .modal-content {
+      background: var(--surface, #ffffff);
+      border-radius: var(--radius-lg, 12px);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      width: 100%;
+      max-width: 580px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid var(--border-color, #e2e8f0);
+      animation: modalSlideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .modal-content.modal-lg {
+      max-width: 780px;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border-color, #e2e8f0);
+    }
+
+    .modal-header h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin: 0;
+      color: var(--text-dark, #0f172a);
+    }
+
+    .modal-body {
+      padding: 1.25rem 1.5rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .modal-footer {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      padding: 1rem 1.5rem;
+      border-top: 1px solid var(--border-color, #e2e8f0);
+      background: var(--surface-secondary, #f8fafc);
+      border-bottom-left-radius: var(--radius-lg, 12px);
+      border-bottom-right-radius: var(--radius-lg, 12px);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes modalSlideUp {
+      from { opacity: 0; transform: translateY(12px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
   `]
 })
 export class DashboardComponent implements OnInit {
@@ -460,24 +568,37 @@ export class DashboardComponent implements OnInit {
   currentUser: any = null;
   loadingStats = false;
 
-  /** Cartes de statistiques du tableau de bord : chacune peut être masquée par
-   *  l'utilisateur (bouton ✕) puis remise en place (chip "+"), préférence gardée
-   *  par navigateur via localStorage — un moniteur et une caissière n'ont pas
-   *  forcément les mêmes cartes utiles au quotidien. */
-  private readonly statDefs: { id: string; label: string; roles: string[] }[] = [
-    { id: 'candidats', label: 'Total Candidats', roles: [] },
-    { id: 'financier', label: 'Total Encaissé', roles: ['ADMIN', 'CAISSIERE', 'SECRETAIRE'] },
-    { id: 'caisse', label: 'Solde de Caisse', roles: ['ADMIN', 'CAISSIERE'] },
-    { id: 'examens', label: 'Examens Pédagogiques', roles: [] }
+  activeSiteModal: 'candidats' | 'financier' | 'caisse' | 'examens' | null = null;
+
+  get modalTitle(): string {
+    switch (this.activeSiteModal) {
+      case 'candidats': return 'Total Candidats';
+      case 'financier': return 'Total Encaissé & Reste Dû';
+      case 'caisse': return 'Solde de Caisse';
+      case 'examens': return 'Examens Pédagogiques';
+      default: return '';
+    }
+  }
+
+  openSiteModal(type: 'candidats' | 'financier' | 'caisse' | 'examens'): void {
+    this.activeSiteModal = type;
+  }
+
+  closeSiteModal(): void {
+    this.activeSiteModal = null;
+  }
+
+  private readonly statDefs: { id: string; roles: string[] }[] = [
+    { id: 'candidats', roles: [] },
+    { id: 'financier', roles: ['ADMIN', 'CAISSIERE', 'SECRETAIRE'] },
+    { id: 'caisse', roles: ['ADMIN', 'CAISSIERE'] },
+    { id: 'examens', roles: [] }
   ];
-  private readonly HIDDEN_STATS_KEY = 'dashboard_hidden_stats';
-  private hiddenStats = new Set<string>();
 
   constructor(private apiService: ApiService, private authService: AuthService) {}
 
   ngOnInit(): void {
     this.currentUser = this.authService.currentUserValue;
-    this.chargerStatsCachees();
     this.loadStats();
   }
 
@@ -496,39 +617,6 @@ export class DashboardComponent implements OnInit {
   isStatVisible(id: string): boolean {
     const def = this.statDefs.find(d => d.id === id);
     if (!def) return false;
-    if (def.roles.length > 0 && !this.hasRole(def.roles)) return false;
-    return !this.hiddenStats.has(id);
-  }
-
-  get statsCachees(): { id: string; label: string }[] {
-    return this.statDefs.filter(d => this.hiddenStats.has(d.id) && (d.roles.length === 0 || this.hasRole(d.roles)));
-  }
-
-  hideStat(id: string): void {
-    this.hiddenStats.add(id);
-    this.sauvegarderStatsCachees();
-  }
-
-  showStat(id: string): void {
-    this.hiddenStats.delete(id);
-    this.sauvegarderStatsCachees();
-  }
-
-  private chargerStatsCachees(): void {
-    try {
-      const raw = localStorage.getItem(this.HIDDEN_STATS_KEY);
-      this.hiddenStats = raw ? new Set(JSON.parse(raw)) : new Set();
-    } catch {
-      this.hiddenStats = new Set();
-    }
-  }
-
-  private sauvegarderStatsCachees(): void {
-    try {
-      localStorage.setItem(this.HIDDEN_STATS_KEY, JSON.stringify(Array.from(this.hiddenStats)));
-    } catch {
-      // Stockage indisponible (navigation privée, etc.) : la préférence ne sera
-      // simplement pas conservée d'une session à l'autre.
-    }
+    return def.roles.length === 0 || this.hasRole(def.roles);
   }
 }

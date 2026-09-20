@@ -148,12 +148,13 @@ export interface Paiement {
   candidatNomComplet: string;
   utilisateurId: number;
   utilisateurNomComplet: string;
-  typeVersement: 'PREMIER_VERSEMENT' | 'VERSEMENT_SUIVANT' | 'FRAIS_EXAMEN';
+  typeVersement?: 'PREMIER_VERSEMENT' | 'VERSEMENT_SUIVANT' | 'FRAIS_EXAMEN' | string;
   typeEpreuve?: 'CODE' | 'CRENEAU' | 'CIRCULATION' | null;
   montant: number;
+  soldeRestant?: number;
   datePaiement: string;
   modeReglement: 'ESPECES' | 'VIREMENT' | 'MOBILE_MONEY' | 'CHEQUE';
-  statut: 'VALIDE' | 'ANNULE' | 'MODIFIE';
+  statut?: 'VALIDE' | 'ANNULE' | 'MODIFIE' | string;
   motifModification?: string;
   dateModification?: string;
   utilisateurModifNom?: string;
@@ -321,6 +322,23 @@ export interface IdentitePublique {
   adresseSiege: string | null;
 }
 
+export interface StatistiquesSite {
+  siteId: number;
+  siteNom: string;
+  totalCandidats: number;
+  candidatsEnCours: number;
+  candidatsSoldes: number;
+  candidatsExpiresNonSoldes: number;
+  montantEncaisse: number;
+  montantRestant: number;
+  soldeCaisse: number;
+  totalEntreesCaisse: number;
+  totalSortiesCaisse: number;
+  examensReussis: number;
+  examensEchecs: number;
+  examensProgrammes: number;
+}
+
 export interface DashboardStats {
   totalCandidats: number;
   candidatsEnCours: number;
@@ -340,6 +358,7 @@ export interface DashboardStats {
   prochainsExamens: PassageExamen[];
   derniersPaiements: Paiement[];
   dernieresTransactionsCaisse: TransactionCaisse[];
+  statsParSite?: StatistiquesSite[];
 }
 
 export interface HistoriqueAction {

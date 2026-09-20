@@ -119,23 +119,23 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   <td class="text-right">
                     <div class="action-flex" style="justify-content: flex-end; gap: 0.35rem;">
                       <!-- VOIR -->
-                      <button class="btn btn-outline btn-xs" (click)="openSessionDetail(s.id)" title="Voir le détail et noter">
+                      <button class="btn btn-outline btn-xs" (click)="openSessionDetail(s.id)" title="Voir le détail et les résultats">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                       </button>
                       <!-- AFFECTER CANDIDATS -->
-                      @if (peutGererSession(s)) {
+                      @if (peutModifierSession(s)) {
                         <button class="btn btn-primary btn-xs" (click)="openQuickAffecterModal(s)" title="Affecter des candidats">
                           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
                         </button>
                       }
                       <!-- MODIFIER -->
-                      @if (peutGererSession(s)) {
+                      @if (peutModifierSession(s)) {
                         <button class="btn btn-secondary btn-xs" (click)="openEditSessionModal(s)" title="Modifier la session">
                           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
                         </button>
                       }
                       <!-- SUPPRIMER -->
-                      @if (peutGererSession(s)) {
+                      @if (peutSupprimerSession(s)) {
                         <button class="btn btn-danger btn-xs" (click)="supprimerSession(s)" title="Supprimer la session">
                           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                         </button>
@@ -164,6 +164,12 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   {{ sessionError }}
                 </div>
               }
+              @if (estTerminee(sessionDetail)) {
+                <div class="alert alert-success" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                  <span><strong>Session terminée</strong> — Les résultats sont proclamés. Seules la consultation et la suppression sont autorisées.</span>
+                </div>
+              }
               <div class="alert alert-info session-info">
                 <div class="session-info-text">
                   <div>Lieu : <strong>{{ sessionDetail.lieu || sessionDetail.siteNom || 'Non spécifié' }}</strong></div>
@@ -175,7 +181,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   </div>
                   <div>{{ sessionDetail.datePassee ? 'Date passée' : 'À venir' }}</div>
                 </div>
-                @if (peutGererSession(sessionDetail)) {
+                @if (peutModifierSession(sessionDetail)) {
                   @if (!editingSessionDate) {
                     <button class="btn btn-outline btn-sm" (click)="startEditSessionDate()">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
@@ -264,7 +270,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 </tbody>
               </table>
 
-              @if (peutRetirer(sessionDetail)) {
+              @if (peutModifierSession(sessionDetail)) {
                 <div style="margin-top: 1.25rem;">
                   @if (!showAjoutCandidats) {
                     <button class="btn btn-secondary btn-sm" (click)="openAjoutCandidats()">
@@ -889,14 +895,30 @@ export class ExamensComponent implements OnInit {
     this.showAjoutCandidats = false;
   }
 
-  /** Le retrait n'est possible qu'avant la date pour un moniteur ; sans restriction pour l'admin. */
-  peutRetirer(s: SessionExamen): boolean {
+  estTerminee(s?: SessionExamen | null): boolean {
+    if (!s) return false;
+    if (s.statut === 'TERMINE' || s.terminee) return true;
+    return !!(s.candidats && s.candidats.length > 0 && s.candidats.every(p => p.resultat !== 'PROGRAMME'));
+  }
+
+  peutModifierSession(s?: SessionExamen | null): boolean {
+    if (!s || this.estTerminee(s)) return false;
     return this.isAdmin || !s.datePassee;
   }
 
-  /** Noter un résultat n'a de sens qu'une fois la date de l'examen arrivée, pour tous les rôles. */
+  peutSupprimerSession(s?: SessionExamen | null): boolean {
+    if (!s) return false;
+    return this.isAdmin || !s.datePassee || this.estTerminee(s);
+  }
+
+  /** Le retrait n'est possible que si la session n'est pas terminée, et avant la date pour un moniteur ; sans restriction pour l'admin. */
+  peutRetirer(s: SessionExamen): boolean {
+    return !this.estTerminee(s) && (this.isAdmin || !s.datePassee);
+  }
+
+  /** Noter un résultat n'a de sens qu'une fois la date de l'examen arrivée, et tant que la session n'est pas verrouillée/terminée. */
   peutNoter(s: SessionExamen): boolean {
-    return s.datePassee;
+    return !this.estTerminee(s) && s.datePassee;
   }
 
   retirerDeSession(passageId: number): void {

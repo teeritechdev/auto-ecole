@@ -108,10 +108,9 @@ export class ApiService {
   }
 
   // ================= PAIEMENTS & REÇUS =================
-  public getPaiements(candidatId?: number, statut?: string, page: number = 0, size: number = 15, debut?: string, fin?: string, siteId?: number): Observable<any> {
+  public getPaiements(candidatId?: number, page: number = 0, size: number = 15, debut?: string, fin?: string, siteId?: number): Observable<any> {
     let params = new HttpParams().set('page', page).set('size', size);
     if (candidatId) params = params.set('candidatId', candidatId);
-    if (statut) params = params.set('statut', statut);
     if (debut) params = params.set('debut', debut);
     if (fin) params = params.set('fin', fin);
     if (siteId) params = params.set('siteId', siteId);
@@ -255,6 +254,10 @@ export class ApiService {
 
   public updateNatureOperation(id: number, data: UpdateNatureOperation): Observable<NatureOperation> {
     return this.http.put<NatureOperation>(`${this.base}/caisse/natures/${id}`, data);
+  }
+
+  public deleteNatureOperation(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/caisse/natures/${id}`);
   }
 
   public deleteTransactionCaisse(id: number, motif?: string): Observable<void> {

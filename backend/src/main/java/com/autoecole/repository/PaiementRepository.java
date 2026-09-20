@@ -1,7 +1,6 @@
 package com.autoecole.repository;
 
 import com.autoecole.entity.Paiement;
-import com.autoecole.entity.enums.StatutPaiement;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -19,18 +18,16 @@ public interface PaiementRepository extends JpaRepository<Paiement, Long> {
 
     List<Paiement> findByInscriptionIdOrderByDatePaiementDesc(Long inscriptionId);
 
-    long countByInscriptionIdAndStatut(Long inscriptionId, StatutPaiement statut);
+    long countByInscriptionId(Long inscriptionId);
 
     @Query("SELECT p FROM Paiement p WHERE " +
            "(:candidatId IS NULL OR p.inscription.candidat.id = :candidatId) " +
-           "AND (:statut IS NULL OR p.statut = :statut) " +
            "AND (CAST(:debut AS timestamp) IS NULL OR p.datePaiement >= :debut) " +
            "AND (CAST(:fin AS timestamp) IS NULL OR p.datePaiement <= :fin) " +
            "AND (:siteIds IS NULL OR p.inscription.site.id IN :siteIds) " +
            "AND (:siteFiltreId IS NULL OR p.inscription.site.id = :siteFiltreId)")
     Page<Paiement> filtrerPaiements(
             @Param("candidatId") Long candidatId,
-            @Param("statut") StatutPaiement statut,
             @Param("debut") LocalDateTime debut,
             @Param("fin") LocalDateTime fin,
             @Param("siteIds") Collection<Long> siteIds,
@@ -38,20 +35,20 @@ public interface PaiementRepository extends JpaRepository<Paiement, Long> {
             Pageable pageable
     );
 
-    /** Nombre et montant total des paiements validés par site (statistiques d'activité par
+    /** Nombre et montant total des paiements par site (statistiques d'activité par
      *  site) : les paiements sans site (données historiques) ne sont pas comptabilisés ici. */
     @Query("SELECT p.inscription.site.id, COUNT(p.id), COALESCE(SUM(p.montant), 0) " +
-           "FROM Paiement p WHERE p.statut = 'VALIDE' AND p.inscription.site IS NOT NULL " +
+           "FROM Paiement p WHERE p.inscription.site IS NOT NULL " +
            "GROUP BY p.inscription.site.id")
     List<Object[]> statistiquesPaiementsParSite();
 
     @Query("SELECT p FROM Paiement p WHERE p.inscription.candidat.id = :candidatId ORDER BY p.datePaiement DESC")
     List<Paiement> findByCandidatIdOrderByDatePaiementDesc(@Param("candidatId") Long candidatId);
 
-    @Query("SELECT COALESCE(SUM(p.montant), 0) FROM Paiement p WHERE p.inscription.id = :inscriptionId AND p.statut = 'VALIDE'")
+    @Query("SELECT COALESCE(SUM(p.montant), 0) FROM Paiement p WHERE p.inscription.id = :inscriptionId")
     BigDecimal sumTotalValideByInscription(@Param("inscriptionId") Long inscriptionId);
 
-    @Query("SELECT COALESCE(SUM(p.montant), 0) FROM Paiement p WHERE p.statut = 'VALIDE' AND p.datePaiement BETWEEN :debut AND :fin")
+    @Query("SELECT COALESCE(SUM(p.montant), 0) FROM Paiement p WHERE p.datePaiement BETWEEN :debut AND :fin")
     BigDecimal sumTotalValideBetween(@Param("debut") LocalDateTime debut, @Param("fin") LocalDateTime fin);
 
     @Query("SELECT p FROM Paiement p WHERE (:siteIds IS NULL OR p.inscription.site.id IN :siteIds) " +

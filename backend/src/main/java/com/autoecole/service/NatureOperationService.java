@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 public class NatureOperationService {
 
     private final NatureOperationRepository natureOperationRepository;
+    private final com.autoecole.repository.TransactionCaisseRepository transactionCaisseRepository;
 
     public List<NatureOperationDTO> getActives() {
         return natureOperationRepository.findByActifTrueOrderByLibelleAsc().stream()
@@ -63,6 +64,16 @@ public class NatureOperationService {
         nature.setDescription(request.getDescription());
         nature.setActif(request.isActif());
         return mapToDTO(natureOperationRepository.save(nature));
+    }
+
+    @Transactional
+    public void supprimer(Long id) {
+        NatureOperation nature = natureOperationRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Nature d'opération introuvable"));
+        if (transactionCaisseRepository.existsByNatureOperationId(id)) {
+            throw new BadRequestException("Impossible de supprimer cette nature d'opération car des opérations de caisse y sont rattachées. Vous pouvez la désactiver à la place.");
+        }
+        natureOperationRepository.delete(nature);
     }
 
     private NatureOperationDTO mapToDTO(NatureOperation n) {

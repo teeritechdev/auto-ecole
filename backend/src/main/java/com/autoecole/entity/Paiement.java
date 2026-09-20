@@ -1,9 +1,7 @@
 package com.autoecole.entity;
 
 import com.autoecole.entity.enums.ModeReglement;
-import com.autoecole.entity.enums.StatutPaiement;
 import com.autoecole.entity.enums.TypeEpreuve;
-import com.autoecole.entity.enums.TypeVersement;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
@@ -12,8 +10,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "paiements", indexes = {
     @Index(name = "idx_paiement_inscription", columnList = "inscription_id"),
-    @Index(name = "idx_paiement_date", columnList = "date_paiement"),
-    @Index(name = "idx_paiement_statut", columnList = "statut")
+    @Index(name = "idx_paiement_date", columnList = "date_paiement")
 })
 @Getter
 @Setter
@@ -34,10 +31,6 @@ public class Paiement {
     @JoinColumn(name = "utilisateur_id", nullable = false)
     private Utilisateur utilisateur;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "type_versement", length = 30, nullable = false)
-    private TypeVersement typeVersement;
-
     /** Renseigné uniquement pour un versement de type FRAIS_EXAMEN : indique pour quelle
      *  épreuve (Code/Créneau/Circulation) ce paiement, distinct du forfait de formation, a
      *  été encaissé. */
@@ -56,11 +49,6 @@ public class Paiement {
     @Column(name = "mode_reglement", length = 30, nullable = false)
     @Builder.Default
     private ModeReglement modeReglement = ModeReglement.ESPECES;
-
-    @Enumerated(EnumType.STRING)
-    @Column(length = 30, nullable = false)
-    @Builder.Default
-    private StatutPaiement statut = StatutPaiement.VALIDE;
 
     @Column(name = "motif_modification", length = 255)
     private String motifModification;

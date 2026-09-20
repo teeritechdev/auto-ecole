@@ -52,8 +52,8 @@ public class RecuService {
                 .montant(r.getMontant())
                 .totalVerse(i != null ? i.getTotalVerse() : null)
                 .soldeRestant(r.getSoldeRestant())
-                .modeReglement(p != null ? p.getModeReglement().name() : "")
-                .typeVersement(p != null ? p.getTypeVersement().name() : "")
+                .modeReglement(p != null && p.getModeReglement() != null ? p.getModeReglement().name() : "")
+                .typeVersement("")
                 .imprimePar(r.getImprimePar())
                 .build();
     }

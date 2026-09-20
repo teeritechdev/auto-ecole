@@ -1,7 +1,6 @@
 package com.autoecole.controller;
 
 import com.autoecole.dto.PaiementDTOs.*;
-import com.autoecole.entity.enums.StatutPaiement;
 import com.autoecole.service.PaiementService;
 import com.autoecole.service.RecuService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -35,13 +34,12 @@ public class PaiementController {
     @Operation(summary = "Lister et filtrer les versements avec pagination")
     public ResponseEntity<Page<PaiementDTO>> filtrerPaiements(
             @RequestParam(required = false) Long candidatId,
-            @RequestParam(required = false) StatutPaiement statut,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime debut,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fin,
             @RequestParam(required = false) Long siteId,
             @PageableDefault(size = 15, sort = "datePaiement", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        return ResponseEntity.ok(paiementService.filtrerPaiements(candidatId, statut, debut, fin, siteId, pageable));
+        return ResponseEntity.ok(paiementService.filtrerPaiements(candidatId, debut, fin, siteId, pageable));
     }
 
     @GetMapping("/candidat/{candidatId}")

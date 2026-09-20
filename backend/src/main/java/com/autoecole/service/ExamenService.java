@@ -22,6 +22,8 @@ import com.autoecole.repository.UtilisateurRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -252,16 +254,29 @@ public class ExamenService {
     }
 
     /**
-     * Empêche un moniteur d'agir (ajouter/retirer un candidat) sur une session dont la
-     * date est déjà passée ; l'administrateur n'a pas cette restriction.
+     * Empêche toute modification (ajout/retrait de candidat, changement de date/lieu)
+     * si la session est TERMINEE (tous les candidats notés).
+     * De plus, un moniteur ne peut pas agir sur une session dont la date est passée.
      */
     private void verifierSessionModifiable(SessionExamen session, String action) {
+        List<PassageExamen> passages = passageRepository.findBySessionIdOrderByDateEnregistrementAsc(session.getId());
+        boolean estTerminee = !passages.isEmpty() && passages.stream().noneMatch(p -> p.getResultat() == ResultatExamen.PROGRAMME);
+        if (estTerminee) {
+            throw new BadRequestException("Cette session est terminée : elle ne peut plus être modifiée (seules la consultation et la suppression sont autorisées)");
+        }
+
         Utilisateur currentUser = auditService.getCurrentUser();
         if (currentUser != null && currentUser.getRole() != null && currentUser.getRole().getCode() == RoleEnum.MONITEUR) {
             if (session.getDatePassage().isBefore(LocalDate.now())) {
                 throw new BadRequestException("Un moniteur ne peut plus " + action + " une fois la date de la session passée");
             }
         }
+    }
+
+    private boolean currentUserPeutSupprimerSessionNotee() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth != null && auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("PERM_EXAMENS_SUPPRIMER"));
     }
 
     @Transactional
@@ -329,7 +344,7 @@ public class ExamenService {
         SessionExamen session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Session d'examen introuvable"));
         siteAccessService.verifierAccesEpreuve(session.getTypeEpreuve());
-        verifierSessionModifiable(session, "modifier la date de");
+        verifierSessionModifiable(session, "modifier");
 
         session.setDatePassage(request.getDatePassage());
         if (request.getLieu() != null) {
@@ -366,16 +381,20 @@ public class ExamenService {
         siteAccessService.verifierAccesEpreuve(session.getTypeEpreuve());
 
         List<PassageExamen> passages = passageRepository.findBySessionIdOrderByDateEnregistrementAsc(sessionId);
-        // Si un des candidats a déjà un résultat définitif (REUSSI ou AJOURNE), on bloque la suppression
+
+        // Si un des candidats a déjà un résultat définitif (REUSSI ou AJOURNE), seule l'autorité
+        // EXAMENS_SUPPRIMER (pas la simple gestion de session, accordée par défaut au moniteur)
+        // permet la suppression : au-delà, cela reviendrait à effacer un résultat proclamé.
         boolean aResultatsDefinitifs = passages.stream().anyMatch(p -> p.getResultat() != ResultatExamen.PROGRAMME);
-        if (aResultatsDefinitifs) {
+        if (aResultatsDefinitifs && !currentUserPeutSupprimerSessionNotee()) {
             throw new BadRequestException("Impossible de supprimer une session dont certains candidats ont déjà un résultat proclamé");
         }
 
-        // Libérer les candidats : remettre leur étape à l'étape préalable
+        // Libérer les candidats : remettre leur étape à l'étape préalable à l'examen si nécessaire
         for (PassageExamen p : passages) {
             Inscription inscription = p.getInscription();
             if (inscription != null) {
+                // Si le candidat avait validé ou échoué, supprimer la session le replace à l'état de préparation
                 inscription.setEtapeParcours(etapeAvantExamen(session.getTypeEpreuve()));
                 inscriptionRepository.save(inscription);
             }

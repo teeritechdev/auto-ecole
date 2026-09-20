@@ -40,5 +40,37 @@ public class DashboardDTOs {
         private List<ExamenDTOs.PassageExamenDTO> prochainsExamens;
         private List<PaiementDTOs.PaiementDTO> derniersPaiements;
         private List<CaisseDTOs.TransactionCaisseDTO> dernieresTransactionsCaisse;
+
+        // Détails par site
+        private List<StatistiquesSiteDTO> statsParSite;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class StatistiquesSiteDTO {
+        private Long siteId;
+        private String siteNom;
+
+        // Candidats
+        private long totalCandidats;
+        private long candidatsEnCours;
+        private long candidatsSoldes;
+        private long candidatsExpiresNonSoldes;
+
+        // Financier
+        private BigDecimal montantEncaisse;
+        private BigDecimal montantRestant;
+
+        // Caisse
+        private BigDecimal soldeCaisse;
+        private BigDecimal totalEntreesCaisse;
+        private BigDecimal totalSortiesCaisse;
+
+        // Examens
+        private long examensReussis;
+        private long examensEchecs;
+        private long examensProgrammes;
     }
 }

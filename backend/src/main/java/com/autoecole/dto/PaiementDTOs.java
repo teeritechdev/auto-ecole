@@ -1,9 +1,7 @@
 package com.autoecole.dto;
 
 import com.autoecole.entity.enums.ModeReglement;
-import com.autoecole.entity.enums.StatutPaiement;
 import com.autoecole.entity.enums.TypeEpreuve;
-import com.autoecole.entity.enums.TypeVersement;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -28,12 +26,11 @@ public class PaiementDTOs {
         private String candidatNomComplet;
         private Long utilisateurId;
         private String utilisateurNomComplet;
-        private TypeVersement typeVersement;
         private TypeEpreuve typeEpreuve;
         private BigDecimal montant;
+        private BigDecimal soldeRestant; // Reste à payer du candidat après ce versement
         private LocalDateTime datePaiement;
         private ModeReglement modeReglement;
-        private StatutPaiement statut;
         private String motifModification;
         private LocalDateTime dateModification;
         private String utilisateurModifNom;
@@ -48,8 +45,6 @@ public class PaiementDTOs {
     public static class CreatePaiementRequest {
         @NotNull(message = "L'identifiant du candidat est obligatoire")
         private Long candidatId;
-
-        private TypeVersement typeVersement; // Optionnel : déterminé automatiquement ou spécifié
 
         @NotNull(message = "Le montant est obligatoire")
         @DecimalMin(value = "1.0", message = "Le montant doit être supérieur à 0")

@@ -62,4 +62,8 @@ public interface PassageExamenRepository extends JpaRepository<PassageExamen, Lo
     @Query("SELECT COUNT(pe) FROM PassageExamen pe WHERE pe.resultat = :resultat " +
            "AND (:siteIds IS NULL OR pe.inscription.site.id IN :siteIds)")
     long countByResultatAndSite(@Param("resultat") ResultatExamen resultat, @Param("siteIds") Collection<Long> siteIds);
+
+    @Query("SELECT pe.inscription.site.id, pe.resultat, COUNT(pe) FROM PassageExamen pe " +
+           "WHERE pe.inscription.site IS NOT NULL GROUP BY pe.inscription.site.id, pe.resultat")
+    List<Object[]> compterPassagesParSiteEtResultat();
 }

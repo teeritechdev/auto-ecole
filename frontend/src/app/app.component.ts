@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, HostListener, ElementRef, ViewChild } from '@angular/core';
 
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -174,29 +174,6 @@ import { extraireMessageErreur } from './core/utils/error-utils';
               </a>
             }
           </nav>
-          <!-- FOOTER USER PROFILE -->
-          <div class="sidebar-footer">
-            <div class="user-profile-widget">
-              <div class="user-avatar">
-                @if (currentUser?.photoProfile) {
-                  <img [src]="$safeNavigationMigration(currentUser?.photoProfile)" alt="Photo de profil" />
-                }
-                @if (!currentUser?.photoProfile) {
-                  <span>{{ userInitials }}</span>
-                }
-              </div>
-              <div class="user-meta">
-                <div class="user-name">{{ currentUser?.nom }} {{ currentUser?.prenom }}</div>
-                <div class="user-role-badge">{{ currentUser?.role }}</div>
-              </div>
-              <button class="btn btn-sm btn-icon sidebar-footer-btn" (click)="showProfileModal = true" title="Modifier la photo de profil">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/><circle cx="12" cy="13" r="4"/></svg>
-              </button>
-              <button class="btn btn-sm btn-icon sidebar-footer-btn" (click)="logout()" title="Déconnexion">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-              </button>
-            </div>
-          </div>
         </aside>
         <!-- MAIN CONTENT WRAPPER -->
         <div class="main-wrapper" [class.sidebar-closed]="!sidebarOpen">
@@ -214,14 +191,54 @@ import { extraireMessageErreur } from './core/utils/error-utils';
               }
             </div>
             <div class="topbar-actions">
-              <button class="btn btn-outline btn-sm" (click)="showPasswordModal = true" title="Mot de passe">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                <span class="btn-label">Mot de passe</span>
-              </button>
-              <button class="btn btn-danger btn-sm" (click)="logout()" title="Déconnexion">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                <span class="btn-label">Déconnexion</span>
-              </button>
+              <!-- USER PROFILE DROPDOWN -->
+              <div class="user-dropdown-container" #profileDropdown (mouseenter)="openProfileMenu()" (mouseleave)="scheduleCloseProfileMenu()">
+                <button type="button" class="user-topbar-btn" (click)="toggleProfileMenu($event)" [attr.aria-expanded]="profileMenuOpen" title="Mon Profil">
+                  <div class="user-topbar-avatar">
+                    @if (currentUser?.photoProfile) {
+                      <img [src]="currentUser?.photoProfile" alt="Photo de profil" />
+                    }
+                    @if (!currentUser?.photoProfile) {
+                      <span>{{ userInitials }}</span>
+                    }
+                  </div>
+                  <div class="user-topbar-info">
+                    <span class="user-topbar-name">{{ currentUser?.nom }} {{ currentUser?.prenom }}</span>
+                    <span class="user-topbar-role">{{ currentUser?.role }}</span>
+                  </div>
+                  <svg class="dropdown-chevron" [class.rotated]="profileMenuOpen" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </button>
+
+                @if (profileMenuOpen) {
+                  <div class="user-dropdown-menu" (click)="$event.stopPropagation()">
+                    <button type="button" class="dropdown-item" (click)="openProfileModal()">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/>
+                        <circle cx="12" cy="13" r="4"/>
+                      </svg>
+                      <span>Photo de profil</span>
+                    </button>
+                    <button type="button" class="dropdown-item" (click)="openPasswordModal()">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                      </svg>
+                      <span>Mot de passe</span>
+                    </button>
+                    <div class="dropdown-divider"></div>
+                    <button type="button" class="dropdown-item dropdown-item-danger" (click)="logoutUser()">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        <polyline points="16 17 21 12 16 7"/>
+                        <line x1="21" y1="12" x2="9" y2="12"/>
+                      </svg>
+                      <span>Déconnexion</span>
+                    </button>
+                  </div>
+                }
+              </div>
             </div>
           </header>
           <!-- CONTENT ROUTER OUTLET -->
@@ -284,7 +301,7 @@ import { extraireMessageErreur } from './core/utils/error-utils';
               <div class="modal-body">
                 <div class="profile-preview">
                   @if (currentUser?.photoProfile) {
-                    <img [src]="$safeNavigationMigration(currentUser?.photoProfile)" alt="Photo actuelle" />
+                    <img [src]="currentUser?.photoProfile" alt="Photo actuelle" />
                   }
                   @if (!currentUser?.photoProfile) {
                     <span>{{ userInitials }}</span>
@@ -307,20 +324,6 @@ import { extraireMessageErreur } from './core/utils/error-utils';
     `,
     changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
-    /* Boutons du pied de barre latérale (photo, déconnexion) : n'ont pas de classe
-       .btn-outline/.btn-primary (juste .btn-icon), donc sans cette couleur ils resteraient
-       transparents avec le texte par défaut du navigateur. */
-    .sidebar-footer-btn {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      color: var(--text-muted);
-    }
-
-    .sidebar-footer-btn:hover {
-      background: var(--bg-main);
-      color: var(--text-main);
-    }
-
     .sidebar-toggle-btn {
       display: inline-flex;
       align-items: center;
@@ -533,7 +536,7 @@ import { extraireMessageErreur } from './core/utils/error-utils';
     .icon-red { color: #ef4444; }
     .nav-item.active .nav-icon { color: #ffffff; }
 
-    .user-avatar, .profile-preview {
+    .profile-preview {
       overflow: hidden;
       border-radius: 50%;
       display: flex;
@@ -545,12 +548,226 @@ import { extraireMessageErreur } from './core/utils/error-utils';
       border: 1.5px solid #fbbf24;
     }
 
-    .user-avatar { width: 2.4rem; height: 2.4rem; }
     .brand-icon { overflow: hidden; }
     .brand-icon img { width: 100%; height: 100%; object-fit: cover; border-radius: 0.6rem; }
     .profile-preview { width: 7rem; height: 7rem; margin-bottom: 1rem; font-size: 2rem; }
-    .user-avatar img, .profile-preview img { width: 100%; height: 100%; object-fit: cover; }
+    .profile-preview img { width: 100%; height: 100%; object-fit: cover; }
     .form-help { color: var(--text-muted); font-size: 0.8rem; margin-top: 0.5rem; }
+
+    /* --- TOPBAR USER PROFILE DROPDOWN --- */
+    .user-dropdown-container {
+      position: relative;
+    }
+
+    .user-topbar-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: rgba(255, 255, 255, 0.24);
+      border: 1px solid rgba(255, 255, 255, 0.45);
+      padding: 0.3rem 0.9rem 0.3rem 0.3rem;
+      border-radius: 9999px;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+    }
+
+    .user-topbar-btn:hover {
+      background: rgba(255, 255, 255, 0.4);
+      border-color: rgba(255, 255, 255, 0.75);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+    }
+
+    .user-topbar-btn:active {
+      transform: scale(0.97);
+    }
+
+    .user-topbar-btn[aria-expanded="true"] {
+      background: rgba(255, 255, 255, 0.45);
+      border-color: rgba(255, 255, 255, 0.8);
+      box-shadow: 0 0 0 3px rgba(16, 55, 120, 0.15), 0 4px 14px rgba(0, 0, 0, 0.1);
+    }
+
+    .user-topbar-btn:focus-visible {
+      outline: 2px solid #103778;
+      outline-offset: 2px;
+    }
+
+    .user-topbar-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #103778, #1d5cc7);
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.85rem;
+      border: 2px solid #ffffff;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+      flex-shrink: 0;
+    }
+
+    .user-topbar-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .user-topbar-info {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      text-align: left;
+      line-height: 1.25;
+    }
+
+    .user-topbar-name {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #103778;
+      max-width: 140px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .user-topbar-role {
+      display: inline-block;
+      font-size: 0.62rem;
+      font-weight: 800;
+      color: #7c2d12;
+      background: rgba(255, 255, 255, 0.55);
+      padding: 0.05rem 0.4rem;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-top: 0.2rem;
+    }
+
+    .dropdown-chevron {
+      color: #103778;
+      transition: transform 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .dropdown-chevron.rotated {
+      transform: rotate(180deg);
+    }
+
+    /* DROPDOWN MENU */
+    .user-dropdown-menu {
+      position: absolute;
+      top: calc(100% + 0.6rem);
+      right: 0;
+      width: 270px;
+      max-width: calc(100vw - 2rem);
+      background: #ffffff;
+      border-radius: var(--radius-lg);
+      box-shadow: 0 16px 32px -8px rgba(16, 24, 40, 0.22), 0 4px 10px -4px rgba(16, 24, 40, 0.12);
+      border: 1px solid var(--border-color);
+      padding: 0.6rem;
+      z-index: 100;
+      transform-origin: top right;
+      animation: dropdownFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes dropdownFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-6px) scale(0.96);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .dropdown-divider {
+      height: 1px;
+      background: var(--border-color);
+      margin: 0.45rem 0;
+    }
+
+    .dropdown-item {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.7rem 0.85rem;
+      border-radius: var(--radius-md);
+      border: none;
+      background: transparent;
+      color: var(--text-main);
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+      text-align: left;
+    }
+
+    .dropdown-item svg {
+      color: var(--text-muted);
+      transition: color var(--transition-fast);
+      flex-shrink: 0;
+    }
+
+    .dropdown-item:hover {
+      background: var(--bg-main);
+      color: var(--primary);
+      transform: translateX(2px);
+    }
+
+    .dropdown-item:hover svg {
+      color: var(--primary);
+    }
+
+    .dropdown-item-danger {
+      color: var(--danger);
+    }
+
+    .dropdown-item-danger svg {
+      color: var(--danger);
+    }
+
+    .dropdown-item-danger:hover {
+      background: #fef2f2;
+      color: #b91c1c;
+    }
+
+    .dropdown-item-danger:hover svg {
+      color: #b91c1c;
+    }
+
+    @media (max-width: 640px) {
+      .user-topbar-info {
+        display: none;
+      }
+      .user-topbar-btn {
+        padding: 0.3rem;
+        gap: 0;
+        background: rgba(255, 255, 255, 0.3);
+      }
+      .user-topbar-avatar {
+        width: 40px;
+        height: 40px;
+      }
+      .dropdown-chevron {
+        display: none;
+      }
+      .user-dropdown-menu {
+        right: -0.5rem;
+        width: 260px;
+      }
+    }
+
+    @media (max-width: 380px) {
+      .user-dropdown-menu {
+        right: -1.5rem;
+      }
+    }
   `]
 })
 export class AppComponent {
@@ -559,6 +776,7 @@ export class AppComponent {
   sidebarOpen = typeof window === 'undefined' || window.innerWidth > 960;
   showPasswordModal = false;
   showProfileModal = false;
+  profileMenuOpen = false;
   ancienPwd = '';
   nouveauPwd = '';
   pwdError = '';
@@ -573,6 +791,9 @@ export class AppComponent {
    *  en ont un (Paramètres Généraux, Caisse Ménu Dépense...). */
   openFlyoutMenu: 'parametrage' | 'caisse' | null = null;
   private flyoutCloseTimer: ReturnType<typeof setTimeout> | null = null;
+  private profileCloseTimer: ReturnType<typeof setTimeout> | null = null;
+
+  @ViewChild('profileDropdown') profileDropdown?: ElementRef<HTMLElement>;
 
   constructor(public authService: AuthService, private router: Router, private apiService: ApiService) {
     this.authService.currentUser$.subscribe(user => {
@@ -586,6 +807,60 @@ export class AppComponent {
         });
       }
     });
+  }
+
+  /** Referme le menu déroulant du profil (topbar) au clic en dehors de celui-ci. */
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (this.profileMenuOpen && !this.profileDropdown?.nativeElement.contains(event.target as Node)) {
+      this.profileMenuOpen = false;
+    }
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscapeKey(): void {
+    this.profileMenuOpen = false;
+  }
+
+  toggleProfileMenu(event: MouseEvent): void {
+    event.stopPropagation();
+    this.profileMenuOpen = !this.profileMenuOpen;
+  }
+
+  /** Survol (souris) : ouvre/referme le menu profil sans avoir à cliquer, comme les
+   *  sous-menus de la barre latérale (cf. openFlyout/scheduleCloseFlyout). Le tactile
+   *  (sans survol) reste géré par le clic sur le bouton (toggleProfileMenu). */
+  openProfileMenu(): void {
+    if (!this.survolDisponible) return;
+    this.cancelCloseProfileMenu();
+    this.profileMenuOpen = true;
+  }
+
+  scheduleCloseProfileMenu(): void {
+    if (!this.survolDisponible) return;
+    this.profileCloseTimer = setTimeout(() => { this.profileMenuOpen = false; }, 200);
+  }
+
+  private cancelCloseProfileMenu(): void {
+    if (this.profileCloseTimer) {
+      clearTimeout(this.profileCloseTimer);
+      this.profileCloseTimer = null;
+    }
+  }
+
+  openProfileModal(): void {
+    this.profileMenuOpen = false;
+    this.showProfileModal = true;
+  }
+
+  openPasswordModal(): void {
+    this.profileMenuOpen = false;
+    this.showPasswordModal = true;
+  }
+
+  logoutUser(): void {
+    this.profileMenuOpen = false;
+    this.logout();
   }
 
   /** Premier mot du nom de l'auto-école (ex: "Nerwaya" dans "Nerwaya Auto-École"),

@@ -26,6 +26,8 @@ public class DashboardService {
     private final InscriptionRepository inscriptionRepository;
     private final PaiementRepository paiementRepository;
     private final PassageExamenRepository passageRepository;
+    private final SiteRepository siteRepository;
+    private final TransactionCaisseRepository transactionCaisseRepository;
     private final CaisseService caisseService;
     private final CandidatService candidatService;
     private final PaiementService paiementService;
@@ -86,6 +88,9 @@ public class DashboardService {
         // Prochains examens (déjà filtrés par site ET spécialité du moniteur courant)
         List<PassageExamenDTO> prochainsExamens = examenService.getProchainsExamens();
 
+        // Statistiques détaillées par site
+        List<com.autoecole.dto.DashboardDTOs.StatistiquesSiteDTO> statsParSite = calculerStatsParSite(siteIds, accesFinancierRestreint);
+
         return DashboardStatsDTO.builder()
                 .totalCandidats(totalCandidats)
                 .candidatsEnCours(candidatsEnCours)
@@ -105,6 +110,93 @@ public class DashboardService {
                 .prochainsExamens(prochainsExamens)
                 .derniersPaiements(derniersPaiements)
                 .dernieresTransactionsCaisse(dernieresTransactionsCaisse)
+                .statsParSite(statsParSite)
                 .build();
+    }
+
+    private List<com.autoecole.dto.DashboardDTOs.StatistiquesSiteDTO> calculerStatsParSite(java.util.Set<Long> siteIdsAutorises, boolean accesFinancierRestreint) {
+        List<com.autoecole.entity.Site> sites = siteRepository.findAllByOrderByNomAsc();
+        if (siteIdsAutorises != null) {
+            sites = sites.stream().filter(s -> siteIdsAutorises.contains(s.getId())).collect(Collectors.toList());
+        }
+
+        // Map inscriptions actives par site et statut
+        java.util.Map<Long, java.util.Map<StatutDossier, Long>> statutsParSite = new java.util.HashMap<>();
+        for (Object[] row : inscriptionRepository.compterInscriptionsActivesParSiteEtStatut()) {
+            Long siteId = (Long) row[0];
+            StatutDossier st = (StatutDossier) row[1];
+            Long count = (Long) row[2];
+            statutsParSite.computeIfAbsent(siteId, k -> new java.util.HashMap<>()).put(st, count);
+        }
+
+        // Map financier par site: siteRepository.statistiquesParSite() -> [siteId, siteNom, nombreCandidatsActifs, montantEncaisse, montantRestantDu]
+        java.util.Map<Long, BigDecimal[]> financierParSite = new java.util.HashMap<>();
+        for (Object[] row : siteRepository.statistiquesParSite()) {
+            Long siteId = (Long) row[0];
+            BigDecimal encaisse = (BigDecimal) row[3];
+            BigDecimal restant = (BigDecimal) row[4];
+            financierParSite.put(siteId, new BigDecimal[]{encaisse, restant});
+        }
+
+        // Map caisse par site: transactionCaisseRepository.statistiquesCaisseParSite() -> [siteId, entrees, sorties]
+        java.util.Map<Long, BigDecimal[]> caisseParSite = new java.util.HashMap<>();
+        for (Object[] row : transactionCaisseRepository.statistiquesCaisseParSite()) {
+            Long siteId = (Long) row[0];
+            BigDecimal entrees = (BigDecimal) row[1];
+            BigDecimal sorties = (BigDecimal) row[2];
+            caisseParSite.put(siteId, new BigDecimal[]{entrees, sorties});
+        }
+
+        // Map examens par site: passageRepository.compterPassagesParSiteEtResultat() -> [siteId, resultat, count]
+        java.util.Map<Long, java.util.Map<ResultatExamen, Long>> examensParSite = new java.util.HashMap<>();
+        for (Object[] row : passageRepository.compterPassagesParSiteEtResultat()) {
+            Long siteId = (Long) row[0];
+            ResultatExamen res = (ResultatExamen) row[1];
+            Long count = (Long) row[2];
+            examensParSite.computeIfAbsent(siteId, k -> new java.util.HashMap<>()).put(res, count);
+        }
+
+        List<com.autoecole.dto.DashboardDTOs.StatistiquesSiteDTO> result = new java.util.ArrayList<>();
+        for (com.autoecole.entity.Site s : sites) {
+            Long sId = s.getId();
+            java.util.Map<StatutDossier, Long> mapSt = statutsParSite.getOrDefault(sId, java.util.Collections.emptyMap());
+            long enCours = mapSt.getOrDefault(StatutDossier.EN_COURS, 0L);
+            long soldes = mapSt.getOrDefault(StatutDossier.SOLDE, 0L);
+            long expiresNonSoldes = mapSt.getOrDefault(StatutDossier.EXPIRE_NON_SOLDE, 0L);
+            long totalCandidats = enCours + soldes + expiresNonSoldes;
+
+            BigDecimal[] fin = financierParSite.get(sId);
+            BigDecimal encaisse = (!accesFinancierRestreint && fin != null) ? fin[0] : BigDecimal.ZERO;
+            BigDecimal restant = (!accesFinancierRestreint && fin != null) ? fin[1] : BigDecimal.ZERO;
+
+            BigDecimal[] caisse = caisseParSite.get(sId);
+            BigDecimal entrees = (!accesFinancierRestreint && caisse != null) ? caisse[0] : BigDecimal.ZERO;
+            BigDecimal sorties = (!accesFinancierRestreint && caisse != null) ? caisse[1] : BigDecimal.ZERO;
+            BigDecimal soldeCaisse = entrees.subtract(sorties);
+
+            java.util.Map<ResultatExamen, Long> mapEx = examensParSite.getOrDefault(sId, java.util.Collections.emptyMap());
+            long exReussis = mapEx.getOrDefault(ResultatExamen.REUSSI, 0L);
+            long exEchecs = mapEx.getOrDefault(ResultatExamen.AJOURNE, 0L);
+            long exProgrammes = mapEx.getOrDefault(ResultatExamen.PROGRAMME, 0L);
+
+            result.add(com.autoecole.dto.DashboardDTOs.StatistiquesSiteDTO.builder()
+                    .siteId(sId)
+                    .siteNom(s.getNom())
+                    .totalCandidats(totalCandidats)
+                    .candidatsEnCours(enCours)
+                    .candidatsSoldes(soldes)
+                    .candidatsExpiresNonSoldes(expiresNonSoldes)
+                    .montantEncaisse(encaisse)
+                    .montantRestant(restant)
+                    .soldeCaisse(soldeCaisse)
+                    .totalEntreesCaisse(entrees)
+                    .totalSortiesCaisse(sorties)
+                    .examensReussis(exReussis)
+                    .examensEchecs(exEchecs)
+                    .examensProgrammes(exProgrammes)
+                    .build());
+        }
+
+        return result;
     }
 }

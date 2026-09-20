@@ -140,28 +140,22 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 <tr>
                   <th>Date & Heure</th>
                   <th>Nature d'opération</th>
-                  @if (sitesAutorises.length > 1) {
-                    <th>Site</th>
-                  }
                   <th>Sens</th>
                   <th>Libellé de l'opération</th>
                   <th>N° Facture</th>
                   <th>Montant</th>
-                  <th>Opérateur</th>
-                  @if (isAdmin) {
-                    <th class="text-right">Action</th>
-                  }
+                  <th class="text-right">Action</th>
                 </tr>
               </thead>
               <tbody>
                 @if (loading) {
                   <tr>
-                    <td colspan="9" class="text-center py-4">Chargement du journal de caisse...</td>
+                    <td colspan="7" class="text-center py-4">Chargement du journal de caisse...</td>
                   </tr>
                 }
                 @if (!loading && transactions.length === 0) {
                   <tr>
-                    <td colspan="9" class="text-center py-4">Aucune opération de caisse trouvée.</td>
+                    <td colspan="7" class="text-center py-4">Aucune opération de caisse trouvée.</td>
                   </tr>
                 }
                 @for (tx of transactions; track tx) {
@@ -173,9 +167,6 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                         <div class="sub-text">Plan comptable : {{ tx.natureOperation.planComptable }}</div>
                       }
                     </td>
-                    @if (sitesAutorises.length > 1) {
-                      <td>{{ tx.siteNom || '—' }}</td>
-                    }
                     <td>
                       <span class="badge" [ngClass]="tx.typeMouvement === 'ENTREE' ? 'badge-entree' : 'badge-sortie'">
                         @if (tx.typeMouvement === 'ENTREE') {
@@ -193,14 +184,18 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                         {{ tx.typeMouvement === 'ENTREE' ? '+' : '-' }}{{ tx.montant | number }} FCFA
                       </strong>
                     </td>
-                    <td>{{ tx.utilisateurNomComplet }}</td>
-                    @if (isAdmin) {
-                      <td class="text-right">
-                        <button class="btn btn-danger btn-sm" (click)="openDeleteModal(tx)" title="Supprimer">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                    <td class="text-right">
+                      <div class="action-flex">
+                        <button class="btn btn-outline btn-sm" (click)="openDetailModal(tx)" title="Voir le détail">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                         </button>
-                      </td>
-                    }
+                        @if (isAdmin) {
+                          <button class="btn btn-danger btn-sm" (click)="openDeleteModal(tx)" title="Supprimer">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                          </button>
+                        }
+                      </div>
+                    </td>
                   </tr>
                 }
               </tbody>
@@ -234,22 +229,19 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   <th>Libellé</th>
                   <th>Sens</th>
                   <th>Plan comptable</th>
-                  <th>Description</th>
                   <th>Statut</th>
-                  @if (isAdmin) {
-                    <th class="text-right">Action</th>
-                  }
+                  <th class="text-right">Action</th>
                 </tr>
               </thead>
               <tbody>
                 @if (loadingNatures) {
                   <tr>
-                    <td colspan="7" class="text-center py-4">Chargement des natures d'opération...</td>
+                    <td colspan="6" class="text-center py-4">Chargement des natures d'opération...</td>
                   </tr>
                 }
                 @if (!loadingNatures && naturesToutes.length === 0) {
                   <tr>
-                    <td colspan="7" class="text-center py-4">Aucune nature d'opération définie. Créez-en une pour pouvoir enregistrer des opérations.</td>
+                    <td colspan="6" class="text-center py-4">Aucune nature d'opération définie. Créez-en une pour pouvoir enregistrer des opérations.</td>
                   </tr>
                 }
                 @for (n of naturesToutes; track n.id) {
@@ -262,7 +254,6 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                       </span>
                     </td>
                     <td>{{ n.planComptable || '—' }}</td>
-                    <td><small class="text-muted">{{ n.description || '—' }}</small></td>
                     <td>
                       @if (n.actif) {
                         <span class="badge badge-solde">Active</span>
@@ -270,13 +261,21 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                         <span class="badge badge-expire">Inactive</span>
                       }
                     </td>
-                    @if (isAdmin) {
-                      <td class="text-right">
-                        <button class="btn btn-outline btn-sm" (click)="openEditNatureModal(n)" title="Modifier">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+                    <td class="text-right">
+                      <div class="action-flex">
+                        <button class="btn btn-outline btn-sm" (click)="openDetailNatureModal(n)" title="Voir le détail">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                         </button>
-                      </td>
-                    }
+                        @if (isAdmin) {
+                          <button class="btn btn-outline btn-sm" (click)="openEditNatureModal(n)" title="Modifier">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+                          </button>
+                          <button class="btn btn-danger btn-sm" (click)="openDeleteNatureModal(n)" title="Supprimer">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                          </button>
+                        }
+                      </div>
+                    </td>
                   </tr>
                 }
               </tbody>
@@ -466,6 +465,160 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
           </div>
         </div>
       }
+
+      <!-- MODAL DÉTAIL TRANSACTION -->
+      @if (showDetailModal && selectedTxDetail) {
+        <div class="modal-backdrop">
+          <div class="modal-content" style="max-width: 580px;">
+            <div class="modal-header">
+              <h3 style="display:flex; align-items:center; gap:0.5rem;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                Détail de l'opération de caisse
+              </h3>
+              <button class="btn btn-outline btn-sm" (click)="showDetailModal = false">✕</button>
+            </div>
+            <div class="modal-body">
+              <div class="detail-grid">
+                <div class="detail-item">
+                  <span class="detail-label">Date & Heure</span>
+                  <span class="detail-val">{{ selectedTxDetail.dateTransaction | date:'dd/MM/yyyy HH:mm' }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Sens</span>
+                  <span class="detail-val">
+                    <span class="badge" [ngClass]="selectedTxDetail.typeMouvement === 'ENTREE' ? 'badge-entree' : 'badge-sortie'">
+                      {{ selectedTxDetail.typeMouvement === 'ENTREE' ? 'RECETTE' : 'DÉPENSE' }}
+                    </span>
+                  </span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Nature d'opération</span>
+                  <span class="detail-val">
+                    <strong>{{ selectedTxDetail.natureOperation.libelle }}</strong>
+                    @if (selectedTxDetail.natureOperation.code) {
+                      <span class="sub-text"> ({{ selectedTxDetail.natureOperation.code }})</span>
+                    }
+                  </span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Plan comptable</span>
+                  <span class="detail-val">{{ selectedTxDetail.natureOperation.planComptable || '—' }}</span>
+                </div>
+                <div class="detail-item full-width">
+                  <span class="detail-label">Libellé de l'opération</span>
+                  <span class="detail-val"><strong>{{ selectedTxDetail.libelle }}</strong></span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">N° Facture / Pièce</span>
+                  <span class="detail-val"><code>{{ selectedTxDetail.numeroFacture || '—' }}</code></span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Montant</span>
+                  <span class="detail-val">
+                    <strong [ngClass]="selectedTxDetail.typeMouvement === 'ENTREE' ? 'text-success' : 'text-danger'">
+                      {{ selectedTxDetail.typeMouvement === 'ENTREE' ? '+' : '-' }}{{ selectedTxDetail.montant | number }} FCFA
+                    </strong>
+                  </span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Opérateur (enregistré par)</span>
+                  <span class="detail-val"><strong>{{ selectedTxDetail.utilisateurNomComplet }}</strong></span>
+                </div>
+                @if (selectedTxDetail.siteNom) {
+                  <div class="detail-item">
+                    <span class="detail-label">Site</span>
+                    <span class="detail-val">{{ selectedTxDetail.siteNom }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" (click)="showDetailModal = false">Fermer</button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- MODAL DÉTAIL NATURE D'OPÉRATION -->
+      @if (showDetailNatureModal && selectedNatureDetail) {
+        <div class="modal-backdrop">
+          <div class="modal-content" style="max-width: 540px;">
+            <div class="modal-header">
+              <h3 style="display:flex; align-items:center; gap:0.5rem;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                Détail de la nature d'opération
+              </h3>
+              <button class="btn btn-outline btn-sm" (click)="showDetailNatureModal = false">✕</button>
+            </div>
+            <div class="modal-body">
+              <div class="detail-grid">
+                <div class="detail-item">
+                  <span class="detail-label">Code</span>
+                  <span class="detail-val"><code>{{ selectedNatureDetail.code }}</code></span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Sens</span>
+                  <span class="detail-val">
+                    <span class="badge" [ngClass]="selectedNatureDetail.sens === 'ENTREE' ? 'badge-entree' : 'badge-sortie'">
+                      {{ selectedNatureDetail.sens === 'ENTREE' ? 'RECETTE' : 'DÉPENSE' }}
+                    </span>
+                  </span>
+                </div>
+                <div class="detail-item full-width">
+                  <span class="detail-label">Libellé</span>
+                  <span class="detail-val"><strong>{{ selectedNatureDetail.libelle }}</strong></span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Plan comptable</span>
+                  <span class="detail-val">{{ selectedNatureDetail.planComptable || '—' }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Statut</span>
+                  <span class="detail-val">
+                    @if (selectedNatureDetail.actif) {
+                      <span class="badge badge-solde">Active</span>
+                    } @else {
+                      <span class="badge badge-expire">Inactive</span>
+                    }
+                  </span>
+                </div>
+                <div class="detail-item full-width">
+                  <span class="detail-label">Description</span>
+                  <span class="detail-val" style="white-space: pre-wrap;">{{ selectedNatureDetail.description || 'Aucune description' }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" (click)="showDetailNatureModal = false">Fermer</button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- MODAL SUPPRESSION NATURE D'OPÉRATION -->
+      @if (showDeleteNatureModal && targetNatureDelete) {
+        <div class="modal-backdrop">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3 style="display:flex; align-items:center; gap:0.5rem;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                Confirmation de Suppression
+              </h3>
+              <button class="btn btn-outline btn-sm" (click)="showDeleteNatureModal = false">✕</button>
+            </div>
+            <div class="modal-body">
+              <p>Supprimer définitivement la nature d'opération <strong>{{ targetNatureDelete.libelle }}</strong> (code : <code>{{ targetNatureDelete.code }}</code>) ?</p>
+              <div class="form-help mt-2">Cette action est irréversible. Si des opérations y sont déjà rattachées, la suppression sera bloquée.</div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" (click)="showDeleteNatureModal = false">Annuler</button>
+              <button type="button" class="btn btn-danger" [disabled]="deletingNature" (click)="confirmDeleteNature()">
+                {{ deletingNature ? 'Suppression...' : 'Supprimer' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      }
     </div>
     `,
     changeDetection: ChangeDetectionStrategy.Eager,
@@ -537,6 +690,42 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       font-weight: 500;
       cursor: pointer;
     }
+
+    .action-flex {
+      display: flex;
+      gap: 0.35rem;
+      justify-content: flex-end;
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.1rem 1.5rem;
+      padding: 0.5rem 0;
+    }
+
+    .detail-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .detail-item.full-width {
+      grid-column: 1 / -1;
+    }
+
+    .detail-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+    }
+
+    .detail-val {
+      font-size: 0.95rem;
+      color: var(--text-dark);
+    }
   `]
 })
 export class CaisseComponent implements OnInit {
@@ -582,6 +771,16 @@ export class CaisseComponent implements OnInit {
   showDeleteModal = false;
   targetTx: TransactionCaisse | null = null;
   deleteMotif = '';
+
+  showDetailModal = false;
+  selectedTxDetail: TransactionCaisse | null = null;
+
+  showDetailNatureModal = false;
+  selectedNatureDetail: NatureOperation | null = null;
+
+  showDeleteNatureModal = false;
+  targetNatureDelete: NatureOperation | null = null;
+  deletingNature = false;
 
   constructor(private apiService: ApiService, private authService: AuthService, private route: ActivatedRoute) {}
 
@@ -766,6 +965,11 @@ export class CaisseComponent implements OnInit {
     });
   }
 
+  openDetailModal(tx: TransactionCaisse): void {
+    this.selectedTxDetail = tx;
+    this.showDetailModal = true;
+  }
+
   openDeleteModal(tx: TransactionCaisse): void {
     this.targetTx = tx;
     this.deleteMotif = '';
@@ -863,5 +1067,32 @@ export class CaisseComponent implements OnInit {
         }
       });
     }
+  }
+
+  openDetailNatureModal(n: NatureOperation): void {
+    this.selectedNatureDetail = n;
+    this.showDetailNatureModal = true;
+  }
+
+  openDeleteNatureModal(n: NatureOperation): void {
+    this.targetNatureDelete = n;
+    this.showDeleteNatureModal = true;
+  }
+
+  confirmDeleteNature(): void {
+    if (!this.targetNatureDelete) return;
+    this.deletingNature = true;
+    this.apiService.deleteNatureOperation(this.targetNatureDelete.id).subscribe({
+      next: () => {
+        this.deletingNature = false;
+        this.showDeleteNatureModal = false;
+        this.loadNaturesToutes();
+        this.loadNaturesActives();
+      },
+      error: (err) => {
+        this.deletingNature = false;
+        alert(extraireMessageErreur(err, 'Erreur lors de la suppression de la nature d\'opération.'));
+      }
+    });
   }
 }

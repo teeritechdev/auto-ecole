@@ -70,7 +70,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 <th style="width: 15%;">Date</th>
                 <th style="width: 25%;">Lieu</th>
                 <th style="width: 18%;">Épreuve</th>
-                <th style="width: 14%;">Candidats</th>
+                <th style="width: 14%;">Inscrits</th>
                 <th style="width: 14%;">Statut</th>
                 <th class="text-right" style="width: 14%;">Action</th>
               </tr>
@@ -201,7 +201,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
               <table class="custom-table">
                 <thead>
                   <tr>
-                    <th>Candidat</th>
+                    <th>Inscrit</th>
                     <th>Résultat actuel</th>
                     <th>Tentatives</th>
                     @if (peutNoter(sessionDetail)) {
@@ -212,7 +212,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 </thead>
                 <tbody>
                   @if (sessionDetail.candidats.length === 0) {
-                    <tr><td [attr.colspan]="peutNoter(sessionDetail) ? 5 : 4" class="text-center py-4">Aucun candidat dans cette session.</td></tr>
+                    <tr><td [attr.colspan]="peutNoter(sessionDetail) ? 5 : 4" class="text-center py-4">Aucun inscrit dans cette session.</td></tr>
                   }
                   @for (p of sessionDetail.candidats; track p.id) {
                     <tr>
@@ -275,13 +275,13 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   @if (!showAjoutCandidats) {
                     <button class="btn btn-secondary btn-sm" (click)="openAjoutCandidats()">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                      Ajouter des candidats
+                      Ajouter des inscrits
                     </button>
                   } @else {
                     <div class="form-group">
                       @if (sitesAutorises.length > 1) {
                         <div style="margin-bottom: 0.75rem;">
-                          <label class="form-label">Filtrer les candidats par site :</label>
+                          <label class="form-label">Filtrer les inscrits par site :</label>
                           <select class="form-control" [(ngModel)]="ajoutFilterSiteId" (change)="onAjoutFilterSiteChange()">
                             <option value="">Tous mes sites</option>
                             @for (s of sitesAutorises; track s.id) {
@@ -290,7 +290,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                           </select>
                         </div>
                       }
-                      <label class="form-label">Candidats éligibles pour cette épreuve</label>
+                      <label class="form-label">Inscrits éligibles pour cette épreuve</label>
                       <div class="candidats-list">
                         @for (c of candidatsAjoutablesFiltres; track c.id) {
                           <label class="candidat-option">
@@ -303,13 +303,13 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                         }
                         @if (candidatsAjoutablesFiltres.length === 0) {
                           <div class="form-help" style="padding: 1rem; text-align: center;">
-                            Aucun candidat éligible disponible pour cette épreuve.
+                            Aucun inscrit éligible disponible pour cette épreuve.
                           </div>
                         }
                       </div>
                       @if (ajoutSelectionIds.length > 0) {
                         <div class="selection-count">
-                          {{ ajoutSelectionIds.length }} candidat(s) sélectionné(s)
+                          {{ ajoutSelectionIds.length }} inscrit(s) sélectionné(s)
                         </div>
                       }
                     </div>
@@ -428,7 +428,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
               <!-- FILTRE PAR SITE POUR L'UTILISATEUR GÉRANT PLUSIEURS SITES -->
               @if (sitesAutorises.length > 1) {
                 <div class="form-group" style="margin-bottom: 0.85rem;">
-                  <label class="form-label" style="font-weight: 600;">Filtrer les candidats par site :</label>
+                  <label class="form-label" style="font-weight: 600;">Filtrer les inscrits par site :</label>
                   <select class="form-control" [(ngModel)]="quickFilterSiteId" (change)="onQuickFilterSiteChange()">
                     <option value="">Tous mes sites</option>
                     @for (site of sitesAutorises; track site.id) {
@@ -440,7 +440,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
 
               <div class="form-group">
                 <label class="form-label">
-                  Sélectionner les candidats éligibles pour cette épreuve :
+                  Sélectionner les inscrits éligibles pour cette épreuve :
                 </label>
                 <div class="candidats-list" style="max-height: 220px;">
                   @for (c of quickEligibleCandidatsFiltres; track c.id) {
@@ -454,7 +454,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   }
                   @if (quickEligibleCandidatsFiltres.length === 0) {
                     <div class="form-help" style="padding: 1rem; text-align: center;">
-                      Aucun candidat éligible disponible pour cette épreuve.
+                      Aucun inscrit éligible disponible pour cette épreuve.
                     </div>
                   }
                 </div>
@@ -540,7 +540,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   </div>
                 }
                 <div class="alert alert-info">
-                  Candidat : <strong>{{ targetPassage?.candidatNomComplet }}</strong><br>
+                  Inscrit : <strong>{{ targetPassage?.candidatNomComplet }}</strong><br>
                   Épreuve : <strong>{{ targetPassage?.typeEpreuve }}</strong> ({{ targetPassage?.nombreEchecs }}/5 tentative(s))
                 </div>
                 <div class="form-group">
@@ -581,6 +581,14 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       flex-wrap: wrap;
       gap: 1rem;
       margin-bottom: 1.5rem;
+    }
+
+    .page-header-bar h2 {
+      color: var(--primary);
+      font-size: 1.4rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.25rem;
     }
 
     .filter-card {

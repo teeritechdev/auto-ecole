@@ -15,7 +15,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       <!-- HEADER ACTIONS -->
       <div class="page-header-bar">
         <div>
-          <h2>Gestion des Candidats</h2>
+          <h2>Gestion des Inscrits</h2>
         </div>
         <div class="header-buttons">
           @if (canSeeFinancialData) {
@@ -43,7 +43,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
           @if (canEdit) {
             <button class="btn btn-primary" (click)="openCreateModal()">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="16" y1="11" x2="22" y2="11"/></svg>
-              Inscrire un Candidat
+              Nouveau Inscrit
             </button>
           }
         </div>
@@ -187,7 +187,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   <th style="width: 40px"><input type="checkbox" (change)="toggleAll($event)"></th>
                 }
                 <th>N° Dossier</th>
-                <th>Candidat</th>
+                <th>Inscrit</th>
                 <th>Contact</th>
                 <th>Permis</th>
                 @if (canProgramExams) {
@@ -203,12 +203,12 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
             <tbody>
               @if (loading) {
                 <tr>
-                  <td colspan="8" class="text-center py-4">Chargement des candidats...</td>
+                  <td colspan="8" class="text-center py-4">Chargement des inscrits...</td>
                 </tr>
               }
               @if (!loading && candidats.length === 0) {
                 <tr>
-                  <td colspan="8" class="text-center py-4">Aucun candidat trouvé pour ces critères.</td>
+                  <td colspan="8" class="text-center py-4">Aucun inscrit trouvé pour ces critères.</td>
                 </tr>
               }
               @for (c of candidats; track c) {
@@ -301,7 +301,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
               Précédent
             </button>
-            <span>Page {{ page + 1 }} sur {{ totalPages }} ({{ totalElements }} candidats)</span>
+            <span>Page {{ page + 1 }} sur {{ totalPages }} ({{ totalElements }} inscrits)</span>
             <button class="btn btn-outline btn-sm" [disabled]="page >= totalPages - 1" (click)="changePage(page + 1)">
               Suivant
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
@@ -317,7 +317,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
             <div class="modal-header">
               <h3 style="display:flex; align-items:center; gap:0.5rem;">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                Inscription d'un Nouveau Candidat
+                Inscription d'un Nouvel Inscrit
               </h3>
               <button class="btn btn-outline btn-sm" (click)="showCreateModal = false">✕</button>
             </div>
@@ -333,7 +333,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   <div class="alert alert-warning doublon-alert">
                     <div style="display:flex; align-items:flex-start; gap:0.5rem;">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; margin-top:0.15rem;"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                      <span>Un candidat existe déjà avec ce numéro : <strong>{{ doublonDetecte.numeroDossier }}</strong> — {{ doublonDetecte.nom }} {{ doublonDetecte.prenom }} (statut : {{ doublonDetecte.statutDossier }})</span>
+                      <span>Un inscrit existe déjà avec ce numéro : <strong>{{ doublonDetecte.numeroDossier }}</strong> — {{ doublonDetecte.nom }} {{ doublonDetecte.prenom }} (statut : {{ doublonDetecte.statutDossier }})</span>
                     </div>
                     <div class="doublon-actions">
                       <button type="button" class="btn btn-primary btn-sm" (click)="rattacherDoublon()">Rattacher à ce dossier (nouvelle inscription)</button>
@@ -348,7 +348,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                       <span>Réinscription de <strong>{{ doublonDetecte?.nom }} {{ doublonDetecte?.prenom }}</strong> ({{ doublonDetecte?.numeroDossier }}) — nouveau cycle marqué « Redoublant ».</span>
                     </div>
                     <div class="doublon-actions">
-                      <button type="button" class="btn btn-outline btn-sm" (click)="annulerReinscription()">Annuler / choisir un autre candidat</button>
+                      <button type="button" class="btn btn-outline btn-sm" (click)="annulerReinscription()">Annuler / choisir un autre inscrit</button>
                     </div>
                   </div>
                 }
@@ -406,7 +406,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                     <input type="text" class="form-control" [(ngModel)]="newCandidat.contactsUrgence" name="contactsUrgence" placeholder="Nom et téléphone du contact d'urgence" />
                   </div>
                   <div class="form-group">
-                    <label class="form-label">Statut du candidat</label>
+                    <label class="form-label">Statut de l'inscrit</label>
                     <select class="form-control" [(ngModel)]="newCandidat.statutInscription" name="statutInscription">
                       <option value="NOUVEAU">Nouveau</option>
                       <option value="REDOUBLANT">Redoublant</option>
@@ -464,7 +464,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" (click)="showCreateModal = false">Annuler</button>
                 <button type="submit" class="btn btn-primary" [disabled]="saving">
-                  {{ saving ? 'Enregistrement...' : 'Enregistrer le Candidat' }}
+                  {{ saving ? 'Enregistrement...' : 'Enregistrer l\'Inscrit' }}
                 </button>
               </div>
             </form>
@@ -479,7 +479,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
             <div class="modal-header">
               <h3 style="display:flex; align-items:center; gap:0.5rem;">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
-                Modifier le Candidat — {{ selectedCandidat?.numeroDossier }}
+                Modifier l'Inscrit — {{ selectedCandidat?.numeroDossier }}
               </h3>
               <button class="btn btn-outline btn-sm" (click)="showEditModal = false">✕</button>
             </div>
@@ -622,12 +622,12 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
             <div class="modal-header">
               <h3 style="display:flex; align-items:center; gap:0.5rem;">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg>
-                Identifiants du compte candidat
+                Identifiants du compte de l'inscrit
               </h3>
               <button class="btn btn-outline btn-sm" (click)="identifiantsCompteAAfficher = null">✕</button>
             </div>
             <div class="modal-body">
-              <p>Communiquez ces identifiants au candidat dès maintenant : ils ne seront plus jamais affichés.</p>
+              <p>Communiquez ces identifiants à l'inscrit dès maintenant : ils ne seront plus jamais affichés.</p>
               <div class="form-group mt-3">
                 <label class="form-label">Identifiant</label>
                 <input type="text" class="form-control" [value]="identifiantsCompteAAfficher.username" readonly />
@@ -636,7 +636,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 <label class="form-label">Mot de passe temporaire</label>
                 <input type="text" class="form-control" [value]="identifiantsCompteAAfficher.motDePasseTemporaire" readonly />
               </div>
-              <p class="form-help">Le candidat devra changer ce mot de passe à sa prochaine connexion.</p>
+              <p class="form-help">L'inscrit devra changer ce mot de passe à sa prochaine connexion.</p>
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-primary" (click)="identifiantsCompteAAfficher = null">J'ai noté les identifiants</button>

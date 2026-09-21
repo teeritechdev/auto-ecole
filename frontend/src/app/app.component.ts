@@ -67,7 +67,7 @@ import { extraireMessageErreur } from './core/utils/error-utils';
               </a>
             }
             @if (showCandidatsSection) {
-              <div class="nav-section-title">Candidats</div>
+              <div class="nav-section-title">Inscrits</div>
             }
             @if (hasPermission(['CANDIDATS_VOIR'])) {
               <a routerLink="/candidats" routerLinkActive="active" class="nav-item">
@@ -460,7 +460,7 @@ import { extraireMessageErreur } from './core/utils/error-utils';
     .nav-item-flyout-row {
       display: flex;
       align-items: center;
-      gap: 0.25rem;
+      gap: 0.2rem;
     }
 
     .nav-item-flyout-row .nav-item {
@@ -473,8 +473,8 @@ import { extraireMessageErreur } from './core/utils/error-utils';
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 2rem;
-      height: 2rem;
+      width: 1.6rem;
+      height: 1.6rem;
       background: transparent;
       border: none;
       border-radius: var(--radius-md);
@@ -563,29 +563,24 @@ import { extraireMessageErreur } from './core/utils/error-utils';
       display: flex;
       align-items: center;
       gap: 0.75rem;
-      background: rgba(255, 255, 255, 0.24);
-      border: 1px solid rgba(255, 255, 255, 0.45);
-      padding: 0.3rem 0.9rem 0.3rem 0.3rem;
-      border-radius: 9999px;
+      background: transparent;
+      border: none;
+      padding: 0.25rem 0.5rem;
+      border-radius: var(--radius-md);
       cursor: pointer;
-      backdrop-filter: blur(8px);
-      transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+      transition: background var(--transition-fast);
     }
 
     .user-topbar-btn:hover {
-      background: rgba(255, 255, 255, 0.4);
-      border-color: rgba(255, 255, 255, 0.75);
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+      background: rgba(16, 55, 120, 0.08);
     }
 
     .user-topbar-btn:active {
-      transform: scale(0.97);
+      transform: scale(0.98);
     }
 
     .user-topbar-btn[aria-expanded="true"] {
-      background: rgba(255, 255, 255, 0.45);
-      border-color: rgba(255, 255, 255, 0.8);
-      box-shadow: 0 0 0 3px rgba(16, 55, 120, 0.15), 0 4px 14px rgba(0, 0, 0, 0.1);
+      background: rgba(16, 55, 120, 0.12);
     }
 
     .user-topbar-btn:focus-visible {
@@ -594,19 +589,19 @@ import { extraireMessageErreur } from './core/utils/error-utils';
     }
 
     .user-topbar-avatar {
-      width: 38px;
-      height: 38px;
-      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-md);
       overflow: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(135deg, #103778, #1d5cc7);
-      color: #fff;
-      font-weight: 700;
-      font-size: 0.85rem;
-      border: 2px solid #ffffff;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+      background: #ffffff;
+      color: #103778;
+      font-weight: 800;
+      font-size: 0.95rem;
+      border: 1.5px solid #ffffff;
+      box-shadow: 0 2px 6px rgba(16, 55, 120, 0.2);
       flex-shrink: 0;
     }
 
@@ -621,30 +616,30 @@ import { extraireMessageErreur } from './core/utils/error-utils';
       flex-direction: column;
       align-items: flex-start;
       text-align: left;
-      line-height: 1.25;
     }
 
     .user-topbar-name {
-      font-size: 0.85rem;
-      font-weight: 700;
+      font-size: 1.05rem;
+      font-weight: 800;
       color: #103778;
-      max-width: 140px;
+      letter-spacing: -0.01em;
+      margin-bottom: 0.05rem;
+      max-width: 170px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
     .user-topbar-role {
-      display: inline-block;
-      font-size: 0.62rem;
-      font-weight: 800;
-      color: #7c2d12;
-      background: rgba(255, 255, 255, 0.55);
-      padding: 0.05rem 0.4rem;
-      border-radius: 9999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #0c2b5e;
       text-transform: uppercase;
-      letter-spacing: 0.03em;
-      margin-top: 0.2rem;
+      letter-spacing: 0.06em;
+      background: transparent;
+      padding: 0;
+      border-radius: 0;
+      margin-top: 0;
     }
 
     .dropdown-chevron {

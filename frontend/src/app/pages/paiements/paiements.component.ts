@@ -80,7 +80,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
               <tr>
                 <th>N° Reçu</th>
                 <th>Date & Heure</th>
-                <th>Candidat (N° Dossier)</th>
+                <th>Inscrit (N° Dossier)</th>
                 <th>Montant</th>
                 <th>Reste à payer</th>
                 <th>Mode Règlement</th>
@@ -172,9 +172,9 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   </div>
                 }
                 <div class="form-group">
-                  <label class="form-label">Sélectionner le candidat</label>
+                  <label class="form-label">Sélectionner l'inscrit</label>
                   <select class="form-control" [(ngModel)]="selectedCandidatId" name="candidatId" (change)="onCandidatSelect()" required>
-                    <option [ngValue]="null">-- Sélectionner un candidat --</option>
+                    <option [ngValue]="null">-- Sélectionner un inscrit --</option>
                     @for (c of nonSoldesCandidats; track c) {
                       <option [value]="c.id">
                         {{ c.numeroDossier }} — {{ c.nom }} {{ c.prenom }} (Reste : {{ c.soldeRestant | number }} FCFA)

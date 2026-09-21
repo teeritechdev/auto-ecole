@@ -26,9 +26,9 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
           <div>
             <a routerLink="/candidats" class="btn btn-outline btn-sm">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-              Retour aux candidats
+              Retour aux inscrits
             </a>
-            <h2>Fiche Candidat : {{ candidat.nom }} {{ candidat.prenom }}</h2>
+            <h2>Fiche Inscrit : {{ candidat.nom }} {{ candidat.prenom }}</h2>
             <span class="dossier-pill">N° Dossier : {{ candidat.numeroDossier }}</span>
           </div>
         </div>
@@ -158,7 +158,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 </span>
               </div>
               <div class="info-group">
-                <span class="info-label">Statut du Candidat</span>
+                <span class="info-label">Statut de l'Inscrit</span>
                 <span class="info-value badge" [ngClass]="candidat.statutInscription === 'REDOUBLANT' ? 'badge-ajourne' : 'badge-solde'">
                   {{ candidat.statutInscription === 'REDOUBLANT' ? 'Redoublant' : 'Nouveau' }}
                 </span>
@@ -681,7 +681,7 @@ export class CandidatDetailComponent implements OnInit {
   }
 
   resetPassword(): void {
-    if (!confirm('Réinitialiser le mot de passe de ce candidat ? Son ancien mot de passe cessera immédiatement de fonctionner.')) {
+    if (!confirm('Réinitialiser le mot de passe de cet inscrit ? Son ancien mot de passe cessera immédiatement de fonctionner.')) {
       return;
     }
     this.resettingPassword = true;

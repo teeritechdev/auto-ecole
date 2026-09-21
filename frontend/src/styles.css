@@ -104,7 +104,7 @@ body {
 
 h1, h2, h3, h4, h5, h6 {
   font-family: 'Outfit', -apple-system, sans-serif;
-  color: var(--text-main);
+  color: var(--primary);
   font-weight: 700;
   letter-spacing: -0.025em;
   line-height: 1.25;
@@ -135,7 +135,7 @@ button, input, select, textarea {
 }
 
 .sidebar {
-  width: 260px;
+  width: 285px;
   background-color: var(--bg-sidebar);
   color: var(--text-muted);
   display: flex;
@@ -196,8 +196,9 @@ button, input, select, textarea {
 
 .sidebar-nav {
   flex: 1;
-  padding: 1.25rem 0.85rem;
+  padding: 1.25rem 0.75rem;
   overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
@@ -215,15 +216,22 @@ button, input, select, textarea {
 .nav-item {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
-  padding: 0.75rem 0.95rem;
+  gap: 0.75rem;
+  padding: 0.7rem 0.75rem;
   border-radius: var(--radius-md);
   color: #334155;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
+  white-space: nowrap;
   transition: all var(--transition-fast);
   cursor: pointer;
   position: relative;
+}
+
+.nav-item span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .nav-item:hover {
@@ -310,7 +318,7 @@ button, input, select, textarea {
      contenu (ex: un tableau large) : sur petit écran, c'est toute la page qui s'élargit
      et défile horizontalement au lieu du seul tableau, dans son .table-responsive. */
   min-width: 0;
-  margin-left: 260px;
+  margin-left: 285px;
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -332,7 +340,7 @@ button, input, select, textarea {
   justify-content: space-between;
   position: fixed;
   top: 0;
-  left: 260px;
+  left: 285px;
   right: 0;
   z-index: 30;
   box-shadow: 0 2px 8px rgba(169, 120, 43, 0.2);
@@ -400,6 +408,34 @@ button, input, select, textarea {
   /* Compense le header désormais en position: fixed (retiré du flux normal),
      pour que le contenu ne se retrouve pas caché en dessous. */
   margin-top: 72px;
+}
+
+/* En-têtes de pages standards (titre bleu profond, police Outfit, sous-titre atténué) */
+.page-header-bar,
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.page-header-bar h2,
+.page-header h2 {
+  font-family: 'Outfit', -apple-system, sans-serif;
+  color: var(--primary);
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.25rem;
+}
+
+.page-header-bar p,
+.page-header p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin: 0;
 }
 
 /* =========================================================

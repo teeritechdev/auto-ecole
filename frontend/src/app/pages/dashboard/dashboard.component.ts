@@ -49,7 +49,7 @@ import { DashboardStats } from '../../core/models/models';
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
             </button>
             <div class="stat-info">
-              <div class="stat-label">Total Candidats</div>
+              <div class="stat-label">Total Inscrits</div>
               <div class="stat-value">{{ stats?.totalCandidats || 0 }}</div>
               <div class="stat-sub">
                 <span>{{ stats?.candidatsEnCours || 0 }} en cours</span> •
@@ -175,7 +175,7 @@ import { DashboardStats } from '../../core/models/models';
                 <table class="custom-table">
                   <thead>
                     <tr>
-                      <th>Candidat</th>
+                      <th>Inscrit</th>
                       <th>Montant</th>
                     </tr>
                   </thead>
@@ -266,7 +266,7 @@ import { DashboardStats } from '../../core/models/models';
                       <tr>
                         <th>Site</th>
                         @if (activeSiteModal === 'candidats') {
-                          <th>Total Candidats</th>
+                          <th>Total Inscrits</th>
                           <th>En cours</th>
                           <th>Soldés</th>
                           <th>Expirés non soldés</th>
@@ -571,7 +571,7 @@ export class DashboardComponent implements OnInit {
 
   get modalTitle(): string {
     switch (this.activeSiteModal) {
-      case 'candidats': return 'Total Candidats';
+      case 'candidats': return 'Total Inscrits';
       case 'financier': return 'Total Encaissé & Reste Dû';
       case 'caisse': return 'Solde de Caisse';
       case 'examens': return 'Examens Pédagogiques';

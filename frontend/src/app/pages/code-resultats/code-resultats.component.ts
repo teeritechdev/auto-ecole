@@ -24,7 +24,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg>
         Résultats — Code de la route
       </h2>
-      <p>Consultez la progression, les Cycles et l'historique des tentatives des candidats autorisés.</p>
+      <p>Consultez la progression, les Cycles et l'historique des tentatives des inscrits autorisés.</p>
     </div>
 
     <!-- RECHERCHE / LISTE DES CANDIDATS AUTORISÉS -->
@@ -39,7 +39,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
           placeholder="Rechercher par nom, prénom, N° dossier, téléphone..."
           [(ngModel)]="recherche"
           (keyup.enter)="chargerCandidats()"
-          />
+        />
       </div>
     </div>
 
@@ -47,26 +47,27 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       <div class="alert alert-danger">{{ erreurListe }}</div>
     }
 
-    <div class="card table-card">
+    <!-- TABLE -->
+    <div class="card">
       <div class="table-responsive">
         <table class="custom-table">
           <thead>
             <tr>
               <th>N° Dossier</th>
-              <th>Candidat</th>
-              <th>Catégorie</th>
-              <th>Site</th>
+              <th>Nom & Prénom</th>
+              <th>Téléphone</th>
+              <th>Permis</th>
               <th>Étape</th>
-              <th class="text-right">Actions</th>
+              <th class="text-right">Action</th>
             </tr>
           </thead>
           <tbody>
             @for (c of candidats; track c.id) {
-              <tr [class.selected-row]="candidatSelectionne?.id === c.id">
-                <td><code>{{ c.numeroDossier }}</code></td>
+              <tr>
+                <td><strong>{{ c.numeroDossier }}</strong></td>
                 <td>{{ c.nom }} {{ c.prenom }}</td>
-                <td>{{ c.categoriePermisCode }}</td>
-                <td>{{ c.siteNom || '—' }}</td>
+                <td>{{ c.telephone }}</td>
+                <td><span class="badge badge-outline">{{ c.categoriePermisCode }}</span></td>
                 <td>{{ c.etapeParcours }}</td>
                 <td class="text-right">
                   <button class="btn btn-sm btn-primary" (click)="selectionner(c)">Voir le Code</button>
@@ -74,7 +75,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
               </tr>
             }
             @if (candidats.length === 0 && !loadingListe) {
-              <tr><td colspan="6" class="text-muted">Aucun candidat autorisé ne correspond à cette recherche.</td></tr>
+              <tr><td colspan="6" class="text-muted">Aucun inscrit autorisé ne correspond à cette recherche.</td></tr>
             }
           </tbody>
         </table>
@@ -86,7 +87,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
             Précédent
           </button>
-          <span>Page {{ page + 1 }} sur {{ totalPages }} ({{ totalElements }} candidats)</span>
+          <span>Page {{ page + 1 }} sur {{ totalPages }} ({{ totalElements }} inscrits)</span>
           <button class="btn btn-outline btn-sm" [disabled]="page >= totalPages - 1" (click)="changerPage(page + 1)">
             Suivant
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
@@ -211,6 +212,13 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
   `,
   styles: [`
     .page-header { margin-bottom: 1.5rem; }
+    .page-header h2 {
+      color: var(--primary);
+      font-size: 1.4rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.25rem;
+    }
     .page-header p { color: var(--text-muted); }
     .text-muted { color: var(--text-muted); }
     .text-right { text-align: right; }

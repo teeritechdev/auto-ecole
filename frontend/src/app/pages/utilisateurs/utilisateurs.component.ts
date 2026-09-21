@@ -226,7 +226,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   <label class="form-label">Rôle attribué <span class="required">*</span></label>
                   <select class="form-control" [(ngModel)]="currentUserForm.role" name="role" required (change)="onRoleChange()">
                     <option value="ADMIN">Administrateur (Tous les droits)</option>
-                    <option value="SECRETAIRE">Secrétaire (Gestion candidats & inscriptions)</option>
+                    <option value="SECRETAIRE">Secrétaire (Gestion inscrits & inscriptions)</option>
                     <option value="CAISSIERE">Caissière (Encaissements, reçus, caisse)</option>
                     <option value="MONITEUR">Moniteur (Suivi pédagogique & examens)</option>
                   </select>

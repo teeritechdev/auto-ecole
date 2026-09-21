@@ -88,7 +88,9 @@ public class AuditService {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
             String username = auth.getName();
-            return utilisateurRepository.findByUsername(username).orElse(null);
+            return utilisateurRepository.findByUsername(username)
+                    .or(() -> utilisateurRepository.findByEmail(username))
+                    .orElse(null);
         }
         return null;
     }

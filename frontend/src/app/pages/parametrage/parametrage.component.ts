@@ -55,29 +55,6 @@ const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'sites',
                   <input type="file" accept="image/png,image/jpeg,image/webp" (change)="onLogoSelected($event)" />
                   <p class="form-help">Affiché sur toutes les pages et l'écran de connexion. JPG, PNG ou WebP, maximum 2 Mo.</p>
                 </div>
-                <div class="connexion-settings">
-                  <div class="connexion-preview">
-                    @if (identiteForm.imageConnexion) {
-                      <img [src]="identiteForm.imageConnexion" alt="Image de connexion actuelle" />
-                    } @else {
-                      <span>
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-                      </span>
-                    }
-                  </div>
-                  <input type="file" accept="image/png,image/jpeg,image/webp" (change)="onImageConnexionSelected($event)" />
-                  <p class="form-help">Photo affichée à côté du formulaire de connexion. JPG, PNG ou WebP, maximum 3 Mo — compressez-la avant l'envoi pour un chargement rapide de l'écran de connexion.</p>
-                  @if (identiteForm.imageConnexion) {
-                    <div class="form-group" style="width: 100%; margin-top: 0.5rem;">
-                      <label class="form-label">Ajustement de l'image</label>
-                      <select class="form-control" [(ngModel)]="identiteForm.imageConnexionAjustement" name="imageConnexionAjustement">
-                        <option value="cover">Remplir l'écran (peut recadrer l'image)</option>
-                        <option value="contain">Toujours voir l'image entière (sans recadrage)</option>
-                      </select>
-                    </div>
-                    <button type="button" class="btn btn-outline btn-sm" (click)="retirerImageConnexion()">Retirer l'image</button>
-                  }
-                </div>
               </div>
               <div class="identite-fields">
                 <h4 style="margin: 0 0 0.75rem;">Informations générales</h4>
@@ -604,7 +581,7 @@ const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'sites',
       width: 100%;
     }
 
-    .logo-settings, .connexion-settings {
+    .logo-settings {
       display: flex;
       flex-direction: column;
       align-items: flex-start;
@@ -614,11 +591,9 @@ const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'sites',
       min-width: 0;
       width: 100%;
     }
-    .logo-settings input[type="file"], .connexion-settings input[type="file"] { max-width: 100%; }
+    .logo-settings input[type="file"] { max-width: 100%; }
     .logo-preview { width: 7rem; height: 7rem; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 0.75rem; background: #eff6ff; color: #2563eb; font-size: 2.5rem; }
     .logo-preview img { width: 100%; height: 100%; object-fit: contain; }
-    .connexion-preview { width: 100%; max-width: 12rem; aspect-ratio: 3 / 4; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 0.75rem; background: #eff6ff; color: #2563eb; }
-    .connexion-preview img { width: 100%; height: 100%; object-fit: cover; }
     .form-help { color: var(--text-muted); font-size: 0.8rem; margin: 0; }
     .tarifs-examens-form { display: flex; flex-direction: column; gap: 0.85rem; margin-bottom: 0.75rem; }
 

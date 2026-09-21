@@ -62,7 +62,7 @@ public class CandidatController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('PERM_CANDIDATS_VOIR')")
+    @PreAuthorize("hasAuthority('PERM_CANDIDATS_VOIR') or hasRole('CANDIDAT')")
     @Operation(summary = "Obtenir la fiche complète d'un candidat")
     public ResponseEntity<CandidatDTO> getCandidatById(@PathVariable Long id) {
         return ResponseEntity.ok(candidatService.getCandidatById(id));

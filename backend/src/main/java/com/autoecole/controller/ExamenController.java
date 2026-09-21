@@ -43,14 +43,14 @@ public class ExamenController {
     }
 
     @GetMapping("/candidat/{candidatId}")
-    @PreAuthorize("hasAuthority('PERM_EXAMENS_VOIR')")
+    @PreAuthorize("hasAuthority('PERM_EXAMENS_VOIR') or hasRole('CANDIDAT')")
     @Operation(summary = "Obtenir l'historique complet des passages d'un candidat")
     public ResponseEntity<List<PassageExamenDTO>> getPassagesByCandidat(@PathVariable Long candidatId) {
         return ResponseEntity.ok(examenService.getPassagesByCandidat(candidatId));
     }
 
     @GetMapping("/candidat/{candidatId}/bilan")
-    @PreAuthorize("hasAuthority('PERM_EXAMENS_VOIR')")
+    @PreAuthorize("hasAuthority('PERM_EXAMENS_VOIR') or hasRole('CANDIDAT')")
     @Operation(summary = "Obtenir le bilan synthétique des 3 épreuves pour un candidat")
     public ResponseEntity<BilanExamensCandidatDTO> getBilanExamensCandidat(@PathVariable Long candidatId) {
         return ResponseEntity.ok(examenService.getBilanExamensCandidat(candidatId));

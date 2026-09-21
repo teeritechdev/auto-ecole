@@ -40,6 +40,7 @@ public class CandidatService {
     private final PassageExamenRepository passageRepository;
     private final AuditService auditService;
     private final SiteAccessService siteAccessService;
+    private final CandidatAccessService candidatAccessService;
     private final CandidatAccountService candidatAccountService;
 
     public Page<CandidatDTO> rechercherCandidats(String recherche, StatutDossier statut, Long categorieId, StatutInscription statutInscription, boolean ignoreEtapeFilter, Long siteFiltreId, com.autoecole.entity.enums.EtapeParcours etapeFiltre, Boolean priseEnChargeExamens, java.time.LocalDate dateExamenProgramme, Pageable pageable) {
@@ -135,6 +136,7 @@ public class CandidatService {
     }
 
     public CandidatDTO getCandidatById(Long id) {
+        candidatAccessService.verifierEstSoiMeme(id);
         Candidat c = candidatRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Candidat non trouvé avec l'id: " + id));
         inscriptionService.verifierAccesCandidat(c.getId());
@@ -153,6 +155,7 @@ public class CandidatService {
     public CandidatDTO getCandidatByNumeroDossier(String numeroDossier) {
         Candidat c = candidatRepository.findByNumeroDossier(numeroDossier)
                 .orElseThrow(() -> new ResourceNotFoundException("Candidat non trouvé avec le numéro de dossier: " + numeroDossier));
+        candidatAccessService.verifierEstSoiMeme(c.getId());
         inscriptionService.verifierAccesCandidat(c.getId());
         return mapToDTO(c);
     }

@@ -48,130 +48,134 @@ import { extraireMessageErreur } from './core/utils/error-utils';
             </div>
           </div>
           <nav class="sidebar-nav" (click)="sidebarOpen = false">
-            @if (!hasRole(['CANDIDAT'])) {
-              <div class="nav-section-title">Principal</div>
-              <a routerLink="/dashboard" routerLinkActive="active" class="nav-item">
-                <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
-                <span>Tableau de bord</span>
-              </a>
-            }
             @if (hasRole(['CANDIDAT'])) {
               <div class="nav-section-title">Mon espace</div>
               <a routerLink="/espace-candidat" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item">
-                <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
-                <span>Ma progression</span>
+                <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+                <span>Mon Dossier & Progression</span>
+              </a>
+              <a routerLink="/espace-candidat" [queryParams]="{tab: 'code'}" routerLinkActive="active" class="nav-item">
+                <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                <span>Quiz & Entraînement Code</span>
               </a>
               <a routerLink="/espace-candidat/historique" routerLinkActive="active" class="nav-item">
                 <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>
                 <span>Historique Code</span>
               </a>
             }
-            @if (showCandidatsSection) {
-              <div class="nav-section-title">Inscrits</div>
-            }
-            @if (hasPermission(['CANDIDATS_VOIR'])) {
-              <a routerLink="/candidats" routerLinkActive="active" class="nav-item">
-                <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                <span>Inscriptions</span>
+            @if (!hasRole(['CANDIDAT'])) {
+              <div class="nav-section-title">Principal</div>
+              <a routerLink="/dashboard" routerLinkActive="active" class="nav-item">
+                <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
+                <span>Tableau de bord</span>
               </a>
-            }
-            @if (hasPermission(['EXAMENS_VOIR'])) {
-              <a routerLink="/examens" routerLinkActive="active" class="nav-item">
-                <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 9 12 4 2 9l10 5 10-5Z"/><path d="M6 11.5V16c0 1.4 2.7 2.8 6 2.8s6-1.4 6-2.8v-4.5"/><path d="M2 9v5"/></svg>
-                <span>Examens & Épreuves</span>
-              </a>
-            }
-            @if (showFinancesSection) {
-              <div class="nav-section-title">Finances</div>
-            }
-            @if (hasPermission(['PAIEMENTS_VOIR'])) {
-              <a routerLink="/paiements" routerLinkActive="active" class="nav-item">
-                <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-                <span>Paiements & Reçus</span>
-              </a>
-            }
-            @if (hasPermission(['CAISSE_VOIR'])) {
-              <div class="nav-item-flyout" [class.open]="openFlyoutMenu === 'caisse'"
-                   (mouseenter)="openFlyout('caisse', $event)" (mouseleave)="scheduleCloseFlyout()">
-                <div class="nav-item-flyout-row">
-                  <a routerLink="/caisse" routerLinkActive="active" class="nav-item">
-                    <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 21 8 3 8"/><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/></svg>
-                    <span>Caisse Ménu Dépense</span>
-                  </a>
-                  <button type="button" class="submenu-caret-btn" (click)="toggleFlyout('caisse', $event)" aria-label="Afficher les catégories de Caisse Ménu Dépense">
-                    <svg class="submenu-caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-                  </button>
-                </div>
-                @if (openFlyoutMenu === 'caisse') {
-                  <div class="submenu-inline">
-                    <a routerLink="/caisse" [queryParams]="{tab: 'operations'}" class="submenu-item" (click)="closeFlyout()">Opérations</a>
-                    <a routerLink="/caisse" [queryParams]="{tab: 'natures'}" class="submenu-item" (click)="closeFlyout()">Natures d'opération</a>
+              @if (showCandidatsSection) {
+                <div class="nav-section-title">Inscrits</div>
+              }
+              @if (hasPermission(['CANDIDATS_VOIR'])) {
+                <a routerLink="/candidats" routerLinkActive="active" class="nav-item">
+                  <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  <span>Inscriptions</span>
+                </a>
+              }
+              @if (hasPermission(['EXAMENS_VOIR'])) {
+                <a routerLink="/examens" routerLinkActive="active" class="nav-item">
+                  <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 9 12 4 2 9l10 5 10-5Z"/><path d="M6 11.5V16c0 1.4 2.7 2.8 6 2.8s6-1.4 6-2.8v-4.5"/><path d="M2 9v5"/></svg>
+                  <span>Examens & Épreuves</span>
+                </a>
+              }
+              @if (showFinancesSection) {
+                <div class="nav-section-title">Finances</div>
+              }
+              @if (hasPermission(['PAIEMENTS_VOIR'])) {
+                <a routerLink="/paiements" routerLinkActive="active" class="nav-item">
+                  <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                  <span>Paiements & Reçus</span>
+                </a>
+              }
+              @if (hasPermission(['CAISSE_VOIR'])) {
+                <div class="nav-item-flyout" [class.open]="openFlyoutMenu === 'caisse'"
+                     (mouseenter)="openFlyout('caisse', $event)" (mouseleave)="scheduleCloseFlyout()">
+                  <div class="nav-item-flyout-row">
+                    <a routerLink="/caisse" routerLinkActive="active" class="nav-item">
+                      <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 21 8 3 8"/><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/></svg>
+                      <span>Caisse Ménu Dépense</span>
+                    </a>
+                    <button type="button" class="submenu-caret-btn" (click)="toggleFlyout('caisse', $event)" aria-label="Afficher les catégories de Caisse Ménu Dépense">
+                      <svg class="submenu-caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                    </button>
                   </div>
-                }
-              </div>
-            }
-            @if (showCodeSection) {
-              <div class="nav-section-title">Code de la Route</div>
-            }
-            @if (hasPermission(['CODE_SUIVI'])) {
-              <a routerLink="/code/resultats" routerLinkActive="active" class="nav-item">
-                <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 9 12 4 2 9l10 5 10-5Z"/><path d="M6 11.5V16c0 1.4 2.7 2.8 6 2.8s6-1.4 6-2.8v-4.5"/><path d="M2 9v5"/></svg>
-                <span>Résultats Code</span>
-              </a>
-            }
-            @if (hasPermission(['CODE_CONFIGURATION_GERER'])) {
-              <a routerLink="/parametrage-code" routerLinkActive="active" class="nav-item">
-                <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82A1.65 1.65 0 0 0 3 13.09H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
-                <span>Configuration Code</span>
-              </a>
-            }
-            @if (hasPermission(['CODE_QUESTIONS_GERER'])) {
-              <a routerLink="/code/questions" routerLinkActive="active" class="nav-item">
-                <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>
-                <span>Quiz Exercice Code</span>
-              </a>
-            }
-            @if (showAdminSection) {
-              <div class="nav-section-title">Administration</div>
-            }
-            @if (hasPermission(['UTILISATEURS_VOIR'])) {
-              <a routerLink="/utilisateurs" routerLinkActive="active" class="nav-item">
-                <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
-                <span>Comptes Utilisateurs</span>
-              </a>
-            }
-            @if (hasRole(['ADMIN'])) {
-              <div class="nav-item-flyout" [class.open]="openFlyoutMenu === 'parametrage'"
-                   (mouseenter)="openFlyout('parametrage', $event)" (mouseleave)="scheduleCloseFlyout()">
-                <div class="nav-item-flyout-row">
-                  <a routerLink="/parametrage" [class.active]="isParametrageGeneralActive" class="nav-item">
-                    <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82A1.65 1.65 0 0 0 3 13.09H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
-                    <span>Paramètres Généraux</span>
-                  </a>
-                  <button type="button" class="submenu-caret-btn" (click)="toggleFlyout('parametrage', $event)" aria-label="Afficher les catégories de Paramètres Généraux">
-                    <svg class="submenu-caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-                  </button>
+                  @if (openFlyoutMenu === 'caisse') {
+                    <div class="submenu-inline">
+                      <a routerLink="/caisse" [queryParams]="{tab: 'operations'}" class="submenu-item" (click)="closeFlyout()">Opérations</a>
+                      <a routerLink="/caisse" [queryParams]="{tab: 'natures'}" class="submenu-item" (click)="closeFlyout()">Natures d'opération</a>
+                    </div>
+                  }
                 </div>
-                @if (openFlyoutMenu === 'parametrage') {
-                  <div class="submenu-inline">
-                    <a routerLink="/parametrage" [queryParams]="{tab: 'identite'}" class="submenu-item" (click)="closeFlyout()">Gestion de profil</a>
-                    <a routerLink="/parametrage" [queryParams]="{tab: 'categories'}" class="submenu-item" (click)="closeFlyout()">Catégories de Permis</a>
-                    <a routerLink="/parametrage" [queryParams]="{tab: 'sites'}" class="submenu-item" (click)="closeFlyout()">Sites de Formation</a>
+              }
+              @if (showCodeSection) {
+                <div class="nav-section-title">Code de la Route</div>
+              }
+              @if (hasPermission(['CODE_SUIVI'])) {
+                <a routerLink="/code/resultats" routerLinkActive="active" class="nav-item">
+                  <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 9 12 4 2 9l10 5 10-5Z"/><path d="M6 11.5V16c0 1.4 2.7 2.8 6 2.8s6-1.4 6-2.8v-4.5"/><path d="M2 9v5"/></svg>
+                  <span>Résultats Code</span>
+                </a>
+              }
+              @if (hasPermission(['CODE_CONFIGURATION_GERER'])) {
+                <a routerLink="/parametrage-code" routerLinkActive="active" class="nav-item">
+                  <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l-.06-.06a1.65 1.65 0 0 0 .33-1.82A1.65 1.65 0 0 0 3 13.09H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06-.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+                  <span>Configuration Code</span>
+                </a>
+              }
+              @if (hasPermission(['CODE_QUESTIONS_GERER'])) {
+                <a routerLink="/code/questions" routerLinkActive="active" class="nav-item">
+                  <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>
+                  <span>Quiz Exercice Code</span>
+                </a>
+              }
+              @if (showAdminSection) {
+                <div class="nav-section-title">Administration</div>
+              }
+              @if (hasPermission(['UTILISATEURS_VOIR'])) {
+                <a routerLink="/utilisateurs" routerLinkActive="active" class="nav-item">
+                  <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+                  <span>Comptes Utilisateurs</span>
+                </a>
+              }
+              @if (hasRole(['ADMIN'])) {
+                <div class="nav-item-flyout" [class.open]="openFlyoutMenu === 'parametrage'"
+                     (mouseenter)="openFlyout('parametrage', $event)" (mouseleave)="scheduleCloseFlyout()">
+                  <div class="nav-item-flyout-row">
+                    <a routerLink="/parametrage" [class.active]="isParametrageGeneralActive" class="nav-item">
+                      <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l-.06-.06a1.65 1.65 0 0 0 .33-1.82A1.65 1.65 0 0 0 3 13.09H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06-.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+                      <span>Paramètres Généraux</span>
+                    </a>
+                    <button type="button" class="submenu-caret-btn" (click)="toggleFlyout('parametrage', $event)" aria-label="Afficher les catégories de Paramètres Généraux">
+                      <svg class="submenu-caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                    </button>
                   </div>
-                }
-              </div>
-            }
-            @if (hasRole(['ADMIN'])) {
-              <a routerLink="/parametrage" [queryParams]="{tab: 'permissions'}" [class.active]="isPermissionsActive" class="nav-item">
-                <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                <span>Permissions</span>
-              </a>
-            }
-            @if (hasPermission(['AUDIT_VOIR'])) {
-              <a routerLink="/audit" routerLinkActive="active" class="nav-item">
-                <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg>
-                <span>Journal d'Audit</span>
-              </a>
+                  @if (openFlyoutMenu === 'parametrage') {
+                    <div class="submenu-inline">
+                      <a routerLink="/parametrage" [queryParams]="{tab: 'identite'}" class="submenu-item" (click)="closeFlyout()">Gestion de profil</a>
+                      <a routerLink="/parametrage" [queryParams]="{tab: 'categories'}" class="submenu-item" (click)="closeFlyout()">Catégories de Permis</a>
+                      <a routerLink="/parametrage" [queryParams]="{tab: 'sites'}" class="submenu-item" (click)="closeFlyout()">Sites de Formation</a>
+                    </div>
+                  }
+                </div>
+              }
+              @if (hasRole(['ADMIN'])) {
+                <a routerLink="/parametrage" [queryParams]="{tab: 'permissions'}" [class.active]="isPermissionsActive" class="nav-item">
+                  <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  <span>Permissions</span>
+                </a>
+              }
+              @if (hasPermission(['AUDIT_VOIR'])) {
+                <a routerLink="/audit" routerLinkActive="active" class="nav-item">
+                  <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg>
+                  <span>Journal d'Audit</span>
+                </a>
+              }
             }
           </nav>
         </aside>

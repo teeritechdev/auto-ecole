@@ -1,106 +1,848 @@
-import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router';
+import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
-import { CodeProgression } from '../../core/models/models';
+import {
+  Candidat,
+  Paiement,
+  BilanExamensCandidat,
+  CodeProgression
+} from '../../core/models/models';
 import { extraireMessageErreur } from '../../core/utils/error-utils';
 
 @Component({
   selector: 'app-espace-candidat',
   imports: [CommonModule, RouterModule],
   template: `
-    <div class="page-header">
-      <h2 style="display:flex; align-items:center; gap:0.5rem;">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg>
-        Code de la route — Ma progression
-      </h2>
-      <p>Bonjour {{ nomComplet }}, entraînez-vous Cycle par Cycle. Les questions restent toujours dans le même ordre.</p>
-    </div>
+    <div class="espace-candidat-page">
+      <!-- HEADER (Visible uniquement hors du quiz pour une interface dédiée et épurée) -->
+      @if (activeTab !== 'code') {
+        <div class="header-banner">
+          <div class="header-titles">
+            <h2>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+              Mon Espace Inscrit
+            </h2>
+            <p>Bienvenue {{ nomComplet }}, retrouvez ci-dessous la synthèse de votre dossier, vos paiements, vos examens et vos quiz.</p>
+          </div>
+          @if (candidat) {
+            <div class="dossier-tag">
+              <span>Dossier N°</span>
+              <strong>{{ candidat.numeroDossier }}</strong>
+            </div>
+          }
+        </div>
+      }
 
-    @if (loading) {
-      <div class="card">Chargement de votre progression...</div>
-    }
-
-    @if (error) {
-      <div class="alert alert-danger">{{ error }}</div>
-    }
-
-    @if (progression) {
-      @if (progression.accesExpire) {
+      <!-- ALERTE EXPIRATION SI APPLICABLE -->
+      @if (candidat?.procheExpiration) {
         <div class="alert alert-warning">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-          L'accès au module Code de la route a expiré pour votre inscription actuelle. Contactez le secrétariat.
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <strong>Attention :</strong> Votre dossier arrive à échéance dans <strong>{{ candidat?.joursRestants }} jours</strong> (le {{ candidat?.dateEcheance | date:'dd/MM/yyyy' }}).
         </div>
       }
 
-      <div class="stats-grid">
-        <div class="stat-card primary">
-          <div class="stat-icon primary">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
-          </div>
-          <div class="stat-info">
-            <div class="stat-label">Cycles réussis</div>
-            <div class="stat-value">{{ progression.cyclesReussis }} / {{ progression.totalCycles }}</div>
-          </div>
-        </div>
-        <div class="stat-card success">
-          <div class="stat-icon success">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
-          </div>
-          <div class="stat-info">
-            <div class="stat-label">Progression</div>
-            <div class="stat-value">{{ progression.pourcentageProgression | number:'1.0-1' }} %</div>
-          </div>
-        </div>
-      </div>
-
-      @if (progression.totalCycles === 0) {
-        <div class="card">Le Quiz Exercice n'est pas encore disponible. Revenez plus tard.</div>
+      @if (error) {
+        <div class="alert alert-danger">{{ error }}</div>
       }
 
-      <div class="cycles-grid">
-        @for (cycle of progression.cycles; track cycle.numeroCycle) {
-          <div class="cycle-card" [class.locked]="cycle.statut === 'VERROUILLE'">
-            <div class="cycle-header">
-              <span class="cycle-title">Cycle {{ cycle.numeroCycle }}</span>
-              <span class="badge" [ngClass]="badgeClass(cycle.statut)">{{ badgeLabel(cycle.statut) }}</span>
+      @if (loading) {
+        <div class="card card-loading">
+          <div class="spinner"></div>
+          <span>Chargement de vos informations...</span>
+        </div>
+      }
+
+      @if (!loading && candidat) {
+        <!-- 4 SUMMARY CARDS (STYLE EXACT DU CANDIDAT-DETAIL) - Uniquement pour le dossier / finances / examens -->
+        @if (activeTab !== 'code') {
+          <div class="stats-grid">
+            <!-- 1. Montant Formation -->
+            <div class="stat-card primary">
+              <div class="stat-icon primary">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              </div>
+              <div class="stat-info">
+                <div class="stat-label">Montant Formation</div>
+                <div class="stat-value">{{ candidat.montantForfait | number }} <small>FCFA</small></div>
+                <div class="stat-sub">{{ candidat.categoriePermisLibelle }} (Catégorie {{ candidat.categoriePermisCode }})</div>
+              </div>
             </div>
-            <div class="cycle-body">
-              <div>{{ cycle.nombreQuestions }} questions</div>
-              @if (cycle.meilleurScore !== undefined && cycle.meilleurScore !== null) {
-                <div>Meilleur score : {{ cycle.meilleurScore }} / {{ cycle.nombreQuestions }}</div>
-              }
-              <div class="text-muted">Tentatives : {{ cycle.nbTentativesUtilisees }} / {{ cycle.tentativesMax }}</div>
+
+            <!-- 2. Déjà Versé -->
+            <div class="stat-card success">
+              <div class="stat-icon success">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
+              </div>
+              <div class="stat-info">
+                <div class="stat-label">Total Déjà Versé</div>
+                <div class="stat-value">{{ candidat.totalVerse | number }} <small>FCFA</small></div>
+                <div class="stat-sub text-success">Paiements validés</div>
+              </div>
             </div>
-            <button
-              class="btn btn-primary btn-sm"
-              [disabled]="cycle.statut === 'VERROUILLE' || progression.accesExpire || demarrage"
-              (click)="demarrer(cycle.numeroCycle)">
-              @if (cycle.statut === 'VERROUILLE') {
-                <span style="display:inline-flex; align-items:center; gap:0.35rem;">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                  Verrouillé
-                </span>
-              }
-              @if (cycle.statut === 'REUSSI') { Revoir / Refaire }
-              @if (cycle.statut === 'ECHEC') { Reprendre le Cycle }
-              @if (cycle.statut === 'DISPONIBLE') { Démarrer le Cycle }
+
+            <!-- 3. Reste Dû -->
+            <div class="stat-card" [ngClass]="candidat.soldeRestant > 0 ? 'danger' : 'success'">
+              <div class="stat-icon" [ngClass]="candidat.soldeRestant > 0 ? 'danger' : 'success'">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="3" x2="12" y2="21"/><path d="M5 7h5"/><path d="M17 7h-5"/><path d="M2 12l3-5 3 5a3 3 0 0 1-6 0Z"/><path d="M16 12l3-5 3 5a3 3 0 0 1-6 0Z"/></svg>
+              </div>
+              <div class="stat-info">
+                <div class="stat-label">Solde Restant Dû</div>
+                <div class="stat-value">{{ candidat.soldeRestant | number }} <small>FCFA</small></div>
+                <div class="stat-sub">
+                  <span class="badge" [ngClass]="candidat.soldeRestant === 0 ? 'badge-solde' : 'badge-expire-non-solde'">
+                    {{ candidat.soldeRestant === 0 ? 'SOLDÉ' : 'NON SOLDÉ' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. Validité Inscription -->
+            <div class="stat-card info">
+              <div class="stat-icon info">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </div>
+              <div class="stat-info">
+                <div class="stat-label">Validité Inscription</div>
+                <div class="stat-value">{{ candidat.dateEcheance | date:'dd/MM/yyyy' }}</div>
+                <div class="stat-sub">Inscrit le {{ candidat.dateInscription | date:'dd/MM/yyyy' }} (8 mois)</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TABS HEADER -->
+          <div class="tabs-header">
+            <button class="tab-btn" [class.active]="activeTab === 'dossier'" (click)="setTab('dossier')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+              Dossier Administratif
+            </button>
+            <button class="tab-btn" [class.active]="activeTab === 'paiements'" (click)="setTab('paiements')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
+              Historique des Versements ({{ paiements.length }})
+            </button>
+            <button class="tab-btn" [class.active]="activeTab === 'examens'" (click)="setTab('examens')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg>
+              Suivi des Examens (Code, Créneau, Conduite)
             </button>
           </div>
         }
-      </div>
-    }
+
+        <!-- TAB 1 : MON DOSSIER -->
+        @if (activeTab === 'dossier') {
+          <div class="card tab-content">
+            <div class="content-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem;">
+              <div style="display:flex; align-items:center; gap:0.75rem;">
+                <h3 style="margin:0;">Informations Administratives</h3>
+                <span class="badge" [ngClass]="candidat.soldeRestant === 0 ? 'badge-solde' : 'badge-en-cours'">
+                  {{ candidat.statutDossier }}
+                </span>
+              </div>
+              <div style="display:flex; gap:0.5rem;">
+                <button type="button" class="btn btn-primary btn-sm" (click)="setTab('examens')">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg>
+                  Consulter mes Examens & Résultats
+                </button>
+              </div>
+            </div>
+            <div class="info-grid">
+              <div class="info-group">
+                <span class="info-label">Nom complet</span>
+                <span class="info-value">{{ candidat.nom }} {{ candidat.prenom }}</span>
+              </div>
+              <div class="info-group">
+                <span class="info-label">Date & Lieu de Naissance</span>
+                <span class="info-value">{{ candidat.dateNaissance | date:'dd/MM/yyyy' }} à {{ candidat.lieuNaissance || 'Non spécifié' }}</span>
+              </div>
+              <div class="info-group">
+                <span class="info-label">Téléphone</span>
+                <span class="info-value" style="display:flex; align-items:center; gap:0.4rem;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                  {{ candidat.telephone }}
+                </span>
+              </div>
+              <div class="info-group">
+                <span class="info-label">Adresse Email</span>
+                <span class="info-value">{{ candidat.email || 'Non renseigné' }}</span>
+              </div>
+              <div class="info-group">
+                <span class="info-label">Catégorie de Permis</span>
+                <span class="info-value badge badge-programme">{{ candidat.categoriePermisCode }} — {{ candidat.categoriePermisLibelle }}</span>
+              </div>
+              <div class="info-group">
+                <span class="info-label">Site de Formation</span>
+                <span class="info-value" style="display:flex; align-items:center; gap:0.4rem;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><line x1="9" y1="9" x2="9" y2="9.01"/><line x1="9" y1="12" x2="9" y2="12.01"/><line x1="9" y1="15" x2="9" y2="15.01"/><line x1="9" y1="18" x2="9" y2="18.01"/></svg>
+                  {{ candidat.siteNom || 'Non spécifié' }}
+                </span>
+              </div>
+              <div class="info-group">
+                <span class="info-label">Statut de l'Inscrit</span>
+                <span class="info-value badge" [ngClass]="candidat.statutInscription === 'REDOUBLANT' ? 'badge-ajourne' : 'badge-solde'">
+                  {{ candidat.statutInscription === 'REDOUBLANT' ? 'Redoublant' : 'Nouveau inscrit' }}
+                </span>
+              </div>
+              <div class="info-group">
+                <span class="info-label">Étape du Parcours</span>
+                <span class="info-value badge badge-programme">{{ candidat.etapeParcours || 'INSCRIPTION' }}</span>
+              </div>
+              <div class="info-group">
+                <span class="info-label">Date d'Inscription</span>
+                <span class="info-value">{{ candidat.dateInscription | date:'dd/MM/yyyy' }}</span>
+              </div>
+              <div class="info-group">
+                <span class="info-label">Date d'Échéance</span>
+                <span class="info-value text-danger">{{ candidat.dateEcheance | date:'dd/MM/yyyy' }}</span>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- TAB 2 : MES PAIEMENTS & REÇUS -->
+        @if (activeTab === 'paiements') {
+          <div class="card tab-content">
+            <div class="content-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem;">
+              <div>
+                <h3>Historique des Versements</h3>
+                <p style="margin:0; font-size:0.85rem; color:var(--text-muted);">Consultez et téléchargez vos reçus officiels de paiement.</p>
+              </div>
+              <div style="display:flex; gap:0.5rem;">
+                <button type="button" class="btn btn-outline btn-sm" (click)="imprimerReleve()">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  Télécharger Relevé (PDF)
+                </button>
+                <button type="button" class="btn btn-primary btn-sm" (click)="imprimerReleveDirectement()">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                  Imprimer Relevé
+                </button>
+              </div>
+            </div>
+
+            @if (paiements.length === 0) {
+              <div class="empty-state">
+                Aucun versement n'a encore été enregistré sur votre dossier.
+              </div>
+            }
+
+            @if (paiements.length > 0) {
+              <div class="table-responsive">
+                <table class="custom-table">
+                  <thead>
+                    <tr>
+                      <th>N° Reçu</th>
+                      <th>Date Paiement</th>
+                      <th>Montant</th>
+                      <th>Reste à payer</th>
+                      <th>Mode Règlement</th>
+                      <th class="text-right">Actions Reçu</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (p of paiements; track p.id) {
+                      <tr>
+                        <td><strong class="dossier-code">{{ p.numeroRecu || '-' }}</strong></td>
+                        <td>{{ p.datePaiement | date:'dd/MM/yyyy HH:mm' }}</td>
+                        <td><strong class="text-success">{{ p.montant | number }} FCFA</strong></td>
+                        <td><strong class="text-danger">{{ (p.soldeRestant || 0) | number }} FCFA</strong></td>
+                        <td>{{ p.modeReglement }}</td>
+                        <td class="text-right">
+                          @if (p.recuId) {
+                            <div style="display:inline-flex; gap:0.35rem;">
+                              <button type="button" class="btn-icon" (click)="imprimerRecu(p.recuId)" title="Télécharger le reçu (PDF)">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                              </button>
+                              <button type="button" class="btn-icon" (click)="imprimerDirectement(p.recuId)" title="Imprimer le reçu directement">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                              </button>
+                            </div>
+                          } @else {
+                            <span class="text-muted" style="font-size:0.8rem;">-</span>
+                          }
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- TAB 3 : SUIVI DES EXAMENS -->
+        @if (activeTab === 'examens') {
+          <div class="card tab-content">
+            <div class="content-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem;">
+              <div>
+                <h3>Mes Examens & Résultats</h3>
+                <p style="margin:0; font-size:0.85rem; color:var(--text-muted);">Suivi détaillé de vos épreuves du permis (Code, Créneau, Circulation) et de vos résultats officiels.</p>
+              </div>
+              @if (bilan) {
+                <span class="badge" [ngClass]="tousExamensReussis ? 'badge-reussi' : 'badge-programme'" style="font-size:0.85rem; padding:0.4rem 0.85rem; font-weight:700;">
+                  {{ tousExamensReussis ? '🎉 TOUTES ÉPREUVES VALIDÉES' : (totalEpreuvesValidees + ' / 3 Épreuve(s) Validée(s)') }}
+                </span>
+              }
+            </div>
+
+            <!-- Synthèse globale des 3 épreuves -->
+            <div class="exam-summary-bar">
+              <div class="exam-summary-item" [class.valide]="bilan?.codeReussi">
+                <div class="summary-check">
+                  @if (bilan?.codeReussi) {
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  } @else {
+                    <span>1</span>
+                  }
+                </div>
+                <div class="summary-text">
+                  <div class="summary-title">1. Épreuve de CODE</div>
+                  <div class="summary-status" [ngClass]="bilan?.codeReussi ? 'text-success' : 'text-muted'">
+                    {{ bilan?.codeReussi ? 'Validé avec succès' : (dernierStatutCode || 'En attente') }}
+                  </div>
+                </div>
+              </div>
+
+              <div class="exam-summary-item" [class.valide]="bilan?.creneauReussi">
+                <div class="summary-check">
+                  @if (bilan?.creneauReussi) {
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  } @else {
+                    <span>2</span>
+                  }
+                </div>
+                <div class="summary-text">
+                  <div class="summary-title">2. Épreuve de CRÉNEAU</div>
+                  <div class="summary-status" [ngClass]="bilan?.creneauReussi ? 'text-success' : 'text-muted'">
+                    {{ bilan?.creneauReussi ? 'Validé avec succès' : (dernierStatutCreneau || 'En attente') }}
+                  </div>
+                </div>
+              </div>
+
+              <div class="exam-summary-item" [class.valide]="bilan?.circulationReussi">
+                <div class="summary-check">
+                  @if (bilan?.circulationReussi) {
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  } @else {
+                    <span>3</span>
+                  }
+                </div>
+                <div class="summary-text">
+                  <div class="summary-title">3. Épreuve de CIRCULATION</div>
+                  <div class="summary-status" [ngClass]="bilan?.circulationReussi ? 'text-success' : 'text-muted'">
+                    {{ bilan?.circulationReussi ? 'Validé avec succès' : (dernierStatutCirculation || 'En attente') }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="exam-grid" style="margin-top:1.5rem;">
+              <!-- 1. CODE -->
+              <div class="exam-card">
+                <div class="exam-card-header">
+                  <h4 style="display:flex; align-items:center; gap:0.45rem; margin:0;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                    1. Épreuve de CODE
+                  </h4>
+                  <span class="badge" [ngClass]="bilan?.codeReussi ? 'badge-reussi' : 'badge-programme'">
+                    {{ bilan?.codeReussi ? 'VALIDÉ' : 'EN COURS' }}
+                  </span>
+                </div>
+                <div class="passage-list">
+                  @if (!bilan?.passagesCode || bilan!.passagesCode.length === 0) {
+                    <div class="no-passage">Aucun passage enregistré pour l'instant</div>
+                  }
+                  @for (pass of bilan?.passagesCode; track pass.id) {
+                    <div class="passage-item">
+                      <div class="passage-details">
+                        <div class="passage-title">
+                          <strong>Passage n°{{ pass.numeroPassage }}/5</strong>
+                          <span class="passage-date">le {{ pass.datePassage | date:'dd/MM/yyyy' }}</span>
+                        </div>
+                        @if (pass.moniteurNomComplet) {
+                          <div class="passage-examinateur">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            Examinateur : {{ pass.moniteurNomComplet }}
+                          </div>
+                        }
+                        @if (pass.observations) {
+                          <div class="obs">« {{ pass.observations }} »</div>
+                        }
+                      </div>
+                      <span class="badge" [ngClass]="getBadgeClass(pass.resultat)">{{ getBadgeLabel(pass.resultat) }}</span>
+                    </div>
+                  }
+                </div>
+              </div>
+
+              <!-- 2. CRÉNEAU -->
+              <div class="exam-card">
+                <div class="exam-card-header">
+                  <h4 style="display:flex; align-items:center; gap:0.45rem; margin:0;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9 16V8h4a3 3 0 0 1 0 6H9"/></svg>
+                    2. Épreuve de CRÉNEAU
+                  </h4>
+                  <span class="badge" [ngClass]="bilan?.creneauReussi ? 'badge-reussi' : 'badge-programme'">
+                    {{ bilan?.creneauReussi ? 'VALIDÉ' : 'EN COURS' }}
+                  </span>
+                </div>
+                <div class="passage-list">
+                  @if (!bilan?.passagesCreneau || bilan!.passagesCreneau.length === 0) {
+                    <div class="no-passage">Aucun passage enregistré pour l'instant</div>
+                  }
+                  @for (pass of bilan?.passagesCreneau; track pass.id) {
+                    <div class="passage-item">
+                      <div class="passage-details">
+                        <div class="passage-title">
+                          <strong>Passage n°{{ pass.numeroPassage }}/5</strong>
+                          <span class="passage-date">le {{ pass.datePassage | date:'dd/MM/yyyy' }}</span>
+                        </div>
+                        @if (pass.moniteurNomComplet) {
+                          <div class="passage-examinateur">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            Examinateur : {{ pass.moniteurNomComplet }}
+                          </div>
+                        }
+                        @if (pass.observations) {
+                          <div class="obs">« {{ pass.observations }} »</div>
+                        }
+                      </div>
+                      <span class="badge" [ngClass]="getBadgeClass(pass.resultat)">{{ getBadgeLabel(pass.resultat) }}</span>
+                    </div>
+                  }
+                </div>
+              </div>
+
+              <!-- 3. CIRCULATION -->
+              <div class="exam-card">
+                <div class="exam-card-header">
+                  <h4 style="display:flex; align-items:center; gap:0.45rem; margin:0;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L19 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2"/><circle cx="6.5" cy="16.5" r="2.5"/><circle cx="16.5" cy="16.5" r="2.5"/></svg>
+                    3. Épreuve de CIRCULATION
+                  </h4>
+                  <span class="badge" [ngClass]="bilan?.circulationReussi ? 'badge-reussi' : 'badge-programme'">
+                    {{ bilan?.circulationReussi ? 'VALIDÉ' : 'EN COURS' }}
+                  </span>
+                </div>
+                <div class="passage-list">
+                  @if (!bilan?.passagesCirculation || bilan!.passagesCirculation.length === 0) {
+                    <div class="no-passage">Aucun passage enregistré pour l'instant</div>
+                  }
+                  @for (pass of bilan?.passagesCirculation; track pass.id) {
+                    <div class="passage-item">
+                      <div class="passage-details">
+                        <div class="passage-title">
+                          <strong>Passage n°{{ pass.numeroPassage }}/5</strong>
+                          <span class="passage-date">le {{ pass.datePassage | date:'dd/MM/yyyy' }}</span>
+                        </div>
+                        @if (pass.moniteurNomComplet) {
+                          <div class="passage-examinateur">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            Examinateur : {{ pass.moniteurNomComplet }}
+                          </div>
+                        }
+                        @if (pass.observations) {
+                          <div class="obs">« {{ pass.observations }} »</div>
+                        }
+                      </div>
+                      <span class="badge" [ngClass]="getBadgeClass(pass.resultat)">{{ getBadgeLabel(pass.resultat) }}</span>
+                    </div>
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- TAB 4 : QUIZ & CODE DE LA ROUTE -->
+        @if (activeTab === 'code') {
+          <div class="card tab-content">
+            <div class="content-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem;">
+              <div>
+                <h3>Entraînement au Code par Cycle</h3>
+                <p style="margin:0; font-size:0.85rem; color:var(--text-muted);">Complétez chaque Cycle pour débloquer le suivant. Les questions restent toujours dans le même ordre.</p>
+              </div>
+              <a routerLink="/espace-candidat/historique" class="btn btn-outline btn-sm">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>
+                Voir tout l'Historique Code
+              </a>
+            </div>
+
+            @if (progression) {
+              @if (progression.accesExpire) {
+                <div class="alert alert-warning" style="margin-top: 1rem;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                  L'accès au module Code de la route a expiré pour votre inscription actuelle. Contactez le secrétariat.
+                </div>
+              }
+
+              <div class="stats-grid" style="margin-top: 1rem;">
+                <div class="stat-card primary">
+                  <div class="stat-icon primary">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+                  </div>
+                  <div class="stat-info">
+                    <div class="stat-label">Cycles réussis</div>
+                    <div class="stat-value">{{ progression.cyclesReussis }} / {{ progression.totalCycles }}</div>
+                  </div>
+                </div>
+                <div class="stat-card success">
+                  <div class="stat-icon success">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+                  </div>
+                  <div class="stat-info">
+                    <div class="stat-label">Progression Code</div>
+                    <div class="stat-value">{{ progression.pourcentageProgression | number:'1.0-1' }} %</div>
+                  </div>
+                </div>
+              </div>
+
+              @if (progression.totalCycles === 0) {
+                <div class="card" style="margin-top: 1rem;">Le Quiz Exercice n'est pas encore disponible. Revenez plus tard.</div>
+              }
+
+              <div class="cycles-grid">
+                @for (cycle of progression.cycles; track cycle.numeroCycle) {
+                  <div class="cycle-card" [class.locked]="cycle.statut === 'VERROUILLE'">
+                    <div class="cycle-header">
+                      <span class="cycle-title">Cycle {{ cycle.numeroCycle }}</span>
+                      <span class="badge" [ngClass]="badgeClass(cycle.statut)">{{ badgeLabel(cycle.statut) }}</span>
+                    </div>
+                    <div class="cycle-body">
+                      <div>{{ cycle.nombreQuestions }} questions</div>
+                      @if (cycle.meilleurScore !== undefined && cycle.meilleurScore !== null) {
+                        <div>Meilleur score : {{ cycle.meilleurScore }} / {{ cycle.nombreQuestions }}</div>
+                      }
+                      <div class="text-muted">Tentatives : {{ cycle.nbTentativesUtilisees }} / {{ cycle.tentativesMax }}</div>
+                    </div>
+                    <button
+                      class="btn btn-primary btn-sm"
+                      [disabled]="cycle.statut === 'VERROUILLE' || progression.accesExpire || demarrage"
+                      (click)="demarrer(cycle.numeroCycle)">
+                      @if (cycle.statut === 'VERROUILLE') {
+                        <span style="display:inline-flex; align-items:center; gap:0.35rem;">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                          Verrouillé
+                        </span>
+                      }
+                      @if (cycle.statut === 'REUSSI') { Revoir / Refaire }
+                      @if (cycle.statut === 'ECHEC') { Reprendre le Cycle }
+                      @if (cycle.statut === 'DISPONIBLE') { Démarrer le Cycle }
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      }
+    </div>
   `,
   styles: [`
-    .page-header { margin-bottom: 1.5rem; }
-    .page-header p { color: var(--text-muted); }
+    .espace-candidat-page {
+      padding-bottom: 2rem;
+    }
+
+    .header-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .header-titles h2 {
+      margin: 0;
+      color: #103778;
+      font-size: 1.5rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .header-titles p {
+      margin: 0.35rem 0 0 0;
+      color: var(--text-muted);
+      font-size: 0.92rem;
+    }
+
+    .dossier-tag {
+      background: white;
+      border: 1px solid var(--border-color);
+      border-left: 4px solid #103778;
+      border-radius: var(--radius-sm);
+      padding: 0.45rem 0.85rem;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .dossier-tag span {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+
+    .dossier-tag strong {
+      font-family: monospace;
+      font-size: 1rem;
+      color: #103778;
+    }
+
+    .card-loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      padding: 3rem 1.5rem;
+      color: var(--text-muted);
+    }
+
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2.5px solid #e2e8f0;
+      border-top-color: #103778;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .tabs-header {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1.5rem;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.5rem;
+      overflow-x: auto;
+    }
+
+    .tab-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-shrink: 0;
+      white-space: nowrap;
+      background: transparent;
+      border: none;
+      padding: 0.65rem 1.25rem;
+      border-radius: var(--radius-md);
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .tab-btn:hover {
+      background: var(--bg-card);
+      color: var(--text-main);
+    }
+
+    .tab-btn.active {
+      background: #103778;
+      color: white;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .tab-content {
+      padding: 1.5rem;
+    }
+
+    .content-header {
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .content-header h3 {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #103778;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .info-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .info-label {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+    }
+
+    .info-value {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .exam-summary-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .exam-summary-item {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      padding: 0.85rem 1rem;
+      background: #f8fafc;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      transition: all 0.2s ease;
+    }
+
+    .exam-summary-item.valide {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+    }
+
+    .summary-check {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: #e2e8f0;
+      color: #64748b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+    }
+
+    .exam-summary-item.valide .summary-check {
+      background: #15803d;
+      color: white;
+    }
+
+    .summary-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #103778;
+    }
+
+    .summary-status {
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    .exam-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .exam-card {
+      background: #f8fafc;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+    }
+
+    .exam-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .exam-card-header h4 {
+      font-size: 0.95rem;
+      color: #103778;
+    }
+
+    .passage-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+
+    .passage-item {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 0.65rem 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      gap: 0.5rem;
+    }
+
+    .passage-details {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .passage-title {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .passage-date {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+    }
+
+    .passage-examinateur {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .passage-item .obs {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-style: italic;
+      margin-top: 0.15rem;
+    }
+
+    .no-passage {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      text-align: center;
+      padding: 1rem;
+    }
+
     .cycles-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
       gap: 1rem;
       margin-top: 1.5rem;
     }
+
     .cycle-card {
       background: var(--bg-card);
       border: 1px solid var(--border-color);
@@ -110,41 +852,171 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       flex-direction: column;
       gap: 0.6rem;
     }
+
     .cycle-card.locked { opacity: 0.6; }
     .cycle-header { display: flex; align-items: center; justify-content: space-between; }
     .cycle-title { font-weight: 700; }
     .cycle-body { font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.2rem; }
     .text-muted { color: var(--text-muted); }
+
+    .empty-state {
+      padding: 2rem;
+      text-align: center;
+      color: var(--text-muted);
+    }
+
+    .btn-icon {
+      background: white;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 0.35rem 0.5rem;
+      color: #103778;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+
+    .btn-icon:hover {
+      background: #f1f5f9;
+      border-color: #103778;
+    }
+
+    .dossier-code {
+      font-family: monospace;
+      color: #103778;
+    }
+
+    .text-right { text-align: right; }
+    .text-success { color: #15803d; }
+    .text-danger { color: #b91c1c; }
   `],
   changeDetection: ChangeDetectionStrategy.Eager
 })
 export class EspaceCandidatComponent implements OnInit {
+  candidat: Candidat | null = null;
+  paiements: Paiement[] = [];
+  bilan: BilanExamensCandidat | null = null;
   progression: CodeProgression | null = null;
+
+  activeTab: 'dossier' | 'paiements' | 'examens' | 'code' = 'dossier';
   loading = false;
   error = '';
   demarrage = false;
 
-  constructor(private apiService: ApiService, private authService: AuthService, private router: Router) {}
+  constructor(
+    public apiService: ApiService,
+    private authService: AuthService,
+    private router: Router,
+    private route: ActivatedRoute,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   get nomComplet(): string {
     const u = this.authService.currentUserValue;
     return u ? `${u.prenom} ${u.nom}` : '';
   }
 
-  ngOnInit(): void {
-    this.charger();
+  get candidatId(): number | null {
+    return this.authService.currentUserValue?.candidatId || null;
   }
 
-  private charger(): void {
-    const candidatId = this.authService.currentUserValue?.candidatId;
-    if (!candidatId) {
-      this.error = "Aucun dossier candidat n'est associé à votre compte.";
+  get totalEpreuvesValidees(): number {
+    if (!this.bilan) return 0;
+    return (this.bilan.codeReussi ? 1 : 0) + (this.bilan.creneauReussi ? 1 : 0) + (this.bilan.circulationReussi ? 1 : 0);
+  }
+
+  get tousExamensReussis(): boolean {
+    return this.totalEpreuvesValidees === 3;
+  }
+
+  get dernierStatutCode(): string {
+    const list = this.bilan?.passagesCode;
+    if (!list || list.length === 0) return '';
+    const last = list[list.length - 1];
+    return this.getBadgeLabel(last.resultat);
+  }
+
+  get dernierStatutCreneau(): string {
+    const list = this.bilan?.passagesCreneau;
+    if (!list || list.length === 0) return '';
+    const last = list[list.length - 1];
+    return this.getBadgeLabel(last.resultat);
+  }
+
+  get dernierStatutCirculation(): string {
+    const list = this.bilan?.passagesCirculation;
+    if (!list || list.length === 0) return '';
+    const last = list[list.length - 1];
+    return this.getBadgeLabel(last.resultat);
+  }
+
+  setTab(tab: 'dossier' | 'paiements' | 'examens' | 'code'): void {
+    this.activeTab = tab;
+    this.cdr.markForCheck();
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { tab },
+      queryParamsHandling: 'merge'
+    });
+  }
+
+  ngOnInit(): void {
+    this.route.queryParams.subscribe(params => {
+      const tab = params['tab'];
+      if (tab === 'dossier' || tab === 'paiements' || tab === 'examens' || tab === 'code') {
+        this.activeTab = tab;
+        this.cdr.markForCheck();
+      }
+    });
+    this.chargerTout();
+  }
+
+  private chargerTout(): void {
+    const id = this.candidatId;
+    if (!id) {
+      this.error = "Aucun dossier candidat n'est associé à votre compte de connexion.";
       return;
     }
+
     this.loading = true;
-    this.apiService.getCodeProgression(candidatId).subscribe({
-      next: (res) => { this.loading = false; this.progression = res; },
-      error: (err) => { this.loading = false; this.error = extraireMessageErreur(err, 'Impossible de charger votre progression.'); }
+    this.error = '';
+
+    // 1. Charger la fiche candidat
+    this.apiService.getCandidatById(id).subscribe({
+      next: (cand) => {
+        this.candidat = cand;
+        this.loading = false;
+      },
+      error: (err) => {
+        this.loading = false;
+        this.error = extraireMessageErreur(err, 'Impossible de charger les informations de votre dossier.');
+      }
+    });
+
+    // 2. Charger les versements
+    this.apiService.getPaiementsByCandidat(id).subscribe({
+      next: (data) => {
+        this.paiements = data || [];
+      },
+      error: () => {}
+    });
+
+    // 3. Charger le bilan des examens
+    this.apiService.getBilanExamensCandidat(id).subscribe({
+      next: (b) => {
+        this.bilan = b;
+      },
+      error: () => {}
+    });
+
+    // 4. Charger la progression Code
+    this.apiService.getCodeProgression(id).subscribe({
+      next: (prog) => {
+        this.progression = prog;
+      },
+      error: () => {}
     });
   }
 
@@ -157,7 +1029,7 @@ export class EspaceCandidatComponent implements OnInit {
         if (etat.enCours) {
           this.router.navigate(['/espace-candidat/code', etat.enCours.tentativeId]);
         } else {
-          this.charger();
+          this.chargerTout();
         }
       },
       error: (err) => {
@@ -165,6 +1037,47 @@ export class EspaceCandidatComponent implements OnInit {
         this.error = extraireMessageErreur(err, 'Impossible de démarrer ce Cycle.');
       }
     });
+  }
+
+  imprimerReleve(): void {
+    if (!this.candidatId) return;
+    this.apiService.downloadBlob(
+      this.apiService.getRelevePaiementPdfUrl(this.candidatId),
+      `releve_paiement_${this.candidat?.numeroDossier || this.candidatId}.pdf`
+    );
+  }
+
+  imprimerReleveDirectement(): void {
+    if (!this.candidatId) return;
+    this.apiService.printBlob(this.apiService.getRelevePaiementPdfUrl(this.candidatId));
+  }
+
+  imprimerRecu(recuId: number): void {
+    this.apiService.downloadBlob(
+      this.apiService.getRecuPdfUrl(recuId),
+      `recu_paiement_${recuId}.pdf`
+    );
+  }
+
+  imprimerDirectement(recuId: number): void {
+    this.apiService.printBlob(this.apiService.getRecuPdfUrl(recuId));
+  }
+
+  getBadgeClass(res: string): string {
+    switch (res) {
+      case 'REUSSI': return 'badge-reussi';
+      case 'AJOURNE': return 'badge-ajourne';
+      default: return 'badge-programme';
+    }
+  }
+
+  getBadgeLabel(res: string): string {
+    switch (res) {
+      case 'REUSSI': return 'RÉUSSI';
+      case 'AJOURNE': return 'AJOURNÉ';
+      case 'PROGRAMME': return 'PROGRAMMÉ';
+      default: return res || 'PROGRAMMÉ';
+    }
   }
 
   badgeClass(statut: string): string {

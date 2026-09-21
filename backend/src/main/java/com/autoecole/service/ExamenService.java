@@ -46,6 +46,7 @@ public class ExamenService {
     private final SiteRepository siteRepository;
     private final AuditService auditService;
     private final SiteAccessService siteAccessService;
+    private final CandidatAccessService candidatAccessService;
 
     public Page<PassageExamenDTO> filtrerPassages(Long candidatId, TypeEpreuve typeEpreuve, ResultatExamen resultat, LocalDate dateRef, Pageable pageable) {
         if (candidatId != null) {
@@ -65,14 +66,20 @@ public class ExamenService {
     }
 
     public List<PassageExamenDTO> getPassagesByCandidat(Long candidatId) {
-        inscriptionService.verifierAccesCandidat(candidatId);
+        candidatAccessService.verifierEstSoiMeme(candidatId);
+        if (!candidatAccessService.estCandidatConnecte()) {
+            inscriptionService.verifierAccesCandidat(candidatId);
+        }
         return passageRepository.findByCandidatIdOrderByTypeEpreuveAscNumeroPassageAsc(candidatId).stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
 
     public BilanExamensCandidatDTO getBilanExamensCandidat(Long candidatId) {
-        inscriptionService.verifierAccesCandidat(candidatId);
+        candidatAccessService.verifierEstSoiMeme(candidatId);
+        if (!candidatAccessService.estCandidatConnecte()) {
+            inscriptionService.verifierAccesCandidat(candidatId);
+        }
         Candidat c = candidatRepository.findById(candidatId)
                 .orElseThrow(() -> new ResourceNotFoundException("Candidat introuvable"));
 

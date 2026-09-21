@@ -30,6 +30,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
           <thead>
             <tr>
               <th>Ordre</th>
+              <th>Image</th>
               <th>Énoncé</th>
               <th>Bonne(s) réponse(s)</th>
               <th>Statut</th>
@@ -39,7 +40,14 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
           <tbody>
             @for (q of questions; track q.id) {
               <tr>
-                <td>{{ q.ordre }}</td>
+                <td><strong>{{ q.ordre }}</strong></td>
+                <td>
+                  @if (q.imageData) {
+                    <img [src]="q.imageData" alt="Image question" class="table-thumb" />
+                  } @else {
+                    <span class="text-muted" style="font-size:0.8rem;">Aucune</span>
+                  }
+                </td>
                 <td>{{ q.enonce }}</td>
                 <td>{{ q.bonnesReponses.join(', ') }}</td>
                 <td><span class="badge" [ngClass]="q.actif ? 'badge-solde' : 'badge-expire'">{{ q.actif ? 'Active' : 'Inactive' }}</span></td>
@@ -50,7 +58,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
               </tr>
             }
             @if (questions.length === 0) {
-              <tr><td colspan="5" class="text-muted">Aucune question dans la banque.</td></tr>
+              <tr><td colspan="6" class="text-muted">Aucune question dans la banque.</td></tr>
             }
           </tbody>
         </table>
@@ -158,6 +166,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     .page-header p { color: var(--text-muted); }
     .text-muted { color: var(--text-muted); text-align: center; }
     .apercu-image { max-width: 200px; max-height: 140px; margin-top: 0.5rem; border-radius: var(--radius-md); display: block; }
+    .table-thumb { width: 45px; height: 45px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border-color); }
     .bonnes-reponses-check { display: flex; gap: 1.25rem; flex-wrap: wrap; }
     .reponse-check { display: flex; align-items: center; gap: 0.4rem; font-weight: 400; cursor: pointer; }
   `],

@@ -43,7 +43,7 @@ public class PaiementController {
     }
 
     @GetMapping("/candidat/{candidatId}")
-    @PreAuthorize("hasAuthority('PERM_PAIEMENTS_VOIR')")
+    @PreAuthorize("hasAuthority('PERM_PAIEMENTS_VOIR') or hasRole('CANDIDAT')")
     @Operation(summary = "Obtenir l'historique des versements d'un candidat")
     public ResponseEntity<List<PaiementDTO>> getPaiementsByCandidat(@PathVariable Long candidatId) {
         return ResponseEntity.ok(paiementService.getPaiementsByCandidat(candidatId));
@@ -99,14 +99,14 @@ public class PaiementController {
 
     // --- REÇUS ---
     @GetMapping("/recus/{id}")
-    @PreAuthorize("hasAuthority('PERM_PAIEMENTS_VOIR')")
+    @PreAuthorize("hasAuthority('PERM_PAIEMENTS_VOIR') or hasRole('CANDIDAT')")
     @Operation(summary = "Obtenir les données d'un reçu de paiement par son id")
     public ResponseEntity<RecuDTO> getRecuById(@PathVariable Long id) {
         return ResponseEntity.ok(recuService.getRecuById(id));
     }
 
     @GetMapping("/recus/paiement/{paiementId}")
-    @PreAuthorize("hasAuthority('PERM_PAIEMENTS_VOIR')")
+    @PreAuthorize("hasAuthority('PERM_PAIEMENTS_VOIR') or hasRole('CANDIDAT')")
     @Operation(summary = "Obtenir le reçu associé à un paiement")
     public ResponseEntity<RecuDTO> getRecuByPaiementId(@PathVariable Long paiementId) {
         return ResponseEntity.ok(recuService.getRecuByPaiementId(paiementId));

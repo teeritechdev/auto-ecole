@@ -2,10 +2,12 @@ package com.autoecole.service;
 
 import com.autoecole.dto.CandidatDTOs.IdentifiantsCompteDTO;
 import com.autoecole.entity.Candidat;
+import com.autoecole.entity.Profil;
 import com.autoecole.entity.Role;
 import com.autoecole.entity.Utilisateur;
 import com.autoecole.entity.enums.RoleEnum;
 import com.autoecole.exception.BadRequestException;
+import com.autoecole.repository.ProfilRepository;
 import com.autoecole.repository.RoleRepository;
 import com.autoecole.repository.UtilisateurRepository;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +31,7 @@ public class CandidatAccountService {
 
     private final UtilisateurRepository utilisateurRepository;
     private final RoleRepository roleRepository;
+    private final ProfilRepository profilRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuditService auditService;
 
@@ -58,6 +61,8 @@ public class CandidatAccountService {
             email = null;
         }
 
+        Profil profilCandidat = profilRepository.findByRoleSysteme(RoleEnum.CANDIDAT).orElse(null);
+
         Utilisateur compte = Utilisateur.builder()
                 .username(candidat.getNumeroDossier())
                 .email(email)
@@ -66,6 +71,7 @@ public class CandidatAccountService {
                 .prenom(candidat.getPrenom())
                 .telephone(candidat.getTelephone())
                 .role(roleCandidat)
+                .profil(profilCandidat)
                 .candidat(candidat)
                 .actif(true)
                 .doitChangerMotDePasse(true)

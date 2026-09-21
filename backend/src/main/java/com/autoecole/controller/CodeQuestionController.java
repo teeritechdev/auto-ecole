@@ -18,7 +18,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/code/questions")
 @RequiredArgsConstructor
-@PreAuthorize("hasAuthority('PERM_CODE_QUESTIONS_GERER')")
+@PreAuthorize("hasAnyRole('ADMIN', 'MONITEUR') or hasAuthority('PERM_CODE_QUESTIONS_GERER')")
 @Tag(name = "Code de la route - Questions", description = "Gestion de la banque de questions (ordre stable, jamais mélangée)")
 public class CodeQuestionController {
 

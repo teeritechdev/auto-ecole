@@ -208,7 +208,7 @@ public class DataInitializerService implements CommandLineRunner {
                 "PAIEMENTS_ANNULER", "CAISSE_VOIR", "CAISSE_CREER", "CAISSE_NATURES_VOIR", "CONFIGURATION_TARIFS_VOIR",
                 "INSCRIPTIONS_VOIR", "RAPPORTS_CANDIDATS", "RAPPORTS_CAISSE");
         Set<String> moniteurDefaut = Set.of("CANDIDATS_VOIR", "EXAMENS_VOIR", "EXAMENS_PROGRAMMER",
-                "EXAMENS_GERER_SESSION", "CODE_SUIVI", "CODE_CONFIGURATION_GERER");
+                "EXAMENS_GERER_SESSION", "CODE_SUIVI", "CODE_CONFIGURATION_GERER", "CODE_QUESTIONS_GERER");
         Set<String> candidatDefaut = Set.of("CODE_PRATIQUER", "CODE_SUIVI");
 
         initProfilSysteme("Administrateur", "Accès total au système, toujours garanti", admin.getCode(), parCode, tout);
@@ -236,10 +236,38 @@ public class DataInitializerService implements CommandLineRunner {
     }
 
     /** Rattache au profil système correspondant à leur rôle les comptes déjà existants qui
-     *  n'ont pas encore de profil (migration depuis une base antérieure à l'onglet Permissions). */
+     *  n'ont pas encore de profil (migration depuis une base antérieure à l'onglet Permissions).
+     *  Garantit également que le profil CANDIDAT possède bien CODE_PRATIQUER et CODE_SUIVI,
+     *  et que le profil MONITEUR possède CODE_QUESTIONS_GERER pour charger questions et images. */
     private void rattacherProfilsManquants() {
+        profilRepository.findByRoleSysteme(RoleEnum.CANDIDAT).ifPresent(profilCandidat -> {
+            boolean modifie = false;
+            Permission permPratiquer = permissionRepository.findByCode("CODE_PRATIQUER").orElse(null);
+            Permission permSuivi = permissionRepository.findByCode("CODE_SUIVI").orElse(null);
+            if (permPratiquer != null && profilCandidat.getPermissions().add(permPratiquer)) {
+                modifie = true;
+            }
+            if (permSuivi != null && profilCandidat.getPermissions().add(permSuivi)) {
+                modifie = true;
+            }
+            if (modifie) {
+                profilRepository.save(profilCandidat);
+            }
+        });
+
+        profilRepository.findByRoleSysteme(RoleEnum.MONITEUR).ifPresent(profilMoniteur -> {
+            boolean modifie = false;
+            Permission permQuestions = permissionRepository.findByCode("CODE_QUESTIONS_GERER").orElse(null);
+            if (permQuestions != null && profilMoniteur.getPermissions().add(permQuestions)) {
+                modifie = true;
+            }
+            if (modifie) {
+                profilRepository.save(profilMoniteur);
+            }
+        });
+
         utilisateurRepository.findAll().forEach(u -> {
-            if (u.getProfil() == null) {
+            if (u.getProfil() == null && u.getRole() != null) {
                 profilRepository.findByRoleSysteme(u.getRole().getCode()).ifPresent(profil -> {
                     u.setProfil(profil);
                     utilisateurRepository.save(u);

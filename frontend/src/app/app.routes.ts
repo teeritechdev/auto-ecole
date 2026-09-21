@@ -88,7 +88,7 @@ export const routes: Routes = [
     path: 'code/questions',
     component: CodeQuestionsComponent,
     canActivate: [authGuard, roleGuard],
-    data: { roles: ['ADMIN'] }
+    data: { roles: ['ADMIN', 'MONITEUR'] }
   },
   {
     path: 'audit',

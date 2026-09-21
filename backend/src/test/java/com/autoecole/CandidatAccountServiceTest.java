@@ -37,6 +37,8 @@ class CandidatAccountServiceTest {
     @Mock
     private RoleRepository roleRepository;
     @Mock
+    private com.autoecole.repository.ProfilRepository profilRepository;
+    @Mock
     private PasswordEncoder passwordEncoder;
     @Mock
     private AuditService auditService;

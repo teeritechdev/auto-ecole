@@ -38,6 +38,7 @@ public class PaiementService {
     private final CandidatService candidatService;
     private final AuditService auditService;
     private final SiteAccessService siteAccessService;
+    private final CandidatAccessService candidatAccessService;
 
     /** Une caissière/secrétaire restreinte à un site ne voit et n'encaisse que les paiements
      *  des candidats inscrits sur ce site (RG : gestion par site, comme pour un moniteur). */
@@ -51,6 +52,10 @@ public class PaiementService {
     }
 
     public List<PaiementDTO> getPaiementsByCandidat(Long candidatId) {
+        candidatAccessService.verifierEstSoiMeme(candidatId);
+        if (!candidatAccessService.estCandidatConnecte()) {
+            inscriptionService.verifierAccesCandidat(candidatId);
+        }
         return paiementRepository.findByCandidatIdOrderByDatePaiementDesc(candidatId).stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());

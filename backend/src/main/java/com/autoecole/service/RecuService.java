@@ -15,23 +15,37 @@ import org.springframework.stereotype.Service;
 public class RecuService {
 
     private final RecuRepository recuRepository;
+    private final CandidatAccessService candidatAccessService;
 
     public RecuDTO getRecuById(Long id) {
         Recu recu = recuRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Reçu introuvable avec l'id: " + id));
+        verifierAccesRecu(recu);
         return mapToDTO(recu);
     }
 
     public RecuDTO getRecuByNumero(String numeroRecu) {
         Recu recu = recuRepository.findByNumeroRecu(numeroRecu)
                 .orElseThrow(() -> new ResourceNotFoundException("Reçu introuvable avec le numéro: " + numeroRecu));
+        verifierAccesRecu(recu);
         return mapToDTO(recu);
     }
 
     public RecuDTO getRecuByPaiementId(Long paiementId) {
         Recu recu = recuRepository.findByPaiementId(paiementId)
                 .orElseThrow(() -> new ResourceNotFoundException("Reçu introuvable pour le paiement: " + paiementId));
+        verifierAccesRecu(recu);
         return mapToDTO(recu);
+    }
+
+    private void verifierAccesRecu(Recu recu) {
+        if (candidatAccessService.estCandidatConnecte()) {
+            Paiement p = recu.getPaiement();
+            Inscription i = (p != null) ? p.getInscription() : null;
+            Candidat c = (i != null) ? i.getCandidat() : null;
+            Long cId = (c != null) ? c.getId() : null;
+            candidatAccessService.verifierEstSoiMeme(cId);
+        }
     }
 
     public RecuDTO mapToDTO(Recu r) {

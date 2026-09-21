@@ -63,7 +63,7 @@ public class RapportController {
     }
 
     @GetMapping("/releve-paiement/{candidatId}/pdf")
-    @PreAuthorize("hasAuthority('PERM_RAPPORTS_CANDIDATS')")
+    @PreAuthorize("hasAuthority('PERM_RAPPORTS_CANDIDATS') or hasRole('CANDIDAT')")
     @Operation(summary = "Générer le relevé de paiement individuel d'un candidat en PDF")
     public ResponseEntity<byte[]> exportRelevePaiementPdf(@PathVariable Long candidatId) {
         byte[] bytes = exportService.exportRelevePaiementCandidatPdf(candidatId);
@@ -75,7 +75,7 @@ public class RapportController {
     }
 
     @GetMapping("/recu/{recuId}/pdf")
-    @PreAuthorize("hasAuthority('PERM_RAPPORTS_CANDIDATS')")
+    @PreAuthorize("hasAuthority('PERM_RAPPORTS_CANDIDATS') or hasRole('CANDIDAT')")
     @Operation(summary = "Imprimer ou exporter un reçu officiel en PDF")
     public ResponseEntity<byte[]> exportRecuPdf(@PathVariable Long recuId) {
         byte[] bytes = exportService.exportRecuPdf(recuId);

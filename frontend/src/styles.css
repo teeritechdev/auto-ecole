@@ -240,24 +240,6 @@ button, input, select, textarea {
   transform: translateX(3px);
 }
 
-.nav-item.active {
-  background: linear-gradient(135deg, #103778, #1d5cc7);
-  color: #ffffff;
-  font-weight: 600;
-  box-shadow: 0 4px 14px rgba(16, 55, 120, 0.28);
-}
-
-.nav-item.active::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 25%;
-  height: 50%;
-  width: 4px;
-  background-color: var(--accent);
-  border-radius: 0 4px 4px 0;
-}
-
 .nav-item .nav-icon {
   font-size: 1.15rem;
   width: 20px;

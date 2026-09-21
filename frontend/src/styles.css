@@ -21,10 +21,9 @@
   --accent-light: #fef3c7;
   --accent-dark: #b45309;
 
-  /* Doré adouci (bandeaux larges : topbar, sidebar-brand) : plus mat/antique que
-     --accent, pour ne pas trancher avec le texte bleu marine posé dessus. */
-  --gold-header-gradient: linear-gradient(135deg, #e6c583 0%, #f6e2b0 50%, #d1a355 100%);
-  --gold-header-border: #c2914a;
+  /* Bandeaux (topbar, sidebar-brand) : Orange / Ambre éclatant (#f59e0b / #f59d13) */
+  --gold-header-gradient: linear-gradient(135deg, #f59e0b 0%, #fbbf24 50%, #d97706 100%);
+  --gold-header-border: #d97706;
 
   /* Nuance Secondaire / Pédagogique */
   --secondary: #0284c7;
@@ -85,6 +84,13 @@
 
 html, body {
   overflow-x: hidden;
+  /* La page ne défile jamais elle-même : c'est .main-wrapper qui défile (voir plus bas).
+     Sans ça, dans certains environnements d'aperçu embarqué (webview avec zoom/transform),
+     le défilement du document laisse apparaître un espace vide sous la topbar en
+     position: fixed, celle-ci étant alors repositionnée par rapport à l'ancêtre transformé
+     plutôt qu'au vrai viewport. */
+  height: 100%;
+  overflow-y: hidden;
 }
 
 body {
@@ -307,7 +313,9 @@ button, input, select, textarea {
   margin-left: 260px;
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* TOPBAR - Couleur Dorée Dégradée & Texte Bleu */
@@ -1072,11 +1080,17 @@ button, input, select, textarea {
 
 /* Print Styles */
 @media print {
+  html, body {
+    height: auto !important;
+    overflow: visible !important;
+  }
   .sidebar, .topbar, .btn, .no-print {
     display: none !important;
   }
   .main-wrapper {
     margin-left: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
   }
   .content-area {
     padding: 0 !important;

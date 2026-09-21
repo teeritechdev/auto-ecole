@@ -2,7 +2,7 @@ package com.autoecole.service;
 
 import com.autoecole.dto.CandidatDTOs.CandidatDTO;
 import com.autoecole.dto.DashboardDTOs.DashboardStatsDTO;
-import com.autoecole.dto.ExamenDTOs.PassageExamenDTO;
+import com.autoecole.dto.ExamenDTOs.SessionExamenDTO;
 import com.autoecole.dto.PaiementDTOs.PaiementDTO;
 import com.autoecole.dto.CaisseDTOs.TransactionCaisseDTO;
 import com.autoecole.dto.CaisseDTOs.RecapCaisseDTO;
@@ -85,8 +85,8 @@ public class DashboardService {
         List<CandidatDTO> alertesExpiration = aucunSiteAssigne ? List.of() : inscriptionRepository.findInscriptionsActivesProchesExpiration(today, today.plusDays(30), siteIds)
                 .stream().map(Inscription::getCandidat).map(candidatService::mapToDTO).collect(Collectors.toList());
 
-        // Prochains examens (déjà filtrés par site ET spécialité du moniteur courant)
-        List<PassageExamenDTO> prochainsExamens = examenService.getProchainsExamens();
+        // Derniers examens créés (déjà filtrés par site ET spécialité du moniteur courant)
+        List<SessionExamenDTO> derniersExamensCrees = examenService.getDernieresSessionsCreees();
 
         // Statistiques détaillées par site
         List<com.autoecole.dto.DashboardDTOs.StatistiquesSiteDTO> statsParSite = calculerStatsParSite(siteIds, accesFinancierRestreint);
@@ -107,7 +107,7 @@ public class DashboardService {
                 .totalExamensEchecs(examensEchecs)
                 .totalExamensProgrammes(examensProgrammes)
                 .alertesExpiration(alertesExpiration)
-                .prochainsExamens(prochainsExamens)
+                .derniersExamensCrees(derniersExamensCrees)
                 .derniersPaiements(derniersPaiements)
                 .dernieresTransactionsCaisse(dernieresTransactionsCaisse)
                 .statsParSite(statsParSite)

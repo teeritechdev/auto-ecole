@@ -37,7 +37,7 @@ public class DashboardDTOs {
 
         // Listes pour widgets du dashboard
         private List<CandidatDTOs.CandidatDTO> alertesExpiration;
-        private List<ExamenDTOs.PassageExamenDTO> prochainsExamens;
+        private List<ExamenDTOs.SessionExamenDTO> derniersExamensCrees;
         private List<PaiementDTOs.PaiementDTO> derniersPaiements;
         private List<CaisseDTOs.TransactionCaisseDTO> dernieresTransactionsCaisse;
 

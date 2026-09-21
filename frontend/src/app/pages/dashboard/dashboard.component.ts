@@ -125,28 +125,27 @@ import { DashboardStats } from '../../core/models/models';
             <a routerLink="/examens" class="btn btn-outline btn-sm">Voir tout</a>
           </div>
     
-          @if (!stats?.prochainsExamens || stats!.prochainsExamens.length === 0) {
+          @if (!stats?.derniersExamensCrees || stats!.derniersExamensCrees.length === 0) {
             <div class="empty-state">
-              Aucun examen programmé pour les prochains jours.
+              Aucun examen créé pour le moment.
             </div>
           }
-    
-          @if (stats?.prochainsExamens && stats!.prochainsExamens.length > 0) {
+
+          @if (stats?.derniersExamensCrees && stats!.derniersExamensCrees.length > 0) {
             <div class="table-responsive">
               <table class="custom-table">
                 <thead>
                   <tr>
-                    <th>Candidat</th>
+                    <th>Date</th>
+                    <th>Lieu</th>
                     <th>Épreuve</th>
                   </tr>
                 </thead>
                 <tbody>
-                  @for (ex of (stats!.prochainsExamens | slice:0:3); track ex) {
+                  @for (ex of stats!.derniersExamensCrees; track ex.id) {
                     <tr>
-                      <td>
-                        <strong>{{ ex.candidatNomComplet }}</strong>
-                        <div class="sub-text">{{ ex.datePassage | date:'dd/MM/yyyy' }}</div>
-                      </td>
+                      <td>{{ ex.datePassage | date:'dd/MM/yyyy' }}</td>
+                      <td>{{ ex.lieu || '-' }}</td>
                       <td><span class="badge badge-programme">{{ ex.typeEpreuve }}</span></td>
                     </tr>
                   }

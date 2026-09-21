@@ -51,18 +51,18 @@ import { extraireMessageErreur } from './core/utils/error-utils';
             @if (!hasRole(['CANDIDAT'])) {
               <div class="nav-section-title">Principal</div>
               <a routerLink="/dashboard" routerLinkActive="active" class="nav-item">
-                <svg class="nav-icon icon-blue" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
+                <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
                 <span>Tableau de bord</span>
               </a>
             }
             @if (hasRole(['CANDIDAT'])) {
               <div class="nav-section-title">Mon espace</div>
               <a routerLink="/espace-candidat" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item">
-                <svg class="nav-icon icon-blue" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
+                <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
                 <span>Ma progression</span>
               </a>
               <a routerLink="/espace-candidat/historique" routerLinkActive="active" class="nav-item">
-                <svg class="nav-icon icon-indigo" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>
+                <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>
                 <span>Historique Code</span>
               </a>
             }
@@ -71,13 +71,13 @@ import { extraireMessageErreur } from './core/utils/error-utils';
             }
             @if (hasPermission(['CANDIDATS_VOIR'])) {
               <a routerLink="/candidats" routerLinkActive="active" class="nav-item">
-                <svg class="nav-icon icon-violet" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 <span>Inscriptions</span>
               </a>
             }
             @if (hasPermission(['EXAMENS_VOIR'])) {
               <a routerLink="/examens" routerLinkActive="active" class="nav-item">
-                <svg class="nav-icon icon-amber" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 9 12 4 2 9l10 5 10-5Z"/><path d="M6 11.5V16c0 1.4 2.7 2.8 6 2.8s6-1.4 6-2.8v-4.5"/><path d="M2 9v5"/></svg>
+                <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 9 12 4 2 9l10 5 10-5Z"/><path d="M6 11.5V16c0 1.4 2.7 2.8 6 2.8s6-1.4 6-2.8v-4.5"/><path d="M2 9v5"/></svg>
                 <span>Examens & Épreuves</span>
               </a>
             }
@@ -86,7 +86,7 @@ import { extraireMessageErreur } from './core/utils/error-utils';
             }
             @if (hasPermission(['PAIEMENTS_VOIR'])) {
               <a routerLink="/paiements" routerLinkActive="active" class="nav-item">
-                <svg class="nav-icon icon-green" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
                 <span>Paiements & Reçus</span>
               </a>
             }
@@ -95,7 +95,7 @@ import { extraireMessageErreur } from './core/utils/error-utils';
                    (mouseenter)="openFlyout('caisse', $event)" (mouseleave)="scheduleCloseFlyout()">
                 <div class="nav-item-flyout-row">
                   <a routerLink="/caisse" routerLinkActive="active" class="nav-item">
-                    <svg class="nav-icon icon-teal" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 21 8 3 8"/><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/></svg>
+                    <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 21 8 3 8"/><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/></svg>
                     <span>Caisse Ménu Dépense</span>
                   </a>
                   <button type="button" class="submenu-caret-btn" (click)="toggleFlyout('caisse', $event)" aria-label="Afficher les catégories de Caisse Ménu Dépense">
@@ -115,7 +115,7 @@ import { extraireMessageErreur } from './core/utils/error-utils';
             }
             @if (hasPermission(['CODE_SUIVI'])) {
               <a routerLink="/code/resultats" routerLinkActive="active" class="nav-item">
-                <svg class="nav-icon icon-amber" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 9 12 4 2 9l10 5 10-5Z"/><path d="M6 11.5V16c0 1.4 2.7 2.8 6 2.8s6-1.4 6-2.8v-4.5"/><path d="M2 9v5"/></svg>
+                <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 9 12 4 2 9l10 5 10-5Z"/><path d="M6 11.5V16c0 1.4 2.7 2.8 6 2.8s6-1.4 6-2.8v-4.5"/><path d="M2 9v5"/></svg>
                 <span>Résultats Code</span>
               </a>
             }
@@ -136,7 +136,7 @@ import { extraireMessageErreur } from './core/utils/error-utils';
             }
             @if (hasPermission(['UTILISATEURS_VOIR'])) {
               <a routerLink="/utilisateurs" routerLinkActive="active" class="nav-item">
-                <svg class="nav-icon icon-rose" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+                <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
                 <span>Comptes Utilisateurs</span>
               </a>
             }
@@ -163,13 +163,13 @@ import { extraireMessageErreur } from './core/utils/error-utils';
             }
             @if (hasRole(['ADMIN'])) {
               <a routerLink="/parametrage" [queryParams]="{tab: 'permissions'}" [class.active]="isPermissionsActive" class="nav-item">
-                <svg class="nav-icon icon-violet" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                 <span>Permissions</span>
               </a>
             }
             @if (hasPermission(['AUDIT_VOIR'])) {
               <a routerLink="/audit" routerLinkActive="active" class="nav-item">
-                <svg class="nav-icon icon-red" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg>
+                <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg>
                 <span>Journal d'Audit</span>
               </a>
             }
@@ -424,10 +424,10 @@ import { extraireMessageErreur } from './core/utils/error-utils';
     }
 
     .nav-item.active {
-      background: linear-gradient(135deg, #103778 0%, #1d5cc7 100%);
-      color: #ffffff;
+      background: var(--gold-header-gradient);
+      color: #103778;
       font-weight: 700;
-      box-shadow: 0 4px 12px rgba(16, 55, 120, 0.25);
+      box-shadow: 0 4px 12px rgba(169, 120, 43, 0.25);
       position: relative;
     }
 
@@ -438,7 +438,7 @@ import { extraireMessageErreur } from './core/utils/error-utils';
       top: 18%;
       height: 64%;
       width: 4px;
-      background: linear-gradient(to bottom, #fbbf24, #d97706);
+      background: #fbbf24;
       border-radius: 0 4px 4px 0;
     }
 
@@ -534,7 +534,7 @@ import { extraireMessageErreur } from './core/utils/error-utils';
     .icon-rose { color: #ec4899; }
     .icon-slate { color: #64748b; }
     .icon-red { color: #ef4444; }
-    .nav-item.active .nav-icon { color: #ffffff; }
+    .nav-item.active .nav-icon { color: #103778; }
 
     .profile-preview {
       overflow: hidden;

@@ -535,6 +535,25 @@ public class ExamenService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Les 3 derniers examens (sessions) créés, tous statuts confondus — utilisé par le
+     * widget du tableau de bord, distinct de getProchainsExamens() qui ne montre que les
+     * passages à venir non encore joués.
+     */
+    public List<SessionExamenDTO> getDernieresSessionsCreees() {
+        Set<Long> siteIds = siteAccessService.resoudreFiltreSitesPourListe();
+        Set<TypeEpreuve> typesAutorises = siteAccessService.resoudreFiltreEpreuvesPourListe();
+        if ((siteIds != null && siteIds.isEmpty()) || (typesAutorises != null && typesAutorises.isEmpty())) {
+            return List.of();
+        }
+        return sessionRepository.findTop10ByOrderByDateCreationDesc().stream()
+                .filter(s -> siteIds == null || (s.getSite() != null && siteIds.contains(s.getSite().getId())))
+                .filter(s -> typesAutorises == null || typesAutorises.contains(s.getTypeEpreuve()))
+                .limit(3)
+                .map(this::mapSessionToDTO)
+                .collect(Collectors.toList());
+    }
+
     public PassageExamenDTO mapToDTO(PassageExamen pe) {
         Candidat candidat = pe.getInscription() != null ? pe.getInscription().getCandidat() : null;
         long nombreEchecs = pe.getInscription() != null

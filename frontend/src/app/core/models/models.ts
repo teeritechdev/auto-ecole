@@ -355,7 +355,7 @@ export interface DashboardStats {
   totalExamensEchecs: number;
   totalExamensProgrammes: number;
   alertesExpiration: Candidat[];
-  prochainsExamens: PassageExamen[];
+  derniersExamensCrees: SessionExamen[];
   derniersPaiements: Paiement[];
   dernieresTransactionsCaisse: TransactionCaisse[];
   statsParSite?: StatistiquesSite[];

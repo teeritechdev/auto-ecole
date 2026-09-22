@@ -888,6 +888,12 @@ button, input, select, textarea {
   border: 1px solid #bae6fd;
 }
 
+.badge-attente {
+  background-color: #f1f5f9;
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+}
+
 .badge-entree {
   background-color: #dcfce7;
   color: #15803d;

@@ -296,7 +296,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 <div class="summary-text">
                   <div class="summary-title">1. Épreuve de CODE</div>
                   <div class="summary-status" [ngClass]="bilan?.codeReussi ? 'text-success' : 'text-muted'">
-                    {{ bilan?.codeReussi ? 'Validé avec succès' : (dernierStatutCode || 'En attente') }}
+                    {{ libelleSecondaireEtape(dernierStatutCode, bilan?.codeReussi, 0) }}
                   </div>
                 </div>
               </div>
@@ -312,7 +312,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 <div class="summary-text">
                   <div class="summary-title">2. Épreuve de CRÉNEAU</div>
                   <div class="summary-status" [ngClass]="bilan?.creneauReussi ? 'text-success' : 'text-muted'">
-                    {{ bilan?.creneauReussi ? 'Validé avec succès' : (dernierStatutCreneau || 'En attente') }}
+                    {{ libelleSecondaireEtape(dernierStatutCreneau, bilan?.creneauReussi, 1) }}
                   </div>
                 </div>
               </div>
@@ -328,7 +328,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 <div class="summary-text">
                   <div class="summary-title">3. Épreuve de CIRCULATION</div>
                   <div class="summary-status" [ngClass]="bilan?.circulationReussi ? 'text-success' : 'text-muted'">
-                    {{ bilan?.circulationReussi ? 'Validé avec succès' : (dernierStatutCirculation || 'En attente') }}
+                    {{ libelleSecondaireEtape(dernierStatutCirculation, bilan?.circulationReussi, 2) }}
                   </div>
                 </div>
               </div>
@@ -342,8 +342,8 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
                     1. Épreuve de CODE
                   </h4>
-                  <span class="badge" [ngClass]="bilan?.codeReussi ? 'badge-reussi' : 'badge-programme'">
-                    {{ bilan?.codeReussi ? 'VALIDÉ' : 'EN COURS' }}
+                  <span class="badge" [ngClass]="classeEtape(bilan?.codeReussi, 0)">
+                    {{ statutEtape(bilan?.codeReussi, 0) }}
                   </span>
                 </div>
                 <div class="passage-list">
@@ -380,8 +380,8 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9 16V8h4a3 3 0 0 1 0 6H9"/></svg>
                     2. Épreuve de CRÉNEAU
                   </h4>
-                  <span class="badge" [ngClass]="bilan?.creneauReussi ? 'badge-reussi' : 'badge-programme'">
-                    {{ bilan?.creneauReussi ? 'VALIDÉ' : 'EN COURS' }}
+                  <span class="badge" [ngClass]="classeEtape(bilan?.creneauReussi, 1)">
+                    {{ statutEtape(bilan?.creneauReussi, 1) }}
                   </span>
                 </div>
                 <div class="passage-list">
@@ -418,8 +418,8 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L19 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2"/><circle cx="6.5" cy="16.5" r="2.5"/><circle cx="16.5" cy="16.5" r="2.5"/></svg>
                     3. Épreuve de CIRCULATION
                   </h4>
-                  <span class="badge" [ngClass]="bilan?.circulationReussi ? 'badge-reussi' : 'badge-programme'">
-                    {{ bilan?.circulationReussi ? 'VALIDÉ' : 'EN COURS' }}
+                  <span class="badge" [ngClass]="classeEtape(bilan?.circulationReussi, 2)">
+                    {{ statutEtape(bilan?.circulationReussi, 2) }}
                   </span>
                 </div>
                 <div class="passage-list">
@@ -929,6 +929,32 @@ export class EspaceCandidatComponent implements OnInit {
 
   get tousExamensReussis(): boolean {
     return this.totalEpreuvesValidees === 3;
+  }
+
+  /** Index (0=CODE, 1=CRÉNEAU, 2=CIRCULATION) de la première épreuve non encore validée,
+   *  dans l'ordre obligatoire du parcours ; -1 si les 3 épreuves sont validées. */
+  get etapeCouranteIndex(): number {
+    if (!this.bilan) return 0;
+    if (!this.bilan.codeReussi) return 0;
+    if (!this.bilan.creneauReussi) return 1;
+    if (!this.bilan.circulationReussi) return 2;
+    return -1;
+  }
+
+  statutEtape(reussi: boolean | undefined, index: number): string {
+    if (reussi) return 'VALIDÉ';
+    return index === this.etapeCouranteIndex ? 'EN COURS' : 'EN ATTENTE';
+  }
+
+  classeEtape(reussi: boolean | undefined, index: number): string {
+    if (reussi) return 'badge-reussi';
+    return index === this.etapeCouranteIndex ? 'badge-en-cours' : 'badge-attente';
+  }
+
+  libelleSecondaireEtape(dernierStatut: string, reussi: boolean | undefined, index: number): string {
+    if (reussi) return 'Validé avec succès';
+    if (dernierStatut) return dernierStatut;
+    return index === this.etapeCouranteIndex ? 'En cours' : 'En attente';
   }
 
   get dernierStatutCode(): string {

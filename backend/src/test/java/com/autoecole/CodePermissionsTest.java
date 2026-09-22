@@ -76,9 +76,9 @@ class CodePermissionsTest {
 
     @Test
     @WithMockUser(roles = "MONITEUR")
-    @DisplayName("15quater. Le Moniteur ne peut pas gérer la banque de questions (réservée à l'Administrateur)")
-    void moniteurNePeutPasGererLaBanqueDeQuestions() {
-        assertThrows(AccessDeniedException.class, () -> codeQuestionController.getQuestionsDeSerie(1L));
+    @DisplayName("Le Moniteur peut consulter la banque de questions (droits alignés sur l'Administrateur)")
+    void moniteurPeutGererLaBanqueDeQuestions() {
+        assertDoesNotThrow(() -> codeQuestionController.getQuestionsDeSerie(1L));
     }
 
     @Test

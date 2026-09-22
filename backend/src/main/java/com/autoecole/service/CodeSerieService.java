@@ -3,10 +3,14 @@ package com.autoecole.service;
 import com.autoecole.dto.CodeDTOs.CodeSerieDTO;
 import com.autoecole.dto.CodeDTOs.CreateCodeSerieRequest;
 import com.autoecole.dto.CodeDTOs.UpdateCodeSerieRequest;
+import com.autoecole.entity.CodeQuestion;
+import com.autoecole.entity.CodeTentative;
 import com.autoecole.entity.SerieCode;
 import com.autoecole.exception.BadRequestException;
 import com.autoecole.exception.ResourceNotFoundException;
 import com.autoecole.repository.CodeQuestionRepository;
+import com.autoecole.repository.CodeReponseTentativeRepository;
+import com.autoecole.repository.CodeTentativeRepository;
 import com.autoecole.repository.SerieCodeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,6 +26,8 @@ public class CodeSerieService {
 
     private final SerieCodeRepository serieRepository;
     private final CodeQuestionRepository questionRepository;
+    private final CodeTentativeRepository tentativeRepository;
+    private final CodeReponseTentativeRepository reponseTentativeRepository;
 
     public List<CodeSerieDTO> getAllSeries() {
         return serieRepository.findAllByOrderByOrdreAsc().stream()
@@ -71,9 +77,26 @@ public class CodeSerieService {
         if (!serieRepository.existsById(id)) {
             throw new ResourceNotFoundException("Série introuvable avec l'id: " + id);
         }
-        if (questionRepository.existsBySerieId(id)) {
-            throw new BadRequestException("Impossible de supprimer une série qui contient des questions : supprimez d'abord ses questions");
+
+        // 1. Supprimer les réponses liées aux tentatives de cette série
+        List<CodeTentative> tentatives = tentativeRepository.findBySerieId(id);
+        for (CodeTentative t : tentatives) {
+            reponseTentativeRepository.deleteByTentativeId(t.getId());
         }
+
+        // 2. Supprimer les réponses liées aux questions de cette série
+        List<CodeQuestion> questions = questionRepository.findBySerieIdOrderByOrdreAsc(id);
+        for (CodeQuestion q : questions) {
+            reponseTentativeRepository.deleteByQuestionId(q.getId());
+        }
+
+        // 3. Supprimer les tentatives de la série
+        tentativeRepository.deleteBySerieId(id);
+
+        // 4. Supprimer les questions de la série
+        questionRepository.deleteBySerieId(id);
+
+        // 5. Supprimer la série elle-même
         serieRepository.deleteById(id);
     }
 

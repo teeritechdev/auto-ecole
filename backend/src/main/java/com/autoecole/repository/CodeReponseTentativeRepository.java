@@ -10,4 +10,8 @@ public interface CodeReponseTentativeRepository extends JpaRepository<CodeRepons
     List<CodeReponseTentative> findByTentativeIdOrderByOrdreDansCycleAsc(Long tentativeId);
     Optional<CodeReponseTentative> findByTentativeIdAndOrdreDansCycle(Long tentativeId, int ordreDansCycle);
     void deleteByTentativeIdAndOrdreDansCycle(Long tentativeId, int ordreDansCycle);
+    /** Supprime toutes les réponses enregistrées pour une question donnée (appelé avant la suppression de la question). */
+    void deleteByQuestionId(Long questionId);
+    /** Supprime toutes les réponses enregistrées pour une tentative donnée. */
+    void deleteByTentativeId(Long tentativeId);
 }

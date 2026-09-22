@@ -511,7 +511,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                       @if (serie.meilleurScore !== undefined && serie.meilleurScore !== null) {
                         <div>Meilleur score : {{ serie.meilleurScore }} / {{ serie.nombreQuestions }}</div>
                       }
-                      <div class="text-muted">Tentatives : {{ serie.nbTentativesUtilisees }} / {{ serie.tentativesMax }}</div>
+                      <div class="text-muted">Tentatives effectuées : {{ serie.nbTentativesUtilisees }}</div>
                     </div>
                     <button
                       class="btn btn-primary btn-sm"
@@ -523,6 +523,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                           Verrouillé
                         </span>
                       }
+                      @if (serie.statut === 'EN_COURS') { Continuer la série }
                       @if (serie.statut === 'REUSSI') { Revoir / Refaire }
                       @if (serie.statut === 'ECHEC') { Reprendre la série }
                       @if (serie.statut === 'DISPONIBLE') { Démarrer la série }
@@ -1053,8 +1054,15 @@ export class EspaceCandidatComponent implements OnInit {
       next: (etat) => {
         this.demarrage = false;
         if (etat.enCours) {
+          // Tentative en cours créée → on navigue vers le quiz
           this.router.navigate(['/espace-candidat/code', etat.enCours.tentativeId]);
+        } else if (etat.resultat) {
+          // Une tentative EN_COURS existante a été clôturée automatiquement (délai expiré) :
+          // on recharge uniquement la progression code pour mettre à jour l'affichage,
+          // sans afficher d'erreur générique trompeuse.
+          this.rechargerProgression();
         } else {
+          // Cas inattendu : on recharge tout de même
           this.chargerTout();
         }
       },
@@ -1064,6 +1072,20 @@ export class EspaceCandidatComponent implements OnInit {
       }
     });
   }
+
+  /** Recharge uniquement la progression Code sans toucher aux autres données. */
+  private rechargerProgression(): void {
+    const id = this.candidatId;
+    if (!id) return;
+    this.apiService.getCodeProgression(id).subscribe({
+      next: (prog) => {
+        this.progression = prog;
+        this.cdr.markForCheck();
+      },
+      error: () => {}
+    });
+  }
+
 
   imprimerReleve(): void {
     if (!this.candidatId) return;
@@ -1110,8 +1132,9 @@ export class EspaceCandidatComponent implements OnInit {
     switch (statut) {
       case 'REUSSI': return 'badge-solde';
       case 'ECHEC': return 'badge-echec';
+      case 'EN_COURS': return 'badge-en-cours';
       case 'VERROUILLE': return 'badge-expire';
-      default: return 'badge-en-cours';
+      default: return 'badge-actif';
     }
   }
 
@@ -1119,6 +1142,7 @@ export class EspaceCandidatComponent implements OnInit {
     switch (statut) {
       case 'REUSSI': return 'Réussi';
       case 'ECHEC': return 'Non réussi';
+      case 'EN_COURS': return 'En cours';
       case 'VERROUILLE': return 'Verrouillé';
       default: return 'Disponible';
     }

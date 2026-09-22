@@ -16,4 +16,5 @@ public interface CodeQuestionRepository extends JpaRepository<CodeQuestion, Long
     boolean existsBySerieIdAndOrdre(Long serieId, int ordre);
     boolean existsBySerieIdAndOrdreAndIdNot(Long serieId, int ordre, Long id);
     Optional<CodeQuestion> findTopBySerieIdOrderByOrdreDesc(Long serieId);
+    void deleteBySerieId(Long serieId);
 }

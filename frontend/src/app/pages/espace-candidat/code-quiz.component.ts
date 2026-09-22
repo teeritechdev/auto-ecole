@@ -14,7 +14,10 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     }
 
     @if (error) {
-      <div class="alert alert-danger">{{ error }}</div>
+      <div class="alert alert-danger" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+        <span>{{ error }}</span>
+        <a routerLink="/espace-candidat" class="btn btn-outline btn-sm">Retour à l'espace candidat</a>
+      </div>
     }
 
     @if (enCours) {

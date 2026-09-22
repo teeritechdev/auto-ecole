@@ -11,6 +11,7 @@ public interface CodeTentativeRepository extends JpaRepository<CodeTentative, Lo
     List<CodeTentative> findByCandidatIdAndSerieIdOrderByNumeroTentativeAsc(Long candidatId, Long serieId);
     List<CodeTentative> findByCandidatIdOrderByDateDebutDesc(Long candidatId);
     Optional<CodeTentative> findByCandidatIdAndSerieIdAndStatut(Long candidatId, Long serieId, StatutTentativeCode statut);
-    long countByCandidatIdAndSerieId(Long candidatId, Long serieId);
     boolean existsByCandidatIdAndSerieIdAndStatut(Long candidatId, Long serieId, StatutTentativeCode statut);
+    List<CodeTentative> findBySerieId(Long serieId);
+    void deleteBySerieId(Long serieId);
 }

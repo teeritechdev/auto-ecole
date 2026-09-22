@@ -34,7 +34,6 @@ public class CodeConfigurationService {
         configuration.setSeuilReussite(request.getSeuilReussite());
         configuration.setTempsParQuestionSecondes(request.getTempsParQuestionSecondes());
         configuration.setDureeMaxSerieSecondes(request.getDureeMaxSerieSecondes());
-        configuration.setTentativesMax(request.getTentativesMax());
         configuration.setRepriseAutoriseeApresEchec(request.isRepriseAutoriseeApresEchec());
         configuration.setRetourQuestionPrecedenteAutorise(request.isRetourQuestionPrecedenteAutorise());
         configuration.setCorrectionImmediate(request.isCorrectionImmediate());
@@ -51,7 +50,6 @@ public class CodeConfigurationService {
                 .seuilReussite(c.getSeuilReussite())
                 .tempsParQuestionSecondes(c.getTempsParQuestionSecondes())
                 .dureeMaxSerieSecondes(c.getDureeMaxSerieSecondes())
-                .tentativesMax(c.getTentativesMax())
                 .repriseAutoriseeApresEchec(c.isRepriseAutoriseeApresEchec())
                 .retourQuestionPrecedenteAutorise(c.isRetourQuestionPrecedenteAutorise())
                 .correctionImmediate(c.isCorrectionImmediate())

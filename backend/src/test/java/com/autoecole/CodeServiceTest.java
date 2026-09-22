@@ -74,7 +74,6 @@ class CodeServiceTest {
         c.setSeuilReussite(2);
         c.setTempsParQuestionSecondes(30);
         c.setDureeMaxSerieSecondes(900);
-        c.setTentativesMax(3);
         c.setRepriseAutoriseeApresEchec(true);
         c.setRetourQuestionPrecedenteAutorise(true);
         c.setCorrectionImmediate(false);
@@ -117,7 +116,6 @@ class CodeServiceTest {
                 .snapSeuilReussite(config.getSeuilReussite())
                 .snapTempsParQuestionSecondes(config.getTempsParQuestionSecondes())
                 .snapDureeMaxSerieSecondes(config.getDureeMaxSerieSecondes())
-                .snapTentativesMax(config.getTentativesMax())
                 .snapRetourAutorise(config.isRetourQuestionPrecedenteAutorise())
                 .snapCorrectionImmediate(config.isCorrectionImmediate())
                 .build();
@@ -224,7 +222,7 @@ class CodeServiceTest {
         when(questionRepository.findBySerieIdAndActifTrueOrderByOrdreAsc(1L))
                 .thenReturn(List.of(question(s1, 1L, 1), question(s1, 2L, 2)));
         stubSaveTentativePassThrough();
-        when(tentativeRepository.countByCandidatIdAndSerieId(1L, 1L)).thenReturn(1L);
+        when(configurationService.getConfigurationEntity()).thenReturn(config);
 
         EtatTentativeDTO apres1 = codeService.repondre(100L, Set.of(LettreReponse.A)); // correcte
         assertNotNull(apres1.getEnCours());
@@ -249,7 +247,8 @@ class CodeServiceTest {
         when(questionRepository.findBySerieIdAndActifTrueOrderByOrdreAsc(1L))
                 .thenReturn(List.of(question(s1, 1L, 1), question(s1, 2L, 2)));
         stubSaveTentativePassThrough();
-        when(tentativeRepository.countByCandidatIdAndSerieId(1L, 1L)).thenReturn(1L);
+        // etatDepuisTentativeTerminee() lit isRepriseAutoriseeApresEchec() depuis la config
+        when(configurationService.getConfigurationEntity()).thenReturn(config);
 
         codeService.repondre(100L, Set.of(LettreReponse.A));  // correcte
         EtatTentativeDTO resultat = codeService.repondre(100L, Set.of(LettreReponse.B)); // incorrecte (bonne réponse = A)
@@ -358,33 +357,10 @@ class CodeServiceTest {
         assertTrue(ex.getMessage().toLowerCase().contains("reprise"));
     }
 
-    // ========================= 10. Nombre maximal de tentatives =========================
-
-    @Test
-    @DisplayName("10. Nombre maximal de tentatives atteint -> nouvelle tentative refusée, même si reprise autorisée")
-    void testNombreMaximalTentativesAtteint() {
-        CodeConfiguration config = configParDefaut();
-        config.setTentativesMax(2);
-        Candidat c = candidat(1L);
-        SerieCode s1 = serie(1L, "Série 1", 1);
-        when(candidatAccessService.getCandidatCourant()).thenReturn(c);
-        when(inscriptionService.getInscriptionActive(1L))
-                .thenReturn(inscription(c, LocalDate.now().minusDays(10), LocalDate.now().plusMonths(6)));
-        when(configurationService.getConfigurationEntity()).thenReturn(config);
-        when(serieRepository.findById(1L)).thenReturn(Optional.of(s1));
-        when(serieRepository.findByActifTrueOrderByOrdreAsc()).thenReturn(List.of(s1));
-        when(tentativeRepository.findByCandidatIdAndSerieIdAndStatut(1L, 1L, StatutTentativeCode.EN_COURS)).thenReturn(Optional.empty());
-
-        CodeTentative t1 = tentativeEnCours(1L, c, s1, config, LocalDateTime.now(), LocalDateTime.now(), 2, 2);
-        t1.setStatut(StatutTentativeCode.ECHEC);
-        CodeTentative t2 = tentativeEnCours(2L, c, s1, config, LocalDateTime.now(), LocalDateTime.now(), 2, 2);
-        t2.setStatut(StatutTentativeCode.ECHEC);
-        when(tentativeRepository.findByCandidatIdAndSerieIdOrderByNumeroTentativeAsc(1L, 1L)).thenReturn(List.of(t1, t2));
-
-        BadRequestException ex = assertThrows(BadRequestException.class, () -> codeService.demarrerSerie(1L));
-        assertTrue(ex.getMessage().toLowerCase().contains("tentative"));
-        verify(tentativeRepository, never()).save(any());
-    }
+    // ========================= 10. (Feature supprimée) =========================
+    // Le nombre maximal de tentatives (tentativesMax) a été retiré de CodeConfiguration :
+    // il n'y a plus de limite de tentatives, seule la config "repriseAutoriseeApresEchec" contrôle
+    // si un candidat peut relancer une série après échec. Le test correspondant est donc obsolète.
 
     // ========================= 11. Chronomètre par question =========================
 
@@ -424,7 +400,8 @@ class CodeServiceTest {
 
         when(tentativeRepository.findById(100L)).thenReturn(Optional.of(tentative));
         stubSaveTentativePassThrough();
-        when(tentativeRepository.countByCandidatIdAndSerieId(1L, 1L)).thenReturn(1L);
+        // finaliser() → etatDepuisTentativeTerminee() lit isRepriseAutoriseeApresEchec() depuis la config
+        when(configurationService.getConfigurationEntity()).thenReturn(config);
 
         EtatTentativeDTO etat = codeService.getEtatTentative(100L);
 

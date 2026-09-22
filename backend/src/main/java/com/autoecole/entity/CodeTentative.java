@@ -93,9 +93,6 @@ public class CodeTentative {
     @Column(name = "snap_duree_max_serie_secondes", nullable = false)
     private int snapDureeMaxSerieSecondes;
 
-    @Column(name = "snap_tentatives_max", nullable = false)
-    private int snapTentativesMax;
-
     @Column(name = "snap_retour_autorise", nullable = false)
     private boolean snapRetourAutorise;
 

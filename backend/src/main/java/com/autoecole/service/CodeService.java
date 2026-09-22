@@ -50,6 +50,7 @@ public class CodeService {
 
     // ============================= PROGRESSION =============================
 
+    @Transactional(readOnly = true)
     public CodeProgressionDTO getProgression(Long candidatId) {
         verifierAccesCandidat(candidatId);
 
@@ -66,6 +67,11 @@ public class CodeService {
                     .findByCandidatIdAndSerieIdOrderByNumeroTentativeAsc(candidatId, serie.getId());
 
             boolean reussi = tentatives.stream().anyMatch(t -> t.getStatut() == StatutTentativeCode.REUSSI);
+            boolean enCours = tentatives.stream().anyMatch(t -> t.getStatut() == StatutTentativeCode.EN_COURS);
+            boolean aEchec = tentatives.stream().anyMatch(t -> t.getStatut() == StatutTentativeCode.ECHEC
+                    || t.getStatut() == StatutTentativeCode.EXPIREE
+                    || t.getStatut() == StatutTentativeCode.ABANDONNEE);
+
             Integer meilleurScore = tentatives.stream()
                     .filter(t -> t.getStatut() != StatutTentativeCode.EN_COURS)
                     .map(CodeTentative::getScore)
@@ -76,8 +82,10 @@ public class CodeService {
             if (reussi) {
                 statut = StatutSerie.REUSSI;
                 seriesReussies++;
+            } else if (enCours) {
+                statut = StatutSerie.EN_COURS;
             } else if (!config.isDeblocageAutomatiqueSerieSuivante() || seriePrecedenteReussie) {
-                statut = tentatives.isEmpty() ? StatutSerie.DISPONIBLE : StatutSerie.ECHEC;
+                statut = aEchec ? StatutSerie.ECHEC : StatutSerie.DISPONIBLE;
             } else {
                 statut = StatutSerie.VERROUILLE;
             }
@@ -91,7 +99,6 @@ public class CodeService {
                     .statut(statut)
                     .meilleurScore(meilleurScore)
                     .nbTentativesUtilisees(tentatives.size())
-                    .tentativesMax(config.getTentativesMax())
                     .build());
 
             seriePrecedenteReussie = reussi;
@@ -107,6 +114,7 @@ public class CodeService {
                 .build();
     }
 
+    @Transactional(readOnly = true)
     public List<CodeHistoriqueLigneDTO> getHistorique(Long candidatId) {
         verifierAccesCandidat(candidatId);
         return tentativeRepository.findByCandidatIdOrderByDateDebutDesc(candidatId).stream()
@@ -134,11 +142,20 @@ public class CodeService {
      * autonome (cf. Cahier_des_charges_Claude_Code_Module_Code_Auto_Ecole), un moniteur "Code"
      * garde donc accès aux candidats qu'il a suivis même après qu'ils ont avancé vers une étape
      * ultérieure (Créneau, Circulation, Permis obtenu).
+     *
+     * IMPORTANT : verifierAccesEpreuve(CODE) ne s'applique qu'aux MONITEURs (restriction par
+     * spécialité). Pour un CANDIDAT, cet appel est sans objet et peut provoquer une erreur
+     * inattendue si le contexte sécurité ne contient pas de profil moniteur. On délègue donc
+     * la vérification de spécialité uniquement lorsque le connecté est un moniteur.
      */
     private void verifierAccesCandidat(Long candidatId) {
         candidatAccessService.verifierEstSoiMeme(candidatId);
         inscriptionService.verifierAccesCandidat(candidatId);
-        siteAccessService.verifierAccesEpreuve(TypeEpreuve.CODE);
+        // La vérification de spécialité CODE ne concerne que les moniteurs :
+        // un CANDIDAT accède toujours à son propre module sans contrainte de spécialité.
+        if (siteAccessService.estMoniteurRestreint()) {
+            siteAccessService.verifierAccesEpreuve(TypeEpreuve.CODE);
+        }
     }
 
     // ============================= DÉMARRAGE D'UNE SÉRIE =============================
@@ -179,17 +196,15 @@ public class CodeService {
                 .orElse(null);
         if (tentativeEnCours != null) {
             EtatTentativeDTO expire = cloturerSiExpiree(tentativeEnCours);
-            if (expire != null) {
-                return expire;
+            if (expire == null) {
+                return buildEtatEnCours(tentativeEnCours);
             }
-            return buildEtatEnCours(tentativeEnCours);
+            // La tentative précédente était expirée et vient d'être clôturée.
+            // On enchaîne directement sur la création d'une nouvelle tentative ci-dessous.
         }
 
         List<CodeTentative> tentativesPrecedentes = tentativeRepository
                 .findByCandidatIdAndSerieIdOrderByNumeroTentativeAsc(candidatId, serieId);
-        if (tentativesPrecedentes.size() >= config.getTentativesMax()) {
-            throw new BadRequestException("Nombre maximum de tentatives atteint pour cette série (" + config.getTentativesMax() + ")");
-        }
         if (!tentativesPrecedentes.isEmpty() && !config.isRepriseAutoriseeApresEchec()) {
             boolean dejaReussi = tentativesPrecedentes.stream().anyMatch(t -> t.getStatut() == StatutTentativeCode.REUSSI);
             if (!dejaReussi) {
@@ -216,7 +231,6 @@ public class CodeService {
                 .snapSeuilReussite(config.getSeuilReussite())
                 .snapTempsParQuestionSecondes(config.getTempsParQuestionSecondes())
                 .snapDureeMaxSerieSecondes(config.getDureeMaxSerieSecondes())
-                .snapTentativesMax(config.getTentativesMax())
                 .snapRetourAutorise(config.isRetourQuestionPrecedenteAutorise())
                 .snapCorrectionImmediate(config.isCorrectionImmediate())
                 .build();
@@ -343,6 +357,7 @@ public class CodeService {
         return finaliser(tentative, false);
     }
 
+    @Transactional
     public EtatTentativeDTO getEtatTentative(Long tentativeId) {
         CodeTentative tentative = getTentativePossedee(tentativeId);
         if (tentative.getStatut() != StatutTentativeCode.EN_COURS) {
@@ -386,7 +401,9 @@ public class CodeService {
 
     private EtatTentativeDTO etatDepuisTentativeTerminee(CodeTentative tentative) {
         boolean reussi = tentative.getStatut() == StatutTentativeCode.REUSSI;
-        long dejaUtilisees = tentativeRepository.countByCandidatIdAndSerieId(tentative.getCandidat().getId(), tentative.getSerie().getId());
+        // Aucune limite de tentatives : seule la config "reprise autorisée après échec"
+        // détermine si le candidat peut relancer cette série.
+        boolean repriseAutorisee = configurationService.getConfigurationEntity().isRepriseAutoriseeApresEchec();
         return EtatTentativeDTO.builder()
                 .resultat(CodeResultatTentativeDTO.builder()
                         .tentativeId(tentative.getId())
@@ -398,21 +415,25 @@ public class CodeService {
                         .statut(tentative.getStatut())
                         .reussi(reussi)
                         .serieSuivanteDebloquee(reussi)
-                        .peutReprendre(!reussi && dejaUtilisees < tentative.getSnapTentativesMax())
+                        .peutReprendre(!reussi && repriseAutorisee)
                         .build())
                 .build();
     }
 
     private EtatTentativeDTO buildEtatEnCours(CodeTentative tentative) {
         List<CodeQuestion> questionsSerie = questionRepository.findBySerieIdAndActifTrueOrderByOrdreAsc(tentative.getSerie().getId());
-        CodeQuestion question = questionsSerie.get(tentative.getIndexQuestionCourante());
+        if (questionsSerie.isEmpty()) {
+            throw new BadRequestException("Aucune question active disponible pour cette série");
+        }
+        int index = Math.min(Math.max(0, tentative.getIndexQuestionCourante()), questionsSerie.size() - 1);
+        CodeQuestion question = questionsSerie.get(index);
         return EtatTentativeDTO.builder()
                 .enCours(TentativeEnCoursDTO.builder()
                         .tentativeId(tentative.getId())
                         .serieId(tentative.getSerie().getId())
                         .serieNom(tentative.getSerie().getNom())
                         .numeroTentative(tentative.getNumeroTentative())
-                        .indexQuestionCourante(tentative.getIndexQuestionCourante())
+                        .indexQuestionCourante(index)
                         .totalQuestionsDeLaSerie(questionsSerie.size())
                         .question(mapQuestionPourCandidat(question))
                         .tempsParQuestionSecondes(tentative.getSnapTempsParQuestionSecondes())
@@ -420,7 +441,7 @@ public class CodeService {
                         .dateDebut(tentative.getDateDebut())
                         .dateAffichageQuestionCourante(tentative.getDateAffichageQuestionCourante())
                         .retourAutorise(tentative.isSnapRetourAutorise())
-                        .peutRevenirEnArriere(tentative.isSnapRetourAutorise() && tentative.getIndexQuestionCourante() > 0)
+                        .peutRevenirEnArriere(tentative.isSnapRetourAutorise() && index > 0)
                         .build())
                 .build();
     }

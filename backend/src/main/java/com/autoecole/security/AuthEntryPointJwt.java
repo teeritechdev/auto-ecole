@@ -22,10 +22,17 @@ public class AuthEntryPointJwt implements AuthenticationEntryPoint {
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 
+        // authException.getMessage() peut être null pour certaines exceptions JWT
+        // (token expiré, signature incorrecte, token révoqué) — on garantit un message lisible.
+        String message = authException.getMessage();
+        if (message == null || message.isBlank()) {
+            message = "Session expirée ou token invalide. Veuillez vous reconnecter.";
+        }
+
         final Map<String, Object> body = new HashMap<>();
         body.put("status", HttpServletResponse.SC_UNAUTHORIZED);
         body.put("error", "Non Autorisé");
-        body.put("message", authException.getMessage());
+        body.put("message", message);
         body.put("path", request.getServletPath());
 
         final ObjectMapper mapper = new ObjectMapper();

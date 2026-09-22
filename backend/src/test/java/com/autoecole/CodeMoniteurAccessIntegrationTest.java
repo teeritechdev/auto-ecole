@@ -171,7 +171,10 @@ class CodeMoniteurAccessIntegrationTest {
     }
 
     private UpdateCodeConfigurationRequest requeteConfigurationValide() {
-        return new UpdateCodeConfigurationRequest(24, 30, 900, 3, true, true, false, true, null);
+        // seuilReussite=24, tempsParQuestion=30s, dureeMaxSerie=900s,
+        // repriseAutorisee=true, retourAutorise=true, correctionImmediate=false,
+        // deblocageAutomatique=true, dureeExpirationAccesJours=null
+        return new UpdateCodeConfigurationRequest(24, 30, 900, true, true, false, true, null);
     }
 
     // ---------- Fixtures ----------

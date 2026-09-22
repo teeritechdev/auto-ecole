@@ -9,6 +9,7 @@ import com.autoecole.entity.enums.LettreReponse;
 import com.autoecole.exception.BadRequestException;
 import com.autoecole.exception.ResourceNotFoundException;
 import com.autoecole.repository.CodeQuestionRepository;
+import com.autoecole.repository.CodeReponseTentativeRepository;
 import com.autoecole.repository.SerieCodeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -30,6 +31,7 @@ public class CodeQuestionService {
 
     private final CodeQuestionRepository questionRepository;
     private final SerieCodeRepository serieRepository;
+    private final CodeReponseTentativeRepository reponseTentativeRepository;
 
     public List<CodeQuestionDTO> getQuestionsDeSerie(Long serieId) {
         return questionRepository.findBySerieIdOrderByOrdreAsc(serieId).stream()
@@ -110,6 +112,9 @@ public class CodeQuestionService {
         if (!questionRepository.existsById(id)) {
             throw new ResourceNotFoundException("Question introuvable avec l'id: " + id);
         }
+        // Supprime d'abord les réponses de tentatives liées à cette question (contrainte FK),
+        // sinon la suppression de la question échoue avec une DataIntegrityViolationException.
+        reponseTentativeRepository.deleteByQuestionId(id);
         questionRepository.deleteById(id);
     }
 

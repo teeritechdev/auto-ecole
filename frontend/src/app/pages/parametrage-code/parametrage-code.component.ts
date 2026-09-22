@@ -54,12 +54,6 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
               <input type="number" class="form-control" min="1" [(ngModel)]="config.dureeMaxSerieSecondes" name="dureeMaxSerie" required />
             </div>
             <div class="form-group">
-              <label class="form-label">Nombre maximum de tentatives <span class="required">*</span></label>
-              <input type="number" class="form-control" min="1" [(ngModel)]="config.tentativesMax" name="tentativesMax" required />
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
               <label class="form-label">Expiration de l'accès au module (jours, vide = illimité)</label>
               <input type="number" class="form-control" min="1" [(ngModel)]="config.dureeExpirationAccesJours" name="dureeExpiration" />
             </div>

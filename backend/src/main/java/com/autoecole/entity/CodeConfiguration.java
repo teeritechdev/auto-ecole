@@ -31,9 +31,6 @@ public class CodeConfiguration {
     @Column(name = "duree_max_serie_secondes", nullable = false)
     private int dureeMaxSerieSecondes = 900;
 
-    @Column(name = "tentatives_max", nullable = false)
-    private int tentativesMax = 3;
-
     @Column(name = "reprise_autorisee_apres_echec", nullable = false)
     private boolean repriseAutoriseeApresEchec = true;
 

@@ -376,13 +376,12 @@ export interface HistoriqueAction {
 
 export type LettreReponse = 'A' | 'B' | 'C' | 'D';
 export type StatutTentativeCode = 'EN_COURS' | 'REUSSI' | 'ECHEC' | 'EXPIREE' | 'ABANDONNEE';
-export type StatutSerie = 'VERROUILLE' | 'DISPONIBLE' | 'REUSSI' | 'ECHEC';
+export type StatutSerie = 'VERROUILLE' | 'DISPONIBLE' | 'REUSSI' | 'ECHEC' | 'EN_COURS';
 
 export interface CodeConfiguration {
   seuilReussite: number;
   tempsParQuestionSecondes: number;
   dureeMaxSerieSecondes: number;
-  tentativesMax: number;
   repriseAutoriseeApresEchec: boolean;
   retourQuestionPrecedenteAutorise: boolean;
   correctionImmediate: boolean;
@@ -442,7 +441,6 @@ export interface CodeSerieStatut {
   statut: StatutSerie;
   meilleurScore?: number;
   nbTentativesUtilisees: number;
-  tentativesMax: number;
 }
 
 export interface CodeProgression {

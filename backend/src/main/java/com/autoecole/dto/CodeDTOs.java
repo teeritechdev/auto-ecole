@@ -26,7 +26,6 @@ public class CodeDTOs {
         private int seuilReussite;
         private int tempsParQuestionSecondes;
         private int dureeMaxSerieSecondes;
-        private int tentativesMax;
         private boolean repriseAutoriseeApresEchec;
         private boolean retourQuestionPrecedenteAutorise;
         private boolean correctionImmediate;
@@ -49,9 +48,6 @@ public class CodeDTOs {
 
         @Min(value = 1, message = "La durée maximale de la série doit être supérieure à 0")
         private int dureeMaxSerieSecondes;
-
-        @Min(value = 1, message = "Le nombre de tentatives doit être supérieur à 0")
-        private int tentativesMax;
 
         private boolean repriseAutoriseeApresEchec;
         private boolean retourQuestionPrecedenteAutorise;
@@ -223,7 +219,8 @@ public class CodeDTOs {
         VERROUILLE,
         DISPONIBLE,
         REUSSI,
-        ECHEC
+        ECHEC,
+        EN_COURS
     }
 
     @Data
@@ -237,7 +234,6 @@ public class CodeDTOs {
         private StatutSerie statut;
         private Integer meilleurScore;
         private int nbTentativesUtilisees;
-        private int tentativesMax;
     }
 
     @Data

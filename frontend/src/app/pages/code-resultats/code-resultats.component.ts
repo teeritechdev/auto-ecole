@@ -166,7 +166,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                     <td>{{ serie.nombreQuestions }}</td>
                     <td><span class="badge" [ngClass]="badgeClassCycle(serie.statut)">{{ badgeLabelCycle(serie.statut) }}</span></td>
                     <td>{{ serie.meilleurScore ?? '—' }}</td>
-                    <td>{{ serie.nbTentativesUtilisees }} / {{ serie.tentativesMax }}</td>
+                    <td>{{ serie.nbTentativesUtilisees }}</td>
                   </tr>
                 }
                 @if (progression.series.length === 0) {

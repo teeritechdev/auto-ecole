@@ -545,12 +545,6 @@ export class CandidatDetailComponent implements OnInit {
     return this.authService.hasPermission(['PAIEMENTS_CREER']) && !!this.candidat && !this.candidat.priseEnChargeExamens;
   }
 
-  libelleTypeVersement(p: Paiement): string {
-    if (p.typeVersement === 'PREMIER_VERSEMENT') return '1er Versement';
-    if (p.typeVersement === 'FRAIS_EXAMEN') return 'Frais d\'examen (' + this.epreuveLabel(p.typeEpreuve) + ')';
-    return 'Versement Suivant';
-  }
-
   epreuveLabel(t?: string | null): string {
     if (t === 'CODE') return 'Code';
     if (t === 'CRENEAU') return 'Créneau';

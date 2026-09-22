@@ -116,7 +116,6 @@ public class PaiementDTOs {
         private BigDecimal totalVerse;
         private BigDecimal soldeRestant;
         private String modeReglement;
-        private String typeVersement;
         private String imprimePar;
     }
 

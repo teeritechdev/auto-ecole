@@ -148,7 +148,6 @@ export interface Paiement {
   candidatNomComplet: string;
   utilisateurId: number;
   utilisateurNomComplet: string;
-  typeVersement?: 'PREMIER_VERSEMENT' | 'VERSEMENT_SUIVANT' | 'FRAIS_EXAMEN' | string;
   typeEpreuve?: 'CODE' | 'CRENEAU' | 'CIRCULATION' | null;
   montant: number;
   soldeRestant?: number;
@@ -176,7 +175,6 @@ export interface Recu {
   totalVerse: number;
   soldeRestant: number;
   modeReglement: string;
-  typeVersement: string;
   imprimePar: string;
 }
 

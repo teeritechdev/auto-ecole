@@ -1172,6 +1172,7 @@ export class ExamensComponent implements OnInit {
     const payload = {
       candidatIds: this.selectedCandidatIds,
       typeEpreuve: this.newPassage.typeEpreuve,
+      siteId: this.newPassage.siteId,
       datePassage: this.newPassage.datePassage,
       lieu: this.newPassage.lieu,
       observations: this.newPassage.observations

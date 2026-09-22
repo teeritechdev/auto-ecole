@@ -208,12 +208,32 @@ public class ExamenService {
     }
 
     /**
+     * Résout le site à rattacher à la session sans jamais bloquer la création : certains
+     * appelants (ex: ajout rapide d'un examen depuis la fiche candidat) ne collectent pas
+     * encore de siteId côté formulaire. Si aucun site n'est fourni et que l'utilisateur
+     * courant est un moniteur restreint à un seul site, ce site est déduit automatiquement
+     * (comme pour la caisse) ; sinon la session reste sans site plutôt que d'échouer.
+     */
+    private Site resoudreSiteSessionSiPossible(Long siteIdFourni) {
+        if (siteIdFourni != null) {
+            return siteRepository.findById(siteIdFourni).orElse(null);
+        }
+        if (siteAccessService.estRestreintParSite()) {
+            Set<Long> sitesAutorises = siteAccessService.getSiteIdsMoniteurCourant();
+            if (sitesAutorises.size() == 1) {
+                return siteRepository.findById(sitesAutorises.iterator().next()).orElse(null);
+            }
+        }
+        return null;
+    }
+
+    /**
      * Crée l'entité session (le moniteur courant en est propriétaire) sans encore y
      * attacher de candidat. Le champ lieu est autonome (texte libre).
      */
     private SessionExamen creerSessionEntite(TypeEpreuve typeEpreuve, LocalDate datePassage, String lieu, String observations, Long siteId) {
         Utilisateur currentUser = auditService.getCurrentUser();
-        Site site = (siteId != null) ? siteRepository.findById(siteId).orElse(null) : null;
+        Site site = resoudreSiteSessionSiPossible(siteId);
         SessionExamen session = SessionExamen.builder()
                 .typeEpreuve(typeEpreuve)
                 .datePassage(datePassage)

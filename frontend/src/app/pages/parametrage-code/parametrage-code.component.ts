@@ -29,40 +29,36 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     @if (config) {
       <div class="card">
         <div class="card-header">
-          <div class="card-title">Quiz Exercice</div>
-          <a routerLink="/code/questions" class="btn btn-outline btn-sm">Gérer les questions</a>
+          <div class="card-title">Séries & Questions</div>
+          <a routerLink="/code/questions" class="btn btn-outline btn-sm">Gérer les séries et questions</a>
         </div>
-        <p>{{ config.nombreQuestionsActives }} question(s) active(s) — {{ config.nombreDeCycles }} Cycle(s) au total.</p>
+        <p>{{ config.nombreDeSeries }} série(s) active(s). La taille de chaque série dépend du nombre de questions qui lui sont assignées.</p>
       </div>
 
       <form (ngSubmit)="enregistrer()">
         <div class="card">
-          <div class="card-header"><div class="card-title">Règles du Cycle</div></div>
+          <div class="card-header"><div class="card-title">Règles de la série</div></div>
           <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Questions par Cycle <span class="required">*</span></label>
-              <input type="number" class="form-control" min="1" [(ngModel)]="config.questionsParCycle" name="questionsParCycle" required />
-            </div>
             <div class="form-group">
               <label class="form-label">Seuil de réussite <span class="required">*</span></label>
               <input type="number" class="form-control" min="1" [(ngModel)]="config.seuilReussite" name="seuilReussite" required />
             </div>
-          </div>
-          <div class="form-row">
             <div class="form-group">
               <label class="form-label">Temps par question (secondes) <span class="required">*</span></label>
               <input type="number" class="form-control" min="1" [(ngModel)]="config.tempsParQuestionSecondes" name="tempsParQuestion" required />
             </div>
-            <div class="form-group">
-              <label class="form-label">Durée maximale du Cycle (secondes) <span class="required">*</span></label>
-              <input type="number" class="form-control" min="1" [(ngModel)]="config.dureeMaxCycleSecondes" name="dureeMaxCycle" required />
-            </div>
           </div>
           <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Durée maximale d'une série (secondes) <span class="required">*</span></label>
+              <input type="number" class="form-control" min="1" [(ngModel)]="config.dureeMaxSerieSecondes" name="dureeMaxSerie" required />
+            </div>
             <div class="form-group">
               <label class="form-label">Nombre maximum de tentatives <span class="required">*</span></label>
               <input type="number" class="form-control" min="1" [(ngModel)]="config.tentativesMax" name="tentativesMax" required />
             </div>
+          </div>
+          <div class="form-row">
             <div class="form-group">
               <label class="form-label">Expiration de l'accès au module (jours, vide = illimité)</label>
               <input type="number" class="form-control" min="1" [(ngModel)]="config.dureeExpirationAccesJours" name="dureeExpiration" />
@@ -74,7 +70,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
           <div class="card-header"><div class="card-title">Comportement</div></div>
           <label class="checkbox-row">
             <input type="checkbox" [(ngModel)]="config.repriseAutoriseeApresEchec" name="repriseAutorisee" />
-            Autoriser la reprise d'un Cycle après échec
+            Autoriser la reprise d'une série après échec
           </label>
           <label class="checkbox-row">
             <input type="checkbox" [(ngModel)]="config.retourQuestionPrecedenteAutorise" name="retourAutorise" />
@@ -85,8 +81,8 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
             Afficher la correction immédiatement après chaque réponse
           </label>
           <label class="checkbox-row">
-            <input type="checkbox" [(ngModel)]="config.deblocageAutomatiqueCycleSuivant" name="deblocageAuto" />
-            Déblocage séquentiel des Cycles (sinon, tous les Cycles sont disponibles dès le départ)
+            <input type="checkbox" [(ngModel)]="config.deblocageAutomatiqueSerieSuivante" name="deblocageAuto" />
+            Déblocage séquentiel des séries (sinon, toutes les séries sont disponibles dès le départ)
           </label>
         </div>
 

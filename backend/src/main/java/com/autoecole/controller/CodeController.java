@@ -15,14 +15,14 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/code")
 @RequiredArgsConstructor
-@Tag(name = "Code de la route", description = "Progression, Cycles et tentatives du module d'entraînement au Code")
+@Tag(name = "Code de la route", description = "Progression, séries et tentatives du module d'entraînement au Code")
 public class CodeController {
 
     private final CodeService codeService;
 
     @GetMapping("/progression/{candidatId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MONITEUR', 'CANDIDAT') or hasAuthority('PERM_CODE_SUIVI')")
-    @Operation(summary = "Progression d'un candidat, Cycle par Cycle")
+    @Operation(summary = "Progression d'un candidat, série par série")
     public ResponseEntity<CodeProgressionDTO> getProgression(@PathVariable Long candidatId) {
         return ResponseEntity.ok(codeService.getProgression(candidatId));
     }
@@ -34,11 +34,11 @@ public class CodeController {
         return ResponseEntity.ok(codeService.getHistorique(candidatId));
     }
 
-    @PostMapping("/cycles/{numero}/start")
+    @PostMapping("/series/{serieId}/start")
     @PreAuthorize("hasRole('CANDIDAT') or hasAuthority('PERM_CODE_PRATIQUER')")
-    @Operation(summary = "Démarrer (ou reprendre) une tentative sur un Cycle autorisé")
-    public ResponseEntity<EtatTentativeDTO> demarrerCycle(@PathVariable int numero) {
-        return new ResponseEntity<>(codeService.demarrerCycle(numero), HttpStatus.CREATED);
+    @Operation(summary = "Démarrer (ou reprendre) une tentative sur une série autorisée")
+    public ResponseEntity<EtatTentativeDTO> demarrerSerie(@PathVariable Long serieId) {
+        return new ResponseEntity<>(codeService.demarrerSerie(serieId), HttpStatus.CREATED);
     }
 
     @GetMapping("/tentatives/{id}")

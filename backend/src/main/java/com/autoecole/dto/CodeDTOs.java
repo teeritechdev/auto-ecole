@@ -23,37 +23,32 @@ public class CodeDTOs {
     @AllArgsConstructor
     @Builder
     public static class CodeConfigurationDTO {
-        private int questionsParCycle;
         private int seuilReussite;
         private int tempsParQuestionSecondes;
-        private int dureeMaxCycleSecondes;
+        private int dureeMaxSerieSecondes;
         private int tentativesMax;
         private boolean repriseAutoriseeApresEchec;
         private boolean retourQuestionPrecedenteAutorise;
         private boolean correctionImmediate;
-        private boolean deblocageAutomatiqueCycleSuivant;
+        private boolean deblocageAutomatiqueSerieSuivante;
         private Integer dureeExpirationAccesJours;
 
         // Informations calculées, pour affichage (§4, §22 du cahier des charges du module)
-        private long nombreQuestionsActives;
-        private int nombreDeCycles;
+        private long nombreDeSeries;
     }
 
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
     public static class UpdateCodeConfigurationRequest {
-        @Min(value = 1, message = "Le nombre de questions par Cycle doit être supérieur à 0")
-        private int questionsParCycle;
-
         @Min(value = 1, message = "Le seuil de réussite doit être supérieur à 0")
         private int seuilReussite;
 
         @Min(value = 1, message = "Le temps par question doit être supérieur à 0")
         private int tempsParQuestionSecondes;
 
-        @Min(value = 1, message = "La durée maximale du Cycle doit être supérieure à 0")
-        private int dureeMaxCycleSecondes;
+        @Min(value = 1, message = "La durée maximale de la série doit être supérieure à 0")
+        private int dureeMaxSerieSecondes;
 
         @Min(value = 1, message = "Le nombre de tentatives doit être supérieur à 0")
         private int tentativesMax;
@@ -61,7 +56,7 @@ public class CodeDTOs {
         private boolean repriseAutoriseeApresEchec;
         private boolean retourQuestionPrecedenteAutorise;
         private boolean correctionImmediate;
-        private boolean deblocageAutomatiqueCycleSuivant;
+        private boolean deblocageAutomatiqueSerieSuivante;
 
         @Min(value = 1, message = "La durée d'expiration de l'accès doit être supérieure à 0 jour")
         private Integer dureeExpirationAccesJours;
@@ -71,8 +66,52 @@ public class CodeDTOs {
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
+    public static class CodeSerieDTO {
+        private Long id;
+        private String nom;
+        private String description;
+        private int ordre;
+        private boolean actif;
+        private long nombreQuestions;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class CreateCodeSerieRequest {
+        @NotBlank(message = "Le nom de la série est obligatoire")
+        private String nom;
+
+        private String description;
+
+        // Optionnel : si absent, la série est ajoutée en fin de liste
+        private Integer ordre;
+
+        private Boolean actif;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class UpdateCodeSerieRequest {
+        @NotBlank(message = "Le nom de la série est obligatoire")
+        private String nom;
+
+        private String description;
+
+        @NotNull(message = "L'ordre est obligatoire")
+        private Integer ordre;
+
+        private boolean actif;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
     public static class CodeQuestionDTO {
         private Long id;
+        private Long serieId;
         private int ordre;
         private String enonce;
         private String imageData;
@@ -80,6 +119,8 @@ public class CodeDTOs {
         private String reponseB;
         private String reponseC;
         private String reponseD;
+        private String sousTitreGroupeAB;
+        private String sousTitreGroupeCD;
         private int nombreOptions;
         private Set<LettreReponse> bonnesReponses;
         private String explication;
@@ -90,7 +131,10 @@ public class CodeDTOs {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class CreateCodeQuestionRequest {
-        // Optionnel : si absent, la question est ajoutée à la fin de la banque
+        @NotNull(message = "La série est obligatoire")
+        private Long serieId;
+
+        // Optionnel : si absent, la question est ajoutée à la fin de la série
         private Integer ordre;
 
         @NotBlank(message = "L'énoncé est obligatoire")
@@ -103,6 +147,11 @@ public class CodeDTOs {
         private String reponseB;
         private String reponseC;
         private String reponseD;
+
+        // Optionnels : libellés de sous-groupe façon examen officiel (ex: "pour aller à
+        // la station service" au-dessus de A/B, "pour aller à Dreux" au-dessus de C/D)
+        private String sousTitreGroupeAB;
+        private String sousTitreGroupeCD;
 
         @NotNull(message = "Le nombre de choix est obligatoire")
         @Min(value = 2, message = "Le nombre de choix doit être entre 2 et 4")
@@ -134,6 +183,9 @@ public class CodeDTOs {
         private String reponseC;
         private String reponseD;
 
+        private String sousTitreGroupeAB;
+        private String sousTitreGroupeCD;
+
         @NotNull(message = "Le nombre de choix est obligatoire")
         @Min(value = 2, message = "Le nombre de choix doit être entre 2 et 4")
         @Max(value = 4, message = "Le nombre de choix doit être entre 2 et 4")
@@ -162,10 +214,12 @@ public class CodeDTOs {
         private String reponseB;
         private String reponseC;
         private String reponseD;
+        private String sousTitreGroupeAB;
+        private String sousTitreGroupeCD;
         private int nombreOptions;
     }
 
-    public enum StatutCycle {
+    public enum StatutSerie {
         VERROUILLE,
         DISPONIBLE,
         REUSSI,
@@ -176,10 +230,11 @@ public class CodeDTOs {
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
-    public static class CodeCycleStatutDTO {
-        private int numeroCycle;
+    public static class CodeSerieStatutDTO {
+        private Long serieId;
+        private String serieNom;
         private int nombreQuestions;
-        private StatutCycle statut;
+        private StatutSerie statut;
         private Integer meilleurScore;
         private int nbTentativesUtilisees;
         private int tentativesMax;
@@ -191,11 +246,11 @@ public class CodeDTOs {
     @Builder
     public static class CodeProgressionDTO {
         private Long candidatId;
-        private int totalCycles;
-        private int cyclesReussis;
+        private int totalSeries;
+        private int seriesReussies;
         private double pourcentageProgression;
         private boolean accesExpire;
-        private List<CodeCycleStatutDTO> cycles;
+        private List<CodeSerieStatutDTO> series;
     }
 
     @Data
@@ -204,13 +259,14 @@ public class CodeDTOs {
     @Builder
     public static class TentativeEnCoursDTO {
         private Long tentativeId;
-        private int numeroCycle;
+        private Long serieId;
+        private String serieNom;
         private int numeroTentative;
         private int indexQuestionCourante;
-        private int totalQuestionsDuCycle;
+        private int totalQuestionsDeLaSerie;
         private CodeQuestionPourCandidatDTO question;
         private int tempsParQuestionSecondes;
-        private int dureeMaxCycleSecondes;
+        private int dureeMaxSerieSecondes;
         private LocalDateTime dateDebut;
         private LocalDateTime dateAffichageQuestionCourante;
         private boolean retourAutorise;
@@ -260,13 +316,14 @@ public class CodeDTOs {
     @Builder
     public static class CodeResultatTentativeDTO {
         private Long tentativeId;
-        private int numeroCycle;
+        private Long serieId;
+        private String serieNom;
         private int score;
         private int totalQuestions;
         private int seuilReussite;
         private StatutTentativeCode statut;
         private boolean reussi;
-        private boolean cycleSuivantDebloque;
+        private boolean serieSuivanteDebloquee;
         private boolean peutReprendre;
     }
 
@@ -276,7 +333,8 @@ public class CodeDTOs {
     @Builder
     public static class CodeHistoriqueLigneDTO {
         private Long tentativeId;
-        private int numeroCycle;
+        private Long serieId;
+        private String serieNom;
         private int numeroTentative;
         private LocalDateTime dateDebut;
         private LocalDateTime dateFin;

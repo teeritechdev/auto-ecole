@@ -7,12 +7,14 @@ import com.autoecole.entity.CodeQuestion;
 import com.autoecole.entity.CodeReponseTentative;
 import com.autoecole.entity.CodeTentative;
 import com.autoecole.entity.Inscription;
+import com.autoecole.entity.SerieCode;
 import com.autoecole.entity.enums.LettreReponse;
 import com.autoecole.entity.enums.StatutTentativeCode;
 import com.autoecole.exception.BadRequestException;
 import com.autoecole.repository.CodeQuestionRepository;
 import com.autoecole.repository.CodeReponseTentativeRepository;
 import com.autoecole.repository.CodeTentativeRepository;
+import com.autoecole.repository.SerieCodeRepository;
 import com.autoecole.service.CandidatAccessService;
 import com.autoecole.service.CodeConfigurationService;
 import com.autoecole.service.CodeService;
@@ -38,7 +40,9 @@ import static org.mockito.Mockito.*;
 /**
  * Tests unitaires du cœur métier du module Code de la route (cf. cahier des charges du module,
  * §2, §6 à §8, §14). CodeService est testé isolément (dépendances mockées), sans base de
- * données, dans le même esprit léger que BusinessRulesTest (logique métier pure).
+ * données, dans le même esprit léger que BusinessRulesTest (logique métier pure). Les séries
+ * sont créées librement par l'ADMIN (pas de découpage calculé) : chaque test attache
+ * explicitement ses questions à la série testée.
  */
 @ExtendWith(MockitoExtension.class)
 class CodeServiceTest {
@@ -47,6 +51,8 @@ class CodeServiceTest {
     private CodeConfigurationService configurationService;
     @Mock
     private CodeQuestionRepository questionRepository;
+    @Mock
+    private SerieCodeRepository serieRepository;
     @Mock
     private CodeTentativeRepository tentativeRepository;
     @Mock
@@ -65,22 +71,25 @@ class CodeServiceTest {
 
     private CodeConfiguration configParDefaut() {
         CodeConfiguration c = new CodeConfiguration();
-        c.setQuestionsParCycle(2);
         c.setSeuilReussite(2);
         c.setTempsParQuestionSecondes(30);
-        c.setDureeMaxCycleSecondes(900);
+        c.setDureeMaxSerieSecondes(900);
         c.setTentativesMax(3);
         c.setRepriseAutoriseeApresEchec(true);
         c.setRetourQuestionPrecedenteAutorise(true);
         c.setCorrectionImmediate(false);
-        c.setDeblocageAutomatiqueCycleSuivant(true);
+        c.setDeblocageAutomatiqueSerieSuivante(true);
         c.setDureeExpirationAccesJours(null);
         return c;
     }
 
-    private CodeQuestion question(long id, int ordre) {
+    private SerieCode serie(long id, String nom, int ordre) {
+        return SerieCode.builder().id(id).nom(nom).ordre(ordre).actif(true).build();
+    }
+
+    private CodeQuestion question(SerieCode serie, long id, int ordre) {
         return CodeQuestion.builder()
-                .id(id).ordre(ordre).enonce("Question " + ordre)
+                .id(id).serie(serie).ordre(ordre).enonce("Question " + ordre)
                 .reponseA("Bonne").reponseB("Mauvaise")
                 .nombreOptions(2)
                 .bonneReponses(LettreReponse.toCsv(Set.of(LettreReponse.A)))
@@ -96,19 +105,18 @@ class CodeServiceTest {
         return Inscription.builder().candidat(c).dateInscription(dateInscription).dateEcheance(dateEcheance).active(true).build();
     }
 
-    private CodeTentative tentativeEnCours(long id, Candidat c, int numeroCycle, CodeConfiguration config,
-                                            LocalDateTime dateDebut, LocalDateTime dateAffichageQuestion, int index) {
+    private CodeTentative tentativeEnCours(long id, Candidat c, SerieCode serie, CodeConfiguration config,
+                                            LocalDateTime dateDebut, LocalDateTime dateAffichageQuestion, int index, int totalQuestions) {
         return CodeTentative.builder()
-                .id(id).candidat(c).numeroCycle(numeroCycle).numeroTentative(1)
+                .id(id).candidat(c).serie(serie).numeroTentative(1)
                 .dateDebut(dateDebut).dateAffichageQuestionCourante(dateAffichageQuestion)
                 .indexQuestionCourante(index)
                 .nbBonnesReponses(0).nbMauvaisesReponses(0)
                 .statut(StatutTentativeCode.EN_COURS)
-                .snapQuestionsParCycle(config.getQuestionsParCycle())
-                .totalQuestionsCycle(config.getQuestionsParCycle())
+                .totalQuestionsSerie(totalQuestions)
                 .snapSeuilReussite(config.getSeuilReussite())
                 .snapTempsParQuestionSecondes(config.getTempsParQuestionSecondes())
-                .snapDureeMaxCycleSecondes(config.getDureeMaxCycleSecondes())
+                .snapDureeMaxSerieSecondes(config.getDureeMaxSerieSecondes())
                 .snapTentativesMax(config.getTentativesMax())
                 .snapRetourAutorise(config.isRetourQuestionPrecedenteAutorise())
                 .snapCorrectionImmediate(config.isCorrectionImmediate())
@@ -123,82 +131,80 @@ class CodeServiceTest {
         });
     }
 
-    // ========================= 1. Calcul du nombre de Cycles =========================
+    // ========================= 1. Progression reflète les séries actives =========================
 
     @Test
-    @DisplayName("1. Nombre de Cycles : cas divisible exactement (4 questions / 2 par Cycle = 2 Cycles)")
-    void testCalculNombreDeCyclesDivisible() {
+    @DisplayName("1. Progression : chaque série active apparaît avec son propre nombre de questions assignées")
+    void testProgressionRefleteLesSeriesActives() {
         CodeConfiguration config = configParDefaut();
+        SerieCode s1 = serie(1L, "Série 1", 1);
+        SerieCode s2 = serie(2L, "Série 2", 2);
         when(configurationService.getConfigurationEntity()).thenReturn(config);
-        when(questionRepository.findByActifTrueOrderByOrdreAsc())
-                .thenReturn(List.of(question(1, 1), question(2, 2), question(3, 3), question(4, 4)));
-        when(tentativeRepository.findByCandidatIdAndNumeroCycleOrderByNumeroTentativeAsc(anyLong(), anyInt()))
+        when(serieRepository.findByActifTrueOrderByOrdreAsc()).thenReturn(List.of(s1, s2));
+        when(questionRepository.countBySerieId(1L)).thenReturn(4L);
+        when(questionRepository.countBySerieId(2L)).thenReturn(1L);
+        when(tentativeRepository.findByCandidatIdAndSerieIdOrderByNumeroTentativeAsc(anyLong(), anyLong()))
                 .thenReturn(List.of());
 
         CodeProgressionDTO progression = codeService.getProgression(1L);
 
-        assertEquals(2, progression.getTotalCycles());
+        assertEquals(2, progression.getTotalSeries());
+        assertEquals(4, progression.getSeries().get(0).getNombreQuestions());
+        assertEquals(1, progression.getSeries().get(1).getNombreQuestions(), "Chaque série garde son propre nombre de questions, indépendamment des autres");
     }
 
+    // ========================= 2. Indépendance des questions entre séries + 3. Ordre stable =========================
+
     @Test
-    @DisplayName("1bis. Nombre de Cycles : cas NON divisible (5 questions / 2 par Cycle = 3 Cycles, dernier partiel)")
-    void testCalculNombreDeCyclesNonDivisible() {
+    @DisplayName("2. Indépendance : la série 2 démarre sur SA propre première question, distincte de celles de la série 1")
+    void testIndependanceQuestionsEntreSeries() {
         CodeConfiguration config = configParDefaut();
-        when(configurationService.getConfigurationEntity()).thenReturn(config);
-        when(questionRepository.findByActifTrueOrderByOrdreAsc())
-                .thenReturn(List.of(question(1, 1), question(2, 2), question(3, 3), question(4, 4), question(5, 5)));
-        when(tentativeRepository.findByCandidatIdAndNumeroCycleOrderByNumeroTentativeAsc(anyLong(), anyInt()))
-                .thenReturn(List.of());
-
-        CodeProgressionDTO progression = codeService.getProgression(1L);
-
-        assertEquals(3, progression.getTotalCycles());
-        assertEquals(1, progression.getCycles().get(2).getNombreQuestions(), "Le dernier Cycle ne doit contenir que la question restante");
-    }
-
-    // ========================= 2. Répartition des questions par Cycle + 3. Ordre stable =========================
-
-    @Test
-    @DisplayName("2. Répartition : le Cycle 2 démarre bien à la 3e question (ordre stable, jamais recalculé par l'id)")
-    void testRepartitionQuestionsParCycle() {
-        CodeConfiguration config = configParDefaut(); // 2 questions par Cycle
         Candidat c = candidat(1L);
+        SerieCode s1 = serie(1L, "Série 1", 1);
+        SerieCode s2 = serie(2L, "Série 2", 2);
+        CodeQuestion questionSerie2 = question(s2, 10L, 1);
+
         when(candidatAccessService.getCandidatCourant()).thenReturn(c);
         when(inscriptionService.getInscriptionActive(1L))
                 .thenReturn(inscription(c, LocalDate.now().minusDays(10), LocalDate.now().plusMonths(6)));
         when(configurationService.getConfigurationEntity()).thenReturn(config);
-        when(questionRepository.findByActifTrueOrderByOrdreAsc())
-                .thenReturn(List.of(question(1, 1), question(2, 2), question(3, 3), question(4, 4)));
-        when(tentativeRepository.existsByCandidatIdAndNumeroCycleAndStatut(1L, 1, StatutTentativeCode.REUSSI)).thenReturn(true);
-        when(tentativeRepository.findByCandidatIdAndNumeroCycleAndStatut(1L, 2, StatutTentativeCode.EN_COURS)).thenReturn(Optional.empty());
-        when(tentativeRepository.findByCandidatIdAndNumeroCycleOrderByNumeroTentativeAsc(1L, 2)).thenReturn(List.of());
+        when(serieRepository.findById(2L)).thenReturn(Optional.of(s2));
+        when(serieRepository.findByActifTrueOrderByOrdreAsc()).thenReturn(List.of(s1, s2));
+        when(tentativeRepository.existsByCandidatIdAndSerieIdAndStatut(1L, 1L, StatutTentativeCode.REUSSI)).thenReturn(true);
+        when(tentativeRepository.findByCandidatIdAndSerieIdAndStatut(1L, 2L, StatutTentativeCode.EN_COURS)).thenReturn(Optional.empty());
+        when(tentativeRepository.findByCandidatIdAndSerieIdOrderByNumeroTentativeAsc(1L, 2L)).thenReturn(List.of());
+        when(questionRepository.findBySerieIdAndActifTrueOrderByOrdreAsc(2L)).thenReturn(List.of(questionSerie2));
         stubSaveTentativePassThrough();
 
-        EtatTentativeDTO etat = codeService.demarrerCycle(2);
+        EtatTentativeDTO etat = codeService.demarrerSerie(2L);
 
         assertNotNull(etat.getEnCours());
-        assertEquals(3, etat.getEnCours().getQuestion().getOrdre(), "Le Cycle 2 doit commencer à la question d'ordre 3");
+        assertEquals("Série 2", etat.getEnCours().getSerieNom());
+        assertEquals(1, etat.getEnCours().getQuestion().getOrdre(), "La série 2 a sa propre numérotation locale, indépendante de la série 1");
     }
 
     @Test
-    @DisplayName("3. Ordre stable : deux tentatives successives sur le même Cycle démarrent toujours par la même question")
+    @DisplayName("3. Ordre stable : deux tentatives successives sur la même série démarrent toujours par la même question")
     void testOrdreQuestionsJamaisMelange() {
         CodeConfiguration config = configParDefaut();
         Candidat c = candidat(1L);
+        SerieCode s1 = serie(1L, "Série 1", 1);
         when(candidatAccessService.getCandidatCourant()).thenReturn(c);
         when(inscriptionService.getInscriptionActive(1L))
                 .thenReturn(inscription(c, LocalDate.now().minusDays(10), LocalDate.now().plusMonths(6)));
         when(configurationService.getConfigurationEntity()).thenReturn(config);
-        when(questionRepository.findByActifTrueOrderByOrdreAsc())
-                .thenReturn(List.of(question(1, 1), question(2, 2)));
-        when(tentativeRepository.findByCandidatIdAndNumeroCycleAndStatut(1L, 1, StatutTentativeCode.EN_COURS)).thenReturn(Optional.empty());
-        when(tentativeRepository.findByCandidatIdAndNumeroCycleOrderByNumeroTentativeAsc(1L, 1))
+        when(serieRepository.findById(1L)).thenReturn(Optional.of(s1));
+        when(serieRepository.findByActifTrueOrderByOrdreAsc()).thenReturn(List.of(s1));
+        when(questionRepository.findBySerieIdAndActifTrueOrderByOrdreAsc(1L))
+                .thenReturn(List.of(question(s1, 1L, 1), question(s1, 2L, 2)));
+        when(tentativeRepository.findByCandidatIdAndSerieIdAndStatut(1L, 1L, StatutTentativeCode.EN_COURS)).thenReturn(Optional.empty());
+        when(tentativeRepository.findByCandidatIdAndSerieIdOrderByNumeroTentativeAsc(1L, 1L))
                 .thenReturn(List.of()) // 1ère tentative : aucun historique
                 .thenReturn(List.of(mock(CodeTentative.class))); // 2e appel (reprise) : une tentative déjà passée
         stubSaveTentativePassThrough();
 
-        EtatTentativeDTO premiere = codeService.demarrerCycle(1);
-        EtatTentativeDTO seconde = codeService.demarrerCycle(1);
+        EtatTentativeDTO premiere = codeService.demarrerSerie(1L);
+        EtatTentativeDTO seconde = codeService.demarrerSerie(1L);
 
         assertEquals(1, premiere.getEnCours().getQuestion().getOrdre());
         assertEquals(1, seconde.getEnCours().getQuestion().getOrdre(), "La question de départ ne doit jamais varier d'une tentative à l'autre");
@@ -207,17 +213,18 @@ class CodeServiceTest {
     // ========================= 4. Calcul du score + 5. Seuil de réussite =========================
 
     @Test
-    @DisplayName("4/5. Score calculé côté serveur et seuil atteint -> Cycle REUSSI")
+    @DisplayName("4/5. Score calculé côté serveur et seuil atteint -> série REUSSIE")
     void testCalculScoreEtSeuilReussi() {
         CodeConfiguration config = configParDefaut(); // seuil = 2, 2 questions
         Candidat c = candidat(1L);
-        CodeTentative tentative = tentativeEnCours(100L, c, 1, config, LocalDateTime.now(), LocalDateTime.now(), 0);
+        SerieCode s1 = serie(1L, "Série 1", 1);
+        CodeTentative tentative = tentativeEnCours(100L, c, s1, config, LocalDateTime.now(), LocalDateTime.now(), 0, 2);
 
         when(tentativeRepository.findById(100L)).thenReturn(Optional.of(tentative));
-        when(questionRepository.findByActifTrueOrderByOrdreAsc())
-                .thenReturn(List.of(question(1, 1), question(2, 2)));
+        when(questionRepository.findBySerieIdAndActifTrueOrderByOrdreAsc(1L))
+                .thenReturn(List.of(question(s1, 1L, 1), question(s1, 2L, 2)));
         stubSaveTentativePassThrough();
-        when(tentativeRepository.countByCandidatIdAndNumeroCycle(1L, 1)).thenReturn(1L);
+        when(tentativeRepository.countByCandidatIdAndSerieId(1L, 1L)).thenReturn(1L);
 
         EtatTentativeDTO apres1 = codeService.repondre(100L, Set.of(LettreReponse.A)); // correcte
         assertNotNull(apres1.getEnCours());
@@ -227,21 +234,22 @@ class CodeServiceTest {
         assertEquals(2, apres2.getResultat().getScore());
         assertEquals(StatutTentativeCode.REUSSI, apres2.getResultat().getStatut());
         assertTrue(apres2.getResultat().isReussi());
-        assertTrue(apres2.getResultat().isCycleSuivantDebloque());
+        assertTrue(apres2.getResultat().isSerieSuivanteDebloquee());
     }
 
     @Test
-    @DisplayName("5bis. Seuil non atteint -> Cycle ECHEC")
+    @DisplayName("5bis. Seuil non atteint -> série ECHEC")
     void testCalculScoreEtSeuilEchec() {
         CodeConfiguration config = configParDefaut(); // seuil = 2, 2 questions
         Candidat c = candidat(1L);
-        CodeTentative tentative = tentativeEnCours(100L, c, 1, config, LocalDateTime.now(), LocalDateTime.now(), 0);
+        SerieCode s1 = serie(1L, "Série 1", 1);
+        CodeTentative tentative = tentativeEnCours(100L, c, s1, config, LocalDateTime.now(), LocalDateTime.now(), 0, 2);
 
         when(tentativeRepository.findById(100L)).thenReturn(Optional.of(tentative));
-        when(questionRepository.findByActifTrueOrderByOrdreAsc())
-                .thenReturn(List.of(question(1, 1), question(2, 2)));
+        when(questionRepository.findBySerieIdAndActifTrueOrderByOrdreAsc(1L))
+                .thenReturn(List.of(question(s1, 1L, 1), question(s1, 2L, 2)));
         stubSaveTentativePassThrough();
-        when(tentativeRepository.countByCandidatIdAndNumeroCycle(1L, 1)).thenReturn(1L);
+        when(tentativeRepository.countByCandidatIdAndSerieId(1L, 1L)).thenReturn(1L);
 
         codeService.repondre(100L, Set.of(LettreReponse.A));  // correcte
         EtatTentativeDTO resultat = codeService.repondre(100L, Set.of(LettreReponse.B)); // incorrecte (bonne réponse = A)
@@ -250,46 +258,51 @@ class CodeServiceTest {
         assertEquals(1, resultat.getResultat().getScore());
         assertEquals(StatutTentativeCode.ECHEC, resultat.getResultat().getStatut());
         assertFalse(resultat.getResultat().isReussi());
-        assertFalse(resultat.getResultat().isCycleSuivantDebloque());
+        assertFalse(resultat.getResultat().isSerieSuivanteDebloquee());
     }
 
     // ========================= 6. Verrouillage / 7. Déblocage =========================
 
     @Test
-    @DisplayName("6. Cycle verrouillé : impossible de démarrer le Cycle 2 sans avoir réussi le Cycle 1")
-    void testCycleVerrouilleSansReussitePrecedente() {
+    @DisplayName("6. Série verrouillée : impossible de démarrer la série 2 sans avoir réussi la série 1")
+    void testSerieVerrouilleeSansReussitePrecedente() {
         CodeConfiguration config = configParDefaut();
         Candidat c = candidat(1L);
+        SerieCode s1 = serie(1L, "Série 1", 1);
+        SerieCode s2 = serie(2L, "Série 2", 2);
         when(candidatAccessService.getCandidatCourant()).thenReturn(c);
         when(inscriptionService.getInscriptionActive(1L))
                 .thenReturn(inscription(c, LocalDate.now().minusDays(10), LocalDate.now().plusMonths(6)));
         when(configurationService.getConfigurationEntity()).thenReturn(config);
-        when(questionRepository.findByActifTrueOrderByOrdreAsc())
-                .thenReturn(List.of(question(1, 1), question(2, 2), question(3, 3), question(4, 4)));
-        when(tentativeRepository.existsByCandidatIdAndNumeroCycleAndStatut(1L, 1, StatutTentativeCode.REUSSI)).thenReturn(false);
+        when(serieRepository.findById(2L)).thenReturn(Optional.of(s2));
+        when(serieRepository.findByActifTrueOrderByOrdreAsc()).thenReturn(List.of(s1, s2));
+        when(tentativeRepository.existsByCandidatIdAndSerieIdAndStatut(1L, 1L, StatutTentativeCode.REUSSI)).thenReturn(false);
 
-        BadRequestException ex = assertThrows(BadRequestException.class, () -> codeService.demarrerCycle(2));
-        assertTrue(ex.getMessage().contains("verrouillé"));
+        BadRequestException ex = assertThrows(BadRequestException.class, () -> codeService.demarrerSerie(2L));
+        assertTrue(ex.getMessage().contains("verrouillée"));
         verify(tentativeRepository, never()).save(any());
     }
 
     @Test
-    @DisplayName("7. Déblocage : le Cycle 2 démarre normalement une fois le Cycle 1 réussi")
-    void testCycleDeverrouilleApresReussite() {
+    @DisplayName("7. Déblocage : la série 2 démarre normalement une fois la série 1 réussie")
+    void testSerieDeverrouilleeApresReussite() {
         CodeConfiguration config = configParDefaut();
         Candidat c = candidat(1L);
+        SerieCode s1 = serie(1L, "Série 1", 1);
+        SerieCode s2 = serie(2L, "Série 2", 2);
         when(candidatAccessService.getCandidatCourant()).thenReturn(c);
         when(inscriptionService.getInscriptionActive(1L))
                 .thenReturn(inscription(c, LocalDate.now().minusDays(10), LocalDate.now().plusMonths(6)));
         when(configurationService.getConfigurationEntity()).thenReturn(config);
-        when(questionRepository.findByActifTrueOrderByOrdreAsc())
-                .thenReturn(List.of(question(1, 1), question(2, 2), question(3, 3), question(4, 4)));
-        when(tentativeRepository.existsByCandidatIdAndNumeroCycleAndStatut(1L, 1, StatutTentativeCode.REUSSI)).thenReturn(true);
-        when(tentativeRepository.findByCandidatIdAndNumeroCycleAndStatut(1L, 2, StatutTentativeCode.EN_COURS)).thenReturn(Optional.empty());
-        when(tentativeRepository.findByCandidatIdAndNumeroCycleOrderByNumeroTentativeAsc(1L, 2)).thenReturn(List.of());
+        when(serieRepository.findById(2L)).thenReturn(Optional.of(s2));
+        when(serieRepository.findByActifTrueOrderByOrdreAsc()).thenReturn(List.of(s1, s2));
+        when(tentativeRepository.existsByCandidatIdAndSerieIdAndStatut(1L, 1L, StatutTentativeCode.REUSSI)).thenReturn(true);
+        when(tentativeRepository.findByCandidatIdAndSerieIdAndStatut(1L, 2L, StatutTentativeCode.EN_COURS)).thenReturn(Optional.empty());
+        when(tentativeRepository.findByCandidatIdAndSerieIdOrderByNumeroTentativeAsc(1L, 2L)).thenReturn(List.of());
+        when(questionRepository.findBySerieIdAndActifTrueOrderByOrdreAsc(2L)).thenReturn(List.of(question(s2, 10L, 1)));
         stubSaveTentativePassThrough();
 
-        EtatTentativeDTO etat = assertDoesNotThrow(() -> codeService.demarrerCycle(2));
+        EtatTentativeDTO etat = assertDoesNotThrow(() -> codeService.demarrerSerie(2L));
         assertNotNull(etat.getEnCours());
     }
 
@@ -301,20 +314,23 @@ class CodeServiceTest {
         CodeConfiguration config = configParDefaut();
         config.setRepriseAutoriseeApresEchec(true);
         Candidat c = candidat(1L);
+        SerieCode s1 = serie(1L, "Série 1", 1);
         when(candidatAccessService.getCandidatCourant()).thenReturn(c);
         when(inscriptionService.getInscriptionActive(1L))
                 .thenReturn(inscription(c, LocalDate.now().minusDays(10), LocalDate.now().plusMonths(6)));
         when(configurationService.getConfigurationEntity()).thenReturn(config);
-        when(questionRepository.findByActifTrueOrderByOrdreAsc())
-                .thenReturn(List.of(question(1, 1), question(2, 2)));
-        when(tentativeRepository.findByCandidatIdAndNumeroCycleAndStatut(1L, 1, StatutTentativeCode.EN_COURS)).thenReturn(Optional.empty());
+        when(serieRepository.findById(1L)).thenReturn(Optional.of(s1));
+        when(serieRepository.findByActifTrueOrderByOrdreAsc()).thenReturn(List.of(s1));
+        when(questionRepository.findBySerieIdAndActifTrueOrderByOrdreAsc(1L))
+                .thenReturn(List.of(question(s1, 1L, 1), question(s1, 2L, 2)));
+        when(tentativeRepository.findByCandidatIdAndSerieIdAndStatut(1L, 1L, StatutTentativeCode.EN_COURS)).thenReturn(Optional.empty());
 
-        CodeTentative echecPrecedent = tentativeEnCours(1L, c, 1, config, LocalDateTime.now(), LocalDateTime.now(), 2);
+        CodeTentative echecPrecedent = tentativeEnCours(1L, c, s1, config, LocalDateTime.now(), LocalDateTime.now(), 2, 2);
         echecPrecedent.setStatut(StatutTentativeCode.ECHEC);
-        when(tentativeRepository.findByCandidatIdAndNumeroCycleOrderByNumeroTentativeAsc(1L, 1)).thenReturn(List.of(echecPrecedent));
+        when(tentativeRepository.findByCandidatIdAndSerieIdOrderByNumeroTentativeAsc(1L, 1L)).thenReturn(List.of(echecPrecedent));
         stubSaveTentativePassThrough();
 
-        EtatTentativeDTO etat = assertDoesNotThrow(() -> codeService.demarrerCycle(1));
+        EtatTentativeDTO etat = assertDoesNotThrow(() -> codeService.demarrerSerie(1L));
         assertNotNull(etat.getEnCours());
         assertEquals(2, etat.getEnCours().getNumeroTentative(), "La reprise doit être la 2e tentative");
     }
@@ -325,19 +341,20 @@ class CodeServiceTest {
         CodeConfiguration config = configParDefaut();
         config.setRepriseAutoriseeApresEchec(false);
         Candidat c = candidat(1L);
+        SerieCode s1 = serie(1L, "Série 1", 1);
         when(candidatAccessService.getCandidatCourant()).thenReturn(c);
         when(inscriptionService.getInscriptionActive(1L))
                 .thenReturn(inscription(c, LocalDate.now().minusDays(10), LocalDate.now().plusMonths(6)));
         when(configurationService.getConfigurationEntity()).thenReturn(config);
-        when(questionRepository.findByActifTrueOrderByOrdreAsc())
-                .thenReturn(List.of(question(1, 1), question(2, 2)));
-        when(tentativeRepository.findByCandidatIdAndNumeroCycleAndStatut(1L, 1, StatutTentativeCode.EN_COURS)).thenReturn(Optional.empty());
+        when(serieRepository.findById(1L)).thenReturn(Optional.of(s1));
+        when(serieRepository.findByActifTrueOrderByOrdreAsc()).thenReturn(List.of(s1));
+        when(tentativeRepository.findByCandidatIdAndSerieIdAndStatut(1L, 1L, StatutTentativeCode.EN_COURS)).thenReturn(Optional.empty());
 
-        CodeTentative echecPrecedent = tentativeEnCours(1L, c, 1, config, LocalDateTime.now(), LocalDateTime.now(), 2);
+        CodeTentative echecPrecedent = tentativeEnCours(1L, c, s1, config, LocalDateTime.now(), LocalDateTime.now(), 2, 2);
         echecPrecedent.setStatut(StatutTentativeCode.ECHEC);
-        when(tentativeRepository.findByCandidatIdAndNumeroCycleOrderByNumeroTentativeAsc(1L, 1)).thenReturn(List.of(echecPrecedent));
+        when(tentativeRepository.findByCandidatIdAndSerieIdOrderByNumeroTentativeAsc(1L, 1L)).thenReturn(List.of(echecPrecedent));
 
-        BadRequestException ex = assertThrows(BadRequestException.class, () -> codeService.demarrerCycle(1));
+        BadRequestException ex = assertThrows(BadRequestException.class, () -> codeService.demarrerSerie(1L));
         assertTrue(ex.getMessage().toLowerCase().contains("reprise"));
     }
 
@@ -349,21 +366,22 @@ class CodeServiceTest {
         CodeConfiguration config = configParDefaut();
         config.setTentativesMax(2);
         Candidat c = candidat(1L);
+        SerieCode s1 = serie(1L, "Série 1", 1);
         when(candidatAccessService.getCandidatCourant()).thenReturn(c);
         when(inscriptionService.getInscriptionActive(1L))
                 .thenReturn(inscription(c, LocalDate.now().minusDays(10), LocalDate.now().plusMonths(6)));
         when(configurationService.getConfigurationEntity()).thenReturn(config);
-        when(questionRepository.findByActifTrueOrderByOrdreAsc())
-                .thenReturn(List.of(question(1, 1), question(2, 2)));
-        when(tentativeRepository.findByCandidatIdAndNumeroCycleAndStatut(1L, 1, StatutTentativeCode.EN_COURS)).thenReturn(Optional.empty());
+        when(serieRepository.findById(1L)).thenReturn(Optional.of(s1));
+        when(serieRepository.findByActifTrueOrderByOrdreAsc()).thenReturn(List.of(s1));
+        when(tentativeRepository.findByCandidatIdAndSerieIdAndStatut(1L, 1L, StatutTentativeCode.EN_COURS)).thenReturn(Optional.empty());
 
-        CodeTentative t1 = tentativeEnCours(1L, c, 1, config, LocalDateTime.now(), LocalDateTime.now(), 2);
+        CodeTentative t1 = tentativeEnCours(1L, c, s1, config, LocalDateTime.now(), LocalDateTime.now(), 2, 2);
         t1.setStatut(StatutTentativeCode.ECHEC);
-        CodeTentative t2 = tentativeEnCours(2L, c, 1, config, LocalDateTime.now(), LocalDateTime.now(), 2);
+        CodeTentative t2 = tentativeEnCours(2L, c, s1, config, LocalDateTime.now(), LocalDateTime.now(), 2, 2);
         t2.setStatut(StatutTentativeCode.ECHEC);
-        when(tentativeRepository.findByCandidatIdAndNumeroCycleOrderByNumeroTentativeAsc(1L, 1)).thenReturn(List.of(t1, t2));
+        when(tentativeRepository.findByCandidatIdAndSerieIdOrderByNumeroTentativeAsc(1L, 1L)).thenReturn(List.of(t1, t2));
 
-        BadRequestException ex = assertThrows(BadRequestException.class, () -> codeService.demarrerCycle(1));
+        BadRequestException ex = assertThrows(BadRequestException.class, () -> codeService.demarrerSerie(1L));
         assertTrue(ex.getMessage().toLowerCase().contains("tentative"));
         verify(tentativeRepository, never()).save(any());
     }
@@ -375,13 +393,14 @@ class CodeServiceTest {
     void testChronometreParQuestionExpireForceReponseIncorrecte() {
         CodeConfiguration config = configParDefaut(); // 30s par question
         Candidat c = candidat(1L);
+        SerieCode s1 = serie(1L, "Série 1", 1);
         LocalDateTime maintenant = LocalDateTime.now();
-        // Question affichée il y a 60s (> 30s autorisées), Cycle démarré aussi il y a 60s (< 900s max)
-        CodeTentative tentative = tentativeEnCours(100L, c, 1, config, maintenant.minusSeconds(60), maintenant.minusSeconds(60), 0);
+        // Question affichée il y a 60s (> 30s autorisées), série démarrée aussi il y a 60s (< 900s max)
+        CodeTentative tentative = tentativeEnCours(100L, c, s1, config, maintenant.minusSeconds(60), maintenant.minusSeconds(60), 0, 2);
 
         when(tentativeRepository.findById(100L)).thenReturn(Optional.of(tentative));
-        when(questionRepository.findByActifTrueOrderByOrdreAsc())
-                .thenReturn(List.of(question(1, 1), question(2, 2)));
+        when(questionRepository.findBySerieIdAndActifTrueOrderByOrdreAsc(1L))
+                .thenReturn(List.of(question(s1, 1L, 1), question(s1, 2L, 2)));
         stubSaveTentativePassThrough();
 
         codeService.repondre(100L, Set.of(LettreReponse.A)); // "A" est la bonne réponse, mais hors délai
@@ -392,19 +411,20 @@ class CodeServiceTest {
         assertTrue(captor.getValue().getReponsesDonnees().isEmpty(), "La réponse hors délai ne doit pas être enregistrée comme si elle avait été donnée à temps");
     }
 
-    // ========================= 12. Durée maximale du Cycle =========================
+    // ========================= 12. Durée maximale de la série =========================
 
     @Test
-    @DisplayName("12. Durée maximale du Cycle dépassée -> tentative automatiquement clôturée EXPIREE")
-    void testDureeMaximaleCycleDepasseeForceExpiration() {
+    @DisplayName("12. Durée maximale de la série dépassée -> tentative automatiquement clôturée EXPIREE")
+    void testDureeMaximaleSerieDepasseeForceExpiration() {
         CodeConfiguration config = configParDefaut(); // 900s max
         Candidat c = candidat(1L);
+        SerieCode s1 = serie(1L, "Série 1", 1);
         LocalDateTime maintenant = LocalDateTime.now();
-        CodeTentative tentative = tentativeEnCours(100L, c, 1, config, maintenant.minusSeconds(1000), maintenant.minusSeconds(10), 0);
+        CodeTentative tentative = tentativeEnCours(100L, c, s1, config, maintenant.minusSeconds(1000), maintenant.minusSeconds(10), 0, 2);
 
         when(tentativeRepository.findById(100L)).thenReturn(Optional.of(tentative));
         stubSaveTentativePassThrough();
-        when(tentativeRepository.countByCandidatIdAndNumeroCycle(1L, 1)).thenReturn(1L);
+        when(tentativeRepository.countByCandidatIdAndSerieId(1L, 1L)).thenReturn(1L);
 
         EtatTentativeDTO etat = codeService.getEtatTentative(100L);
 
@@ -416,14 +436,14 @@ class CodeServiceTest {
     // ========================= 13/14. Les trois expirations distinctes (§14) =========================
 
     @Test
-    @DisplayName("13. Inscription expirée (8 mois) -> accès au Cycle refusé, message spécifique à l'inscription")
+    @DisplayName("13. Inscription expirée (8 mois) -> accès à la série refusé, message spécifique à l'inscription")
     void testInscriptionExpireeBloqueDemarrage() {
         Candidat c = candidat(1L);
         when(candidatAccessService.getCandidatCourant()).thenReturn(c);
         when(inscriptionService.getInscriptionActive(1L))
                 .thenReturn(inscription(c, LocalDate.now().minusMonths(9), LocalDate.now().minusMonths(1))); // échéance dépassée
 
-        BadRequestException ex = assertThrows(BadRequestException.class, () -> codeService.demarrerCycle(1));
+        BadRequestException ex = assertThrows(BadRequestException.class, () -> codeService.demarrerSerie(1L));
         assertTrue(ex.getMessage().toLowerCase().contains("inscription"));
         verifyNoInteractions(questionRepository);
     }
@@ -440,7 +460,7 @@ class CodeServiceTest {
                 .thenReturn(inscription(c, LocalDate.now().minusDays(40), LocalDate.now().plusMonths(6)));
         when(configurationService.getConfigurationEntity()).thenReturn(config);
 
-        BadRequestException ex = assertThrows(BadRequestException.class, () -> codeService.demarrerCycle(1));
+        BadRequestException ex = assertThrows(BadRequestException.class, () -> codeService.demarrerSerie(1L));
         assertTrue(ex.getMessage().toLowerCase().contains("code"));
         verifyNoInteractions(questionRepository);
     }
@@ -451,12 +471,13 @@ class CodeServiceTest {
     @DisplayName("15. Historique : toutes les tentatives sont restituées, dans l'ordre renvoyé par le dépôt")
     void testHistoriqueOrdonneEtComplet() {
         Candidat c = candidat(1L);
-        CodeTentative t1 = CodeTentative.builder().id(1L).candidat(c).numeroCycle(1).numeroTentative(1)
+        SerieCode s1 = serie(1L, "Série 1", 1);
+        CodeTentative t1 = CodeTentative.builder().id(1L).candidat(c).serie(s1).numeroTentative(1)
                 .dateDebut(LocalDateTime.now().minusDays(2)).dateFin(LocalDateTime.now().minusDays(2))
-                .score(20).totalQuestionsCycle(30).statut(StatutTentativeCode.ECHEC).build();
-        CodeTentative t2 = CodeTentative.builder().id(2L).candidat(c).numeroCycle(1).numeroTentative(2)
+                .score(20).totalQuestionsSerie(30).statut(StatutTentativeCode.ECHEC).build();
+        CodeTentative t2 = CodeTentative.builder().id(2L).candidat(c).serie(s1).numeroTentative(2)
                 .dateDebut(LocalDateTime.now().minusDays(1)).dateFin(LocalDateTime.now().minusDays(1))
-                .score(26).totalQuestionsCycle(30).statut(StatutTentativeCode.REUSSI).build();
+                .score(26).totalQuestionsSerie(30).statut(StatutTentativeCode.REUSSI).build();
 
         when(tentativeRepository.findByCandidatIdOrderByDateDebutDesc(1L)).thenReturn(List.of(t2, t1));
 
@@ -472,19 +493,17 @@ class CodeServiceTest {
     // ========================= 17. Contournement des règles par l'API =========================
 
     @Test
-    @DisplayName("17. Impossible de démarrer un numéro de Cycle inexistant en appelant directement l'API")
-    void testDemarrerCycleInvalideRefuse() {
-        CodeConfiguration config = configParDefaut();
+    @DisplayName("17. Impossible de démarrer une série inexistante ou inactive en appelant directement l'API")
+    void testDemarrerSerieInvalideRefuse() {
         Candidat c = candidat(1L);
         when(candidatAccessService.getCandidatCourant()).thenReturn(c);
         when(inscriptionService.getInscriptionActive(1L))
                 .thenReturn(inscription(c, LocalDate.now().minusDays(10), LocalDate.now().plusMonths(6)));
-        when(configurationService.getConfigurationEntity()).thenReturn(config);
-        when(questionRepository.findByActifTrueOrderByOrdreAsc())
-                .thenReturn(List.of(question(1, 1), question(2, 2))); // 1 seul Cycle possible
+        when(configurationService.getConfigurationEntity()).thenReturn(configParDefaut());
+        when(serieRepository.findById(999L)).thenReturn(Optional.empty());
 
-        BadRequestException ex = assertThrows(BadRequestException.class, () -> codeService.demarrerCycle(5));
-        assertTrue(ex.getMessage().toLowerCase().contains("cycle"));
+        BadRequestException ex = assertThrows(BadRequestException.class, () -> codeService.demarrerSerie(999L));
+        assertTrue(ex.getMessage().toLowerCase().contains("série"));
         verify(tentativeRepository, never()).save(any());
     }
 
@@ -496,11 +515,12 @@ class CodeServiceTest {
         CodeConfiguration config = configParDefaut();
         config.setCorrectionImmediate(true);
         Candidat c = candidat(1L);
-        CodeTentative tentative = tentativeEnCours(100L, c, 1, config, LocalDateTime.now(), LocalDateTime.now(), 0);
-        CodeQuestion question = questionAvecExplication(1, "Explication de la question 1");
+        SerieCode s1 = serie(1L, "Série 1", 1);
+        CodeTentative tentative = tentativeEnCours(100L, c, s1, config, LocalDateTime.now(), LocalDateTime.now(), 0, 2);
+        CodeQuestion question = questionAvecExplication(s1, 1, "Explication de la question 1");
 
         when(tentativeRepository.findById(100L)).thenReturn(Optional.of(tentative));
-        when(questionRepository.findByActifTrueOrderByOrdreAsc()).thenReturn(List.of(question, question(2, 2)));
+        when(questionRepository.findBySerieIdAndActifTrueOrderByOrdreAsc(1L)).thenReturn(List.of(question, question(s1, 2L, 2)));
         stubSaveTentativePassThrough();
 
         EtatTentativeDTO etat = codeService.repondre(100L, Set.of(LettreReponse.A));
@@ -517,11 +537,12 @@ class CodeServiceTest {
         CodeConfiguration config = configParDefaut();
         config.setCorrectionImmediate(true);
         Candidat c = candidat(1L);
-        CodeTentative tentative = tentativeEnCours(100L, c, 1, config, LocalDateTime.now(), LocalDateTime.now(), 0);
-        CodeQuestion question = questionAvecExplication(1, "Explication de la question 1");
+        SerieCode s1 = serie(1L, "Série 1", 1);
+        CodeTentative tentative = tentativeEnCours(100L, c, s1, config, LocalDateTime.now(), LocalDateTime.now(), 0, 2);
+        CodeQuestion question = questionAvecExplication(s1, 1, "Explication de la question 1");
 
         when(tentativeRepository.findById(100L)).thenReturn(Optional.of(tentative));
-        when(questionRepository.findByActifTrueOrderByOrdreAsc()).thenReturn(List.of(question, question(2, 2)));
+        when(questionRepository.findBySerieIdAndActifTrueOrderByOrdreAsc(1L)).thenReturn(List.of(question, question(s1, 2L, 2)));
         stubSaveTentativePassThrough();
 
         EtatTentativeDTO etat = codeService.repondre(100L, Set.of(LettreReponse.B)); // bonne réponse = A
@@ -538,11 +559,12 @@ class CodeServiceTest {
         CodeConfiguration config = configParDefaut();
         config.setCorrectionImmediate(false);
         Candidat c = candidat(1L);
-        CodeTentative tentative = tentativeEnCours(100L, c, 1, config, LocalDateTime.now(), LocalDateTime.now(), 0);
+        SerieCode s1 = serie(1L, "Série 1", 1);
+        CodeTentative tentative = tentativeEnCours(100L, c, s1, config, LocalDateTime.now(), LocalDateTime.now(), 0, 2);
 
         when(tentativeRepository.findById(100L)).thenReturn(Optional.of(tentative));
-        when(questionRepository.findByActifTrueOrderByOrdreAsc())
-                .thenReturn(List.of(question(1, 1), question(2, 2)));
+        when(questionRepository.findBySerieIdAndActifTrueOrderByOrdreAsc(1L))
+                .thenReturn(List.of(question(s1, 1L, 1), question(s1, 2L, 2)));
         stubSaveTentativePassThrough();
 
         EtatTentativeDTO etat = codeService.repondre(100L, Set.of(LettreReponse.A));
@@ -554,19 +576,20 @@ class CodeServiceTest {
     @DisplayName("La correction respecte le snapshot figé de la tentative, jamais la configuration courante (deux tentatives, deux snapshots différents)")
     void testCorrectionUtiliseLeSnapshotDeLaTentative() {
         Candidat c = candidat(1L);
+        SerieCode s1 = serie(1L, "Série 1", 1);
 
         CodeConfiguration configAvecCorrection = configParDefaut();
         configAvecCorrection.setCorrectionImmediate(true);
-        CodeTentative tentativeAvecCorrection = tentativeEnCours(100L, c, 1, configAvecCorrection, LocalDateTime.now(), LocalDateTime.now(), 0);
+        CodeTentative tentativeAvecCorrection = tentativeEnCours(100L, c, s1, configAvecCorrection, LocalDateTime.now(), LocalDateTime.now(), 0, 2);
 
         CodeConfiguration configSansCorrection = configParDefaut();
         configSansCorrection.setCorrectionImmediate(false);
-        CodeTentative tentativeSansCorrection = tentativeEnCours(101L, c, 1, configSansCorrection, LocalDateTime.now(), LocalDateTime.now(), 0);
+        CodeTentative tentativeSansCorrection = tentativeEnCours(101L, c, s1, configSansCorrection, LocalDateTime.now(), LocalDateTime.now(), 0, 2);
 
         when(tentativeRepository.findById(100L)).thenReturn(Optional.of(tentativeAvecCorrection));
         when(tentativeRepository.findById(101L)).thenReturn(Optional.of(tentativeSansCorrection));
-        when(questionRepository.findByActifTrueOrderByOrdreAsc())
-                .thenReturn(List.of(question(1, 1), question(2, 2)));
+        when(questionRepository.findBySerieIdAndActifTrueOrderByOrdreAsc(1L))
+                .thenReturn(List.of(question(s1, 1L, 1), question(s1, 2L, 2)));
         stubSaveTentativePassThrough();
 
         EtatTentativeDTO etatAvecCorrection = codeService.repondre(100L, Set.of(LettreReponse.A));
@@ -577,9 +600,9 @@ class CodeServiceTest {
         verifyNoInteractions(configurationService);
     }
 
-    private CodeQuestion questionAvecExplication(int ordre, String explication) {
+    private CodeQuestion questionAvecExplication(SerieCode serie, int ordre, String explication) {
         return CodeQuestion.builder()
-                .id((long) ordre).ordre(ordre).enonce("Question " + ordre)
+                .id((long) ordre).serie(serie).ordre(ordre).enonce("Question " + ordre)
                 .reponseA("Bonne").reponseB("Mauvaise")
                 .nombreOptions(2)
                 .bonneReponses(LettreReponse.toCsv(Set.of(LettreReponse.A)))

@@ -9,11 +9,11 @@ import java.util.Optional;
 
 @Repository
 public interface CodeQuestionRepository extends JpaRepository<CodeQuestion, Long> {
-    List<CodeQuestion> findByActifTrueOrderByOrdreAsc();
-    List<CodeQuestion> findAllByOrderByOrdreAsc();
-    long countByActifTrue();
-    boolean existsByOrdre(int ordre);
-    boolean existsByOrdreAndIdNot(int ordre, Long id);
-    Optional<CodeQuestion> findByOrdre(int ordre);
-    Optional<CodeQuestion> findTopByOrderByOrdreDesc();
+    List<CodeQuestion> findBySerieIdAndActifTrueOrderByOrdreAsc(Long serieId);
+    List<CodeQuestion> findBySerieIdOrderByOrdreAsc(Long serieId);
+    long countBySerieId(Long serieId);
+    boolean existsBySerieId(Long serieId);
+    boolean existsBySerieIdAndOrdre(Long serieId, int ordre);
+    boolean existsBySerieIdAndOrdreAndIdNot(Long serieId, int ordre, Long id);
+    Optional<CodeQuestion> findTopBySerieIdOrderByOrdreDesc(Long serieId);
 }

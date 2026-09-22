@@ -7,16 +7,15 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 /**
- * Une tentative d'un candidat sur un Cycle donné. Le Cycle n'est pas une entité persistée
- * (calculé à la volée depuis CodeConfiguration.questionsParCycle et la banque de questions),
- * seul son numéro est conservé ici. Les colonnes "snap*" figent la configuration réellement
- * appliquée au moment du démarrage, pour qu'une modification ultérieure des règles ne
- * réinterprète jamais rétroactivement une tentative déjà en cours ou terminée.
+ * Une tentative d'un candidat sur une {@link SerieCode} donnée. Les colonnes "snap*" figent
+ * la configuration réellement appliquée au moment du démarrage, pour qu'une modification
+ * ultérieure des règles ne réinterprète jamais rétroactivement une tentative déjà en cours
+ * ou terminée.
  */
 @Entity
 @Table(name = "code_tentatives", indexes = {
     @Index(name = "idx_code_tentative_candidat", columnList = "candidat_id"),
-    @Index(name = "idx_code_tentative_candidat_cycle", columnList = "candidat_id, numero_cycle")
+    @Index(name = "idx_code_tentative_candidat_serie", columnList = "candidat_id, serie_id")
 })
 @Getter
 @Setter
@@ -38,8 +37,9 @@ public class CodeTentative {
     @JoinColumn(name = "inscription_id")
     private Inscription inscription;
 
-    @Column(name = "numero_cycle", nullable = false)
-    private int numeroCycle;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "serie_id", nullable = false)
+    private SerieCode serie;
 
     @Column(name = "numero_tentative", nullable = false)
     private int numeroTentative;
@@ -78,13 +78,11 @@ public class CodeTentative {
 
     // --- Configuration appliquée à cette tentative (snapshot, cf. javadoc de la classe) ---
 
-    @Column(name = "snap_questions_par_cycle", nullable = false)
-    private int snapQuestionsParCycle;
-
-    /** Nombre réel de questions de CE Cycle (peut être inférieur à snapQuestionsParCycle
-     *  pour le dernier Cycle, si le total de questions actives n'est pas un multiple exact). */
-    @Column(name = "total_questions_cycle", nullable = false)
-    private int totalQuestionsCycle;
+    /** Nombre de questions de cette série au moment du démarrage de la tentative (fixé une
+     *  fois pour toutes : ajouter/retirer des questions à la série ensuite ne doit jamais
+     *  réinterpréter rétroactivement une tentative déjà en cours ou terminée). */
+    @Column(name = "total_questions_serie", nullable = false)
+    private int totalQuestionsSerie;
 
     @Column(name = "snap_seuil_reussite", nullable = false)
     private int snapSeuilReussite;
@@ -92,8 +90,8 @@ public class CodeTentative {
     @Column(name = "snap_temps_par_question_secondes", nullable = false)
     private int snapTempsParQuestionSecondes;
 
-    @Column(name = "snap_duree_max_cycle_secondes", nullable = false)
-    private int snapDureeMaxCycleSecondes;
+    @Column(name = "snap_duree_max_serie_secondes", nullable = false)
+    private int snapDureeMaxSerieSecondes;
 
     @Column(name = "snap_tentatives_max", nullable = false)
     private int snapTentativesMax;

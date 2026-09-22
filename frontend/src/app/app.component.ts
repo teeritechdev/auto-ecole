@@ -131,7 +131,7 @@ import { extraireMessageErreur } from './core/utils/error-utils';
               @if (hasPermission(['CODE_QUESTIONS_GERER'])) {
                 <a routerLink="/code/questions" routerLinkActive="active" class="nav-item">
                   <svg class="nav-icon icon-slate" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>
-                  <span>Quiz Exercice Code</span>
+                  <span>Séries & Questions Code</span>
                 </a>
               }
               @if (showAdminSection) {

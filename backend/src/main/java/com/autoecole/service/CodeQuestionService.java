@@ -4,10 +4,12 @@ import com.autoecole.dto.CodeDTOs.CodeQuestionDTO;
 import com.autoecole.dto.CodeDTOs.CreateCodeQuestionRequest;
 import com.autoecole.dto.CodeDTOs.UpdateCodeQuestionRequest;
 import com.autoecole.entity.CodeQuestion;
+import com.autoecole.entity.SerieCode;
 import com.autoecole.entity.enums.LettreReponse;
 import com.autoecole.exception.BadRequestException;
 import com.autoecole.exception.ResourceNotFoundException;
 import com.autoecole.repository.CodeQuestionRepository;
+import com.autoecole.repository.SerieCodeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,36 +20,40 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Gestion de la banque de questions du Code de la route (ADMIN uniquement). L'ordre des
- * questions est stable et jamais mélangé (cf. §4 du cahier des charges du module) : il
- * détermine aussi le découpage en Cycles, calculé à la volée par CodeService.
+ * Gestion de la banque de questions du Code de la route (ADMIN/MONITEUR), organisée par
+ * série. L'ordre des questions est stable et jamais mélangé au sein de sa série (cf. §4 du
+ * cahier des charges du module).
  */
 @Service
 @RequiredArgsConstructor
 public class CodeQuestionService {
 
     private final CodeQuestionRepository questionRepository;
+    private final SerieCodeRepository serieRepository;
 
-    public List<CodeQuestionDTO> getAllQuestions() {
-        return questionRepository.findAllByOrderByOrdreAsc().stream()
+    public List<CodeQuestionDTO> getQuestionsDeSerie(Long serieId) {
+        return questionRepository.findBySerieIdOrderByOrdreAsc(serieId).stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
 
     @Transactional
     public CodeQuestionDTO createQuestion(CreateCodeQuestionRequest request) {
+        SerieCode serie = serieRepository.findById(request.getSerieId())
+                .orElseThrow(() -> new ResourceNotFoundException("Série introuvable"));
         validerReponse(request.getBonnesReponses(), request.getNombreOptions());
         validateImage(request.getImageData());
 
         int ordre = request.getOrdre() != null
                 ? request.getOrdre()
-                : questionRepository.findTopByOrderByOrdreDesc().map(q -> q.getOrdre() + 1).orElse(1);
+                : questionRepository.findTopBySerieIdOrderByOrdreDesc(serie.getId()).map(q -> q.getOrdre() + 1).orElse(1);
 
-        if (questionRepository.existsByOrdre(ordre)) {
-            throw new BadRequestException("Une question existe déjà à l'ordre " + ordre);
+        if (questionRepository.existsBySerieIdAndOrdre(serie.getId(), ordre)) {
+            throw new BadRequestException("Une question existe déjà à l'ordre " + ordre + " dans cette série");
         }
 
         CodeQuestion question = CodeQuestion.builder()
+                .serie(serie)
                 .ordre(ordre)
                 .enonce(request.getEnonce().trim())
                 .imageData(request.getImageData())
@@ -55,6 +61,8 @@ public class CodeQuestionService {
                 .reponseB(texteOuNull(request.getReponseB()))
                 .reponseC(texteOuNull(request.getReponseC()))
                 .reponseD(texteOuNull(request.getReponseD()))
+                .sousTitreGroupeAB(texteOuNull(request.getSousTitreGroupeAB()))
+                .sousTitreGroupeCD(texteOuNull(request.getSousTitreGroupeCD()))
                 .nombreOptions(request.getNombreOptions())
                 .bonneReponses(LettreReponse.toCsv(request.getBonnesReponses()))
                 .explication(request.getExplication())
@@ -72,8 +80,8 @@ public class CodeQuestionService {
         validerReponse(request.getBonnesReponses(), request.getNombreOptions());
         validateImage(request.getImageData());
 
-        if (questionRepository.existsByOrdreAndIdNot(request.getOrdre(), id)) {
-            throw new BadRequestException("Une autre question existe déjà à l'ordre " + request.getOrdre());
+        if (questionRepository.existsBySerieIdAndOrdreAndIdNot(question.getSerie().getId(), request.getOrdre(), id)) {
+            throw new BadRequestException("Une autre question existe déjà à l'ordre " + request.getOrdre() + " dans cette série");
         }
 
         question.setOrdre(request.getOrdre());
@@ -83,6 +91,8 @@ public class CodeQuestionService {
         question.setReponseB(texteOuNull(request.getReponseB()));
         question.setReponseC(texteOuNull(request.getReponseC()));
         question.setReponseD(texteOuNull(request.getReponseD()));
+        question.setSousTitreGroupeAB(texteOuNull(request.getSousTitreGroupeAB()));
+        question.setSousTitreGroupeCD(texteOuNull(request.getSousTitreGroupeCD()));
         question.setNombreOptions(request.getNombreOptions());
         question.setBonneReponses(LettreReponse.toCsv(request.getBonnesReponses()));
         question.setExplication(request.getExplication());
@@ -134,6 +144,7 @@ public class CodeQuestionService {
     private CodeQuestionDTO mapToDTO(CodeQuestion q) {
         return CodeQuestionDTO.builder()
                 .id(q.getId())
+                .serieId(q.getSerie().getId())
                 .ordre(q.getOrdre())
                 .enonce(q.getEnonce())
                 .imageData(q.getImageData())
@@ -141,6 +152,8 @@ public class CodeQuestionService {
                 .reponseB(q.getReponseB())
                 .reponseC(q.getReponseC())
                 .reponseD(q.getReponseD())
+                .sousTitreGroupeAB(q.getSousTitreGroupeAB())
+                .sousTitreGroupeCD(q.getSousTitreGroupeCD())
                 .nombreOptions(q.getNombreOptionsEffectif())
                 .bonnesReponses(LettreReponse.fromCsv(q.getBonneReponses()))
                 .explication(q.getExplication())

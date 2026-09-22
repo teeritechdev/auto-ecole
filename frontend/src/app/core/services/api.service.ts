@@ -28,6 +28,7 @@ import {
   Identite,
   IdentitePublique,
   CodeConfiguration,
+  CodeSerie,
   CodeQuestion,
   CodeProgression,
   EtatTentative,
@@ -466,8 +467,24 @@ export class ApiService {
     return this.http.put<CodeConfiguration>(`${this.base}/code/configuration`, data);
   }
 
-  public getCodeQuestions(): Observable<CodeQuestion[]> {
-    return this.http.get<CodeQuestion[]>(`${this.base}/code/questions`);
+  public getCodeSeries(): Observable<CodeSerie[]> {
+    return this.http.get<CodeSerie[]>(`${this.base}/code/series`);
+  }
+
+  public createCodeSerie(data: Partial<CodeSerie>): Observable<CodeSerie> {
+    return this.http.post<CodeSerie>(`${this.base}/code/series`, data);
+  }
+
+  public updateCodeSerie(id: number, data: Partial<CodeSerie>): Observable<CodeSerie> {
+    return this.http.put<CodeSerie>(`${this.base}/code/series/${id}`, data);
+  }
+
+  public deleteCodeSerie(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/code/series/${id}`);
+  }
+
+  public getCodeQuestions(serieId: number): Observable<CodeQuestion[]> {
+    return this.http.get<CodeQuestion[]>(`${this.base}/code/questions?serieId=${serieId}`);
   }
 
   public createCodeQuestion(data: Partial<CodeQuestion>): Observable<CodeQuestion> {
@@ -490,8 +507,8 @@ export class ApiService {
     return this.http.get<CodeHistoriqueLigne[]>(`${this.base}/code/historique/${candidatId}`);
   }
 
-  public demarrerCycleCode(numero: number): Observable<EtatTentative> {
-    return this.http.post<EtatTentative>(`${this.base}/code/cycles/${numero}/start`, {});
+  public demarrerSerieCode(serieId: number): Observable<EtatTentative> {
+    return this.http.post<EtatTentative>(`${this.base}/code/series/${serieId}/start`, {});
   }
 
   public getEtatTentativeCode(tentativeId: number): Observable<EtatTentative> {

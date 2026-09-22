@@ -6,13 +6,13 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 /**
- * Une question de la banque du Code de la route. L'ordre définit à la fois l'affichage
- * stable (pas de mélange aléatoire, cf. §4 du cahier des charges du module) et le découpage
- * en Cycles, calculé à la volée par CodeQuestionService (pas de table CodeCycle persistée).
+ * Une question appartenant à une {@link SerieCode}. L'ordre définit l'affichage stable
+ * (pas de mélange aléatoire, cf. §4 du cahier des charges du module) au sein de sa série
+ * — il est unique par série, pas globalement.
  */
 @Entity
 @Table(name = "code_questions", indexes = {
-    @Index(name = "idx_code_question_ordre", columnList = "ordre", unique = true)
+    @Index(name = "idx_code_question_serie_ordre", columnList = "serie_id, ordre", unique = true)
 })
 @Getter
 @Setter
@@ -25,7 +25,11 @@ public class CodeQuestion {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "serie_id", nullable = false)
+    private SerieCode serie;
+
+    @Column(nullable = false)
     private int ordre;
 
     @Column(columnDefinition = "TEXT", nullable = false)
@@ -48,6 +52,15 @@ public class CodeQuestion {
 
     @Column(name = "reponse_d", length = 500)
     private String reponseD;
+
+    /** Libellé optionnel affiché en gras avant la paire d'options A/B (ex: "pour aller à la
+     *  station service"), pour une question à choix groupés façon examen officiel. */
+    @Column(name = "sous_titre_groupe_ab", length = 200)
+    private String sousTitreGroupeAB;
+
+    /** Même principe pour la paire C/D (question à 4 choix uniquement, cf. nombreOptions). */
+    @Column(name = "sous_titre_groupe_cd", length = 200)
+    private String sousTitreGroupeCD;
 
     /** Nombre de choix affichés pour cette question (2 à 4). Nul pour les questions créées
      *  avant la réforme multi-réponses/texte-optionnel : cf. getNombreOptionsEffectif(), qui

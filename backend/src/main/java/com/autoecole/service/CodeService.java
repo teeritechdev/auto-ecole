@@ -7,6 +7,7 @@ import com.autoecole.entity.CodeQuestion;
 import com.autoecole.entity.CodeReponseTentative;
 import com.autoecole.entity.CodeTentative;
 import com.autoecole.entity.Inscription;
+import com.autoecole.entity.SerieCode;
 import com.autoecole.entity.enums.LettreReponse;
 import com.autoecole.entity.enums.StatutTentativeCode;
 import com.autoecole.entity.enums.TypeEpreuve;
@@ -15,6 +16,7 @@ import com.autoecole.exception.ResourceNotFoundException;
 import com.autoecole.repository.CodeQuestionRepository;
 import com.autoecole.repository.CodeReponseTentativeRepository;
 import com.autoecole.repository.CodeTentativeRepository;
+import com.autoecole.repository.SerieCodeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,10 +30,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Cœur métier du module Code de la route : progression par Cycle, démarrage/déroulement
- * d'une tentative, chronomètre côté serveur, historique. Un Cycle n'est jamais persisté :
- * c'est une tranche calculée à la volée sur la banque de questions actives, ordonnées et
- * jamais mélangées (cf. §4 du cahier des charges du module).
+ * Cœur métier du module Code de la route : progression par Série, démarrage/déroulement
+ * d'une tentative, chronomètre côté serveur, historique. Une Série est créée librement par
+ * l'ADMIN (cf. CodeSerieService) avec ses propres questions assignées, jamais mélangées
+ * (cf. §4 du cahier des charges du module).
  */
 @Service
 @RequiredArgsConstructor
@@ -39,6 +41,7 @@ public class CodeService {
 
     private final CodeConfigurationService configurationService;
     private final CodeQuestionRepository questionRepository;
+    private final SerieCodeRepository serieRepository;
     private final CodeTentativeRepository tentativeRepository;
     private final CodeReponseTentativeRepository reponseRepository;
     private final InscriptionService inscriptionService;
@@ -51,18 +54,16 @@ public class CodeService {
         verifierAccesCandidat(candidatId);
 
         CodeConfiguration config = configurationService.getConfigurationEntity();
-        List<CodeQuestion> questionsActives = questionRepository.findByActifTrueOrderByOrdreAsc();
-        int totalCycles = calculerNombreDeCycles(questionsActives.size(), config.getQuestionsParCycle());
-
+        List<SerieCode> series = serieRepository.findByActifTrueOrderByOrdreAsc();
         boolean accesExpire = estAccesExpire(candidatId, config);
 
-        List<CodeCycleStatutDTO> cycles = new ArrayList<>();
-        boolean cyclePrecedentReussi = true; // le Cycle 1 est toujours disponible au départ
-        int cyclesReussis = 0;
+        List<CodeSerieStatutDTO> statutsSeries = new ArrayList<>();
+        boolean seriePrecedenteReussie = true; // la 1ère série est toujours disponible au départ
+        int seriesReussies = 0;
 
-        for (int numero = 1; numero <= totalCycles; numero++) {
+        for (SerieCode serie : series) {
             List<CodeTentative> tentatives = tentativeRepository
-                    .findByCandidatIdAndNumeroCycleOrderByNumeroTentativeAsc(candidatId, numero);
+                    .findByCandidatIdAndSerieIdOrderByNumeroTentativeAsc(candidatId, serie.getId());
 
             boolean reussi = tentatives.stream().anyMatch(t -> t.getStatut() == StatutTentativeCode.REUSSI);
             Integer meilleurScore = tentatives.stream()
@@ -71,38 +72,38 @@ public class CodeService {
                     .max(Integer::compareTo)
                     .orElse(null);
 
-            StatutCycle statut;
+            StatutSerie statut;
             if (reussi) {
-                statut = StatutCycle.REUSSI;
-                cyclesReussis++;
-            } else if (!config.isDeblocageAutomatiqueCycleSuivant() || cyclePrecedentReussi) {
-                statut = tentatives.isEmpty() ? StatutCycle.DISPONIBLE : StatutCycle.ECHEC;
+                statut = StatutSerie.REUSSI;
+                seriesReussies++;
+            } else if (!config.isDeblocageAutomatiqueSerieSuivante() || seriePrecedenteReussie) {
+                statut = tentatives.isEmpty() ? StatutSerie.DISPONIBLE : StatutSerie.ECHEC;
             } else {
-                statut = StatutCycle.VERROUILLE;
+                statut = StatutSerie.VERROUILLE;
             }
 
-            int nbQuestionsCycle = Math.min(config.getQuestionsParCycle(),
-                    questionsActives.size() - (numero - 1) * config.getQuestionsParCycle());
+            long nbQuestionsSerie = questionRepository.countBySerieId(serie.getId());
 
-            cycles.add(CodeCycleStatutDTO.builder()
-                    .numeroCycle(numero)
-                    .nombreQuestions(nbQuestionsCycle)
+            statutsSeries.add(CodeSerieStatutDTO.builder()
+                    .serieId(serie.getId())
+                    .serieNom(serie.getNom())
+                    .nombreQuestions((int) nbQuestionsSerie)
                     .statut(statut)
                     .meilleurScore(meilleurScore)
                     .nbTentativesUtilisees(tentatives.size())
                     .tentativesMax(config.getTentativesMax())
                     .build());
 
-            cyclePrecedentReussi = reussi;
+            seriePrecedenteReussie = reussi;
         }
 
         return CodeProgressionDTO.builder()
                 .candidatId(candidatId)
-                .totalCycles(totalCycles)
-                .cyclesReussis(cyclesReussis)
-                .pourcentageProgression(totalCycles == 0 ? 0 : (cyclesReussis * 100.0) / totalCycles)
+                .totalSeries(series.size())
+                .seriesReussies(seriesReussies)
+                .pourcentageProgression(series.isEmpty() ? 0 : (seriesReussies * 100.0) / series.size())
                 .accesExpire(accesExpire)
-                .cycles(cycles)
+                .series(statutsSeries)
                 .build();
     }
 
@@ -111,12 +112,13 @@ public class CodeService {
         return tentativeRepository.findByCandidatIdOrderByDateDebutDesc(candidatId).stream()
                 .map(t -> CodeHistoriqueLigneDTO.builder()
                         .tentativeId(t.getId())
-                        .numeroCycle(t.getNumeroCycle())
+                        .serieId(t.getSerie().getId())
+                        .serieNom(t.getSerie().getNom())
                         .numeroTentative(t.getNumeroTentative())
                         .dateDebut(t.getDateDebut())
                         .dateFin(t.getDateFin())
                         .score(t.getScore())
-                        .totalQuestions(t.getTotalQuestionsCycle())
+                        .totalQuestions(t.getTotalQuestionsSerie())
                         .statut(t.getStatut())
                         .build())
                 .collect(Collectors.toList());
@@ -139,16 +141,16 @@ public class CodeService {
         siteAccessService.verifierAccesEpreuve(TypeEpreuve.CODE);
     }
 
-    // ============================= DÉMARRAGE D'UN CYCLE =============================
+    // ============================= DÉMARRAGE D'UNE SÉRIE =============================
 
     @Transactional
-    public EtatTentativeDTO demarrerCycle(int numeroCycle) {
+    public EtatTentativeDTO demarrerSerie(Long serieId) {
         Candidat candidat = candidatAccessService.getCandidatCourant();
         Long candidatId = candidat.getId();
 
         Inscription inscription = inscriptionService.getInscriptionActive(candidatId);
         if (LocalDate.now().isAfter(inscription.getDateEcheance())) {
-            throw new BadRequestException("Votre inscription a expiré : le module Code n'est plus accessible pour ce cycle de formation");
+            throw new BadRequestException("Votre inscription a expiré : le module Code n'est plus accessible pour cette série");
         }
 
         CodeConfiguration config = configurationService.getConfigurationEntity();
@@ -156,71 +158,71 @@ public class CodeService {
             throw new BadRequestException("L'accès au module Code de la route a expiré");
         }
 
-        List<CodeQuestion> questionsActives = questionRepository.findByActifTrueOrderByOrdreAsc();
-        int totalCycles = calculerNombreDeCycles(questionsActives.size(), config.getQuestionsParCycle());
-        if (numeroCycle < 1 || numeroCycle > totalCycles) {
-            throw new BadRequestException("Cycle invalide");
-        }
+        SerieCode serie = serieRepository.findById(serieId)
+                .filter(SerieCode::isActif)
+                .orElseThrow(() -> new BadRequestException("Série invalide"));
 
-        if (config.isDeblocageAutomatiqueCycleSuivant() && numeroCycle > 1) {
-            boolean cyclePrecedentReussi = tentativeRepository
-                    .existsByCandidatIdAndNumeroCycleAndStatut(candidatId, numeroCycle - 1, StatutTentativeCode.REUSSI);
-            if (!cyclePrecedentReussi) {
-                throw new BadRequestException("Ce Cycle est verrouillé : réussissez d'abord le Cycle " + (numeroCycle - 1));
+        List<SerieCode> series = serieRepository.findByActifTrueOrderByOrdreAsc();
+        int position = series.indexOf(serie);
+        if (config.isDeblocageAutomatiqueSerieSuivante() && position > 0) {
+            SerieCode seriePrecedente = series.get(position - 1);
+            boolean seriePrecedenteReussie = tentativeRepository
+                    .existsByCandidatIdAndSerieIdAndStatut(candidatId, seriePrecedente.getId(), StatutTentativeCode.REUSSI);
+            if (!seriePrecedenteReussie) {
+                throw new BadRequestException("Cette série est verrouillée : réussissez d'abord la série « " + seriePrecedente.getNom() + " »");
             }
         }
 
         // Reprise d'une tentative déjà en cours (rafraîchissement de page, etc.)
         CodeTentative tentativeEnCours = tentativeRepository
-                .findByCandidatIdAndNumeroCycleAndStatut(candidatId, numeroCycle, StatutTentativeCode.EN_COURS)
+                .findByCandidatIdAndSerieIdAndStatut(candidatId, serieId, StatutTentativeCode.EN_COURS)
                 .orElse(null);
         if (tentativeEnCours != null) {
             EtatTentativeDTO expire = cloturerSiExpiree(tentativeEnCours);
             if (expire != null) {
                 return expire;
             }
-            return buildEtatEnCours(tentativeEnCours, questionsActives);
+            return buildEtatEnCours(tentativeEnCours);
         }
 
         List<CodeTentative> tentativesPrecedentes = tentativeRepository
-                .findByCandidatIdAndNumeroCycleOrderByNumeroTentativeAsc(candidatId, numeroCycle);
+                .findByCandidatIdAndSerieIdOrderByNumeroTentativeAsc(candidatId, serieId);
         if (tentativesPrecedentes.size() >= config.getTentativesMax()) {
-            throw new BadRequestException("Nombre maximum de tentatives atteint pour ce Cycle (" + config.getTentativesMax() + ")");
+            throw new BadRequestException("Nombre maximum de tentatives atteint pour cette série (" + config.getTentativesMax() + ")");
         }
         if (!tentativesPrecedentes.isEmpty() && !config.isRepriseAutoriseeApresEchec()) {
             boolean dejaReussi = tentativesPrecedentes.stream().anyMatch(t -> t.getStatut() == StatutTentativeCode.REUSSI);
             if (!dejaReussi) {
-                throw new BadRequestException("La reprise de ce Cycle après échec n'est pas autorisée");
+                throw new BadRequestException("La reprise de cette série après échec n'est pas autorisée");
             }
         }
 
-        List<CodeQuestion> questionsDuCycle = extraireQuestionsDuCycle(questionsActives, numeroCycle, config.getQuestionsParCycle());
-        if (questionsDuCycle.isEmpty()) {
-            throw new BadRequestException("Aucune question disponible pour ce Cycle");
+        List<CodeQuestion> questionsSerie = questionRepository.findBySerieIdAndActifTrueOrderByOrdreAsc(serieId);
+        if (questionsSerie.isEmpty()) {
+            throw new BadRequestException("Aucune question disponible pour cette série");
         }
 
         LocalDateTime maintenant = LocalDateTime.now();
         CodeTentative tentative = CodeTentative.builder()
                 .candidat(candidat)
                 .inscription(inscription)
-                .numeroCycle(numeroCycle)
+                .serie(serie)
                 .numeroTentative(tentativesPrecedentes.size() + 1)
                 .dateDebut(maintenant)
                 .dateAffichageQuestionCourante(maintenant)
                 .indexQuestionCourante(0)
                 .statut(StatutTentativeCode.EN_COURS)
-                .snapQuestionsParCycle(config.getQuestionsParCycle())
-                .totalQuestionsCycle(questionsDuCycle.size())
+                .totalQuestionsSerie(questionsSerie.size())
                 .snapSeuilReussite(config.getSeuilReussite())
                 .snapTempsParQuestionSecondes(config.getTempsParQuestionSecondes())
-                .snapDureeMaxCycleSecondes(config.getDureeMaxCycleSecondes())
+                .snapDureeMaxSerieSecondes(config.getDureeMaxSerieSecondes())
                 .snapTentativesMax(config.getTentativesMax())
                 .snapRetourAutorise(config.isRetourQuestionPrecedenteAutorise())
                 .snapCorrectionImmediate(config.isCorrectionImmediate())
                 .build();
 
         tentative = tentativeRepository.save(tentative);
-        return buildEtatEnCours(tentative, questionsActives);
+        return buildEtatEnCours(tentative);
     }
 
     // ============================= DÉROULEMENT =============================
@@ -237,12 +239,11 @@ public class CodeService {
             return expire;
         }
 
-        List<CodeQuestion> questionsActives = questionRepository.findByActifTrueOrderByOrdreAsc();
-        List<CodeQuestion> questionsDuCycle = extraireQuestionsDuCycle(questionsActives, tentative.getNumeroCycle(), tentative.getSnapQuestionsParCycle());
-        if (tentative.getIndexQuestionCourante() >= questionsDuCycle.size()) {
+        List<CodeQuestion> questionsSerie = questionRepository.findBySerieIdAndActifTrueOrderByOrdreAsc(tentative.getSerie().getId());
+        if (tentative.getIndexQuestionCourante() >= questionsSerie.size()) {
             return finaliser(tentative, false);
         }
-        CodeQuestion question = questionsDuCycle.get(tentative.getIndexQuestionCourante());
+        CodeQuestion question = questionsSerie.get(tentative.getIndexQuestionCourante());
 
         LocalDateTime maintenant = LocalDateTime.now();
         long tempsEcouleQuestion = Duration.between(tentative.getDateAffichageQuestionCourante(), maintenant).getSeconds();
@@ -282,14 +283,14 @@ public class CodeService {
                         .build()
                 : null;
 
-        if (tentative.getIndexQuestionCourante() >= questionsDuCycle.size()) {
+        if (tentative.getIndexQuestionCourante() >= questionsSerie.size()) {
             EtatTentativeDTO resultat = finaliser(tentative, false);
             resultat.setCorrection(correction);
             return resultat;
         }
 
         tentativeRepository.save(tentative);
-        EtatTentativeDTO suite = buildEtatEnCours(tentative, questionsActives);
+        EtatTentativeDTO suite = buildEtatEnCours(tentative);
         suite.setCorrection(correction);
         return suite;
     }
@@ -326,7 +327,7 @@ public class CodeService {
         tentative.setDateAffichageQuestionCourante(LocalDateTime.now());
         tentativeRepository.save(tentative);
 
-        return buildEtatEnCours(tentative, questionRepository.findByActifTrueOrderByOrdreAsc());
+        return buildEtatEnCours(tentative);
     }
 
     @Transactional
@@ -351,7 +352,7 @@ public class CodeService {
         if (expire != null) {
             return expire;
         }
-        return buildEtatEnCours(tentative, questionRepository.findByActifTrueOrderByOrdreAsc());
+        return buildEtatEnCours(tentative);
     }
 
     // ============================= UTILITAIRES INTERNES =============================
@@ -363,12 +364,11 @@ public class CodeService {
         return tentative;
     }
 
-    /** Ferme automatiquement une tentative EN_COURS dont la durée maximale du Cycle est
-     *  dépassée (contrôle serveur du chronomètre, cf. §6/§18 du cahier des charges du module).
-     *  Renvoie le résultat si la tentative vient d'être close, sinon null. */
+    /** Ferme automatiquement une tentative EN_COURS dont la durée maximale de la série est
+     *  dépassée (contrôle serveur du chronomètre, cf. §6/§18 du cahier des charges du module). */
     private EtatTentativeDTO cloturerSiExpiree(CodeTentative tentative) {
-        long tempsEcouleCycle = Duration.between(tentative.getDateDebut(), LocalDateTime.now()).getSeconds();
-        if (tempsEcouleCycle > tentative.getSnapDureeMaxCycleSecondes()) {
+        long tempsEcouleSerie = Duration.between(tentative.getDateDebut(), LocalDateTime.now()).getSeconds();
+        if (tempsEcouleSerie > tentative.getSnapDureeMaxSerieSecondes()) {
             return finaliser(tentative, true);
         }
         return null;
@@ -386,35 +386,37 @@ public class CodeService {
 
     private EtatTentativeDTO etatDepuisTentativeTerminee(CodeTentative tentative) {
         boolean reussi = tentative.getStatut() == StatutTentativeCode.REUSSI;
-        long dejaUtilisees = tentativeRepository.countByCandidatIdAndNumeroCycle(tentative.getCandidat().getId(), tentative.getNumeroCycle());
+        long dejaUtilisees = tentativeRepository.countByCandidatIdAndSerieId(tentative.getCandidat().getId(), tentative.getSerie().getId());
         return EtatTentativeDTO.builder()
                 .resultat(CodeResultatTentativeDTO.builder()
                         .tentativeId(tentative.getId())
-                        .numeroCycle(tentative.getNumeroCycle())
+                        .serieId(tentative.getSerie().getId())
+                        .serieNom(tentative.getSerie().getNom())
                         .score(tentative.getScore())
-                        .totalQuestions(tentative.getTotalQuestionsCycle())
+                        .totalQuestions(tentative.getTotalQuestionsSerie())
                         .seuilReussite(tentative.getSnapSeuilReussite())
                         .statut(tentative.getStatut())
                         .reussi(reussi)
-                        .cycleSuivantDebloque(reussi)
+                        .serieSuivanteDebloquee(reussi)
                         .peutReprendre(!reussi && dejaUtilisees < tentative.getSnapTentativesMax())
                         .build())
                 .build();
     }
 
-    private EtatTentativeDTO buildEtatEnCours(CodeTentative tentative, List<CodeQuestion> questionsActives) {
-        List<CodeQuestion> questionsDuCycle = extraireQuestionsDuCycle(questionsActives, tentative.getNumeroCycle(), tentative.getSnapQuestionsParCycle());
-        CodeQuestion question = questionsDuCycle.get(tentative.getIndexQuestionCourante());
+    private EtatTentativeDTO buildEtatEnCours(CodeTentative tentative) {
+        List<CodeQuestion> questionsSerie = questionRepository.findBySerieIdAndActifTrueOrderByOrdreAsc(tentative.getSerie().getId());
+        CodeQuestion question = questionsSerie.get(tentative.getIndexQuestionCourante());
         return EtatTentativeDTO.builder()
                 .enCours(TentativeEnCoursDTO.builder()
                         .tentativeId(tentative.getId())
-                        .numeroCycle(tentative.getNumeroCycle())
+                        .serieId(tentative.getSerie().getId())
+                        .serieNom(tentative.getSerie().getNom())
                         .numeroTentative(tentative.getNumeroTentative())
                         .indexQuestionCourante(tentative.getIndexQuestionCourante())
-                        .totalQuestionsDuCycle(questionsDuCycle.size())
+                        .totalQuestionsDeLaSerie(questionsSerie.size())
                         .question(mapQuestionPourCandidat(question))
                         .tempsParQuestionSecondes(tentative.getSnapTempsParQuestionSecondes())
-                        .dureeMaxCycleSecondes(tentative.getSnapDureeMaxCycleSecondes())
+                        .dureeMaxSerieSecondes(tentative.getSnapDureeMaxSerieSecondes())
                         .dateDebut(tentative.getDateDebut())
                         .dateAffichageQuestionCourante(tentative.getDateAffichageQuestionCourante())
                         .retourAutorise(tentative.isSnapRetourAutorise())
@@ -433,22 +435,10 @@ public class CodeService {
                 .reponseB(q.getReponseB())
                 .reponseC(q.getReponseC())
                 .reponseD(q.getReponseD())
+                .sousTitreGroupeAB(q.getSousTitreGroupeAB())
+                .sousTitreGroupeCD(q.getSousTitreGroupeCD())
                 .nombreOptions(q.getNombreOptionsEffectif())
                 .build();
-    }
-
-    private List<CodeQuestion> extraireQuestionsDuCycle(List<CodeQuestion> questionsActives, int numeroCycle, int questionsParCycle) {
-        int debut = (numeroCycle - 1) * questionsParCycle;
-        if (debut >= questionsActives.size()) {
-            return List.of();
-        }
-        int fin = Math.min(numeroCycle * questionsParCycle, questionsActives.size());
-        return questionsActives.subList(debut, fin);
-    }
-
-    private int calculerNombreDeCycles(int nombreQuestionsActives, int questionsParCycle) {
-        if (nombreQuestionsActives == 0 || questionsParCycle <= 0) return 0;
-        return (int) Math.ceil((double) nombreQuestionsActives / questionsParCycle);
     }
 
     /** Distingue explicitement les trois expirations du §14 du cahier des charges du module :

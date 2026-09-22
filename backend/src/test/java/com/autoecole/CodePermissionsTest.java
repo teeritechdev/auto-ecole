@@ -78,21 +78,21 @@ class CodePermissionsTest {
     @WithMockUser(roles = "MONITEUR")
     @DisplayName("15quater. Le Moniteur ne peut pas gérer la banque de questions (réservée à l'Administrateur)")
     void moniteurNePeutPasGererLaBanqueDeQuestions() {
-        assertThrows(AccessDeniedException.class, () -> codeQuestionController.getAllQuestions());
+        assertThrows(AccessDeniedException.class, () -> codeQuestionController.getQuestionsDeSerie(1L));
     }
 
     @Test
     @WithMockUser(roles = "SECRETAIRE")
     @DisplayName("Une Secrétaire ne peut pas gérer la banque de questions")
     void secretaireNePeutPasGererLaBanqueDeQuestions() {
-        assertThrows(AccessDeniedException.class, () -> codeQuestionController.getAllQuestions());
+        assertThrows(AccessDeniedException.class, () -> codeQuestionController.getQuestionsDeSerie(1L));
     }
 
     @Test
     @WithMockUser(roles = "ADMIN")
     @DisplayName("L'Administrateur peut consulter la banque de questions")
     void adminPeutGererLaBanqueDeQuestions() {
-        assertDoesNotThrow(() -> codeQuestionController.getAllQuestions());
+        assertDoesNotThrow(() -> codeQuestionController.getQuestionsDeSerie(1L));
     }
 
     // ---------- Démarrage / réponse à une tentative : CANDIDAT uniquement ----------
@@ -101,14 +101,14 @@ class CodePermissionsTest {
     @WithMockUser(roles = "SECRETAIRE")
     @DisplayName("15quinquies. Une Secrétaire ne peut pas démarrer un Cycle à la place d'un candidat")
     void secretaireNePeutPasDemarrerUnCycle() {
-        assertThrows(AccessDeniedException.class, () -> codeController.demarrerCycle(1));
+        assertThrows(AccessDeniedException.class, () -> codeController.demarrerSerie(1L));
     }
 
     @Test
     @WithMockUser(roles = "ADMIN")
     @DisplayName("L'Administrateur lui-même ne peut pas démarrer un Cycle à la place d'un candidat")
     void adminNePeutPasDemarrerUnCycleALaPlaceDuCandidat() {
-        assertThrows(AccessDeniedException.class, () -> codeController.demarrerCycle(1));
+        assertThrows(AccessDeniedException.class, () -> codeController.demarrerSerie(1L));
     }
 
     @Test
@@ -122,7 +122,7 @@ class CodePermissionsTest {
     @WithMockUser(username = "compte-candidat-inexistant-en-base", roles = "CANDIDAT")
     @DisplayName("17. Le rôle CANDIDAT franchit la sécurité ; l'échec qui suit (aucun compte réel) est un échec MÉTIER, jamais un contournement de sécurité")
     void candidatEstAutoriseParLaSecuriteMemeSansCompteReelEnBase() {
-        Exception ex = assertThrows(Exception.class, () -> codeController.demarrerCycle(1));
+        Exception ex = assertThrows(Exception.class, () -> codeController.demarrerSerie(1L));
         assertFalse(ex instanceof AccessDeniedException,
                 "La sécurité doit laisser passer un CANDIDAT : un compte manquant est une erreur métier (404/400), pas un refus d'accès");
     }

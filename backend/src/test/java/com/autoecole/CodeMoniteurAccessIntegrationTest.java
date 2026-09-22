@@ -171,7 +171,7 @@ class CodeMoniteurAccessIntegrationTest {
     }
 
     private UpdateCodeConfigurationRequest requeteConfigurationValide() {
-        return new UpdateCodeConfigurationRequest(30, 24, 30, 900, 3, true, true, false, true, null);
+        return new UpdateCodeConfigurationRequest(24, 30, 900, 3, true, true, false, true, null);
     }
 
     // ---------- Fixtures ----------

@@ -8,9 +8,9 @@ import java.util.List;
 import java.util.Optional;
 
 public interface CodeTentativeRepository extends JpaRepository<CodeTentative, Long> {
-    List<CodeTentative> findByCandidatIdAndNumeroCycleOrderByNumeroTentativeAsc(Long candidatId, int numeroCycle);
+    List<CodeTentative> findByCandidatIdAndSerieIdOrderByNumeroTentativeAsc(Long candidatId, Long serieId);
     List<CodeTentative> findByCandidatIdOrderByDateDebutDesc(Long candidatId);
-    Optional<CodeTentative> findByCandidatIdAndNumeroCycleAndStatut(Long candidatId, int numeroCycle, StatutTentativeCode statut);
-    long countByCandidatIdAndNumeroCycle(Long candidatId, int numeroCycle);
-    boolean existsByCandidatIdAndNumeroCycleAndStatut(Long candidatId, int numeroCycle, StatutTentativeCode statut);
+    Optional<CodeTentative> findByCandidatIdAndSerieIdAndStatut(Long candidatId, Long serieId, StatutTentativeCode statut);
+    long countByCandidatIdAndSerieId(Long candidatId, Long serieId);
+    boolean existsByCandidatIdAndSerieIdAndStatut(Long candidatId, Long serieId, StatutTentativeCode statut);
 }

@@ -376,25 +376,33 @@ export interface HistoriqueAction {
 
 export type LettreReponse = 'A' | 'B' | 'C' | 'D';
 export type StatutTentativeCode = 'EN_COURS' | 'REUSSI' | 'ECHEC' | 'EXPIREE' | 'ABANDONNEE';
-export type StatutCycle = 'VERROUILLE' | 'DISPONIBLE' | 'REUSSI' | 'ECHEC';
+export type StatutSerie = 'VERROUILLE' | 'DISPONIBLE' | 'REUSSI' | 'ECHEC';
 
 export interface CodeConfiguration {
-  questionsParCycle: number;
   seuilReussite: number;
   tempsParQuestionSecondes: number;
-  dureeMaxCycleSecondes: number;
+  dureeMaxSerieSecondes: number;
   tentativesMax: number;
   repriseAutoriseeApresEchec: boolean;
   retourQuestionPrecedenteAutorise: boolean;
   correctionImmediate: boolean;
-  deblocageAutomatiqueCycleSuivant: boolean;
+  deblocageAutomatiqueSerieSuivante: boolean;
   dureeExpirationAccesJours?: number | null;
-  nombreQuestionsActives: number;
-  nombreDeCycles: number;
+  nombreDeSeries: number;
+}
+
+export interface CodeSerie {
+  id: number;
+  nom: string;
+  description?: string;
+  ordre: number;
+  actif: boolean;
+  nombreQuestions: number;
 }
 
 export interface CodeQuestion {
   id: number;
+  serieId: number;
   ordre: number;
   enonce: string;
   imageData?: string;
@@ -403,6 +411,10 @@ export interface CodeQuestion {
   reponseB?: string;
   reponseC?: string;
   reponseD?: string;
+  // Libellés optionnels de sous-groupe façon examen officiel (ex: "pour aller à la
+  // station service" au-dessus de A/B, "pour aller à Dreux" au-dessus de C/D).
+  sousTitreGroupeAB?: string;
+  sousTitreGroupeCD?: string;
   nombreOptions: number; // 2 à 4
   bonnesReponses: LettreReponse[];
   explication?: string;
@@ -418,13 +430,16 @@ export interface CodeQuestionPourCandidat {
   reponseB?: string;
   reponseC?: string;
   reponseD?: string;
+  sousTitreGroupeAB?: string;
+  sousTitreGroupeCD?: string;
   nombreOptions: number;
 }
 
-export interface CodeCycleStatut {
-  numeroCycle: number;
+export interface CodeSerieStatut {
+  serieId: number;
+  serieNom: string;
   nombreQuestions: number;
-  statut: StatutCycle;
+  statut: StatutSerie;
   meilleurScore?: number;
   nbTentativesUtilisees: number;
   tentativesMax: number;
@@ -432,22 +447,23 @@ export interface CodeCycleStatut {
 
 export interface CodeProgression {
   candidatId: number;
-  totalCycles: number;
-  cyclesReussis: number;
+  totalSeries: number;
+  seriesReussies: number;
   pourcentageProgression: number;
   accesExpire: boolean;
-  cycles: CodeCycleStatut[];
+  series: CodeSerieStatut[];
 }
 
 export interface TentativeEnCours {
   tentativeId: number;
-  numeroCycle: number;
+  serieId: number;
+  serieNom: string;
   numeroTentative: number;
   indexQuestionCourante: number;
-  totalQuestionsDuCycle: number;
+  totalQuestionsDeLaSerie: number;
   question: CodeQuestionPourCandidat;
   tempsParQuestionSecondes: number;
-  dureeMaxCycleSecondes: number;
+  dureeMaxSerieSecondes: number;
   dateDebut: string;
   dateAffichageQuestionCourante: string;
   retourAutorise: boolean;
@@ -456,13 +472,14 @@ export interface TentativeEnCours {
 
 export interface CodeResultatTentative {
   tentativeId: number;
-  numeroCycle: number;
+  serieId: number;
+  serieNom: string;
   score: number;
   totalQuestions: number;
   seuilReussite: number;
   statut: StatutTentativeCode;
   reussi: boolean;
-  cycleSuivantDebloque: boolean;
+  serieSuivanteDebloquee: boolean;
   peutReprendre: boolean;
 }
 
@@ -482,7 +499,8 @@ export interface EtatTentative {
 
 export interface CodeHistoriqueLigne {
   tentativeId: number;
-  numeroCycle: number;
+  serieId: number;
+  serieNom: string;
   numeroTentative: number;
   dateDebut: string;
   dateFin?: string;

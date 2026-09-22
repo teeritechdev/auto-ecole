@@ -457,8 +457,8 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
           <div class="card tab-content">
             <div class="content-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem;">
               <div>
-                <h3>Entraînement au Code par Cycle</h3>
-                <p style="margin:0; font-size:0.85rem; color:var(--text-muted);">Complétez chaque Cycle pour débloquer le suivant. Les questions restent toujours dans le même ordre.</p>
+                <h3>Entraînement au Code par Série</h3>
+                <p style="margin:0; font-size:0.85rem; color:var(--text-muted);">Complétez chaque série pour débloquer la suivante. Les questions restent toujours dans le même ordre.</p>
               </div>
               <a routerLink="/espace-candidat/historique" class="btn btn-outline btn-sm">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>
@@ -480,8 +480,8 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
                   </div>
                   <div class="stat-info">
-                    <div class="stat-label">Cycles réussis</div>
-                    <div class="stat-value">{{ progression.cyclesReussis }} / {{ progression.totalCycles }}</div>
+                    <div class="stat-label">Séries réussies</div>
+                    <div class="stat-value">{{ progression.seriesReussies }} / {{ progression.totalSeries }}</div>
                   </div>
                 </div>
                 <div class="stat-card success">
@@ -495,37 +495,37 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 </div>
               </div>
 
-              @if (progression.totalCycles === 0) {
+              @if (progression.totalSeries === 0) {
                 <div class="card" style="margin-top: 1rem;">Le Quiz Exercice n'est pas encore disponible. Revenez plus tard.</div>
               }
 
               <div class="cycles-grid">
-                @for (cycle of progression.cycles; track cycle.numeroCycle) {
-                  <div class="cycle-card" [class.locked]="cycle.statut === 'VERROUILLE'">
+                @for (serie of progression.series; track serie.serieId) {
+                  <div class="cycle-card" [class.locked]="serie.statut === 'VERROUILLE'">
                     <div class="cycle-header">
-                      <span class="cycle-title">Cycle {{ cycle.numeroCycle }}</span>
-                      <span class="badge" [ngClass]="badgeClass(cycle.statut)">{{ badgeLabel(cycle.statut) }}</span>
+                      <span class="cycle-title">{{ serie.serieNom }}</span>
+                      <span class="badge" [ngClass]="badgeClass(serie.statut)">{{ badgeLabel(serie.statut) }}</span>
                     </div>
                     <div class="cycle-body">
-                      <div>{{ cycle.nombreQuestions }} questions</div>
-                      @if (cycle.meilleurScore !== undefined && cycle.meilleurScore !== null) {
-                        <div>Meilleur score : {{ cycle.meilleurScore }} / {{ cycle.nombreQuestions }}</div>
+                      <div>{{ serie.nombreQuestions }} questions</div>
+                      @if (serie.meilleurScore !== undefined && serie.meilleurScore !== null) {
+                        <div>Meilleur score : {{ serie.meilleurScore }} / {{ serie.nombreQuestions }}</div>
                       }
-                      <div class="text-muted">Tentatives : {{ cycle.nbTentativesUtilisees }} / {{ cycle.tentativesMax }}</div>
+                      <div class="text-muted">Tentatives : {{ serie.nbTentativesUtilisees }} / {{ serie.tentativesMax }}</div>
                     </div>
                     <button
                       class="btn btn-primary btn-sm"
-                      [disabled]="cycle.statut === 'VERROUILLE' || progression.accesExpire || demarrage"
-                      (click)="demarrer(cycle.numeroCycle)">
-                      @if (cycle.statut === 'VERROUILLE') {
+                      [disabled]="serie.statut === 'VERROUILLE' || progression.accesExpire || demarrage"
+                      (click)="demarrer(serie.serieId)">
+                      @if (serie.statut === 'VERROUILLE') {
                         <span style="display:inline-flex; align-items:center; gap:0.35rem;">
                           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                           Verrouillé
                         </span>
                       }
-                      @if (cycle.statut === 'REUSSI') { Revoir / Refaire }
-                      @if (cycle.statut === 'ECHEC') { Reprendre le Cycle }
-                      @if (cycle.statut === 'DISPONIBLE') { Démarrer le Cycle }
+                      @if (serie.statut === 'REUSSI') { Revoir / Refaire }
+                      @if (serie.statut === 'ECHEC') { Reprendre la série }
+                      @if (serie.statut === 'DISPONIBLE') { Démarrer la série }
                     </button>
                   </div>
                 }
@@ -1046,10 +1046,10 @@ export class EspaceCandidatComponent implements OnInit {
     });
   }
 
-  demarrer(numeroCycle: number): void {
+  demarrer(serieId: number): void {
     this.demarrage = true;
     this.error = '';
-    this.apiService.demarrerCycleCode(numeroCycle).subscribe({
+    this.apiService.demarrerSerieCode(serieId).subscribe({
       next: (etat) => {
         this.demarrage = false;
         if (etat.enCours) {
@@ -1060,7 +1060,7 @@ export class EspaceCandidatComponent implements OnInit {
       },
       error: (err) => {
         this.demarrage = false;
-        this.error = extraireMessageErreur(err, 'Impossible de démarrer ce Cycle.');
+        this.error = extraireMessageErreur(err, 'Impossible de démarrer cette série.');
       }
     });
   }

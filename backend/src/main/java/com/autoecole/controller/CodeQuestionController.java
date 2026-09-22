@@ -25,9 +25,9 @@ public class CodeQuestionController {
     private final CodeQuestionService questionService;
 
     @GetMapping
-    @Operation(summary = "Lister toutes les questions de la banque, dans l'ordre")
-    public ResponseEntity<List<CodeQuestionDTO>> getAllQuestions() {
-        return ResponseEntity.ok(questionService.getAllQuestions());
+    @Operation(summary = "Lister les questions d'une série, dans l'ordre")
+    public ResponseEntity<List<CodeQuestionDTO>> getQuestionsDeSerie(@RequestParam Long serieId) {
+        return ResponseEntity.ok(questionService.getQuestionsDeSerie(serieId));
     }
 
     @PostMapping

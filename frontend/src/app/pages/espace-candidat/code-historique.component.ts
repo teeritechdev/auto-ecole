@@ -13,7 +13,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     <div class="page-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
       <div>
         <h2 style="margin:0;">Historique — Code de la route</h2>
-        <p style="margin:0.25rem 0 0 0;">Toutes vos tentatives, Cycle par Cycle.</p>
+        <p style="margin:0.25rem 0 0 0;">Toutes vos tentatives, série par série.</p>
       </div>
       <div>
         <a routerLink="/espace-candidat" class="btn btn-outline btn-sm" style="display:inline-flex; align-items:center; gap:0.4rem;">
@@ -32,7 +32,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
         <table class="custom-table">
           <thead>
             <tr>
-              <th>Cycle</th>
+              <th>Série</th>
               <th>Tentative</th>
               <th>Date</th>
               <th>Score</th>
@@ -42,7 +42,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
           <tbody>
             @for (ligne of lignes; track ligne.tentativeId) {
               <tr>
-                <td>Cycle {{ ligne.numeroCycle }}</td>
+                <td>{{ ligne.serieNom }}</td>
                 <td>#{{ ligne.numeroTentative }}</td>
                 <td>{{ ligne.dateDebut | date:'dd/MM/yyyy HH:mm' }}</td>
                 <td>{{ ligne.score }} / {{ ligne.totalQuestions }}</td>

@@ -19,8 +19,8 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
 
     @if (enCours) {
       <div class="quiz-card">
-        <div class="quiz-header">
-          <span>Cycle {{ enCours.numeroCycle }} — Question {{ enCours.indexQuestionCourante + 1 }} / {{ enCours.totalQuestionsDuCycle }}</span>
+        <div class="quiz-topbar">
+          <span class="serie-titre">Série {{ enCours.serieNom }}</span>
           <span class="chrono" [class.chrono-warning]="tempsRestantQuestion <= 5">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             {{ tempsRestantQuestion }}s
@@ -31,94 +31,124 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
           <div class="progress-fill" [style.width.%]="progressionPct"></div>
         </div>
 
-        @if (enCours.question.imageData) {
-          <div class="question-image">
-            <img [src]="enCours.question.imageData" alt="Illustration de la question" />
-          </div>
-        }
+        <p class="question-compteur">Question : {{ enCours.indexQuestionCourante + 1 }}/{{ enCours.totalQuestionsDeLaSerie }}</p>
 
-        <p class="question-enonce">{{ enCours.question.enonce }}</p>
-
-        <p class="question-consigne">Cochez la ou les bonnes réponses.</p>
-
-        <div class="options">
-          @for (lettre of lettresDisponibles; track lettre) {
-            <button type="button" class="option"
-              [class.selected]="estSelectionnee(lettre) && !verrouille"
-              [class.correct]="verrouille && estBonneReponse(lettre)"
-              [class.incorrect]="verrouille && estSelectionnee(lettre) && !estBonneReponse(lettre)"
-              [disabled]="verrouille || envoi"
-              (click)="toggleReponse(lettre)">
-              <span class="option-check" [class.checked]="estSelectionnee(lettre)"></span>
-              <span>{{ lettre }}{{ texteReponse(lettre) ? ' . ' + texteReponse(lettre) : '' }}</span>
-            </button>
-          }
-        </div>
-
-        @if (verrouille && derniereCorrection) {
-          <div class="correction-panel" [class.correction-ok]="derniereCorrection.correcte" [class.correction-ko]="!derniereCorrection.correcte">
-            <div class="correction-header">
-              @if (derniereCorrection.correcte) {
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-              } @else {
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-              }
-              {{ derniereCorrection.correcte ? 'Bonne réponse' : 'Réponse incorrecte' }}
+        <div class="question-layout">
+          @if (enCours.question.imageData) {
+            <div class="question-image">
+              <img [src]="enCours.question.imageData" alt="Illustration de la question" />
             </div>
-            @if (derniereCorrection.explication) {
-              <p class="correction-explication">{{ derniereCorrection.explication }}</p>
-            }
-          </div>
-        }
-
-        <div class="quiz-actions">
-          <button
-            type="button"
-            class="btn btn-secondary"
-            [disabled]="!enCours.peutRevenirEnArriere || envoi || verrouille"
-            (click)="precedente()">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-            Précédent
-          </button>
-          @if (verrouille) {
-            <button type="button" class="btn btn-primary" (click)="continuer()">
-              {{ estDerniereQuestion ? 'Voir le résultat' : 'Suivant' }}
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-            </button>
-          } @else {
-            <button type="button" class="btn btn-primary" [disabled]="envoi" (click)="soumettre()">
-              Valider
-            </button>
           }
+
+          <div class="question-body">
+            <p class="question-enonce">{{ enCours.question.enonce }}</p>
+
+            @if (enCours.question.sousTitreGroupeAB) {
+              <p class="groupe-titre">{{ enCours.question.sousTitreGroupeAB }}</p>
+            }
+            <div class="options">
+              @for (lettre of lettresGroupe1; track lettre) {
+                <button type="button" class="option"
+                  [class.selected]="estSelectionnee(lettre) && !verrouille"
+                  [class.correct]="verrouille && estBonneReponse(lettre)"
+                  [class.incorrect]="verrouille && estSelectionnee(lettre) && !estBonneReponse(lettre)"
+                  [disabled]="verrouille || envoi"
+                  (click)="toggleReponse(lettre)">
+                  <span class="option-check" [class.checked]="estSelectionnee(lettre)"></span>
+                  <span class="option-texte">{{ texteReponse(lettre) || (lettre === 'A' ? 'OUI' : 'NON') }}</span>
+                  <span class="option-dots"></span>
+                  <span class="option-lettre">{{ lettre }}</span>
+                </button>
+              }
+            </div>
+
+            @if (enCours.question.sousTitreGroupeCD && lettresGroupe2.length) {
+              <p class="groupe-titre">{{ enCours.question.sousTitreGroupeCD }}</p>
+            }
+            @if (lettresGroupe2.length) {
+              <div class="options">
+                @for (lettre of lettresGroupe2; track lettre) {
+                  <button type="button" class="option"
+                    [class.selected]="estSelectionnee(lettre) && !verrouille"
+                    [class.correct]="verrouille && estBonneReponse(lettre)"
+                    [class.incorrect]="verrouille && estSelectionnee(lettre) && !estBonneReponse(lettre)"
+                    [disabled]="verrouille || envoi"
+                    (click)="toggleReponse(lettre)">
+                    <span class="option-check" [class.checked]="estSelectionnee(lettre)"></span>
+                    <span class="option-texte">{{ texteReponse(lettre) || (lettre === 'C' ? 'OUI' : 'NON') }}</span>
+                    <span class="option-dots"></span>
+                    <span class="option-lettre">{{ lettre }}</span>
+                  </button>
+                }
+              </div>
+            }
+
+            @if (verrouille && derniereCorrection) {
+              <div class="correction-panel" [class.correction-ok]="derniereCorrection.correcte" [class.correction-ko]="!derniereCorrection.correcte">
+                <div class="correction-header">
+                  @if (derniereCorrection.correcte) {
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                  } @else {
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                  }
+                  {{ derniereCorrection.correcte ? 'Bonne réponse' : 'Réponse incorrecte' }}
+                </div>
+                @if (derniereCorrection.explication) {
+                  <p class="correction-explication">{{ derniereCorrection.explication }}</p>
+                }
+              </div>
+            }
+
+            <div class="quiz-actions">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                [disabled]="!enCours.peutRevenirEnArriere || envoi || verrouille"
+                (click)="precedente()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                Précédent
+              </button>
+              @if (verrouille) {
+                <button type="button" class="btn btn-primary" (click)="continuer()">
+                  {{ estDerniereQuestion ? 'Voir le résultat' : 'Suivant' }}
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+              } @else {
+                <button type="button" class="btn btn-primary" [disabled]="envoi" (click)="soumettre()">
+                  Valider
+                </button>
+              }
+            </div>
+          </div>
         </div>
       </div>
     }
 
     @if (resultat) {
       <div class="quiz-card resultat-card">
-        <h2>Résultat du Cycle {{ resultat.numeroCycle }}</h2>
+        <h2>Résultat — Série {{ resultat.serieNom }}</h2>
         <div class="score">{{ resultat.score }} / {{ resultat.totalQuestions }}</div>
         <p>Seuil de réussite : {{ resultat.seuilReussite }} / {{ resultat.totalQuestions }}</p>
         @if (resultat.statut === 'REUSSI') {
           <div class="alert alert-success">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-            Cycle réussi ! Le Cycle suivant est débloqué.
+            Série réussie ! La série suivante est débloquée.
           </div>
         }
         @if (resultat.statut === 'EXPIREE') {
           <div class="alert alert-warning">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            Le temps imparti pour ce Cycle est écoulé.
+            Le temps imparti pour cette série est écoulé.
           </div>
         }
         @if (resultat.statut === 'ECHEC') {
           <div class="alert alert-danger">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-            Cycle non réussi. {{ resultat.peutReprendre ? 'Il faut reprendre ce Cycle.' : '' }}
+            Série non réussie. {{ resultat.peutReprendre ? 'Il faut reprendre cette série.' : '' }}
           </div>
           @if (resultat.peutReprendre) {
-            <button class="btn btn-warning" (click)="reprendreCycle()" [disabled]="loading" style="margin-bottom: 1rem; margin-right: 1rem;">
-              Reprendre le Cycle
+            <button class="btn btn-warning" (click)="reprendreSerie()" [disabled]="loading" style="margin-bottom: 1rem; margin-right: 1rem;">
+              Reprendre la série
             </button>
           }
         }
@@ -132,19 +162,23 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       border-radius: var(--radius-lg);
       box-shadow: var(--shadow-md);
       padding: 1.5rem;
-      max-width: 620px;
+      max-width: 920px;
       margin: 0 auto;
     }
-    .quiz-header { display: flex; justify-content: space-between; align-items: center; font-weight: 600; margin-bottom: 0.75rem; }
-    .chrono { display:inline-flex; align-items:center; gap:0.3rem; color: var(--primary); }
+    .quiz-topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+    .serie-titre { font-weight: 800; font-size: 1.1rem; color: var(--primary); }
+    .chrono { display:inline-flex; align-items:center; gap:0.3rem; color: var(--primary); font-weight: 600; }
     .chrono-warning { color: var(--danger); font-weight: 700; }
-    .progress-bar { height: 6px; border-radius: 3px; background: var(--border-color); overflow: hidden; margin-bottom: 1.25rem; }
+    .progress-bar { height: 6px; border-radius: 3px; background: var(--border-color); overflow: hidden; margin-bottom: 0.75rem; }
     .progress-fill { height: 100%; background: var(--primary); transition: width 0.2s; }
-    .question-image { margin-bottom: 1rem; text-align: center; }
-    .question-image img { max-width: 100%; max-height: 260px; border-radius: var(--radius-md); }
-    .question-enonce { font-size: 1.05rem; font-weight: 600; margin-bottom: 0.35rem; }
-    .question-consigne { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem; }
-    .options { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1.25rem; }
+    .question-compteur { font-weight: 700; color: var(--text-muted); margin-bottom: 1rem; }
+    .question-layout { display: flex; gap: 1.75rem; align-items: flex-start; flex-wrap: wrap; }
+    .question-image { flex: 1 1 320px; max-width: 380px; text-align: center; }
+    .question-image img { max-width: 100%; max-height: 320px; border-radius: var(--radius-md); }
+    .question-body { flex: 1 1 320px; min-width: 280px; }
+    .question-enonce { font-size: 1.15rem; font-weight: 700; margin-bottom: 1rem; }
+    .groupe-titre { font-weight: 700; margin: 0.9rem 0 0.5rem; }
+    .options { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 0.5rem; }
     .option-check {
       width: 18px; height: 18px; flex-shrink: 0;
       border-radius: 4px; border: 1.5px solid var(--border-color);
@@ -154,8 +188,8 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     .option {
       display: flex;
       align-items: center;
-      gap: 0.65rem;
-      padding: 0.75rem 1rem;
+      gap: 0.6rem;
+      padding: 0.7rem 1rem;
       border: 1.5px solid var(--border-color);
       border-radius: var(--radius-md);
       cursor: pointer;
@@ -165,17 +199,20 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       text-align: left;
       width: 100%;
     }
+    .option-texte { white-space: nowrap; }
+    .option-dots { flex: 1; border-bottom: 2px dotted var(--border-color); margin: 0 0.35rem; align-self: flex-end; height: 0.75em; min-width: 20px; }
+    .option-lettre { font-weight: 800; color: var(--primary); }
     .option:hover:not(:disabled) { border-color: var(--primary); }
     .option.selected { border-color: var(--primary); background: var(--primary-light); }
     .option.correct { border-color: var(--success); background: var(--success-light); font-weight: 600; }
     .option.incorrect { border-color: var(--danger); background: var(--danger-light); font-weight: 600; }
     .option:disabled { cursor: default; }
     .option:disabled:not(.correct):not(.incorrect) { opacity: 0.6; }
-    .quiz-actions { display: flex; justify-content: space-between; gap: 0.75rem; }
+    .quiz-actions { display: flex; justify-content: space-between; gap: 0.75rem; margin-top: 1.25rem; }
     .resultat-card { text-align: center; }
     .score { font-size: 2.5rem; font-weight: 800; color: var(--primary); margin: 0.75rem 0; }
     .correction-panel {
-      margin-bottom: 1.25rem;
+      margin-top: 1rem;
       padding: 0.85rem 1rem;
       border-radius: var(--radius-md);
       border: 1.5px solid var(--border-color);
@@ -218,17 +255,26 @@ export class CodeQuizComponent implements OnInit, OnDestroy {
   }
 
   get estDerniereQuestion(): boolean {
-    return !!this.enCours && this.enCours.indexQuestionCourante === this.enCours.totalQuestionsDuCycle - 1;
+    return !!this.enCours && this.enCours.indexQuestionCourante === this.enCours.totalQuestionsDeLaSerie - 1;
   }
 
   get progressionPct(): number {
     if (!this.enCours) return 0;
-    return (this.enCours.indexQuestionCourante / this.enCours.totalQuestionsDuCycle) * 100;
+    return (this.enCours.indexQuestionCourante / this.enCours.totalQuestionsDeLaSerie) * 100;
   }
 
-  get lettresDisponibles(): LettreReponse[] {
+  /** Les options sont affichées par paire (A/B, puis C/D) pour pouvoir insérer un
+   *  sous-titre de groupe entre les deux, façon examen officiel du Code de la route. */
+  get lettresGroupe1(): LettreReponse[] {
     const toutes: LettreReponse[] = ['A', 'B', 'C', 'D'];
-    return toutes.slice(0, this.enCours?.question.nombreOptions ?? 4);
+    return toutes.slice(0, Math.min(2, this.enCours?.question.nombreOptions ?? 2));
+  }
+
+  get lettresGroupe2(): LettreReponse[] {
+    const total = this.enCours?.question.nombreOptions ?? 0;
+    if (total <= 2) return [];
+    const toutes: LettreReponse[] = ['A', 'B', 'C', 'D'];
+    return toutes.slice(2, total);
   }
 
   texteReponse(lettre: LettreReponse): string | undefined {
@@ -338,11 +384,11 @@ export class CodeQuizComponent implements OnInit, OnDestroy {
     });
   }
 
-  reprendreCycle(): void {
+  reprendreSerie(): void {
     if (!this.resultat || !this.resultat.peutReprendre || this.loading) return;
     this.loading = true;
     this.error = '';
-    this.apiService.demarrerCycleCode(this.resultat.numeroCycle).subscribe({
+    this.apiService.demarrerSerieCode(this.resultat.serieId).subscribe({
       next: (etat) => {
         this.loading = false;
         if (etat.enCours) {
@@ -353,7 +399,7 @@ export class CodeQuizComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         this.loading = false;
-        this.error = extraireMessageErreur(err, 'Impossible de reprendre le Cycle.');
+        this.error = extraireMessageErreur(err, 'Impossible de reprendre la série.');
       }
     });
   }

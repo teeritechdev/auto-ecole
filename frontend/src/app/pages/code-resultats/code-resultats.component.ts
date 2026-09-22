@@ -24,7 +24,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg>
         Résultats — Code de la route
       </h2>
-      <p>Consultez la progression, les Cycles et l'historique des tentatives des inscrits autorisés.</p>
+      <p>Consultez la progression, les séries et l'historique des tentatives des inscrits autorisés.</p>
     </div>
 
     <!-- RECHERCHE / LISTE DES CANDIDATS AUTORISÉS -->
@@ -132,8 +132,8 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
               </div>
               <div class="stat-info">
-                <div class="stat-label">Cycles réussis</div>
-                <div class="stat-value">{{ progression.cyclesReussis }} / {{ progression.totalCycles }}</div>
+                <div class="stat-label">Séries réussies</div>
+                <div class="stat-value">{{ progression.seriesReussies }} / {{ progression.totalSeries }}</div>
               </div>
             </div>
             <div class="stat-card success">
@@ -147,12 +147,12 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
             </div>
           </div>
 
-          <h4 class="section-title">Cycles</h4>
+          <h4 class="section-title">Séries</h4>
           <div class="table-responsive">
             <table class="custom-table">
               <thead>
                 <tr>
-                  <th>Cycle</th>
+                  <th>Série</th>
                   <th>Questions</th>
                   <th>Statut</th>
                   <th>Meilleur score</th>
@@ -160,17 +160,17 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 </tr>
               </thead>
               <tbody>
-                @for (cycle of progression.cycles; track cycle.numeroCycle) {
+                @for (serie of progression.series; track serie.serieId) {
                   <tr>
-                    <td>Cycle {{ cycle.numeroCycle }}</td>
-                    <td>{{ cycle.nombreQuestions }}</td>
-                    <td><span class="badge" [ngClass]="badgeClassCycle(cycle.statut)">{{ badgeLabelCycle(cycle.statut) }}</span></td>
-                    <td>{{ cycle.meilleurScore ?? '—' }}</td>
-                    <td>{{ cycle.nbTentativesUtilisees }} / {{ cycle.tentativesMax }}</td>
+                    <td>{{ serie.serieNom }}</td>
+                    <td>{{ serie.nombreQuestions }}</td>
+                    <td><span class="badge" [ngClass]="badgeClassCycle(serie.statut)">{{ badgeLabelCycle(serie.statut) }}</span></td>
+                    <td>{{ serie.meilleurScore ?? '—' }}</td>
+                    <td>{{ serie.nbTentativesUtilisees }} / {{ serie.tentativesMax }}</td>
                   </tr>
                 }
-                @if (progression.cycles.length === 0) {
-                  <tr><td colspan="5" class="text-muted">Aucun Cycle disponible (Quiz Exercice vide).</td></tr>
+                @if (progression.series.length === 0) {
+                  <tr><td colspan="5" class="text-muted">Aucune série disponible (Quiz Exercice vide).</td></tr>
                 }
               </tbody>
             </table>
@@ -181,7 +181,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
             <table class="custom-table">
               <thead>
                 <tr>
-                  <th>Cycle</th>
+                  <th>Série</th>
                   <th>Tentative</th>
                   <th>Date</th>
                   <th>Score</th>
@@ -191,7 +191,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
               <tbody>
                 @for (ligne of historique; track ligne.tentativeId) {
                   <tr>
-                    <td>Cycle {{ ligne.numeroCycle }}</td>
+                    <td>{{ ligne.serieNom }}</td>
                     <td>#{{ ligne.numeroTentative }}</td>
                     <td>{{ ligne.dateDebut | date:'dd/MM/yyyy HH:mm' }}</td>
                     <td>{{ ligne.score }} / {{ ligne.totalQuestions }}</td>

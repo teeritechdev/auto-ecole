@@ -149,6 +149,16 @@ public class CaisseService {
 
         Site site = resoudreSiteTransaction(request.getSiteId());
 
+        if (nature.getSens() == TypeMouvementCaisse.SORTIE) {
+            BigDecimal soldeSite = transactionRepository.sumByTypeMouvement(TypeMouvementCaisse.ENTREE, Set.of(site.getId()))
+                    .subtract(transactionRepository.sumByTypeMouvement(TypeMouvementCaisse.SORTIE, Set.of(site.getId())));
+            if (request.getMontant().compareTo(soldeSite) > 0) {
+                throw new BadRequestException("Le montant de la dépense (" + request.getMontant()
+                        + " FCFA) dépasse le solde actuel de la caisse du site " + site.getNom()
+                        + " (" + soldeSite + " FCFA)");
+            }
+        }
+
         TransactionCaisse tx = TransactionCaisse.builder()
                 .natureOperation(nature)
                 .typeMouvement(nature.getSens())

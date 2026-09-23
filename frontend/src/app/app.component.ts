@@ -432,18 +432,7 @@ import { extraireMessageErreur } from './core/utils/error-utils';
       color: #103778;
       font-weight: 700;
       box-shadow: 0 2px 6px rgba(250, 184, 37, 0.25);
-      position: relative;
-    }
-
-    .nav-item.active::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 18%;
-      height: 64%;
-      width: 4px;
-      background: #103778;
-      border-radius: 0 4px 4px 0;
+      border-left-color: #103778;
     }
 
     /* Sous-menu de liens (Paramètres Généraux, Caisse Ménu Dépense...) : un dépliage EN

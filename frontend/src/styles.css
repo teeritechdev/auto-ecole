@@ -227,6 +227,7 @@ button, input, select, textarea {
   transition: all var(--transition-fast);
   cursor: pointer;
   position: relative;
+  border-left: 5px solid transparent;
 }
 
 .nav-item span {

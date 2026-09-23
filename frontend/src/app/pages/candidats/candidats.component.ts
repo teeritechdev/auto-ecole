@@ -49,9 +49,14 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
         </div>
       </div>
 
-      <!-- CARTE STATISTIQUE UNIQUE "INSCRITS" -->
+      <!-- CARTE STATISTIQUE UNIQUE "INSCRITS" AVEC ACTION DÉTAIL -->
       <div class="stats-sexe-bar">
         <div class="stats-sexe-box inscrits">
+          @if (statsSexe && statsSexe.parSite && statsSexe.parSite.length > 0) {
+            <button type="button" class="stat-action-btn" (click)="showSiteModal = true" title="Voir le détail par site">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          }
           <span class="stats-sexe-label">Inscrits</span>
           <span class="stats-sexe-value">{{ (statsSexe?.totalHommes || 0) + (statsSexe?.totalFemmes || 0) + (statsSexe?.totalNonRenseigne || 0) }}</span>
           <div class="stats-sexe-details">
@@ -61,36 +66,6 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
             }
           </div>
         </div>
-        @if (statsSexe && statsSexe.parSite.length > 1) {
-          <div class="stats-sexe-par-site">
-            <table class="stats-site-table">
-              <thead>
-                <tr>
-                  <th>Site</th>
-                  <th>Hommes</th>
-                  <th>Femmes</th>
-                  @if (statsSexe.totalNonRenseigne > 0) {
-                    <th>Non renseigné</th>
-                  }
-                  <th>Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (s of statsSexe.parSite; track s.siteNom) {
-                  <tr>
-                    <td>{{ s.siteNom }}</td>
-                    <td>{{ s.hommes }}</td>
-                    <td>{{ s.femmes }}</td>
-                    @if (statsSexe.totalNonRenseigne > 0) {
-                      <td>{{ s.nonRenseigne }}</td>
-                    }
-                    <td><strong>{{ s.total }}</strong></td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        }
       </div>
 
       <!-- FILTER BAR -->
@@ -717,6 +692,61 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
           </div>
         </div>
       }
+
+      <!-- MODAL DÉTAIL DES INSCRITS PAR SITE -->
+      @if (showSiteModal) {
+        <div class="modal-backdrop">
+          <div class="modal-content modal-md">
+            <div class="modal-header">
+              <h3 style="display:flex; align-items:center; gap:0.5rem;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                Détail des Inscrits par Site
+              </h3>
+              <button class="btn btn-outline btn-sm" (click)="showSiteModal = false">✕</button>
+            </div>
+            <div class="modal-body">
+              @if (!statsSexe?.parSite || statsSexe!.parSite.length === 0) {
+                <div class="empty-state">
+                  Aucune donnée par site disponible.
+                </div>
+              }
+              @if (statsSexe?.parSite && statsSexe!.parSite.length > 0) {
+                <div class="table-responsive">
+                  <table class="custom-table">
+                    <thead>
+                      <tr>
+                        <th>Site</th>
+                        <th style="text-align: center;">Hommes</th>
+                        <th style="text-align: center;">Femmes</th>
+                        @if (statsSexe!.totalNonRenseigne > 0) {
+                          <th style="text-align: center;">Non renseigné</th>
+                        }
+                        <th style="text-align: right;">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (s of statsSexe!.parSite; track s.siteNom) {
+                        <tr>
+                          <td><strong>{{ s.siteNom }}</strong></td>
+                          <td style="text-align: center;">{{ s.hommes }}</td>
+                          <td style="text-align: center;">{{ s.femmes }}</td>
+                          @if (statsSexe!.totalNonRenseigne > 0) {
+                            <td style="text-align: center;">{{ s.nonRenseigne }}</td>
+                          }
+                          <td style="text-align: right;"><strong>{{ s.total }}</strong></td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" (click)="showSiteModal = false">Fermer</button>
+            </div>
+          </div>
+        </div>
+      }
     </div>
     `,
     changeDetection: ChangeDetectionStrategy.Eager,
@@ -770,6 +800,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       flex-direction: column;
       box-shadow: var(--shadow-sm);
       transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+      position: relative;
     }
 
     .stats-sexe-box:hover {
@@ -777,10 +808,38 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       box-shadow: var(--shadow-md);
     }
 
-    .stats-sexe-box.inscrits { border-left: 4px solid var(--accent); min-width: 220px; }
+    .stats-sexe-box.inscrits { border-left: 4px solid var(--accent); min-width: 240px; }
     .stats-sexe-box.hommes { border-left: 4px solid var(--cobalt); }
     .stats-sexe-box.femmes { border-left: 4px solid var(--accent); }
     .stats-sexe-box.non-renseigne { border-left: 4px solid var(--text-muted); }
+
+    .stat-action-btn {
+      position: absolute;
+      top: 0.65rem;
+      right: 0.65rem;
+      width: 1.85rem;
+      height: 1.85rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 9999px;
+      background: rgba(255, 255, 255, 0.9);
+      color: var(--text-dark, #334155);
+      cursor: pointer;
+      opacity: 0.85;
+      transition: all var(--transition-fast);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      z-index: 2;
+    }
+
+    .stat-action-btn:hover {
+      opacity: 1;
+      background: #ffffff;
+      color: var(--primary);
+      border-color: var(--primary);
+      transform: scale(1.08);
+    }
 
     .stats-sexe-details {
       font-size: 0.8rem;
@@ -804,40 +863,6 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       letter-spacing: 0.04em;
       color: var(--text-muted);
       margin-top: 0.15rem;
-    }
-
-    .stats-sexe-par-site {
-      flex: 1;
-      min-width: 260px;
-      background: #fff;
-      border: 1px solid var(--border-color);
-      border-radius: 0.75rem;
-      padding: 0.5rem 0.75rem;
-      overflow-x: auto;
-    }
-
-    .stats-site-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.82rem;
-    }
-
-    .stats-site-table th {
-      text-align: left;
-      color: var(--text-muted);
-      font-weight: 600;
-      padding: 0.35rem 0.5rem;
-      border-bottom: 1px solid var(--border-color);
-    }
-
-    .stats-site-table td {
-      padding: 0.35rem 0.5rem;
-      border-bottom: 1px solid var(--border-color);
-      color: var(--text-main);
-    }
-
-    .stats-site-table tr:last-child td {
-      border-bottom: none;
     }
 
     .filter-card {
@@ -949,6 +974,7 @@ export class CandidatsComponent implements OnInit {
   showCreateModal = false;
   showEditModal = false;
   showDeleteModal = false;
+  showSiteModal = false;
   identifiantsCompteAAfficher: IdentifiantsCompte | null = null;
   selectedCandidat: Candidat | null = null;
   editCandidat: any = {};

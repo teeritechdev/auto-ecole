@@ -17,6 +17,8 @@ public interface UtilisateurRepository extends JpaRepository<Utilisateur, Long> 
     Optional<Utilisateur> findByEmail(String email);
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
+    Optional<Utilisateur> findByCandidatId(Long candidatId);
+    void deleteByCandidatId(Long candidatId);
 
     /** Comptes du personnel (hors CANDIDAT) : utilisé par l'écran d'administration des
      *  utilisateurs, qui ne gère que Administrateur/Secrétaire/Caissière/Moniteur — les

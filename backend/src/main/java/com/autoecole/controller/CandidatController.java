@@ -104,7 +104,7 @@ public class CandidatController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('PERM_CANDIDATS_SUPPRIMER')")
+    @PreAuthorize("hasAuthority('PERM_CANDIDATS_SUPPRIMER') or hasRole('ADMIN')")
     @Operation(summary = "Supprimer un dossier candidat (réservé ADMIN)")
     public ResponseEntity<Void> deleteCandidat(
             @PathVariable Long id,

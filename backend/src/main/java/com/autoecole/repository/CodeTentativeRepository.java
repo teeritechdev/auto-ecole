@@ -14,4 +14,5 @@ public interface CodeTentativeRepository extends JpaRepository<CodeTentative, Lo
     boolean existsByCandidatIdAndSerieIdAndStatut(Long candidatId, Long serieId, StatutTentativeCode statut);
     List<CodeTentative> findBySerieId(Long serieId);
     void deleteBySerieId(Long serieId);
+    void deleteByCandidatId(Long candidatId);
 }

@@ -464,7 +464,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" (click)="showCreateModal = false">Annuler</button>
                 <button type="submit" class="btn btn-primary" [disabled]="saving">
-                  {{ saving ? 'Enregistrement...' : 'Enregistrer l\'Inscrit' }}
+                  @if (saving) { Enregistrement... } @else { Enregistrer l'Inscrit }
                 </button>
               </div>
             </form>
@@ -581,7 +581,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" (click)="showEditModal = false">Annuler</button>
                 <button type="submit" class="btn btn-primary" [disabled]="saving">
-                  {{ saving ? 'Enregistrement...' : 'Enregistrer les modifications' }}
+                  @if (saving) { Enregistrement... } @else { Enregistrer les modifications }
                 </button>
               </div>
             </form>
@@ -701,7 +701,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" (click)="showProgramModal = false">Annuler</button>
                 <button type="submit" class="btn btn-primary" [disabled]="savingProgram || !programData.siteId">
-                  {{ savingProgram ? 'Enregistrement...' : 'Confirmer' }}
+                  @if (savingProgram) { Enregistrement... } @else { Confirmer }
                 </button>
               </div>
             </form>

@@ -37,6 +37,7 @@ public interface PassageExamenRepository extends JpaRepository<PassageExamen, Lo
     long countByInscriptionIdAndTypeEpreuveAndResultat(Long inscriptionId, TypeEpreuve typeEpreuve, ResultatExamen resultat);
 
     boolean existsByInscriptionIdAndTypeEpreuveAndResultat(Long inscriptionId, TypeEpreuve typeEpreuve, ResultatExamen resultat);
+    void deleteByInscriptionId(Long inscriptionId);
 
     @Query("SELECT pe FROM PassageExamen pe WHERE " +
            "(:candidatId IS NULL OR pe.inscription.candidat.id = :candidatId) " +

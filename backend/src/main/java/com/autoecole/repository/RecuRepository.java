@@ -12,4 +12,5 @@ public interface RecuRepository extends JpaRepository<Recu, Long> {
     Optional<Recu> findByPaiementId(Long paiementId);
     Optional<Recu> findTopByOrderByIdDesc();
     boolean existsByNumeroRecu(String numeroRecu);
+    void deleteByPaiementId(Long paiementId);
 }

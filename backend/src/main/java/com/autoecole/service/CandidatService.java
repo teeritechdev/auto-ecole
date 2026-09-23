@@ -42,6 +42,10 @@ public class CandidatService {
     private final SiteAccessService siteAccessService;
     private final CandidatAccessService candidatAccessService;
     private final CandidatAccountService candidatAccountService;
+    private final UtilisateurRepository utilisateurRepository;
+    private final CodeTentativeRepository tentativeRepository;
+    private final CodeReponseTentativeRepository reponseTentativeRepository;
+    private final HistoriqueActionRepository historiqueActionRepository;
 
     public Page<CandidatDTO> rechercherCandidats(String recherche, StatutDossier statut, Long categorieId, StatutInscription statutInscription, boolean ignoreEtapeFilter, Long siteFiltreId, com.autoecole.entity.enums.EtapeParcours etapeFiltre, Boolean priseEnChargeExamens, java.time.LocalDate dateExamenProgramme, Pageable pageable) {
         java.util.Set<Long> siteIds = siteAccessService.resoudreFiltreSitesPourListe();
@@ -317,7 +321,46 @@ public class CandidatService {
         String num = candidat.getNumeroDossier();
         String nom = candidat.getNom() + " " + candidat.getPrenom();
 
+        // 1. Supprimer les réponses et les tentatives de code du candidat
+        List<CodeTentative> tentatives = tentativeRepository.findByCandidatIdOrderByDateDebutDesc(id);
+        for (CodeTentative t : tentatives) {
+            reponseTentativeRepository.deleteByTentativeId(t.getId());
+        }
+        tentativeRepository.deleteAll(tentatives);
+
+        // 2. Traiter les inscriptions du candidat
+        List<Inscription> inscriptions = inscriptionRepository.findByCandidatIdOrderByNumeroCycleDesc(id);
+        // Défaire les liaisons auto-référentielles (inscription_precedente_id)
+        for (Inscription i : inscriptions) {
+            if (i.getInscriptionPrecedente() != null) {
+                i.setInscriptionPrecedente(null);
+                inscriptionRepository.save(i);
+            }
+        }
+
+        for (Inscription i : inscriptions) {
+            // Supprimer les passages d'examen
+            passageRepository.deleteByInscriptionId(i.getId());
+
+            // Supprimer les reçus puis les paiements associés
+            List<Paiement> paiements = paiementRepository.findByInscriptionIdOrderByDatePaiementDesc(i.getId());
+            for (Paiement p : paiements) {
+                recuRepository.deleteByPaiementId(p.getId());
+            }
+            paiementRepository.deleteAll(paiements);
+        }
+        inscriptionRepository.deleteAll(inscriptions);
+
+        // 3. Supprimer le compte utilisateur lié au candidat s'il existe
+        utilisateurRepository.findByCandidatId(id).ifPresent(u -> {
+            historiqueActionRepository.deleteByUtilisateurId(u.getId());
+            utilisateurRepository.delete(u);
+        });
+
+        // 4. Supprimer le dossier candidat lui-même
         candidatRepository.delete(candidat);
+
+        // 5. Tracer l'action dans le journal d'audit
         auditService.logAction("SUPPRESSION_CANDIDAT", "Candidat", num, "Suppression du dossier candidat " + nom, motif);
     }
 

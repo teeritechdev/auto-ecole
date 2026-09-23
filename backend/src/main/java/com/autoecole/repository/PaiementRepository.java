@@ -20,6 +20,8 @@ public interface PaiementRepository extends JpaRepository<Paiement, Long> {
 
     long countByInscriptionId(Long inscriptionId);
 
+    void deleteByInscriptionId(Long inscriptionId);
+
     @Query("SELECT p FROM Paiement p WHERE " +
            "(:candidatId IS NULL OR p.inscription.candidat.id = :candidatId) " +
            "AND (CAST(:debut AS timestamp) IS NULL OR p.datePaiement >= :debut) " +

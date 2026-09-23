@@ -28,4 +28,6 @@ public interface HistoriqueActionRepository extends JpaRepository<HistoriqueActi
             @Param("utilisateurId") Long utilisateurId,
             Pageable pageable
     );
+
+    void deleteByUtilisateurId(Long utilisateurId);
 }

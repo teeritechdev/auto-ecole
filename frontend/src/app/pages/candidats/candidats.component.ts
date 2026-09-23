@@ -357,11 +357,11 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   <div class="form-row">
                     <div class="form-group">
                       <label class="form-label">Nom <span class="required">*</span></label>
-                      <input type="text" class="form-control" [(ngModel)]="newCandidat.nom" name="nom" required placeholder="Ex: KOUADIO" />
+                      <input type="text" class="form-control" [(ngModel)]="newCandidat.nom" name="nom" required />
                     </div>
                     <div class="form-group">
                       <label class="form-label">Prénom(s) <span class="required">*</span></label>
-                      <input type="text" class="form-control" [(ngModel)]="newCandidat.prenom" name="prenom" required placeholder="Ex: Jean-Luc" />
+                      <input type="text" class="form-control" [(ngModel)]="newCandidat.prenom" name="prenom" required />
                     </div>
                   </div>
                   <div class="form-row">
@@ -371,13 +371,13 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                     </div>
                     <div class="form-group">
                       <label class="form-label">Lieu de naissance</label>
-                      <input type="text" class="form-control" [(ngModel)]="newCandidat.lieuNaissance" name="lieuNaissance" placeholder="Ex: Cocody, Abidjan" />
+                      <input type="text" class="form-control" [(ngModel)]="newCandidat.lieuNaissance" name="lieuNaissance" />
                     </div>
                   </div>
                   <div class="form-row">
                     <div class="form-group">
                       <label class="form-label">Numéro Téléphone <span class="required">*</span></label>
-                      <input type="tel" class="form-control" [(ngModel)]="newCandidat.telephone" name="telephone" required placeholder="Ex: 0701020304" (blur)="verifierDoublon()" />
+                      <input type="tel" class="form-control" [(ngModel)]="newCandidat.telephone" name="telephone" required placeholder="+226 ..." (blur)="verifierDoublon()" />
                     </div>
                     <div class="form-group">
                       <label class="form-label">Adresse Email</label>
@@ -393,27 +393,36 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                       </select>
                     </div>
                     <div class="form-group">
-                      <label class="form-label">Étape du parcours</label>
-                      <select class="form-control" [(ngModel)]="newCandidat.etapeParcours" name="etapeParcours">
-                        @for (e of etapesParcours; track e) {
-                          <option [value]="e">{{ etapeLabel(e) }}</option>
-                        }
-                      </select>
+                      <label class="form-label">Autres contacts utiles / Personne à prévenir</label>
+                      <input type="text" class="form-control" [(ngModel)]="newCandidat.contactsUrgence" name="contactsUrgence" />
                     </div>
                   </div>
-                  <div class="form-group">
-                    <label class="form-label">Autres contacts utiles / Personne à prévenir</label>
-                    <input type="text" class="form-control" [(ngModel)]="newCandidat.contactsUrgence" name="contactsUrgence" placeholder="Nom et téléphone du contact d'urgence" />
-                  </div>
+                }
+                <h4 class="section-title">2. Inscription & Tarif</h4>
+                <div class="form-row">
                   <div class="form-group">
                     <label class="form-label">Statut de l'inscrit</label>
-                    <select class="form-control" [(ngModel)]="newCandidat.statutInscription" name="statutInscription">
+                    <select class="form-control" [(ngModel)]="newCandidat.statutInscription" name="statutInscription" (change)="onStatutInscriptionChange()">
                       <option value="NOUVEAU">Nouveau</option>
                       <option value="REDOUBLANT">Redoublant</option>
                     </select>
                   </div>
-                }
-                <h4 class="section-title">2. Inscription & Tarif</h4>
+                  <div class="form-group">
+                    <label class="form-label">Étape actuelle</label>
+                    @if (newCandidat.statutInscription === 'NOUVEAU') {
+                      <select class="form-control" [ngModel]="'INSCRIPTION'" name="etapeParcours" [disabled]="true">
+                        <option value="INSCRIPTION">Inscription</option>
+                      </select>
+                      <small class="text-muted">Verrouillé sur Inscription pour un nouvel inscrit.</small>
+                    } @else {
+                      <select class="form-control" [(ngModel)]="newCandidat.etapeParcours" name="etapeParcours">
+                        @for (e of etapesRedoublant; track e) {
+                          <option [value]="e">{{ etapeLabel(e) }}</option>
+                        }
+                      </select>
+                    }
+                  </div>
+                </div>
                 <div class="form-row">
                   <div class="form-group">
                     <label class="form-label">Catégorie de permis <span class="required">*</span></label>
@@ -424,13 +433,6 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                     </select>
                   </div>
                   <div class="form-group">
-                    <label class="form-label">Montant de formation (FCFA) <span class="required">*</span></label>
-                    <input type="number" class="form-control" [(ngModel)]="newCandidat.montant" name="montant" required placeholder="Ex: 100000" />
-                    <small class="text-muted">Pré-rempli selon la catégorie choisie, modifiable si besoin.</small>
-                  </div>
-                </div>
-                <div class="form-row">
-                  <div class="form-group">
                     <label class="form-label">Site de formation <span class="required">*</span></label>
                     <select class="form-control" [(ngModel)]="newCandidat.siteId" name="siteId" required>
                       @for (s of sitesAutorises; track s) {
@@ -438,20 +440,27 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                       }
                     </select>
                   </div>
+                </div>
+                <div class="form-row">
                   <div class="form-group">
-                    <label class="form-label">Date d'inscription <span class="required">*</span></label>
-                    <input type="date" class="form-control" [(ngModel)]="newCandidat.dateInscription" name="dateInscription" required />
+                    <label class="form-label">Montant de formation (FCFA) <span class="required">*</span></label>
+                    <input type="number" class="form-control" [(ngModel)]="newCandidat.montant" name="montant" required />
+                    <small class="text-muted">Pré-rempli selon la catégorie choisie, modifiable si besoin.</small>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Frais d'examen (FCFA)</label>
+                    <input type="number" class="form-control" [(ngModel)]="newCandidat.fraisExamen" name="fraisExamen" />
+                    <small class="text-muted">Pré-rempli selon la catégorie, modifiable.</small>
                   </div>
                 </div>
                 <div class="form-row">
                   <div class="form-group">
-                    <label class="form-label">Date de réception dossier</label>
-                    <input type="date" class="form-control" [(ngModel)]="newCandidat.dateReceptionDossier" name="dateReceptionDossier" />
+                    <label class="form-label">Date d'inscription <span class="required">*</span></label>
+                    <input type="date" class="form-control" [(ngModel)]="newCandidat.dateInscription" name="dateInscription" required />
                   </div>
                   <div class="form-group">
-                    <label class="form-label">Frais d'examen (FCFA)</label>
-                    <input type="number" class="form-control" [(ngModel)]="newCandidat.fraisExamen" name="fraisExamen" placeholder="Ex: 25000" />
-                    <small class="text-muted">Pré-rempli selon la catégorie, modifiable.</small>
+                    <label class="form-label">Date de réception dossier</label>
+                    <input type="date" class="form-control" [(ngModel)]="newCandidat.dateReceptionDossier" name="dateReceptionDossier" />
                   </div>
                 </div>
                 <div class="form-group form-check" style="margin-top: 4px;">
@@ -567,7 +576,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 <div class="form-row">
                   <div class="form-group">
                     <label class="form-label">Frais d'examen (FCFA)</label>
-                    <input type="number" class="form-control" [(ngModel)]="editCandidat.fraisExamen" name="editFraisExamen" placeholder="Ex: 25000" />
+                    <input type="number" class="form-control" [(ngModel)]="editCandidat.fraisExamen" name="editFraisExamen" />
                     <small class="text-muted">Pré-rempli selon la catégorie, modifiable.</small>
                   </div>
                 </div>
@@ -935,6 +944,7 @@ export class CandidatsComponent implements OnInit {
   totalElements = 0;
 
   etapesParcours = ['INSCRIPTION', 'CODE', 'EXAMEN_CODE', 'CRENEAU', 'EXAMEN_CRENEAU', 'CIRCULATION', 'EXAMEN_CIRCULATION', 'PERMIS_OBTENU', 'EXPIRE'];
+  etapesRedoublant = ['INSCRIPTION', 'CODE', 'CRENEAU', 'CIRCULATION'];
 
   showCreateModal = false;
   showEditModal = false;
@@ -1262,6 +1272,12 @@ export class CandidatsComponent implements OnInit {
     }
   }
 
+  onStatutInscriptionChange(): void {
+    if (this.newCandidat.statutInscription === 'NOUVEAU') {
+      this.newCandidat.etapeParcours = 'INSCRIPTION';
+    }
+  }
+
   verifierDoublon(): void {
     const telephone = this.newCandidat.telephone?.trim();
     this.doublonDetecte = null;
@@ -1278,6 +1294,7 @@ export class CandidatsComponent implements OnInit {
   rattacherDoublon(): void {
     if (!this.doublonDetecte) return;
     this.modeReinscription = true;
+    this.newCandidat.statutInscription = 'REDOUBLANT';
     this.modalError = '';
   }
 
@@ -1290,11 +1307,17 @@ export class CandidatsComponent implements OnInit {
     this.modeReinscription = false;
     this.doublonDetecte = null;
     this.doublonIgnore = true;
+    this.newCandidat.statutInscription = 'NOUVEAU';
+    this.newCandidat.etapeParcours = 'INSCRIPTION';
   }
 
   saveCreateCandidat(): void {
     this.saving = true;
     this.modalError = '';
+
+    if (this.newCandidat.statutInscription === 'NOUVEAU') {
+      this.newCandidat.etapeParcours = 'INSCRIPTION';
+    }
 
     if (this.modeReinscription && this.doublonDetecte) {
       const payload = {

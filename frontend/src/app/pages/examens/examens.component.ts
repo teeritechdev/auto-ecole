@@ -198,6 +198,24 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   }
                 }
               </div>
+
+              @if (hasModificationsResultats) {
+                <div class="alert alert-warning" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; margin-bottom:1rem; border-left: 4px solid #f59e0b;">
+                  <div style="display:flex; align-items:center; gap:0.5rem;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    <span><strong>{{ getNbModificationsResultats() }} résultat(s) modifié(s) en attente</strong> d'enregistrement pour cette session.</span>
+                  </div>
+                  <div style="display:flex; gap:0.5rem;">
+                    <button type="button" class="btn btn-secondary btn-sm" [disabled]="savingResultats" (click)="annulerModificationsResultats()">
+                      Annuler
+                    </button>
+                    <button type="button" class="btn btn-primary btn-sm" [disabled]="savingResultats" (click)="enregistrerModificationsResultats()">
+                      @if (savingResultats) { Enregistrement... } @else { Enregistrer les résultats }
+                    </button>
+                  </div>
+                </div>
+              }
+
               <table class="custom-table">
                 <thead>
                   <tr>
@@ -220,7 +238,12 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                         <a [routerLink]="['/candidats', p.candidatId]" class="candidat-link"><strong>{{ p.candidatNomComplet }}</strong></a>
                         <div class="sub-text">{{ p.candidatNumeroDossier }}</div>
                       </td>
-                      <td><span class="badge" [ngClass]="getBadgeClass(p.resultat)">{{ p.resultat }}</span></td>
+                      <td>
+                        <span class="badge" [ngClass]="getBadgeClass(getResultatAffiche(p))">{{ getResultatAffiche(p) }}</span>
+                        @if (isResultatModifie(p)) {
+                          <span class="badge-modifie" title="Modifié (en attente d'enregistrement)">Modifié</span>
+                        }
+                      </td>
                       <td>{{ p.nombreEchecs }}/5</td>
 
                       @if (peutNoter(sessionDetail)) {
@@ -229,23 +252,23 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                             <!-- CASE VALIDER -->
                             <button type="button" 
                                     class="btn-case btn-case-valider"
-                                    [class.selected]="p.resultat === 'REUSSI'"
-                                    [disabled]="notingPassageId === p.id"
-                                    (click)="noterPassageDirect(p, 'REUSSI')"
+                                    [class.selected]="getResultatAffiche(p) === 'REUSSI'"
+                                    [disabled]="savingResultats"
+                                    (click)="proposerResultat(p, 'REUSSI')"
                                     title="Marquer comme Validé / Réussi">
                               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                               <span>Validé</span>
                             </button>
 
-                            <!-- CASE AJOURNER -->
+                            <!-- CASE ÉCHOUÉ -->
                             <button type="button" 
                                     class="btn-case btn-case-ajourner"
-                                    [class.selected]="p.resultat === 'AJOURNE'"
-                                    [disabled]="notingPassageId === p.id"
-                                    (click)="noterPassageDirect(p, 'AJOURNE')"
-                                    title="Marquer comme Ajourné">
+                                    [class.selected]="getResultatAffiche(p) === 'AJOURNE'"
+                                    [disabled]="savingResultats"
+                                    (click)="proposerResultat(p, 'AJOURNE')"
+                                    title="Marquer comme Échoué / Ajourné">
                               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                              <span>Ajourné</span>
+                              <span>Échoué</span>
                             </button>
                           </div>
                         </td>
@@ -269,6 +292,17 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   }
                 </tbody>
               </table>
+
+              @if (hasModificationsResultats) {
+                <div style="display:flex; justify-content:flex-end; gap:0.5rem; margin-top:1rem; padding-top:0.75rem; border-top:1px solid var(--border-color);">
+                  <button type="button" class="btn btn-secondary btn-sm" [disabled]="savingResultats" (click)="annulerModificationsResultats()">
+                    Annuler
+                  </button>
+                  <button type="button" class="btn btn-primary btn-sm" [disabled]="savingResultats" (click)="enregistrerModificationsResultats()">
+                    @if (savingResultats) { Enregistrement... } @else { Enregistrer les résultats }
+                  </button>
+                </div>
+              }
 
               @if (peutModifierSession(sessionDetail)) {
                 <div style="margin-top: 1.25rem;">
@@ -350,18 +384,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   </div>
                 }
 
-                <!-- Ordre des champs conforme : 1. Date, 2. Lieu (saisissable), 3. Épreuve, 4. Statut -->
-                <div class="form-row">
-                  <div class="form-group">
-                    <label class="form-label">Date de la session <span class="required">*</span></label>
-                    <input type="date" class="form-control" [(ngModel)]="newPassage.datePassage" name="datePassage" required />
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label">Lieu <span class="required">*</span></label>
-                    <input type="text" class="form-control" [(ngModel)]="newPassage.lieu" name="lieu" placeholder="Ex: Centre Ouaga 2000, Piste Song-Naba..." required />
-                  </div>
-                </div>
-
+                <!-- Ordre des champs conforme (Proposition A) : 1. Type d'épreuve, 2. Date, 3. Lieu, 4. Statut -->
                 <div class="form-row">
                   <div class="form-group">
                     <label class="form-label">Type d'épreuve <span class="required">*</span></label>
@@ -370,6 +393,17 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                         <option [value]="t">{{ epreuveLabel(t) }}</option>
                       }
                     </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Date de la session <span class="required">*</span></label>
+                    <input type="date" class="form-control" [(ngModel)]="newPassage.datePassage" name="datePassage" required />
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Lieu <span class="required">*</span></label>
+                    <input type="text" class="form-control" [(ngModel)]="newPassage.lieu" name="lieu" placeholder="Ex: Centre Ouaga 2000, Piste Song-Naba..." required />
                   </div>
                   <div class="form-group">
                     <label class="form-label">Statut</label>
@@ -393,7 +427,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" (click)="showProgrammerModal = false">Annuler</button>
                 <button type="submit" class="btn btn-primary" [disabled]="saving || !newPassage.datePassage || !newPassage.lieu || !newPassage.typeEpreuve">
-                  {{ saving ? 'Enregistrement...' : 'Créer la Session' }}
+                  @if (saving) { Enregistrement... } @else { Créer la Session }
                 </button>
               </div>
             </form>
@@ -563,7 +597,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" (click)="showUpdateModal = false">Annuler</button>
                 <button type="submit" class="btn btn-primary" [disabled]="saving">
-                  {{ saving ? 'Mise à jour...' : 'Enregistrer la Décision' }}
+                  @if (saving) { Mise à jour... } @else { Enregistrer la Décision }
                 </button>
               </div>
             </form>
@@ -776,6 +810,18 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       cursor: wait;
       transform: none !important;
     }
+
+    .badge-modifie {
+      background-color: #fef3c7;
+      color: #92400e;
+      border: 1px solid #fcd34d;
+      font-size: 0.7rem;
+      padding: 0.15rem 0.4rem;
+      border-radius: var(--radius-sm);
+      margin-left: 0.35rem;
+      font-weight: 600;
+      vertical-align: middle;
+    }
   `]
 })
 export class ExamensComponent implements OnInit {
@@ -783,6 +829,9 @@ export class ExamensComponent implements OnInit {
   eligibleCandidats: Candidat[] = [];
   allExamens: PassageExamen[] = [];
   saving = false;
+
+  resultatsEnAttente: { [passageId: number]: 'REUSSI' | 'AJOURNE' } = {};
+  savingResultats = false;
 
   sessions: SessionExamen[] = [];
   loadingSessions = false;
@@ -888,6 +937,7 @@ export class ExamensComponent implements OnInit {
   openSessionDetail(id: number): void {
     this.sessionError = '';
     this.showAjoutCandidats = false;
+    this.resultatsEnAttente = {};
     this.apiService.getSessionDetail(id).subscribe({
       next: (data) => {
         this.sessionDetail = data;
@@ -898,9 +948,15 @@ export class ExamensComponent implements OnInit {
   }
 
   closeSessionModal(): void {
+    if (this.hasModificationsResultats) {
+      if (!confirm('Des modifications de résultats ne sont pas encore enregistrées. Voulez-vous vraiment fermer sans enregistrer ?')) {
+        return;
+      }
+    }
     this.showSessionModal = false;
     this.sessionDetail = null;
     this.showAjoutCandidats = false;
+    this.resultatsEnAttente = {};
   }
 
   estTerminee(s?: SessionExamen | null): boolean {
@@ -1224,37 +1280,69 @@ export class ExamensComponent implements OnInit {
     });
   }
 
-  /** Notation directe et instantanée en 1 clic ("Validé" ou "Ajourné") sans ouvrir le modal */
-  noterPassageDirect(p: PassageExamen, nouveauResultat: 'REUSSI' | 'AJOURNE'): void {
-    if (this.notingPassageId === p.id) return;
-    this.notingPassageId = p.id;
+  getResultatAffiche(p: PassageExamen): string {
+    return this.resultatsEnAttente[p.id] !== undefined ? this.resultatsEnAttente[p.id] : p.resultat;
+  }
+
+  isResultatModifie(p: PassageExamen): boolean {
+    return this.resultatsEnAttente[p.id] !== undefined && this.resultatsEnAttente[p.id] !== p.resultat;
+  }
+
+  proposerResultat(p: PassageExamen, nouveauResultat: 'REUSSI' | 'AJOURNE'): void {
+    if (this.savingResultats) return;
+    // Si on reclique sur le résultat déjà persistant en base et qu'aucune modif n'était en attente
+    if (p.resultat === nouveauResultat && this.resultatsEnAttente[p.id] === undefined) {
+      return;
+    }
+    // Si on reclique sur le résultat d'origine alors qu'il était modifié localement, on annule pour ce passage
+    if (p.resultat === nouveauResultat) {
+      delete this.resultatsEnAttente[p.id];
+    } else {
+      this.resultatsEnAttente[p.id] = nouveauResultat;
+    }
+  }
+
+  get hasModificationsResultats(): boolean {
+    return Object.keys(this.resultatsEnAttente).length > 0;
+  }
+
+  getNbModificationsResultats(): number {
+    return Object.keys(this.resultatsEnAttente).length;
+  }
+
+  annulerModificationsResultats(): void {
+    this.resultatsEnAttente = {};
+  }
+
+  enregistrerModificationsResultats(): void {
+    if (!this.sessionDetail || !this.hasModificationsResultats) return;
+    this.savingResultats = true;
     this.sessionError = '';
 
-    const payload = {
-      datePassage: p.datePassage || this.sessionDetail?.datePassage || new Date().toISOString().substring(0, 10),
-      resultat: nouveauResultat,
-      observations: p.observations || ''
-    };
+    const passageIds = Object.keys(this.resultatsEnAttente).map(Number);
+    const requests = passageIds.map(id => {
+      const p = this.sessionDetail!.candidats.find(c => c.id === id);
+      const nouveauResultat = this.resultatsEnAttente[id];
+      const payload = {
+        datePassage: p?.datePassage || this.sessionDetail!.datePassage || new Date().toISOString().substring(0, 10),
+        resultat: nouveauResultat,
+        observations: p?.observations || ''
+      };
+      return this.apiService.updateResultatPassage(id, payload);
+    });
 
-    this.apiService.updateResultatPassage(p.id, payload).subscribe({
-      next: (updated) => {
-        this.notingPassageId = null;
-        p.resultat = updated.resultat;
-        // Recharger en arrière-plan la session et la liste pour mettre à jour les statuts dynamiques
+    forkJoin(requests).subscribe({
+      next: () => {
+        this.savingResultats = false;
+        this.resultatsEnAttente = {};
         if (this.sessionDetail) {
-          this.apiService.getSessionDetail(this.sessionDetail.id).subscribe({
-            next: (data) => {
-              this.sessionDetail = data;
-              this.loadSessions();
-            }
-          });
-        } else {
-          this.loadSessions();
+          this.openSessionDetail(this.sessionDetail.id);
         }
+        this.loadSessions();
       },
       error: (err) => {
-        this.notingPassageId = null;
-        this.sessionError = extraireMessageErreur(err, 'Erreur lors de la notation.');
+        this.savingResultats = false;
+        this.sessionError = extraireMessageErreur(err, "Erreur lors de l'enregistrement des résultats.");
       }
     });
   }

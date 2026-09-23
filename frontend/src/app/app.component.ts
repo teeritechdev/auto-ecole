@@ -428,10 +428,10 @@ import { extraireMessageErreur } from './core/utils/error-utils';
     }
 
     .nav-item.active {
-      background: var(--gold-header-gradient);
+      background: var(--gold-header-bg, #fab825);
       color: #103778;
       font-weight: 700;
-      box-shadow: 0 4px 12px rgba(169, 120, 43, 0.25);
+      box-shadow: 0 2px 6px rgba(250, 184, 37, 0.25);
       position: relative;
     }
 
@@ -442,7 +442,7 @@ import { extraireMessageErreur } from './core/utils/error-utils';
       top: 18%;
       height: 64%;
       width: 4px;
-      background: #fbbf24;
+      background: #103778;
       border-radius: 0 4px 4px 0;
     }
 

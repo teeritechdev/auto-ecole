@@ -81,6 +81,20 @@ export class AuthService {
     );
   }
 
+  public updateMyUsername(username: string): Observable<User> {
+    return this.http.patch<any>(`${environment.apiUrl}/utilisateurs/me/username`, { username }).pipe(
+      tap(res => {
+        const current = this.currentUserValue;
+        const updatedUser = { ...current, ...res, token: res.token || current?.token } as User;
+        if (res.token) {
+          localStorage.setItem('jwtToken', res.token);
+        }
+        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+        this.currentUserSubject.next(updatedUser);
+      })
+    );
+  }
+
   /** Déconnexion explicite (action utilisateur) : révoque le token côté serveur. */
   public logout(): void {
     this.http.post<void>(`${this.apiUrl}/logout`, {}).subscribe({

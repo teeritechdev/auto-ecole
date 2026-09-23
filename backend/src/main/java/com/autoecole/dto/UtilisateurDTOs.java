@@ -5,6 +5,7 @@ import com.autoecole.entity.enums.TypeEpreuve;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -81,6 +82,8 @@ public class UtilisateurDTOs {
     @AllArgsConstructor
     @Builder
     public static class UpdateUtilisateurRequest {
+        private String username;
+
         @Email(message = "Format d'email invalide")
         private String email;
 
@@ -109,5 +112,16 @@ public class UtilisateurDTOs {
         // Pertinent uniquement pour le rôle MONITEUR
         private Set<Long> siteIds;
         private Set<TypeEpreuve> specialites;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class UpdateUsernameRequest {
+        @NotBlank(message = "L'identifiant est obligatoire")
+        @Size(min = 3, max = 50, message = "L'identifiant doit contenir entre 3 et 50 caractères")
+        @Pattern(regexp = "^[a-zA-Z0-9._-]+$", message = "L'identifiant ne peut contenir que des lettres, chiffres, tirets, points ou underscores")
+        private String username;
     }
 }

@@ -1,5 +1,6 @@
 package com.autoecole.service;
 
+import com.autoecole.dto.AuthDTOs.JwtResponse;
 import com.autoecole.dto.CandidatDTOs.IdentifiantsCompteDTO;
 import com.autoecole.dto.UtilisateurDTOs.CreateUtilisateurRequest;
 import com.autoecole.dto.UtilisateurDTOs.UpdateUtilisateurRequest;
@@ -16,7 +17,14 @@ import com.autoecole.repository.ProfilRepository;
 import com.autoecole.repository.RoleRepository;
 import com.autoecole.repository.SiteRepository;
 import com.autoecole.repository.UtilisateurRepository;
+import com.autoecole.security.JwtUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,6 +45,8 @@ public class UtilisateurService {
     private final PasswordEncoder passwordEncoder;
     private final AuditService auditService;
     private final CandidatAccountService candidatAccountService;
+    private final UserDetailsService userDetailsService;
+    private final JwtUtils jwtUtils;
 
     /** Ne renvoie que les comptes du personnel (ADMIN/SECRETAIRE/CAISSIERE/MONITEUR) : les
      *  comptes CANDIDAT sont auto-créés, n'ont pas nécessairement d'email et n'ont pas leur
@@ -115,6 +125,22 @@ public class UtilisateurService {
         Set<Site> sites = resoudreSitesPourRole(request.getRole(), request.getSiteIds());
         Profil profil = resoudreProfil(request.getProfilId(), request.getRole());
 
+        if (request.getUsername() != null && !request.getUsername().trim().isEmpty()) {
+            String newUsername = request.getUsername().trim();
+            if (!newUsername.equalsIgnoreCase(user.getUsername())) {
+                if (newUsername.length() < 3 || newUsername.length() > 50) {
+                    throw new BadRequestException("L'identifiant doit contenir entre 3 et 50 caractères");
+                }
+                if (!newUsername.matches("^[a-zA-Z0-9._-]+$")) {
+                    throw new BadRequestException("L'identifiant ne peut contenir que des lettres, chiffres, tirets (-), points (.) ou underscores (_)");
+                }
+                if (utilisateurRepository.existsByUsername(newUsername)) {
+                    throw new BadRequestException("Un compte avec cet identifiant existe déjà: " + newUsername);
+                }
+                user.setUsername(newUsername);
+            }
+        }
+
         user.setEmail(email);
         user.setNom(request.getNom().trim());
         user.setPrenom(request.getPrenom().trim());
@@ -192,6 +218,67 @@ public class UtilisateurService {
         }
         user.setPhotoProfile(photoProfile);
         return mapToDTO(utilisateurRepository.save(user));
+    }
+
+    @Transactional
+    public JwtResponse updateCurrentUsername(String newUsername) {
+        if (newUsername == null || newUsername.trim().isBlank()) {
+            throw new BadRequestException("L'identifiant est obligatoire");
+        }
+        String trimmed = newUsername.trim();
+        if (trimmed.length() < 3 || trimmed.length() > 50) {
+            throw new BadRequestException("L'identifiant doit contenir entre 3 et 50 caractères");
+        }
+        if (!trimmed.matches("^[a-zA-Z0-9._-]+$")) {
+            throw new BadRequestException("L'identifiant ne peut contenir que des lettres, chiffres, tirets (-), points (.) ou underscores (_)");
+        }
+
+        Utilisateur currentUser = auditService.getCurrentUser();
+        if (currentUser == null) {
+            throw new ResourceNotFoundException("Utilisateur non identifié");
+        }
+
+        if (trimmed.equalsIgnoreCase(currentUser.getUsername())) {
+            throw new BadRequestException("Le nouvel identifiant est identique à l'actuel");
+        }
+
+        if (utilisateurRepository.existsByUsername(trimmed)) {
+            throw new BadRequestException("Cet identifiant est déjà utilisé par un autre compte");
+        }
+
+        String ancienUsername = currentUser.getUsername();
+        currentUser.setUsername(trimmed);
+        Utilisateur saved = utilisateurRepository.save(currentUser);
+
+        auditService.logAction("MODIFICATION_IDENTIFIANT", "Utilisateur", saved.getUsername(),
+                "Modification du nom d'utilisateur de '" + ancienUsername + "' à '" + saved.getUsername() + "'", null);
+
+        UserDetails userDetails = userDetailsService.loadUserByUsername(saved.getUsername());
+        Authentication newAuth = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(newAuth);
+        String jwt = jwtUtils.generateJwtToken(newAuth);
+
+        List<String> permissions = userDetails.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .filter(a -> a.startsWith("PERM_"))
+                .map(a -> a.replace("PERM_", ""))
+                .collect(Collectors.toList());
+
+        return JwtResponse.builder()
+                .token(jwt)
+                .id(saved.getId())
+                .username(saved.getUsername())
+                .email(saved.getEmail())
+                .nom(saved.getNom())
+                .prenom(saved.getPrenom())
+                .role(saved.getRole().getCode().name())
+                .permissions(permissions)
+                .photoProfile(saved.getPhotoProfile())
+                .siteIds(saved.getSites().stream().map(Site::getId).collect(Collectors.toSet()))
+                .specialites(saved.getSpecialites())
+                .candidatId(saved.getCandidat() != null ? saved.getCandidat().getId() : null)
+                .doitChangerMotDePasse(saved.isDoitChangerMotDePasse())
+                .build();
     }
 
     /** Rôles de terrain rattachables à un ou plusieurs sites (RG : gestion par site, comme

@@ -20,15 +20,63 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
         <form (ngSubmit)="onSubmit()">
           <div class="form-group">
             <label class="form-label">Mot de passe temporaire (reçu du secrétariat) <span class="required">*</span></label>
-            <input type="password" class="form-control" [(ngModel)]="ancienPassword" name="ancien" required />
+            <div class="password-input-wrapper">
+              <input [type]="showAncienPassword ? 'text' : 'password'" class="form-control" [(ngModel)]="ancienPassword" name="ancien" required autocomplete="current-password" />
+              <button type="button" class="password-toggle-btn" (click)="showAncienPassword = !showAncienPassword" [title]="showAncienPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'" tabindex="-1">
+                @if (!showAncienPassword) {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                }
+                @if (showAncienPassword) {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                  </svg>
+                }
+              </button>
+            </div>
           </div>
           <div class="form-group">
             <label class="form-label">Nouveau mot de passe (8 caractères minimum) <span class="required">*</span></label>
-            <input type="password" class="form-control" [(ngModel)]="nouveauPassword" name="nouveau" required minlength="8" />
+            <div class="password-input-wrapper">
+              <input [type]="showNouveauPassword ? 'text' : 'password'" class="form-control" [(ngModel)]="nouveauPassword" name="nouveau" required minlength="8" autocomplete="new-password" />
+              <button type="button" class="password-toggle-btn" (click)="showNouveauPassword = !showNouveauPassword" [title]="showNouveauPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'" tabindex="-1">
+                @if (!showNouveauPassword) {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                }
+                @if (showNouveauPassword) {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                  </svg>
+                }
+              </button>
+            </div>
           </div>
           <div class="form-group">
             <label class="form-label">Confirmer le nouveau mot de passe <span class="required">*</span></label>
-            <input type="password" class="form-control" [(ngModel)]="confirmation" name="confirmation" required />
+            <div class="password-input-wrapper">
+              <input [type]="showConfirmation ? 'text' : 'password'" class="form-control" [(ngModel)]="confirmation" name="confirmation" required autocomplete="new-password" />
+              <button type="button" class="password-toggle-btn" (click)="showConfirmation = !showConfirmation" [title]="showConfirmation ? 'Masquer le mot de passe' : 'Afficher le mot de passe'" tabindex="-1">
+                @if (!showConfirmation) {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                }
+                @if (showConfirmation) {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                  </svg>
+                }
+              </button>
+            </div>
           </div>
           <button type="submit" class="btn btn-primary" [disabled]="loading || !ancienPassword || nouveauPassword.length < 8 || !confirmation">
             {{ loading ? 'Enregistrement...' : 'Valider et continuer' }}
@@ -51,6 +99,9 @@ export class PremiereConnexionComponent {
   ancienPassword = '';
   nouveauPassword = '';
   confirmation = '';
+  showAncienPassword = false;
+  showNouveauPassword = false;
+  showConfirmation = false;
   loading = false;
   error = '';
 

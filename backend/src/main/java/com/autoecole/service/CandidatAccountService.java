@@ -43,7 +43,8 @@ public class CandidatAccountService {
      */
     @Transactional
     public IdentifiantsCompteDTO creerCompteCandidatSiAbsent(Candidat candidat) {
-        if (utilisateurRepository.findByUsername(candidat.getNumeroDossier()).isPresent()) {
+        if (utilisateurRepository.findByCandidatId(candidat.getId()).isPresent()
+                || utilisateurRepository.findByUsername(candidat.getNumeroDossier()).isPresent()) {
             // Compte déjà existant pour ce numéro de dossier (reprise après expiration, etc.)
             return null;
         }
@@ -100,7 +101,8 @@ public class CandidatAccountService {
      */
     @Transactional
     public IdentifiantsCompteDTO reinitialiserMotDePasse(Candidat candidat) {
-        Utilisateur compte = utilisateurRepository.findByUsername(candidat.getNumeroDossier())
+        Utilisateur compte = utilisateurRepository.findByCandidatId(candidat.getId())
+                .or(() -> utilisateurRepository.findByUsername(candidat.getNumeroDossier()))
                 .orElseThrow(() -> new BadRequestException("Ce candidat n'a pas encore de compte de connexion"));
 
         String motDePasseTemporaire = genererMotDePasseTemporaire();

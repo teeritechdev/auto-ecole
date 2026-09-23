@@ -1,5 +1,6 @@
 package com.autoecole.controller;
 
+import com.autoecole.dto.AuthDTOs.JwtResponse;
 import com.autoecole.dto.CandidatDTOs.IdentifiantsCompteDTO;
 import com.autoecole.dto.UtilisateurDTOs.*;
 import com.autoecole.exception.BadRequestException;
@@ -78,6 +79,13 @@ public class UtilisateurController {
     public ResponseEntity<UtilisateurDTO> updateMyPhoto(@Valid @RequestBody PhotoRequest request) {
         validatePhoto(request.getPhotoProfile());
         return ResponseEntity.ok(utilisateurService.updateCurrentUserPhoto(request.getPhotoProfile()));
+    }
+
+    @PatchMapping("/me/username")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Modifier mon propre nom d'utilisateur (accessible à tout compte connecté)")
+    public ResponseEntity<JwtResponse> updateMyUsername(@Valid @RequestBody UpdateUsernameRequest request) {
+        return ResponseEntity.ok(utilisateurService.updateCurrentUsername(request.getUsername()));
     }
 
     private void validatePhoto(String photoProfile) {

@@ -189,8 +189,30 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                     </div>
                     <div class="form-group">
                       <label class="form-label">Mot de passe <span class="required">*</span></label>
-                      <input type="password" class="form-control" [(ngModel)]="currentUserForm.password" name="password" required placeholder="••••••••" />
+                      <div class="password-input-wrapper">
+                        <input [type]="showPassword ? 'text' : 'password'" class="form-control" [(ngModel)]="currentUserForm.password" name="password" required placeholder="••••••••" autocomplete="new-password" />
+                        <button type="button" class="password-toggle-btn" (click)="showPassword = !showPassword" [title]="showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'" tabindex="-1">
+                          @if (!showPassword) {
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                              <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                          }
+                          @if (showPassword) {
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                              <line x1="1" y1="1" x2="23" y2="23"></line>
+                            </svg>
+                          }
+                        </button>
+                      </div>
                     </div>
+                  </div>
+                }
+                @if (isEdit) {
+                  <div class="form-group">
+                    <label class="form-label">Identifiant de connexion <span class="required">*</span></label>
+                    <input type="text" class="form-control" [(ngModel)]="currentUserForm.username" name="username" required placeholder="Ex: amadou" />
                   </div>
                 }
                 <div class="form-row">
@@ -267,7 +289,23 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 @if (isEdit) {
                   <div class="form-group">
                     <label class="form-label">Nouveau mot de passe (laisser vide pour ne pas changer)</label>
-                    <input type="password" class="form-control" [(ngModel)]="currentUserForm.password" name="password" placeholder="••••••••" />
+                    <div class="password-input-wrapper">
+                      <input [type]="showEditPassword ? 'text' : 'password'" class="form-control" [(ngModel)]="currentUserForm.password" name="password" placeholder="••••••••" autocomplete="new-password" />
+                      <button type="button" class="password-toggle-btn" (click)="showEditPassword = !showEditPassword" [title]="showEditPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'" tabindex="-1">
+                        @if (!showEditPassword) {
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                          </svg>
+                        }
+                        @if (showEditPassword) {
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                            <line x1="1" y1="1" x2="23" y2="23"></line>
+                          </svg>
+                        }
+                      </button>
+                    </div>
                   </div>
                 }
               </div>
@@ -373,6 +411,8 @@ export class UtilisateursComponent implements OnInit {
 
   showModal = false;
   isEdit = false;
+  showPassword = false;
+  showEditPassword = false;
   selectedId: number | null = null;
   formError = '';
   pendingPhoto: string | null = null;
@@ -500,6 +540,7 @@ export class UtilisateursComponent implements OnInit {
 
   openCreateModal(): void {
     this.isEdit = false;
+    this.showPassword = false;
     this.selectedId = null;
     this.formError = '';
     this.currentUserForm = {
@@ -521,9 +562,11 @@ export class UtilisateursComponent implements OnInit {
 
   openEditModal(u: UtilisateurDTO): void {
     this.isEdit = true;
+    this.showEditPassword = false;
     this.selectedId = u.id;
     this.formError = '';
     this.currentUserForm = {
+      username: u.username,
       nom: u.nom,
       prenom: u.prenom,
       email: u.email,

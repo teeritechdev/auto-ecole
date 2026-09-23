@@ -224,6 +224,13 @@ import { extraireMessageErreur } from './core/utils/error-utils';
                       </svg>
                       <span>Photo de profil</span>
                     </button>
+                    <button type="button" class="dropdown-item" (click)="openUsernameModal()">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                      </svg>
+                      <span>Nom d'utilisateur</span>
+                    </button>
                     <button type="button" class="dropdown-item" (click)="openPasswordModal()">
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="3" y="11" width="18" height="11" rx="2"/>
@@ -277,11 +284,43 @@ import { extraireMessageErreur } from './core/utils/error-utils';
                   }
                   <div class="form-group">
                     <label class="form-label">Ancien mot de passe <span class="required">*</span></label>
-                    <input type="password" class="form-control" [(ngModel)]="ancienPwd" name="ancien" required />
+                    <div class="password-input-wrapper">
+                      <input [type]="showAncienPwd ? 'text' : 'password'" class="form-control" [(ngModel)]="ancienPwd" name="ancien" required autocomplete="current-password" />
+                      <button type="button" class="password-toggle-btn" (click)="showAncienPwd = !showAncienPwd" [title]="showAncienPwd ? 'Masquer le mot de passe' : 'Afficher le mot de passe'" tabindex="-1">
+                        @if (!showAncienPwd) {
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                          </svg>
+                        }
+                        @if (showAncienPwd) {
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                            <line x1="1" y1="1" x2="23" y2="23"></line>
+                          </svg>
+                        }
+                      </button>
+                    </div>
                   </div>
                   <div class="form-group">
                     <label class="form-label">Nouveau mot de passe <span class="required">*</span></label>
-                    <input type="password" class="form-control" [(ngModel)]="nouveauPwd" name="nouveau" required />
+                    <div class="password-input-wrapper">
+                      <input [type]="showNouveauPwd ? 'text' : 'password'" class="form-control" [(ngModel)]="nouveauPwd" name="nouveau" required autocomplete="new-password" />
+                      <button type="button" class="password-toggle-btn" (click)="showNouveauPwd = !showNouveauPwd" [title]="showNouveauPwd ? 'Masquer le mot de passe' : 'Afficher le mot de passe'" tabindex="-1">
+                        @if (!showNouveauPwd) {
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                          </svg>
+                        }
+                        @if (showNouveauPwd) {
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                            <line x1="1" y1="1" x2="23" y2="23"></line>
+                          </svg>
+                        }
+                      </button>
+                    </div>
                   </div>
                 </div>
                 <div class="modal-footer">
@@ -320,6 +359,59 @@ import { extraireMessageErreur } from './core/utils/error-utils';
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" (click)="showProfileModal = false">Fermer</button>
               </div>
+            </div>
+          </div>
+        }
+        @if (showUsernameModal) {
+          <div class="modal-backdrop">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h3 style="display:flex; align-items:center; gap:0.5rem;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  Modifier mon nom d'utilisateur
+                </h3>
+                <button class="btn btn-outline btn-sm" (click)="showUsernameModal = false">✕</button>
+              </div>
+              <form (ngSubmit)="changeUsername()">
+                <div class="modal-body">
+                  @if (usernameError) {
+                    <div class="alert alert-danger">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                      {{ usernameError }}
+                    </div>
+                  }
+                  @if (usernameSuccess) {
+                    <div class="alert alert-success">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                      Nom d'utilisateur modifié avec succès.
+                    </div>
+                  }
+
+                  <div class="form-group" style="margin-bottom: 1.25rem;">
+                    <label class="form-label" style="color: var(--text-muted); font-size: 0.85rem;">Nom d'utilisateur actuel</label>
+                    <div style="font-weight: 700; font-size: 0.95rem; color: var(--primary); padding: 0.55rem 0.75rem; background: var(--bg-sidebar, #f8fafc); border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                      {{ currentUser?.username }}
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label">Nouveau nom d'utilisateur <span class="required">*</span></label>
+                    <input type="text" class="form-control" [(ngModel)]="nouveauUsername" name="nouveauUsername" placeholder="Ex: mon.identifiant" required minlength="3" maxlength="50" autocomplete="off" />
+                    <div class="form-help" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.35rem;">
+                      Entre 3 et 50 caractères. Lettres, chiffres, tirets (-), points (.) ou underscores (_).
+                    </div>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" (click)="showUsernameModal = false">Fermer</button>
+                  <button type="submit" class="btn btn-primary" [disabled]="!nouveauUsername || nouveauUsername.trim() === currentUser?.username || isSavingUsername">
+                    {{ isSavingUsername ? 'Enregistrement...' : 'Enregistrer' }}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         }
@@ -764,12 +856,19 @@ export class AppComponent {
   sidebarOpen = typeof window === 'undefined' || window.innerWidth > 960;
   showPasswordModal = false;
   showProfileModal = false;
+  showUsernameModal = false;
   profileMenuOpen = false;
   ancienPwd = '';
   nouveauPwd = '';
+  showAncienPwd = false;
+  showNouveauPwd = false;
   pwdError = '';
   pwdSuccess = false;
   profileError = '';
+  nouveauUsername = '';
+  usernameError = '';
+  usernameSuccess = false;
+  isSavingUsername = false;
   logoData: string | null = null;
   nomEtablissement = 'Nerwaya Auto-École';
   slogan = 'Plateforme Web Centralisée • Gestion Administrative & Financière';
@@ -841,8 +940,41 @@ export class AppComponent {
     this.showProfileModal = true;
   }
 
+  openUsernameModal(): void {
+    this.profileMenuOpen = false;
+    this.usernameError = '';
+    this.usernameSuccess = false;
+    this.nouveauUsername = '';
+    this.showUsernameModal = true;
+  }
+
+  changeUsername(): void {
+    if (!this.nouveauUsername || !this.nouveauUsername.trim()) return;
+    this.usernameError = '';
+    this.usernameSuccess = false;
+    this.isSavingUsername = true;
+
+    this.authService.updateMyUsername(this.nouveauUsername.trim()).subscribe({
+      next: () => {
+        this.isSavingUsername = false;
+        this.usernameSuccess = true;
+        this.nouveauUsername = '';
+        setTimeout(() => {
+          this.showUsernameModal = false;
+          this.usernameSuccess = false;
+        }, 1500);
+      },
+      error: (err) => {
+        this.isSavingUsername = false;
+        this.usernameError = extraireMessageErreur(err, 'Erreur lors du changement de nom d\'utilisateur.');
+      }
+    });
+  }
+
   openPasswordModal(): void {
     this.profileMenuOpen = false;
+    this.showAncienPwd = false;
+    this.showNouveauPwd = false;
     this.showPasswordModal = true;
   }
 

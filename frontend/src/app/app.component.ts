@@ -2,6 +2,7 @@ import { Component, ChangeDetectionStrategy, HostListener, ElementRef, ViewChild
 
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
 import { AuthService } from './core/services/auth.service';
 import { User } from './core/models/models';
 import { ApiService } from './core/services/api.service';
@@ -217,26 +218,12 @@ import { extraireMessageErreur } from './core/utils/error-utils';
 
                 @if (profileMenuOpen) {
                   <div class="user-dropdown-menu" (click)="$event.stopPropagation()">
-                    <button type="button" class="dropdown-item" (click)="openProfileModal()">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/>
-                        <circle cx="12" cy="13" r="4"/>
-                      </svg>
-                      <span>Photo de profil</span>
-                    </button>
-                    <button type="button" class="dropdown-item" (click)="openUsernameModal()">
+                    <button type="button" class="dropdown-item" (click)="openMonProfilModal()">
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
                         <circle cx="12" cy="7" r="4"/>
                       </svg>
-                      <span>Nom d'utilisateur</span>
-                    </button>
-                    <button type="button" class="dropdown-item" (click)="openPasswordModal()">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="11" width="18" height="11" rx="2"/>
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                      </svg>
-                      <span>Mot de passe</span>
+                      <span>Mon Profil</span>
                     </button>
                     <div class="dropdown-divider"></div>
                     <button type="button" class="dropdown-item dropdown-item-danger" (click)="logoutUser()">
@@ -257,158 +244,141 @@ import { extraireMessageErreur } from './core/utils/error-utils';
             <router-outlet></router-outlet>
           </main>
         </div>
-        <!-- MODAL CHANGER MOT DE PASSE -->
-        @if (showPasswordModal) {
+        <!-- MODAL MON PROFIL (Formulaire unique : Photo, Nom d'utilisateur, Mot de passe) -->
+        @if (showMonProfilModal) {
           <div class="modal-backdrop">
-            <div class="modal-content">
+            <div class="modal-content modal-md">
               <div class="modal-header">
                 <h3 style="display:flex; align-items:center; gap:0.5rem;">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                  Changer mon mot de passe
-                </h3>
-                <button class="btn btn-outline btn-sm" (click)="showPasswordModal = false">✕</button>
-              </div>
-              <form (ngSubmit)="changePassword()">
-                <div class="modal-body">
-                  @if (pwdError) {
-                    <div class="alert alert-danger">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                      {{ pwdError }}
-                    </div>
-                  }
-                  @if (pwdSuccess) {
-                    <div class="alert alert-success">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                      Mot de passe modifié avec succès.
-                    </div>
-                  }
-                  <div class="form-group">
-                    <label class="form-label">Ancien mot de passe <span class="required">*</span></label>
-                    <div class="password-input-wrapper">
-                      <input [type]="showAncienPwd ? 'text' : 'password'" class="form-control" [(ngModel)]="ancienPwd" name="ancien" required autocomplete="current-password" />
-                      <button type="button" class="password-toggle-btn" (click)="showAncienPwd = !showAncienPwd" [title]="showAncienPwd ? 'Masquer le mot de passe' : 'Afficher le mot de passe'" tabindex="-1">
-                        @if (!showAncienPwd) {
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                            <circle cx="12" cy="12" r="3"></circle>
-                          </svg>
-                        }
-                        @if (showAncienPwd) {
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                            <line x1="1" y1="1" x2="23" y2="23"></line>
-                          </svg>
-                        }
-                      </button>
-                    </div>
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label">Nouveau mot de passe <span class="required">*</span></label>
-                    <div class="password-input-wrapper">
-                      <input [type]="showNouveauPwd ? 'text' : 'password'" class="form-control" [(ngModel)]="nouveauPwd" name="nouveau" required autocomplete="new-password" />
-                      <button type="button" class="password-toggle-btn" (click)="showNouveauPwd = !showNouveauPwd" [title]="showNouveauPwd ? 'Masquer le mot de passe' : 'Afficher le mot de passe'" tabindex="-1">
-                        @if (!showNouveauPwd) {
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                            <circle cx="12" cy="12" r="3"></circle>
-                          </svg>
-                        }
-                        @if (showNouveauPwd) {
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                            <line x1="1" y1="1" x2="23" y2="23"></line>
-                          </svg>
-                        }
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                <div class="modal-footer">
-                  <button type="button" class="btn btn-secondary" (click)="showPasswordModal = false">Fermer</button>
-                  <button type="submit" class="btn btn-primary" [disabled]="!ancienPwd || !nouveauPwd">Valider</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        }
-        @if (showProfileModal) {
-          <div class="modal-backdrop">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h3 style="display:flex; align-items:center; gap:0.5rem;">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/><circle cx="12" cy="13" r="4"/></svg>
-                  Photo de profil
-                </h3>
-                <button class="btn btn-outline btn-sm" (click)="showProfileModal = false">✕</button>
-              </div>
-              <div class="modal-body">
-                <div class="profile-preview">
-                  @if (currentUser?.photoProfile) {
-                    <img [src]="currentUser?.photoProfile" alt="Photo actuelle" />
-                  }
-                  @if (!currentUser?.photoProfile) {
-                    <span>{{ userInitials }}</span>
-                  }
-                </div>
-                <input type="file" accept="image/png,image/jpeg,image/webp" (change)="onProfilePhotoSelected($event)" />
-                <p class="form-help">Image JPG, PNG ou WebP, maximum 2 Mo.</p>
-                @if (profileError) {
-                  <div class="alert alert-danger">{{ profileError }}</div>
-                }
-              </div>
-              <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" (click)="showProfileModal = false">Fermer</button>
-              </div>
-            </div>
-          </div>
-        }
-        @if (showUsernameModal) {
-          <div class="modal-backdrop">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h3 style="display:flex; align-items:center; gap:0.5rem;">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
                     <circle cx="12" cy="7" r="4"/>
                   </svg>
-                  Modifier mon nom d'utilisateur
+                  Mon Profil
                 </h3>
-                <button class="btn btn-outline btn-sm" (click)="showUsernameModal = false">✕</button>
+                <button type="button" class="btn btn-outline btn-sm" (click)="closeMonProfilModal()">✕</button>
               </div>
-              <form (ngSubmit)="changeUsername()">
+
+              <form (ngSubmit)="saveProfile()">
                 <div class="modal-body">
-                  @if (usernameError) {
-                    <div class="alert alert-danger">
+                  @if (profileError) {
+                    <div class="alert alert-danger" style="margin-bottom: 1.25rem;">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                      {{ usernameError }}
+                      {{ profileError }}
                     </div>
                   }
-                  @if (usernameSuccess) {
-                    <div class="alert alert-success">
+                  @if (profileSuccess) {
+                    <div class="alert alert-success" style="margin-bottom: 1.25rem;">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                      Nom d'utilisateur modifié avec succès.
+                      {{ profileSuccess }}
                     </div>
                   }
 
-                  <div class="form-group" style="margin-bottom: 1.25rem;">
-                    <label class="form-label" style="color: var(--text-muted); font-size: 0.85rem;">Nom d'utilisateur actuel</label>
-                    <div style="font-weight: 700; font-size: 0.95rem; color: var(--primary); padding: 0.55rem 0.75rem; background: var(--bg-sidebar, #f8fafc); border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
-                      {{ currentUser?.username }}
+                  <!-- SECTION 1 : PHOTO DE PROFIL & UTILISATEUR -->
+                  <div class="profile-single-top">
+                    <div class="profile-avatar-wrapper">
+                      <div class="profile-avatar-circle">
+                        @if (avatarToDisplay) {
+                          <img [src]="avatarToDisplay" alt="Photo de profil" />
+                        } @else {
+                          <span>{{ userInitials }}</span>
+                        }
+                      </div>
+                      <label class="btn btn-outline btn-xs photo-upload-btn" title="Changer la photo">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/>
+                          <circle cx="12" cy="13" r="4"/>
+                        </svg>
+                        <span>Changer photo</span>
+                        <input type="file" accept="image/png,image/jpeg,image/webp" (change)="onProfilePhotoSelected($event)" style="display:none;" />
+                      </label>
+                      @if (avatarToDisplay) {
+                        <button type="button" class="btn-text-danger-sm" (click)="removeProfilePhoto()">
+                          Supprimer
+                        </button>
+                      }
+                    </div>
+                    <div class="profile-user-summary">
+                      <div class="profile-summary-name">{{ currentUser?.nom }} {{ currentUser?.prenom }}</div>
+                      <div class="profile-summary-meta">
+                        <span class="profile-badge-role">{{ currentUser?.role }}</span>
+                        <span class="profile-badge-username">@{{ currentUser?.username }}</span>
+                      </div>
+                      @if (pendingPhotoData !== null) {
+                        <div class="profile-pending-badge">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+                          Photo modifiée (en attente d'enregistrement)
+                        </div>
+                      }
                     </div>
                   </div>
 
-                  <div class="form-group">
-                    <label class="form-label">Nouveau nom d'utilisateur <span class="required">*</span></label>
-                    <input type="text" class="form-control" [(ngModel)]="nouveauUsername" name="nouveauUsername" placeholder="Ex: mon.identifiant" required minlength="3" maxlength="50" autocomplete="off" />
-                    <div class="form-help" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.35rem;">
-                      Entre 3 et 50 caractères. Lettres, chiffres, tirets (-), points (.) ou underscores (_).
+                  <!-- SECTION 2 : NOM D'UTILISATEUR -->
+                  <div class="profile-form-section">
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <label class="form-label">
+                        Nom d'utilisateur <span class="required">*</span>
+                      </label>
+                      <input type="text" class="form-control" [(ngModel)]="profileUsername" name="profileUsername" required minlength="3" maxlength="50" autocomplete="username" placeholder="Identifiant de connexion" />
+                      <div class="form-help">
+                        Visible lors de la connexion. Lettres, chiffres, tirets (-), points (.) ou underscores (_) (min 3 caractères).
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- SECTION 3 : SÉCURITÉ / MOT DE PASSE -->
+                  <div class="profile-password-section">
+                    <div class="profile-section-title">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                      </svg>
+                      <span>Mot de passe</span>
+                      <small class="profile-title-hint">(Laissez vide si inchangé)</small>
+                    </div>
+
+                    <div class="profile-password-grid">
+                      <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">Ancien mot de passe</label>
+                        <div class="password-input-wrapper">
+                          <input [type]="showAncienPwd ? 'text' : 'password'" class="form-control" [(ngModel)]="ancienPwd" name="ancienPwd" autocomplete="current-password" placeholder="Mot de passe actuel" />
+                          <button type="button" class="password-toggle-btn" (click)="showAncienPwd = !showAncienPwd" [title]="showAncienPwd ? 'Masquer' : 'Afficher'" tabindex="-1">
+                            @if (!showAncienPwd) {
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            }
+                            @if (showAncienPwd) {
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                            }
+                          </button>
+                        </div>
+                      </div>
+
+                      <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">Nouveau mot de passe</label>
+                        <div class="password-input-wrapper">
+                          <input [type]="showNouveauPwd ? 'text' : 'password'" class="form-control" [(ngModel)]="nouveauPwd" name="nouveauPwd" autocomplete="new-password" placeholder="Nouveau mot de passe" />
+                          <button type="button" class="password-toggle-btn" (click)="showNouveauPwd = !showNouveauPwd" [title]="showNouveauPwd ? 'Masquer' : 'Afficher'" tabindex="-1">
+                            @if (!showNouveauPwd) {
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            }
+                            @if (showNouveauPwd) {
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                            }
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-                <div class="modal-footer">
-                  <button type="button" class="btn btn-secondary" (click)="showUsernameModal = false">Fermer</button>
-                  <button type="submit" class="btn btn-primary" [disabled]="!nouveauUsername || nouveauUsername.trim() === currentUser?.username || isSavingUsername">
-                    {{ isSavingUsername ? 'Enregistrement...' : 'Enregistrer' }}
+
+                <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:0.75rem;">
+                  <button type="button" class="btn btn-secondary" (click)="closeMonProfilModal()" [disabled]="isSavingProfile">Fermer</button>
+                  <button type="submit" class="btn btn-primary" [disabled]="isSavingProfile">
+                    @if (isSavingProfile) {
+                      <span>Enregistrement...</span>
+                    } @else {
+                      <span>Enregistrer</span>
+                    }
                   </button>
                 </div>
               </form>
@@ -821,6 +791,178 @@ import { extraireMessageErreur } from './core/utils/error-utils';
       color: #b91c1c;
     }
 
+    /* Modal Mon Profil (Formulaire unique) Styles */
+    .profile-single-top {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      padding: 1rem 1.15rem;
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.06) 0%, rgba(30, 58, 138, 0.03) 100%);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      margin-bottom: 1.25rem;
+    }
+
+    .profile-avatar-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.4rem;
+      flex-shrink: 0;
+    }
+
+    .profile-avatar-circle {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary) 0%, #1e3a8a 100%);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.5rem;
+      overflow: hidden;
+      border: 3px solid #fff;
+      box-shadow: 0 2px 10px rgba(37, 99, 235, 0.25);
+    }
+
+    .profile-avatar-circle img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .btn-xs {
+      padding: 0.25rem 0.55rem;
+      font-size: 0.75rem;
+      border-radius: var(--radius-sm);
+    }
+
+    .btn-text-danger-sm {
+      background: transparent;
+      border: none;
+      color: var(--danger);
+      font-size: 0.72rem;
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 0;
+    }
+
+    .btn-text-danger-sm:hover {
+      color: #b91c1c;
+    }
+
+    .profile-user-summary {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      flex: 1;
+    }
+
+    .profile-summary-name {
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--text-main);
+    }
+
+    .profile-summary-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .profile-badge-role {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.15rem 0.5rem;
+      border-radius: 9999px;
+      background: rgba(37, 99, 235, 0.12);
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .profile-badge-username {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .profile-pending-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #d97706;
+      background: #fef3c7;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      margin-top: 0.25rem;
+      width: fit-content;
+    }
+
+    .profile-form-section {
+      margin-bottom: 1.25rem;
+    }
+
+    .profile-password-section {
+      padding: 1.1rem;
+      background: var(--bg-sidebar, #f8fafc);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      margin-bottom: 0.5rem;
+    }
+
+    .profile-section-title {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: var(--text-main);
+      margin-bottom: 0.85rem;
+    }
+
+    .profile-title-hint {
+      font-weight: 400;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .profile-password-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    @media (max-width: 600px) {
+      .profile-password-grid {
+        grid-template-columns: 1fr;
+        gap: 0.85rem;
+      }
+      .profile-single-top {
+        flex-direction: column;
+        text-align: center;
+      }
+      .profile-summary-meta {
+        justify-content: center;
+      }
+      .profile-pending-badge {
+        margin: 0.25rem auto 0;
+      }
+    }
+
+    .photo-upload-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
     @media (max-width: 640px) {
       .user-topbar-info {
         display: none;
@@ -854,21 +996,17 @@ export class AppComponent {
   // Repliée par défaut sur petit écran (sinon elle recouvre tout le contenu dès le premier
   // chargement, en superposition avec fond assombri) ; ouverte par défaut sur desktop/tablette.
   sidebarOpen = typeof window === 'undefined' || window.innerWidth > 960;
-  showPasswordModal = false;
-  showProfileModal = false;
-  showUsernameModal = false;
-  profileMenuOpen = false;
+  showMonProfilModal = false;
+  profileUsername = '';
+  pendingPhotoData: string | null = null;
   ancienPwd = '';
   nouveauPwd = '';
   showAncienPwd = false;
   showNouveauPwd = false;
-  pwdError = '';
-  pwdSuccess = false;
   profileError = '';
-  nouveauUsername = '';
-  usernameError = '';
-  usernameSuccess = false;
-  isSavingUsername = false;
+  profileSuccess = '';
+  isSavingProfile = false;
+  profileMenuOpen = false;
   logoData: string | null = null;
   nomEtablissement = 'Nerwaya Auto-École';
   slogan = 'Plateforme Web Centralisée • Gestion Administrative & Financière';
@@ -935,47 +1073,145 @@ export class AppComponent {
     }
   }
 
-  openProfileModal(): void {
+  get avatarToDisplay(): string | null {
+    if (this.pendingPhotoData !== null) {
+      return this.pendingPhotoData || null;
+    }
+    return this.currentUser?.photoProfile || null;
+  }
+
+  openMonProfilModal(): void {
     this.profileMenuOpen = false;
-    this.showProfileModal = true;
+    this.profileUsername = this.currentUser?.username || '';
+    this.pendingPhotoData = null;
+    this.ancienPwd = '';
+    this.nouveauPwd = '';
+    this.showAncienPwd = false;
+    this.showNouveauPwd = false;
+    this.profileError = '';
+    this.profileSuccess = '';
+    this.isSavingProfile = false;
+    this.showMonProfilModal = true;
+  }
+
+  closeMonProfilModal(): void {
+    this.showMonProfilModal = false;
+    this.pendingPhotoData = null;
+    this.ancienPwd = '';
+    this.nouveauPwd = '';
+    this.profileError = '';
+    this.profileSuccess = '';
+    this.isSavingProfile = false;
+  }
+
+  openProfileModal(): void {
+    this.openMonProfilModal();
   }
 
   openUsernameModal(): void {
-    this.profileMenuOpen = false;
-    this.usernameError = '';
-    this.usernameSuccess = false;
-    this.nouveauUsername = '';
-    this.showUsernameModal = true;
-  }
-
-  changeUsername(): void {
-    if (!this.nouveauUsername || !this.nouveauUsername.trim()) return;
-    this.usernameError = '';
-    this.usernameSuccess = false;
-    this.isSavingUsername = true;
-
-    this.authService.updateMyUsername(this.nouveauUsername.trim()).subscribe({
-      next: () => {
-        this.isSavingUsername = false;
-        this.usernameSuccess = true;
-        this.nouveauUsername = '';
-        setTimeout(() => {
-          this.showUsernameModal = false;
-          this.usernameSuccess = false;
-        }, 1500);
-      },
-      error: (err) => {
-        this.isSavingUsername = false;
-        this.usernameError = extraireMessageErreur(err, 'Erreur lors du changement de nom d\'utilisateur.');
-      }
-    });
+    this.openMonProfilModal();
   }
 
   openPasswordModal(): void {
-    this.profileMenuOpen = false;
-    this.showAncienPwd = false;
-    this.showNouveauPwd = false;
-    this.showPasswordModal = true;
+    this.openMonProfilModal();
+  }
+
+  onProfilePhotoSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      this.profileError = 'La photo ne doit pas dépasser 2 Mo.';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.pendingPhotoData = reader.result as string;
+      this.profileError = '';
+    };
+    reader.readAsDataURL(file);
+    input.value = '';
+  }
+
+  removeProfilePhoto(): void {
+    this.pendingPhotoData = '';
+    this.profileError = '';
+  }
+
+  async saveProfile(): Promise<void> {
+    if (this.isSavingProfile) return;
+    this.profileError = '';
+    this.profileSuccess = '';
+
+    const currentUsername = this.currentUser?.username || '';
+    const targetUsername = (this.profileUsername || '').trim();
+    const usernameChanged = targetUsername !== currentUsername;
+    const hasPasswordChange = !!(this.ancienPwd || this.nouveauPwd);
+    const hasPhotoChange = this.pendingPhotoData !== null;
+
+    if (!usernameChanged && !hasPasswordChange && !hasPhotoChange) {
+      this.profileError = 'Aucune modification à enregistrer.';
+      return;
+    }
+
+    if (usernameChanged) {
+      if (!targetUsername || targetUsername.length < 3) {
+        this.profileError = 'Le nom d\'utilisateur doit comporter au moins 3 caractères.';
+        return;
+      }
+      if (!/^[a-zA-Z0-9._-]+$/.test(targetUsername)) {
+        this.profileError = 'Le nom d\'utilisateur ne peut contenir que des lettres, chiffres, tirets (-), points (.) ou underscores (_).';
+        return;
+      }
+    }
+
+    if (hasPasswordChange) {
+      if (!this.ancienPwd || !this.nouveauPwd) {
+        this.profileError = 'Veuillez renseigner à la fois l\'ancien et le nouveau mot de passe.';
+        return;
+      }
+      if (this.nouveauPwd.length < 4) {
+        this.profileError = 'Le nouveau mot de passe doit comporter au moins 4 caractères.';
+        return;
+      }
+    }
+
+    this.isSavingProfile = true;
+
+    try {
+      // 1. Photo
+      if (hasPhotoChange) {
+        const photoToSend = this.pendingPhotoData === '' ? null : this.pendingPhotoData;
+        await firstValueFrom(this.authService.updateMyPhoto(photoToSend));
+        this.pendingPhotoData = null;
+      }
+
+      // 2. Nom d'utilisateur
+      if (usernameChanged) {
+        await firstValueFrom(this.authService.updateMyUsername(targetUsername));
+      }
+
+      // 3. Mot de passe
+      if (hasPasswordChange) {
+        await firstValueFrom(this.authService.changePassword({
+          ancienPassword: this.ancienPwd,
+          nouveauPassword: this.nouveauPwd
+        }));
+        this.ancienPwd = '';
+        this.nouveauPwd = '';
+        this.showAncienPwd = false;
+        this.showNouveauPwd = false;
+      }
+
+      this.profileSuccess = 'Profil mis à jour avec succès !';
+      setTimeout(() => {
+        this.profileSuccess = '';
+      }, 3500);
+    } catch (err: any) {
+      this.profileError = extraireMessageErreur(err, 'Erreur lors de la mise à jour du profil.');
+    } finally {
+      this.isSavingProfile = false;
+    }
   }
 
   logoutUser(): void {
@@ -1095,41 +1331,5 @@ export class AppComponent {
   closeFlyout(): void {
     this.cancelCloseFlyout();
     this.openFlyoutMenu = null;
-  }
-
-  onProfilePhotoSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
-      this.profileError = 'La photo ne doit pas dépasser 2 Mo.';
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => this.authService.updateMyPhoto(reader.result as string).subscribe({
-      next: () => { this.profileError = ''; },
-      error: err => this.profileError = extraireMessageErreur(err, 'Impossible de modifier la photo.')
-    });
-    reader.readAsDataURL(file);
-  }
-
-  changePassword(): void {
-    this.pwdError = '';
-    this.pwdSuccess = false;
-
-    this.authService.changePassword({
-      ancienPassword: this.ancienPwd,
-      nouveauPassword: this.nouveauPwd
-    }).subscribe({
-      next: () => {
-        this.pwdSuccess = true;
-        this.ancienPwd = '';
-        this.nouveauPwd = '';
-        setTimeout(() => this.showPasswordModal = false, 1500);
-      },
-      error: (err) => {
-        this.pwdError = extraireMessageErreur(err, 'Erreur lors du changement de mot de passe.');
-      }
-    });
   }
 }

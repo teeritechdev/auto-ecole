@@ -49,11 +49,12 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
         </div>
       </div>
 
-      <!-- CARTE STATISTIQUE UNIQUE "INSCRITS" AVEC ACTION DÉTAIL -->
+      <!-- CARTES STATISTIQUES AVEC ACTIONS DÉTAIL -->
       <div class="stats-sexe-bar">
+        <!-- 1. INSCRITS -->
         <div class="stats-sexe-box inscrits">
           @if (statsSexe && statsSexe.parSite && statsSexe.parSite.length > 0) {
-            <button type="button" class="stat-action-btn" (click)="showSiteModal = true" title="Voir le détail par site">
+            <button type="button" class="stat-action-btn" (click)="openSiteModal('inscrits')" title="Voir le détail par site">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
             </button>
           }
@@ -64,6 +65,34 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
             @if (statsSexe && statsSexe.totalNonRenseigne > 0) {
               • {{ statsSexe.totalNonRenseigne }} non renseigné(s)
             }
+          </div>
+        </div>
+
+        <!-- 2. SOLDÉS -->
+        <div class="stats-sexe-box soldes">
+          @if (statsSexe && statsSexe.parSite && statsSexe.parSite.length > 0) {
+            <button type="button" class="stat-action-btn" (click)="openSiteModal('soldes')" title="Voir le détail par site">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          }
+          <span class="stats-sexe-label">Soldés</span>
+          <span class="stats-sexe-value text-success">{{ statsSexe?.totalSoldes || 0 }}</span>
+          <div class="stats-sexe-details text-success">
+            Dossiers intégralement réglés
+          </div>
+        </div>
+
+        <!-- 3. NON SOLDÉS -->
+        <div class="stats-sexe-box non-soldes">
+          @if (statsSexe && statsSexe.parSite && statsSexe.parSite.length > 0) {
+            <button type="button" class="stat-action-btn" (click)="openSiteModal('non_soldes')" title="Voir le détail par site">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          }
+          <span class="stats-sexe-label">Non Soldés</span>
+          <span class="stats-sexe-value text-danger">{{ statsSexe?.totalNonSoldes || 0 }}</span>
+          <div class="stats-sexe-details">
+            {{ statsSexe?.totalEnCours || 0 }} en cours • {{ statsSexe?.totalExpiresNonSoldes || 0 }} expirés non soldés
           </div>
         </div>
       </div>
@@ -693,14 +722,20 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
         </div>
       }
 
-      <!-- MODAL DÉTAIL DES INSCRITS PAR SITE -->
+      <!-- MODAL DÉTAIL PAR SITE -->
       @if (showSiteModal) {
         <div class="modal-backdrop">
           <div class="modal-content modal-md">
             <div class="modal-header">
               <h3 style="display:flex; align-items:center; gap:0.5rem;">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                Détail des Inscrits par Site
+                @if (siteModalType === 'inscrits') {
+                  Détail des Inscrits par Site
+                } @else if (siteModalType === 'soldes') {
+                  Détail des Candidats Soldés par Site
+                } @else {
+                  Détail des Candidats Non Soldés par Site
+                }
               </h3>
               <button class="btn btn-outline btn-sm" (click)="showSiteModal = false">✕</button>
             </div>
@@ -716,27 +751,78 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                     <thead>
                       <tr>
                         <th>Site</th>
-                        <th style="text-align: center;">Hommes</th>
-                        <th style="text-align: center;">Femmes</th>
-                        @if (statsSexe!.totalNonRenseigne > 0) {
-                          <th style="text-align: center;">Non renseigné</th>
+                        @if (siteModalType === 'inscrits') {
+                          <th style="text-align: center;">Hommes</th>
+                          <th style="text-align: center;">Femmes</th>
+                          @if (statsSexe!.totalNonRenseigne > 0) {
+                            <th style="text-align: center;">Non renseigné</th>
+                          }
+                          <th style="text-align: right;">Total</th>
                         }
-                        <th style="text-align: right;">Total</th>
+                        @if (siteModalType === 'soldes') {
+                          <th style="text-align: right;">Candidats Soldés</th>
+                        }
+                        @if (siteModalType === 'non_soldes') {
+                          <th style="text-align: center;">En cours</th>
+                          <th style="text-align: center;">Expirés non soldés</th>
+                          <th style="text-align: right;">Total Non Soldés</th>
+                        }
                       </tr>
                     </thead>
                     <tbody>
                       @for (s of statsSexe!.parSite; track s.siteNom) {
                         <tr>
                           <td><strong>{{ s.siteNom }}</strong></td>
-                          <td style="text-align: center;">{{ s.hommes }}</td>
-                          <td style="text-align: center;">{{ s.femmes }}</td>
-                          @if (statsSexe!.totalNonRenseigne > 0) {
-                            <td style="text-align: center;">{{ s.nonRenseigne }}</td>
+                          @if (siteModalType === 'inscrits') {
+                            <td style="text-align: center;">{{ s.hommes }}</td>
+                            <td style="text-align: center;">{{ s.femmes }}</td>
+                            @if (statsSexe!.totalNonRenseigne > 0) {
+                              <td style="text-align: center;">{{ s.nonRenseigne }}</td>
+                            }
+                            <td style="text-align: right;"><strong>{{ s.total }}</strong></td>
                           }
-                          <td style="text-align: right;"><strong>{{ s.total }}</strong></td>
+                          @if (siteModalType === 'soldes') {
+                            <td style="text-align: right;">
+                              <strong class="text-success">{{ s.soldes }}</strong>
+                            </td>
+                          }
+                          @if (siteModalType === 'non_soldes') {
+                            <td style="text-align: center;">{{ s.enCours }}</td>
+                            <td style="text-align: center;">{{ s.expiresNonSoldes }}</td>
+                            <td style="text-align: right;">
+                              <strong class="text-danger">{{ s.nonSoldes }}</strong>
+                            </td>
+                          }
                         </tr>
                       }
                     </tbody>
+                    <tfoot>
+                      <tr style="background: var(--bg-light, #f8fafc); font-weight: 700;">
+                        <td><strong>Total Global</strong></td>
+                        @if (siteModalType === 'inscrits') {
+                          <td style="text-align: center;">{{ statsSexe?.totalHommes || 0 }}</td>
+                          <td style="text-align: center;">{{ statsSexe?.totalFemmes || 0 }}</td>
+                          @if (statsSexe!.totalNonRenseigne > 0) {
+                            <td style="text-align: center;">{{ statsSexe?.totalNonRenseigne || 0 }}</td>
+                          }
+                          <td style="text-align: right;">
+                            <strong>{{ (statsSexe?.totalHommes || 0) + (statsSexe?.totalFemmes || 0) + (statsSexe?.totalNonRenseigne || 0) }}</strong>
+                          </td>
+                        }
+                        @if (siteModalType === 'soldes') {
+                          <td style="text-align: right;">
+                            <strong class="text-success">{{ statsSexe?.totalSoldes || 0 }}</strong>
+                          </td>
+                        }
+                        @if (siteModalType === 'non_soldes') {
+                          <td style="text-align: center;">{{ statsSexe?.totalEnCours || 0 }}</td>
+                          <td style="text-align: center;">{{ statsSexe?.totalExpiresNonSoldes || 0 }}</td>
+                          <td style="text-align: right;">
+                            <strong class="text-danger">{{ statsSexe?.totalNonSoldes || 0 }}</strong>
+                          </td>
+                        }
+                      </tr>
+                    </tfoot>
                   </table>
                 </div>
               }
@@ -808,7 +894,9 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       box-shadow: var(--shadow-md);
     }
 
-    .stats-sexe-box.inscrits { border-left: 4px solid var(--accent); min-width: 240px; }
+    .stats-sexe-box.inscrits { border-left: 4px solid var(--accent); min-width: 240px; flex: 1; }
+    .stats-sexe-box.soldes { border-left: 4px solid var(--success); min-width: 240px; flex: 1; }
+    .stats-sexe-box.non-soldes { border-left: 4px solid var(--danger); min-width: 240px; flex: 1; }
     .stats-sexe-box.hommes { border-left: 4px solid var(--cobalt); }
     .stats-sexe-box.femmes { border-left: 4px solid var(--accent); }
     .stats-sexe-box.non-renseigne { border-left: 4px solid var(--text-muted); }
@@ -975,6 +1063,12 @@ export class CandidatsComponent implements OnInit {
   showEditModal = false;
   showDeleteModal = false;
   showSiteModal = false;
+  siteModalType: 'inscrits' | 'soldes' | 'non_soldes' = 'inscrits';
+
+  openSiteModal(type: 'inscrits' | 'soldes' | 'non_soldes' = 'inscrits'): void {
+    this.siteModalType = type;
+    this.showSiteModal = true;
+  }
   identifiantsCompteAAfficher: IdentifiantsCompte | null = null;
   selectedCandidat: Candidat | null = null;
   editCandidat: any = {};

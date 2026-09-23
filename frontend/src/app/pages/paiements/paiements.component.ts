@@ -34,6 +34,11 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       <!-- RÉSUMÉ ENCAISSEMENTS -->
       <div class="resume-bar">
         <div class="resume-box resume-encaisse">
+          @if (resume && resume.parSite && resume.parSite.length > 0) {
+            <button type="button" class="stat-action-btn" (click)="openDetailModal('encaisse')" title="Voir le détail par site">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          }
           <div class="resume-label">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
             Total encaissé
@@ -41,6 +46,11 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
           <div class="resume-value">{{ (resume?.totalEncaisse || 0) | number }} FCFA</div>
         </div>
         <div class="resume-box resume-reste">
+          @if (resume && resume.parSite && resume.parSite.length > 0) {
+            <button type="button" class="stat-action-btn" (click)="openDetailModal('reste')" title="Voir le détail par site">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          }
           <div class="resume-label">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             Reste à payer
@@ -343,6 +353,81 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
           </div>
         </div>
       }
+
+      <!-- MODAL DÉTAIL PAR SITE -->
+      @if (showDetailModal) {
+        <div class="modal-backdrop">
+          <div class="modal-content modal-md">
+            <div class="modal-header">
+              <h3 style="display:flex; align-items:center; gap:0.5rem;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                @if (detailType === 'encaisse') {
+                  Détail du Total Encaissé par Site
+                } @else {
+                  Détail du Reste à Payer par Site
+                }
+              </h3>
+              <button class="btn btn-outline btn-sm" (click)="closeDetailModal()">✕</button>
+            </div>
+            <div class="modal-body">
+              @if (!resume?.parSite || resume!.parSite!.length === 0) {
+                <div class="empty-state">
+                  Aucune donnée par site disponible.
+                </div>
+              }
+              @if (resume?.parSite && resume!.parSite!.length > 0) {
+                <div class="table-responsive">
+                  <table class="custom-table">
+                    <thead>
+                      <tr>
+                        <th>Site</th>
+                        @if (detailType === 'encaisse') {
+                          <th style="text-align: right;">Total Encaissé</th>
+                        } @else {
+                          <th style="text-align: right;">Reste à Payer</th>
+                        }
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (s of resume!.parSite; track s.siteNom) {
+                        <tr>
+                          <td><strong>{{ s.siteNom }}</strong></td>
+                          @if (detailType === 'encaisse') {
+                            <td style="text-align: right;">
+                              <strong class="text-success">{{ (s.totalEncaisse || 0) | number }} FCFA</strong>
+                            </td>
+                          } @else {
+                            <td style="text-align: right;">
+                              <strong class="text-danger">{{ (s.totalReste || 0) | number }} FCFA</strong>
+                            </td>
+                          }
+                        </tr>
+                      }
+                    </tbody>
+                    <tfoot>
+                      <tr style="background: var(--bg-light, #f8fafc); font-weight: 700;">
+                        <td><strong>Total Global</strong></td>
+                        @if (detailType === 'encaisse') {
+                          <td style="text-align: right;">
+                            <strong class="text-success">{{ (resume?.totalEncaisse || 0) | number }} FCFA</strong>
+                          </td>
+                        } @else {
+                          <td style="text-align: right;">
+                            <strong class="text-danger">{{ (resume?.totalReste || 0) | number }} FCFA</strong>
+                          </td>
+                        }
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              }
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" (click)="closeDetailModal()">Fermer</button>
+            </div>
+          </div>
+        </div>
+      }
     </div>
     `,
     changeDetection: ChangeDetectionStrategy.Eager,
@@ -372,6 +457,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     }
 
     .resume-box {
+      position: relative;
       background: #fff;
       border: 1px solid var(--border-color);
       border-radius: var(--radius-md);
@@ -383,6 +469,34 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     .resume-box:hover {
       transform: translateY(-2px);
       box-shadow: var(--shadow-md);
+    }
+
+    .stat-action-btn {
+      position: absolute;
+      top: 0.65rem;
+      right: 0.65rem;
+      width: 1.85rem;
+      height: 1.85rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 9999px;
+      background: rgba(255, 255, 255, 0.9);
+      color: var(--text-dark, #334155);
+      cursor: pointer;
+      opacity: 0.85;
+      transition: all var(--transition-fast);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      z-index: 2;
+    }
+
+    .stat-action-btn:hover {
+      opacity: 1;
+      background: #ffffff;
+      color: var(--primary);
+      border-color: var(--primary);
+      transform: scale(1.08);
     }
 
     .resume-encaisse {
@@ -551,6 +665,18 @@ export class PaiementsComponent implements OnInit {
    *  de télécharger ou d'imprimer — sans téléchargement automatique. */
   showSuccessModal = false;
   dernierRecuId: number | null = null;
+
+  showDetailModal = false;
+  detailType: 'encaisse' | 'reste' = 'encaisse';
+
+  openDetailModal(type: 'encaisse' | 'reste'): void {
+    this.detailType = type;
+    this.showDetailModal = true;
+  }
+
+  closeDetailModal(): void {
+    this.showDetailModal = false;
+  }
 
   constructor(private apiService: ApiService, private authService: AuthService) {}
 

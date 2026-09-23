@@ -65,4 +65,8 @@ public interface InscriptionRepository extends JpaRepository<Inscription, Long> 
     @Query("SELECT i FROM Inscription i WHERE i.active = true " +
            "AND i.dateEcheance < :dateRef AND i.statutDossier = 'EN_COURS'")
     List<Inscription> findInscriptionsActivesAExpirer(@Param("dateRef") LocalDate dateRef);
+
+    @Query("SELECT COALESCE(SUM(i.totalVerse), 0), COALESCE(SUM(i.soldeRestant), 0) FROM Inscription i WHERE i.active = true AND i.site IS NULL")
+    List<Object[]> sumFinancesActifSansSite();
 }
+

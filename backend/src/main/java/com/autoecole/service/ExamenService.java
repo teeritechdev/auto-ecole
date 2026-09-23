@@ -443,6 +443,14 @@ public class ExamenService {
                 .collect(Collectors.toList());
     }
 
+    public List<SessionExamenDTO> listerSessionsPourExport(Long siteId, TypeEpreuve typeEpreuve, String statut) {
+        return listerSessions().stream()
+                .filter(s -> siteId == null || (s.getSiteId() != null && s.getSiteId().equals(siteId)))
+                .filter(s -> typeEpreuve == null || s.getTypeEpreuve() == typeEpreuve)
+                .filter(s -> statut == null || statut.isBlank() || (s.getStatut() != null && s.getStatut().equalsIgnoreCase(statut)))
+                .collect(Collectors.toList());
+    }
+
     public SessionExamenDTO getSessionDetail(Long sessionId) {
         SessionExamen session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Session d'examen introuvable"));

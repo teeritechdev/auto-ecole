@@ -20,6 +20,18 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
           <p>Épreuves de Code, Créneau et Circulation</p>
         </div>
         <div class="header-buttons">
+          <button class="btn btn-outline btn-sm" (click)="exporterPdf()" title="Exporter en PDF">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            Export PDF
+          </button>
+          <button class="btn btn-outline btn-sm" (click)="imprimerListe()" title="Imprimer la liste">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            Imprimer
+          </button>
+          <button class="btn btn-outline btn-sm" (click)="exporterExcel()" title="Exporter en Excel">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            Export Excel
+          </button>
           @if (canAdd) {
             <button class="btn btn-primary" (click)="openProgrammerModal()">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
@@ -31,9 +43,9 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
 
       <!-- FILTRE -->
       <div class="card filter-card">
-        <div class="filter-grid">
+        <div class="filter-row">
           @if (!isMoniteurRole || sitesAutorises.length > 1) {
-            <div>
+            <div class="filter-col">
               <select class="form-control" [(ngModel)]="sessionFiltreSite">
                 <option value="">Tous les sites</option>
                 @for (s of sitesAutorises; track s.id) {
@@ -42,7 +54,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
               </select>
             </div>
           }
-          <div>
+          <div class="filter-col">
             <select class="form-control" [(ngModel)]="sessionFiltreEpreuve">
               @if (epreuvesAutorisees.length > 1) {
                 <option value="">Toutes les épreuves</option>
@@ -55,7 +67,15 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
               }
             </select>
           </div>
-          <div>
+          <div class="filter-col">
+            <select class="form-control" [(ngModel)]="sessionFiltreStatut">
+              <option value="">Tous les statuts</option>
+              <option value="PROGRAMME">Programmé</option>
+              <option value="EN_COURS">En cours</option>
+              <option value="TERMINE">Terminé</option>
+            </select>
+          </div>
+          <div class="filter-action">
             <button class="btn btn-secondary" (click)="reinitialiserFiltres()">Réinitialiser</button>
           </div>
         </div>
@@ -655,10 +675,43 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       width: auto;
     }
 
-    .filter-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr 0.5fr;
+    .filter-row {
+      display: flex;
+      align-items: center;
       gap: 1rem;
+      flex-wrap: nowrap;
+    }
+
+    .filter-col {
+      flex: 1 1 0;
+      min-width: 0;
+    }
+
+    .filter-col .form-control {
+      width: 100%;
+    }
+
+    .filter-action {
+      flex: 0 0 auto;
+    }
+
+    .filter-action .btn {
+      white-space: nowrap;
+    }
+
+    @media (max-width: 768px) {
+      .filter-row {
+        flex-wrap: wrap;
+      }
+      .filter-col {
+        flex: 1 1 calc(50% - 0.5rem);
+        min-width: 140px;
+      }
+      .filter-action {
+        flex: 1 1 100%;
+        display: flex;
+        justify-content: flex-end;
+      }
     }
 
     .candidat-link {
@@ -837,6 +890,7 @@ export class ExamensComponent implements OnInit {
   loadingSessions = false;
   sessionFiltreEpreuve = '';
   sessionFiltreSite = '';
+  sessionFiltreStatut = '';
   sites: Site[] = [];
 
   showSessionModal = false;
@@ -910,15 +964,41 @@ export class ExamensComponent implements OnInit {
     return this.authService.currentUserValue?.role === 'MONITEUR';
   }
 
+  getSessionStatut(s: SessionExamen): string {
+    return s.statut || (s.terminee ? 'TERMINE' : (s.datePassee ? 'EN_COURS' : 'PROGRAMME'));
+  }
+
   get sessionsAffichees(): SessionExamen[] {
     return this.sessions
       .filter(s => !this.sessionFiltreEpreuve || s.typeEpreuve === this.sessionFiltreEpreuve)
-      .filter(s => !this.sessionFiltreSite || String(s.siteId) === this.sessionFiltreSite);
+      .filter(s => !this.sessionFiltreSite || String(s.siteId) === this.sessionFiltreSite)
+      .filter(s => !this.sessionFiltreStatut || this.getSessionStatut(s) === this.sessionFiltreStatut);
   }
 
   reinitialiserFiltres(): void {
     this.sessionFiltreEpreuve = '';
     this.sessionFiltreSite = '';
+    this.sessionFiltreStatut = '';
+  }
+
+  exporterPdf(): void {
+    this.apiService.downloadBlob(
+      this.apiService.getSessionsPdfUrl(this.sessionFiltreSite, this.sessionFiltreEpreuve, this.sessionFiltreStatut),
+      'sessions_examens.pdf'
+    );
+  }
+
+  imprimerListe(): void {
+    this.apiService.printBlob(
+      this.apiService.getSessionsPdfUrl(this.sessionFiltreSite, this.sessionFiltreEpreuve, this.sessionFiltreStatut)
+    );
+  }
+
+  exporterExcel(): void {
+    this.apiService.downloadBlob(
+      this.apiService.getSessionsExcelUrl(this.sessionFiltreSite, this.sessionFiltreEpreuve, this.sessionFiltreStatut),
+      'sessions_examens.xlsx'
+    );
   }
 
   loadSessions(): void {

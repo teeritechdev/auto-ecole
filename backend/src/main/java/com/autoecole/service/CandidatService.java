@@ -86,28 +86,47 @@ public class CandidatService {
 
         if ((siteIds != null && siteIds.isEmpty()) || (etapesAutorisees != null && etapesAutorisees.isEmpty() && !ignoreEtapeFilter)) {
             return com.autoecole.dto.CandidatDTOs.CandidatStatistiquesDTO.builder()
-                    .totalHommes(0).totalFemmes(0).totalNonRenseigne(0).parSite(List.of()).build();
+                    .totalHommes(0).totalFemmes(0).totalNonRenseigne(0)
+                    .totalSoldes(0).totalNonSoldes(0).totalEnCours(0).totalExpiresNonSoldes(0)
+                    .parSite(List.of()).build();
         }
 
         List<Object[]> rows = candidatRepository.statistiquesParSiteEtSexe(recherche, statut, categorieId, siteIds, statutInscription, etapesAutorisees, siteFiltreId, etapeFiltre, priseEnChargeExamens, dateExamenProgramme);
 
         java.util.Map<Long, String> nomsParSite = new java.util.LinkedHashMap<>();
-        java.util.Map<Long, long[]> comptageParSite = new java.util.LinkedHashMap<>(); // [hommes, femmes, nonRenseigne]
+        java.util.Map<Long, long[]> comptageParSite = new java.util.LinkedHashMap<>(); // [hommes, femmes, nonRenseigne, soldes, enCours, expiresNonSoldes, nonSoldes]
         long totalHommes = 0, totalFemmes = 0, totalNonRenseigne = 0;
+        long totalSoldes = 0, totalEnCours = 0, totalExpiresNonSoldes = 0, totalNonSoldes = 0;
 
         for (Object[] row : rows) {
             Long siteId = (Long) row[0];
             String siteNom = (String) row[1];
             Sexe sexe = (Sexe) row[2];
-            long count = (Long) row[3];
+            StatutDossier st = (StatutDossier) row[3];
+            long count = (Long) row[4];
 
             Long cle = siteId != null ? siteId : -1L;
             nomsParSite.putIfAbsent(cle, siteNom != null ? siteNom : "Sans site");
-            long[] compte = comptageParSite.computeIfAbsent(cle, k -> new long[3]);
+            long[] compte = comptageParSite.computeIfAbsent(cle, k -> new long[7]);
 
             if (sexe == Sexe.HOMME) { compte[0] += count; totalHommes += count; }
             else if (sexe == Sexe.FEMME) { compte[1] += count; totalFemmes += count; }
             else { compte[2] += count; totalNonRenseigne += count; }
+
+            if (st == StatutDossier.SOLDE) {
+                compte[3] += count;
+                totalSoldes += count;
+            } else if (st == StatutDossier.EN_COURS) {
+                compte[4] += count;
+                compte[6] += count;
+                totalEnCours += count;
+                totalNonSoldes += count;
+            } else if (st == StatutDossier.EXPIRE_NON_SOLDE) {
+                compte[5] += count;
+                compte[6] += count;
+                totalExpiresNonSoldes += count;
+                totalNonSoldes += count;
+            }
         }
 
         List<com.autoecole.dto.CandidatDTOs.SiteStatSexeDTO> parSite = comptageParSite.entrySet().stream()
@@ -119,6 +138,10 @@ public class CandidatService {
                             .hommes(c[0])
                             .femmes(c[1])
                             .nonRenseigne(c[2])
+                            .soldes(c[3])
+                            .enCours(c[4])
+                            .expiresNonSoldes(c[5])
+                            .nonSoldes(c[6])
                             .total(c[0] + c[1] + c[2])
                             .build();
                 })
@@ -129,6 +152,10 @@ public class CandidatService {
                 .totalHommes(totalHommes)
                 .totalFemmes(totalFemmes)
                 .totalNonRenseigne(totalNonRenseigne)
+                .totalSoldes(totalSoldes)
+                .totalNonSoldes(totalNonSoldes)
+                .totalEnCours(totalEnCours)
+                .totalExpiresNonSoldes(totalExpiresNonSoldes)
                 .parSite(parSite)
                 .build();
     }

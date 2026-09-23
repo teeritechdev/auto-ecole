@@ -7,6 +7,7 @@ import com.autoecole.dto.PaiementDTOs.ModifierPaiementRequest;
 import com.autoecole.dto.PaiementDTOs.PaiementDTO;
 import com.autoecole.dto.PaiementDTOs.RecuDTO;
 import com.autoecole.dto.PaiementDTOs.ResumePaiementsDTO;
+import com.autoecole.dto.PaiementDTOs.ResumePaiementsParSiteDTO;
 import com.autoecole.entity.*;
 import com.autoecole.entity.enums.*;
 import com.autoecole.exception.BadRequestException;
@@ -14,6 +15,7 @@ import com.autoecole.exception.ResourceNotFoundException;
 import com.autoecole.repository.InscriptionRepository;
 import com.autoecole.repository.PaiementRepository;
 import com.autoecole.repository.RecuRepository;
+import com.autoecole.repository.SiteRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -39,6 +41,7 @@ public class PaiementService {
     private final AuditService auditService;
     private final SiteAccessService siteAccessService;
     private final CandidatAccessService candidatAccessService;
+    private final SiteRepository siteRepository;
 
     /** Une caissière/secrétaire restreinte à un site ne voit et n'encaisse que les paiements
      *  des candidats inscrits sur ce site (RG : gestion par site, comme pour un moniteur). */
@@ -78,16 +81,68 @@ public class PaiementService {
         siteAccessService.verifierAccesSite(siteId);
     }
 
-    /** Total encaissé et reste à payer, sur les dossiers actifs du/des site(s) de l'utilisateur
-     *  courant si restreint (en-tête de la page Paiements), tous sites confondus pour ADMIN. */
+    /** Total encaissé et reste à payer (global et répartition par site), sur les dossiers actifs du/des site(s)
+     *  de l'utilisateur courant si restreint, tous sites confondus pour ADMIN. */
     public ResumePaiementsDTO getResume() {
         java.util.Set<Long> siteIds = siteAccessService.resoudreFiltreSitesPourListe();
         if (siteIds != null && siteIds.isEmpty()) {
-            return ResumePaiementsDTO.builder().totalEncaisse(BigDecimal.ZERO).totalReste(BigDecimal.ZERO).build();
+            return ResumePaiementsDTO.builder()
+                    .totalEncaisse(BigDecimal.ZERO)
+                    .totalReste(BigDecimal.ZERO)
+                    .parSite(List.of())
+                    .build();
         }
+
+        BigDecimal totalEncaisse = inscriptionRepository.sumTotalVerseActif(siteIds);
+        BigDecimal totalReste = inscriptionRepository.sumSoldeRestantActif(siteIds);
+
+        List<Site> sites = siteRepository.findAllByOrderByNomAsc();
+        if (siteIds != null) {
+            sites = sites.stream().filter(s -> siteIds.contains(s.getId())).collect(Collectors.toList());
+        }
+
+        java.util.Map<Long, BigDecimal[]> financierParSite = new java.util.HashMap<>();
+        for (Object[] row : siteRepository.statistiquesParSite()) {
+            Long sId = (Long) row[0];
+            BigDecimal encaisse = (BigDecimal) row[3];
+            BigDecimal restant = (BigDecimal) row[4];
+            financierParSite.put(sId, new BigDecimal[]{encaisse, restant});
+        }
+
+        List<ResumePaiementsParSiteDTO> parSite = new java.util.ArrayList<>();
+        for (Site s : sites) {
+            BigDecimal[] fin = financierParSite.get(s.getId());
+            BigDecimal encaisse = fin != null && fin[0] != null ? fin[0] : BigDecimal.ZERO;
+            BigDecimal restant = fin != null && fin[1] != null ? fin[1] : BigDecimal.ZERO;
+            parSite.add(ResumePaiementsParSiteDTO.builder()
+                    .siteId(s.getId())
+                    .siteNom(s.getNom())
+                    .totalEncaisse(encaisse)
+                    .totalReste(restant)
+                    .build());
+        }
+
+        if (siteIds == null) {
+            List<Object[]> sansSiteRows = inscriptionRepository.sumFinancesActifSansSite();
+            if (sansSiteRows != null && !sansSiteRows.isEmpty()) {
+                Object[] sansSite = sansSiteRows.get(0);
+                BigDecimal encaisseSS = sansSite[0] != null ? (BigDecimal) sansSite[0] : BigDecimal.ZERO;
+                BigDecimal restantSS = sansSite[1] != null ? (BigDecimal) sansSite[1] : BigDecimal.ZERO;
+                if (encaisseSS.compareTo(BigDecimal.ZERO) > 0 || restantSS.compareTo(BigDecimal.ZERO) > 0) {
+                    parSite.add(ResumePaiementsParSiteDTO.builder()
+                            .siteId(null)
+                            .siteNom("Sans site")
+                            .totalEncaisse(encaisseSS)
+                            .totalReste(restantSS)
+                            .build());
+                }
+            }
+        }
+
         return ResumePaiementsDTO.builder()
-                .totalEncaisse(inscriptionRepository.sumTotalVerseActif(siteIds))
-                .totalReste(inscriptionRepository.sumSoldeRestantActif(siteIds))
+                .totalEncaisse(totalEncaisse != null ? totalEncaisse : BigDecimal.ZERO)
+                .totalReste(totalReste != null ? totalReste : BigDecimal.ZERO)
+                .parSite(parSite)
                 .build();
     }
 

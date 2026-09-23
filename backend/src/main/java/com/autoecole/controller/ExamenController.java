@@ -4,6 +4,7 @@ import com.autoecole.dto.ExamenDTOs.*;
 import com.autoecole.entity.enums.ResultatExamen;
 import com.autoecole.entity.enums.TypeEpreuve;
 import com.autoecole.service.ExamenService;
+import com.autoecole.service.ExportService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -13,11 +14,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -28,6 +32,7 @@ import java.util.List;
 public class ExamenController {
 
     private final ExamenService examenService;
+    private final ExportService exportService;
 
     @GetMapping
     @PreAuthorize("hasAuthority('PERM_EXAMENS_VOIR')")
@@ -82,6 +87,40 @@ public class ExamenController {
     @Operation(summary = "Lister les sessions d'examen")
     public ResponseEntity<List<SessionExamenDTO>> listerSessions() {
         return ResponseEntity.ok(examenService.listerSessions());
+    }
+
+    @GetMapping("/sessions/export/pdf")
+    @PreAuthorize("hasAuthority('PERM_EXAMENS_VOIR')")
+    @Operation(summary = "Exporter les sessions d'examen en PDF")
+    public ResponseEntity<byte[]> exportSessionsPdf(
+            @RequestParam(required = false) Long siteId,
+            @RequestParam(required = false) TypeEpreuve typeEpreuve,
+            @RequestParam(required = false) String statut
+    ) {
+        List<SessionExamenDTO> sessions = examenService.listerSessionsPourExport(siteId, typeEpreuve, statut);
+        byte[] bytes = exportService.exportSessionsPdf(sessions);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=sessions_examens.pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(bytes);
+    }
+
+    @GetMapping("/sessions/export/excel")
+    @PreAuthorize("hasAuthority('PERM_EXAMENS_VOIR')")
+    @Operation(summary = "Exporter les sessions d'examen en Excel (.xlsx)")
+    public ResponseEntity<byte[]> exportSessionsExcel(
+            @RequestParam(required = false) Long siteId,
+            @RequestParam(required = false) TypeEpreuve typeEpreuve,
+            @RequestParam(required = false) String statut
+    ) throws IOException {
+        List<SessionExamenDTO> sessions = examenService.listerSessionsPourExport(siteId, typeEpreuve, statut);
+        byte[] bytes = exportService.exportSessionsExcel(sessions);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=sessions_examens.xlsx")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(bytes);
     }
 
     @GetMapping("/sessions/{id}")

@@ -126,6 +126,10 @@ export interface SiteStatSexe {
   hommes: number;
   femmes: number;
   nonRenseigne: number;
+  soldes: number;
+  nonSoldes: number;
+  enCours: number;
+  expiresNonSoldes: number;
   total: number;
 }
 
@@ -133,6 +137,10 @@ export interface CandidatStatistiques {
   totalHommes: number;
   totalFemmes: number;
   totalNonRenseigne: number;
+  totalSoldes: number;
+  totalNonSoldes: number;
+  totalEnCours: number;
+  totalExpiresNonSoldes: number;
   parSite: SiteStatSexe[];
 }
 
@@ -279,10 +287,19 @@ export interface RecapCaisse {
   soldeJour: number;
 }
 
-export interface ResumePaiements {
+export interface ResumePaiementsParSite {
+  siteId?: number | null;
+  siteNom: string;
   totalEncaisse: number;
   totalReste: number;
 }
+
+export interface ResumePaiements {
+  totalEncaisse: number;
+  totalReste: number;
+  parSite?: ResumePaiementsParSite[];
+}
+
 
 export interface TarifsExamens {
   prixExamenCode: number;

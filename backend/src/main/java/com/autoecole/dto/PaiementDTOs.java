@@ -123,8 +123,21 @@ public class PaiementDTOs {
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
-    public static class ResumePaiementsDTO {
+    public static class ResumePaiementsParSiteDTO {
+        private Long siteId;
+        private String siteNom;
         private BigDecimal totalEncaisse;
         private BigDecimal totalReste;
     }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class ResumePaiementsDTO {
+        private BigDecimal totalEncaisse;
+        private BigDecimal totalReste;
+        private java.util.List<ResumePaiementsParSiteDTO> parSite;
+    }
 }
+

@@ -67,7 +67,7 @@ public interface CandidatRepository extends JpaRepository<Candidat, Long> {
     /** Répartition site x sexe sur exactement le même sous-ensemble de candidats que
      *  {@link #rechercherCandidats}, pour que les statistiques affichées au-dessus de la
      *  liste suivent les mêmes filtres (recherche, statut, site, étape, etc.). */
-    @Query("SELECT i.site.id, i.site.nom, c.sexe, COUNT(c) FROM Candidat c JOIN c.inscriptions i WHERE i.active = true AND " +
+    @Query("SELECT i.site.id, i.site.nom, c.sexe, i.statutDossier, COUNT(c) FROM Candidat c JOIN c.inscriptions i WHERE i.active = true AND " +
            "(:recherche IS NULL OR LOWER(c.nom) LIKE LOWER(CONCAT('%', CAST(:recherche AS string), '%')) " +
            "OR LOWER(c.prenom) LIKE LOWER(CONCAT('%', CAST(:recherche AS string), '%')) " +
            "OR LOWER(c.numeroDossier) LIKE LOWER(CONCAT('%', CAST(:recherche AS string), '%')) " +
@@ -85,7 +85,7 @@ public interface CandidatRepository extends JpaRepository<Candidat, Long> {
            "  AND pe.resultat = com.autoecole.entity.enums.ResultatExamen.PROGRAMME " +
            "  AND pe.datePassage = :dateExamenProgramme" +
            ")) " +
-           "GROUP BY i.site.id, i.site.nom, c.sexe")
+           "GROUP BY i.site.id, i.site.nom, c.sexe, i.statutDossier")
     List<Object[]> statistiquesParSiteEtSexe(
             @Param("recherche") String recherche,
             @Param("statut") StatutDossier statut,

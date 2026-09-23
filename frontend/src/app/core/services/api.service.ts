@@ -450,6 +450,22 @@ export class ApiService {
   public getRecuPdfUrl(recuId: number): string { return `${this.base}/rapports/recu/${recuId}/pdf`; }
   public getCaissePdfUrl(debut?: string, fin?: string): string { return `${this.base}/rapports/caisse/pdf${this.buildPeriodeQuery(debut, fin)}`; }
   public getCaisseExcelUrl(debut?: string, fin?: string): string { return `${this.base}/rapports/caisse/excel${this.buildPeriodeQuery(debut, fin)}`; }
+  public getSessionsPdfUrl(siteId?: string, typeEpreuve?: string, statut?: string): string {
+    const params = new URLSearchParams();
+    if (siteId) params.set('siteId', siteId);
+    if (typeEpreuve) params.set('typeEpreuve', typeEpreuve);
+    if (statut) params.set('statut', statut);
+    const qs = params.toString();
+    return `${this.base}/examens/sessions/export/pdf${qs ? '?' + qs : ''}`;
+  }
+  public getSessionsExcelUrl(siteId?: string, typeEpreuve?: string, statut?: string): string {
+    const params = new URLSearchParams();
+    if (siteId) params.set('siteId', siteId);
+    if (typeEpreuve) params.set('typeEpreuve', typeEpreuve);
+    if (statut) params.set('statut', statut);
+    const qs = params.toString();
+    return `${this.base}/examens/sessions/export/excel${qs ? '?' + qs : ''}`;
+  }
 
   private buildPeriodeQuery(debut?: string, fin?: string): string {
     const parts: string[] = [];

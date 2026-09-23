@@ -2,11 +2,14 @@ package com.autoecole.service;
 
 import com.autoecole.dto.CandidatDTOs.CandidatDTO;
 import com.autoecole.dto.CaisseDTOs.TransactionCaisseDTO;
+import com.autoecole.dto.ExamenDTOs.SessionExamenDTO;
 import com.autoecole.dto.PaiementDTOs.PaiementDTO;
 import com.autoecole.dto.PaiementDTOs.RecuDTO;
 import com.autoecole.entity.ConfigurationApplication;
+import com.autoecole.entity.enums.TypeEpreuve;
 import com.autoecole.repository.ConfigurationApplicationRepository;
 import com.lowagie.text.Document;
+import com.lowagie.text.DocumentException;
 import com.lowagie.text.Element;
 import com.lowagie.text.FontFactory;
 import com.lowagie.text.Image;
@@ -20,19 +23,22 @@ import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
 import lombok.RequiredArgsConstructor;
+import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
-import org.springframework.beans.factory.annotation.Value;
 import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.awt.Color;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.List;
@@ -646,5 +652,160 @@ public class ExportService {
 
         table.addCell(c1);
         table.addCell(c2);
+    }
+
+    // ==========================================
+    // EXPORT SESSIONS D'EXAMENS PDF
+    // ==========================================
+    public byte[] exportSessionsPdf(List<SessionExamenDTO> sessions) {
+        Document document = new Document(PageSize.A4, 25, 25, 25, 25);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        try {
+            PdfWriter.getInstance(document, out);
+            document.open();
+
+            // Titre
+            com.lowagie.text.Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 15, PRIMARY_COLOR);
+            Paragraph title = new Paragraph(getNomEtablissement() + " - SUIVI PÉDAGOGIQUE & EXAMENS", titleFont);
+            title.setAlignment(Element.ALIGN_CENTER);
+            title.setSpacingAfter(6);
+            document.add(title);
+
+            com.lowagie.text.Font subFont = FontFactory.getFont(FontFactory.HELVETICA, 10, Color.DARK_GRAY);
+            Paragraph sub = new Paragraph("Liste des sessions d'examens • Édité le " + LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")), subFont);
+            sub.setAlignment(Element.ALIGN_CENTER);
+            sub.setSpacingAfter(15);
+            document.add(sub);
+
+            PdfPTable table = new PdfPTable(5);
+            table.setWidthPercentage(100);
+            table.setWidths(new float[]{2.5f, 3.5f, 3.5f, 2f, 2.5f});
+
+            String[] headers = {"Date", "Lieu / Site", "Épreuve", "Inscrits", "Statut"};
+            com.lowagie.text.Font headFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, Color.WHITE);
+
+            for (String h : headers) {
+                PdfPCell cell = new PdfPCell(new Phrase(h, headFont));
+                cell.setBackgroundColor(PRIMARY_COLOR);
+                cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                cell.setPadding(6);
+                table.addCell(cell);
+            }
+
+            com.lowagie.text.Font bodyFont = FontFactory.getFont(FontFactory.HELVETICA, 9, Color.BLACK);
+            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+            for (SessionExamenDTO s : sessions) {
+                String dateStr = s.getDatePassage() != null ? s.getDatePassage().format(dtf) : "-";
+                String lieuStr = (s.getLieu() != null && !s.getLieu().isBlank()) ? s.getLieu() : (s.getSiteNom() != null ? s.getSiteNom() : "-");
+                String epreuveStr = formaterEpreuve(s.getTypeEpreuve());
+                int nbInscrits = s.getCandidats() != null ? s.getCandidats().size() : 0;
+                String statutStr = formaterStatutSession(s.getStatut());
+
+                PdfPCell c1 = new PdfPCell(new Phrase(dateStr, bodyFont));
+                c1.setPadding(5);
+                table.addCell(c1);
+
+                PdfPCell c2 = new PdfPCell(new Phrase(lieuStr, bodyFont));
+                c2.setPadding(5);
+                table.addCell(c2);
+
+                PdfPCell c3 = new PdfPCell(new Phrase(epreuveStr, bodyFont));
+                c3.setPadding(5);
+                table.addCell(c3);
+
+                PdfPCell c4 = new PdfPCell(new Phrase(nbInscrits + " candidat(s)", bodyFont));
+                c4.setPadding(5);
+                c4.setHorizontalAlignment(Element.ALIGN_CENTER);
+                table.addCell(c4);
+
+                PdfPCell c5 = new PdfPCell(new Phrase(statutStr, bodyFont));
+                c5.setPadding(5);
+                c5.setHorizontalAlignment(Element.ALIGN_CENTER);
+                table.addCell(c5);
+            }
+
+            document.add(table);
+            document.close();
+        } catch (DocumentException e) {
+            throw new RuntimeException("Erreur lors de la génération du PDF des sessions d'examens", e);
+        }
+
+        return out.toByteArray();
+    }
+
+    // ==========================================
+    // EXPORT SESSIONS D'EXAMENS EXCEL
+    // ==========================================
+    public byte[] exportSessionsExcel(List<SessionExamenDTO> sessions) throws IOException {
+        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sheet = workbook.createSheet("Sessions d'Examens");
+
+            // Header Style
+            org.apache.poi.ss.usermodel.Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerFont.setColor(IndexedColors.WHITE.getIndex());
+
+            CellStyle headerStyle = workbook.createCellStyle();
+            headerStyle.setFont(headerFont);
+            headerStyle.setFillForegroundColor(IndexedColors.DARK_BLUE.getIndex());
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            headerStyle.setAlignment(HorizontalAlignment.CENTER);
+
+            // Row Header
+            Row headerRow = sheet.createRow(0);
+            String[] headers = {"Date", "Lieu / Site", "Épreuve", "Nombre d'inscrits", "Statut"};
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+                cell.setCellStyle(headerStyle);
+            }
+
+            // Data Rows
+            int rowIdx = 1;
+            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+            for (SessionExamenDTO s : sessions) {
+                Row row = sheet.createRow(rowIdx++);
+                String dateStr = s.getDatePassage() != null ? s.getDatePassage().format(dtf) : "-";
+                String lieuStr = (s.getLieu() != null && !s.getLieu().isBlank()) ? s.getLieu() : (s.getSiteNom() != null ? s.getSiteNom() : "-");
+                String epreuveStr = formaterEpreuve(s.getTypeEpreuve());
+                int nbInscrits = s.getCandidats() != null ? s.getCandidats().size() : 0;
+                String statutStr = formaterStatutSession(s.getStatut());
+
+                row.createCell(0).setCellValue(sanitizeForExcel(dateStr));
+                row.createCell(1).setCellValue(sanitizeForExcel(lieuStr));
+                row.createCell(2).setCellValue(sanitizeForExcel(epreuveStr));
+                row.createCell(3).setCellValue(nbInscrits);
+                row.createCell(4).setCellValue(sanitizeForExcel(statutStr));
+            }
+
+            for (int i = 0; i < headers.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            workbook.write(out);
+            return out.toByteArray();
+        }
+    }
+
+    private String formaterEpreuve(TypeEpreuve type) {
+        if (type == null) return "-";
+        switch (type) {
+            case CODE: return "1. Code de la route";
+            case CRENEAU: return "2. Manœuvre / Créneau";
+            case CIRCULATION: return "3. Conduite / Circulation";
+            default: return type.name();
+        }
+    }
+
+    private String formaterStatutSession(String statut) {
+        if (statut == null) return "Programmé";
+        switch (statut.toUpperCase()) {
+            case "TERMINE": return "Terminé";
+            case "EN_COURS": return "En cours";
+            case "PROGRAMME":
+            default: return "Programmé";
+        }
     }
 }

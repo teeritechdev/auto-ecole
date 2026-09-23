@@ -98,6 +98,10 @@ public class CandidatDTOs {
         private long totalHommes;
         private long totalFemmes;
         private long totalNonRenseigne;
+        private long totalSoldes;
+        private long totalNonSoldes;
+        private long totalEnCours;
+        private long totalExpiresNonSoldes;
         private List<SiteStatSexeDTO> parSite;
     }
 
@@ -111,6 +115,10 @@ public class CandidatDTOs {
         private long hommes;
         private long femmes;
         private long nonRenseigne;
+        private long soldes;
+        private long nonSoldes;
+        private long enCours;
+        private long expiresNonSoldes;
         private long total;
     }
 

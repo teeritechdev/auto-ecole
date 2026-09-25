@@ -17,6 +17,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import com.autoecole.service.ExportService;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+
+import java.io.IOException;
+import java.time.LocalDate;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/candidats")
@@ -25,6 +32,7 @@ import org.springframework.web.bind.annotation.*;
 public class CandidatController {
 
     private final CandidatService candidatService;
+    private final ExportService exportService;
 
     @GetMapping
     @PreAuthorize("hasAuthority('PERM_CANDIDATS_VOIR')")
@@ -112,5 +120,51 @@ public class CandidatController {
     ) {
         candidatService.deleteCandidat(id, motif);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/export/pdf")
+    @PreAuthorize("hasAuthority('PERM_CANDIDATS_VOIR') or hasAuthority('PERM_RAPPORTS_CANDIDATS')")
+    @Operation(summary = "Exporter la liste des candidats en PDF avec filtres")
+    public ResponseEntity<byte[]> exportPdf(
+            @RequestParam(required = false) String recherche,
+            @RequestParam(required = false) StatutDossier statut,
+            @RequestParam(required = false) Long categorieId,
+            @RequestParam(required = false) StatutInscription statutInscription,
+            @RequestParam(required = false) Long siteId,
+            @RequestParam(required = false) EtapeParcours etape,
+            @RequestParam(required = false) Boolean priseEnChargeExamens,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate dateExamenProgramme
+    ) {
+        List<CandidatDTO> candidats = candidatService.getTousLesCandidatsPourRapport(
+                recherche, statut, categorieId, statutInscription, siteId, etape, priseEnChargeExamens, dateExamenProgramme);
+        byte[] bytes = exportService.exportCandidatsPdf(candidats);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=candidats_auto_ecole.pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(bytes);
+    }
+
+    @GetMapping("/export/excel")
+    @PreAuthorize("hasAuthority('PERM_CANDIDATS_VOIR') or hasAuthority('PERM_RAPPORTS_CANDIDATS')")
+    @Operation(summary = "Exporter la liste des candidats en Excel avec filtres")
+    public ResponseEntity<byte[]> exportExcel(
+            @RequestParam(required = false) String recherche,
+            @RequestParam(required = false) StatutDossier statut,
+            @RequestParam(required = false) Long categorieId,
+            @RequestParam(required = false) StatutInscription statutInscription,
+            @RequestParam(required = false) Long siteId,
+            @RequestParam(required = false) EtapeParcours etape,
+            @RequestParam(required = false) Boolean priseEnChargeExamens,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate dateExamenProgramme
+    ) throws IOException {
+        List<CandidatDTO> candidats = candidatService.getTousLesCandidatsPourRapport(
+                recherche, statut, categorieId, statutInscription, siteId, etape, priseEnChargeExamens, dateExamenProgramme);
+        byte[] bytes = exportService.exportCandidatsExcel(candidats);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=candidats_auto_ecole.xlsx")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(bytes);
     }
 }

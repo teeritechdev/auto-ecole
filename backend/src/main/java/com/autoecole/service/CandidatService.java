@@ -160,10 +160,34 @@ public class CandidatService {
                 .build();
     }
 
-    public List<CandidatDTO> getTousLesCandidatsPourRapport(StatutDossier statut, Long categorieId) {
-        return candidatRepository.filtrerPourRapport(statut, categorieId).stream()
+    public List<CandidatDTO> getTousLesCandidatsPourRapport(
+            String recherche,
+            StatutDossier statut,
+            Long categorieId,
+            StatutInscription statutInscription,
+            Long siteFiltreId,
+            com.autoecole.entity.enums.EtapeParcours etapeFiltre,
+            Boolean priseEnChargeExamens,
+            java.time.LocalDate dateExamenProgramme
+    ) {
+        java.util.Set<Long> siteIds = siteAccessService.resoudreFiltreSitesPourListe();
+        java.util.Set<com.autoecole.entity.enums.EtapeParcours> etapesAutorisees = siteAccessService.resoudreFiltreEtapesPourListe();
+
+        if ((siteIds != null && siteIds.isEmpty()) || (etapesAutorisees != null && etapesAutorisees.isEmpty())) {
+            return List.of();
+        }
+
+        org.springframework.data.domain.Pageable unpaged = org.springframework.data.domain.PageRequest.of(
+                0, 10000, org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "id"));
+        return candidatRepository.rechercherCandidats(
+                recherche, statut, categorieId, siteIds, statutInscription, etapesAutorisees,
+                siteFiltreId, etapeFiltre, priseEnChargeExamens, dateExamenProgramme, unpaged)
                 .map(this::mapToDTO)
-                .collect(Collectors.toList());
+                .getContent();
+    }
+
+    public List<CandidatDTO> getTousLesCandidatsPourRapport(StatutDossier statut, Long categorieId) {
+        return getTousLesCandidatsPourRapport(null, statut, categorieId, null, null, null, null, null);
     }
 
     public CandidatDTO getCandidatById(Long id) {

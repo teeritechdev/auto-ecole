@@ -2,7 +2,9 @@ package com.autoecole.controller;
 
 import com.autoecole.dto.CandidatDTOs.CandidatDTO;
 import com.autoecole.dto.CaisseDTOs.TransactionCaisseDTO;
+import com.autoecole.entity.enums.EtapeParcours;
 import com.autoecole.entity.enums.StatutDossier;
+import com.autoecole.entity.enums.StatutInscription;
 import com.autoecole.entity.enums.TypeMouvementCaisse;
 import com.autoecole.service.CaisseService;
 import com.autoecole.service.CandidatService;
@@ -18,6 +20,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -32,13 +35,20 @@ public class RapportController {
     private final CaisseService caisseService;
 
     @GetMapping("/candidats/excel")
-    @PreAuthorize("hasAuthority('PERM_RAPPORTS_CANDIDATS')")
+    @PreAuthorize("hasAuthority('PERM_RAPPORTS_CANDIDATS') or hasAuthority('PERM_CANDIDATS_VOIR')")
     @Operation(summary = "Exporter la liste des candidats en Excel (.xlsx)")
     public ResponseEntity<byte[]> exportCandidatsExcel(
+            @RequestParam(required = false) String recherche,
             @RequestParam(required = false) StatutDossier statut,
-            @RequestParam(required = false) Long categorieId
+            @RequestParam(required = false) Long categorieId,
+            @RequestParam(required = false) StatutInscription statutInscription,
+            @RequestParam(required = false) Long siteId,
+            @RequestParam(required = false) EtapeParcours etape,
+            @RequestParam(required = false) Boolean priseEnChargeExamens,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateExamenProgramme
     ) throws IOException {
-        List<CandidatDTO> candidats = candidatService.getTousLesCandidatsPourRapport(statut, categorieId);
+        List<CandidatDTO> candidats = candidatService.getTousLesCandidatsPourRapport(
+                recherche, statut, categorieId, statutInscription, siteId, etape, priseEnChargeExamens, dateExamenProgramme);
         byte[] bytes = exportService.exportCandidatsExcel(candidats);
 
         return ResponseEntity.ok()
@@ -48,13 +58,20 @@ public class RapportController {
     }
 
     @GetMapping("/candidats/pdf")
-    @PreAuthorize("hasAuthority('PERM_RAPPORTS_CANDIDATS')")
+    @PreAuthorize("hasAuthority('PERM_RAPPORTS_CANDIDATS') or hasAuthority('PERM_CANDIDATS_VOIR')")
     @Operation(summary = "Exporter la liste des candidats en PDF")
     public ResponseEntity<byte[]> exportCandidatsPdf(
+            @RequestParam(required = false) String recherche,
             @RequestParam(required = false) StatutDossier statut,
-            @RequestParam(required = false) Long categorieId
+            @RequestParam(required = false) Long categorieId,
+            @RequestParam(required = false) StatutInscription statutInscription,
+            @RequestParam(required = false) Long siteId,
+            @RequestParam(required = false) EtapeParcours etape,
+            @RequestParam(required = false) Boolean priseEnChargeExamens,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateExamenProgramme
     ) {
-        List<CandidatDTO> candidats = candidatService.getTousLesCandidatsPourRapport(statut, categorieId);
+        List<CandidatDTO> candidats = candidatService.getTousLesCandidatsPourRapport(
+                recherche, statut, categorieId, statutInscription, siteId, etape, priseEnChargeExamens, dateExamenProgramme);
         byte[] bytes = exportService.exportCandidatsPdf(candidats);
 
         return ResponseEntity.ok()

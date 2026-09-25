@@ -1506,15 +1506,42 @@ export class CandidatsComponent implements OnInit {
     });
   }
 
+  private getCandidatsExportUrl(format: 'pdf' | 'excel'): string {
+    const catId = this.categorieFiltre ? Number(this.categorieFiltre) : undefined;
+    const siteId = this.siteFiltre ? Number(this.siteFiltre) : undefined;
+    const priseEnCharge = this.priseEnChargeExamensFiltre ? this.priseEnChargeExamensFiltre === 'true' : undefined;
+    return format === 'pdf'
+      ? this.apiService.getCandidatsPdfUrl(
+          this.recherche || undefined,
+          this.statutFiltre || undefined,
+          catId,
+          this.statutInscriptionFiltre || undefined,
+          siteId,
+          this.etapeFiltre || undefined,
+          priseEnCharge,
+          this.dateExamenProgrammeFiltre || undefined
+        )
+      : this.apiService.getCandidatsExcelUrl(
+          this.recherche || undefined,
+          this.statutFiltre || undefined,
+          catId,
+          this.statutInscriptionFiltre || undefined,
+          siteId,
+          this.etapeFiltre || undefined,
+          priseEnCharge,
+          this.dateExamenProgrammeFiltre || undefined
+        );
+  }
+
   exporterPdf(): void {
-    this.apiService.downloadBlob(this.apiService.getCandidatsPdfUrl(), 'candidats_auto_ecole.pdf');
+    this.apiService.downloadBlob(this.getCandidatsExportUrl('pdf'), 'candidats_auto_ecole.pdf');
   }
 
   imprimerListe(): void {
-    this.apiService.printBlob(this.apiService.getCandidatsPdfUrl());
+    this.apiService.printBlob(this.getCandidatsExportUrl('pdf'));
   }
 
   exporterExcel(): void {
-    this.apiService.downloadBlob(this.apiService.getCandidatsExcelUrl(), 'candidats_auto_ecole.xlsx');
+    this.apiService.downloadBlob(this.getCandidatsExportUrl('excel'), 'candidats_auto_ecole.xlsx');
   }
 }

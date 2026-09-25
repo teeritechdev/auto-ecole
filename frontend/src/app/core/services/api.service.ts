@@ -444,8 +444,51 @@ export class ApiService {
     });
   }
 
-  public getCandidatsPdfUrl(): string { return `${this.base}/rapports/candidats/pdf`; }
-  public getCandidatsExcelUrl(): string { return `${this.base}/rapports/candidats/excel`; }
+  public getCandidatsPdfUrl(
+    recherche?: string,
+    statut?: string,
+    categorieId?: number,
+    statutInscription?: string,
+    siteId?: number,
+    etape?: string,
+    priseEnChargeExamens?: boolean,
+    dateExamenProgramme?: string
+  ): string {
+    const params = new URLSearchParams();
+    if (recherche) params.set('recherche', recherche);
+    if (statut) params.set('statut', statut);
+    if (categorieId) params.set('categorieId', categorieId.toString());
+    if (statutInscription) params.set('statutInscription', statutInscription);
+    if (siteId) params.set('siteId', siteId.toString());
+    if (etape) params.set('etape', etape);
+    if (priseEnChargeExamens !== undefined) params.set('priseEnChargeExamens', String(priseEnChargeExamens));
+    if (dateExamenProgramme) params.set('dateExamenProgramme', dateExamenProgramme);
+    const qs = params.toString();
+    return `${this.base}/rapports/candidats/pdf${qs ? '?' + qs : ''}`;
+  }
+
+  public getCandidatsExcelUrl(
+    recherche?: string,
+    statut?: string,
+    categorieId?: number,
+    statutInscription?: string,
+    siteId?: number,
+    etape?: string,
+    priseEnChargeExamens?: boolean,
+    dateExamenProgramme?: string
+  ): string {
+    const params = new URLSearchParams();
+    if (recherche) params.set('recherche', recherche);
+    if (statut) params.set('statut', statut);
+    if (categorieId) params.set('categorieId', categorieId.toString());
+    if (statutInscription) params.set('statutInscription', statutInscription);
+    if (siteId) params.set('siteId', siteId.toString());
+    if (etape) params.set('etape', etape);
+    if (priseEnChargeExamens !== undefined) params.set('priseEnChargeExamens', String(priseEnChargeExamens));
+    if (dateExamenProgramme) params.set('dateExamenProgramme', dateExamenProgramme);
+    const qs = params.toString();
+    return `${this.base}/rapports/candidats/excel${qs ? '?' + qs : ''}`;
+  }
   public getRelevePaiementPdfUrl(candidatId: number): string { return `${this.base}/rapports/releve-paiement/${candidatId}/pdf`; }
   public getRecuPdfUrl(recuId: number): string { return `${this.base}/rapports/recu/${recuId}/pdf`; }
   public getCaissePdfUrl(

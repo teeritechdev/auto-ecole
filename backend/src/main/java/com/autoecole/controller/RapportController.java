@@ -3,6 +3,7 @@ package com.autoecole.controller;
 import com.autoecole.dto.CandidatDTOs.CandidatDTO;
 import com.autoecole.dto.CaisseDTOs.TransactionCaisseDTO;
 import com.autoecole.entity.enums.StatutDossier;
+import com.autoecole.entity.enums.TypeMouvementCaisse;
 import com.autoecole.service.CaisseService;
 import com.autoecole.service.CandidatService;
 import com.autoecole.service.ExportService;
@@ -87,13 +88,16 @@ public class RapportController {
     }
 
     @GetMapping("/caisse/pdf")
-    @PreAuthorize("hasAuthority('PERM_RAPPORTS_CAISSE')")
+    @PreAuthorize("hasAuthority('PERM_RAPPORTS_CAISSE') or hasAuthority('PERM_CAISSE_VOIR')")
     @Operation(summary = "Générer le relevé de caisse périodique en PDF")
     public ResponseEntity<byte[]> exportCaissePdf(
+            @RequestParam(required = false) TypeMouvementCaisse type,
+            @RequestParam(required = false) Long natureOperationId,
+            @RequestParam(required = false) Long siteId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime debut,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fin
     ) {
-        List<TransactionCaisseDTO> transactions = caisseService.getTransactionsPourRapport(debut, fin);
+        List<TransactionCaisseDTO> transactions = caisseService.getTransactionsPourRapport(type, natureOperationId, debut, fin, siteId);
         byte[] bytes = exportService.exportCaissePdf(transactions);
 
         return ResponseEntity.ok()
@@ -103,13 +107,16 @@ public class RapportController {
     }
 
     @GetMapping("/caisse/excel")
-    @PreAuthorize("hasAuthority('PERM_RAPPORTS_CAISSE')")
+    @PreAuthorize("hasAuthority('PERM_RAPPORTS_CAISSE') or hasAuthority('PERM_CAISSE_VOIR')")
     @Operation(summary = "Générer le relevé de caisse périodique en Excel")
     public ResponseEntity<byte[]> exportCaisseExcel(
+            @RequestParam(required = false) TypeMouvementCaisse type,
+            @RequestParam(required = false) Long natureOperationId,
+            @RequestParam(required = false) Long siteId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime debut,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fin
     ) throws IOException {
-        List<TransactionCaisseDTO> transactions = caisseService.getTransactionsPourRapport(debut, fin);
+        List<TransactionCaisseDTO> transactions = caisseService.getTransactionsPourRapport(type, natureOperationId, debut, fin, siteId);
         byte[] bytes = exportService.exportCaisseExcel(transactions);
 
         return ResponseEntity.ok()

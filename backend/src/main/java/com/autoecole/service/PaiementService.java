@@ -54,6 +54,18 @@ public class PaiementService {
                 .map(this::mapToDTO);
     }
 
+    public List<PaiementDTO> getPaiementsPourRapport(Long candidatId, LocalDateTime debut, LocalDateTime fin, Long siteFiltreId) {
+        java.util.Set<Long> siteIds = siteAccessService.resoudreFiltreSitesPourListe();
+        if (siteIds != null && siteIds.isEmpty()) {
+            return List.of();
+        }
+        return paiementRepository.filtrerPaiements(candidatId, debut, fin, siteIds, siteFiltreId, Pageable.unpaged())
+                .getContent()
+                .stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
     public List<PaiementDTO> getPaiementsByCandidat(Long candidatId) {
         candidatAccessService.verifierEstSoiMeme(candidatId);
         if (!candidatAccessService.estCandidatConnecte()) {
@@ -359,6 +371,8 @@ public class PaiementService {
                 .utilisateurModifNom(p.getUtilisateurModif() != null ? p.getUtilisateurModif().getNom() + " " + p.getUtilisateurModif().getPrenom() : null)
                 .numeroRecu(recu != null ? recu.getNumeroRecu() : null)
                 .recuId(recu != null ? recu.getId() : null)
+                .siteId(inscription != null && inscription.getSite() != null ? inscription.getSite().getId() : null)
+                .siteNom(inscription != null && inscription.getSite() != null ? inscription.getSite().getNom() : null)
                 .build();
     }
 }

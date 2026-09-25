@@ -15,12 +15,26 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
           <h2>Journal d'Audit & Traçabilité (RG10)</h2>
           <p>Historique inaltérable de toutes les opérations sensibles réalisées sur la plateforme</p>
         </div>
-        @if (selectedIds.size > 0) {
-          <button class="btn btn-danger" (click)="openDeleteModal(selectedIdsArray)">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-            Supprimer la sélection ({{ selectedIds.size }})
+        <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+          <button class="btn btn-outline btn-sm" (click)="exportPdf()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            Export PDF
           </button>
-        }
+          <button class="btn btn-outline btn-sm" (click)="imprimer()" title="Imprimer directement">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            Imprimer
+          </button>
+          <button class="btn btn-outline btn-sm" (click)="exportExcel()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            Export Excel
+          </button>
+          @if (selectedIds.size > 0) {
+            <button class="btn btn-danger btn-sm" (click)="openDeleteModal(selectedIdsArray)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+              Supprimer la sélection ({{ selectedIds.size }})
+            </button>
+          }
+        </div>
       </div>
     
       <div class="card filter-card">
@@ -357,5 +371,26 @@ export class AuditComponent implements OnInit {
     this.finFiltre = '';
     this.page = 0;
     this.loadAudit();
+  }
+
+  private getAuditExportUrl(format: 'pdf' | 'excel'): string {
+    const debut = this.debutFiltre ? `${this.debutFiltre}T00:00:00` : undefined;
+    const fin = this.finFiltre ? `${this.finFiltre}T23:59:59` : undefined;
+    const utilisateurId = this.utilisateurFiltre ? Number(this.utilisateurFiltre) : undefined;
+    return format === 'pdf'
+      ? this.apiService.getAuditPdfUrl(this.entiteFiltre || undefined, this.actionFiltre || undefined, debut, fin, utilisateurId)
+      : this.apiService.getAuditExcelUrl(this.entiteFiltre || undefined, this.actionFiltre || undefined, debut, fin, utilisateurId);
+  }
+
+  exportPdf(): void {
+    this.apiService.downloadBlob(this.getAuditExportUrl('pdf'), 'journal_audit.pdf');
+  }
+
+  imprimer(): void {
+    this.apiService.printBlob(this.getAuditExportUrl('pdf'));
+  }
+
+  exportExcel(): void {
+    this.apiService.downloadBlob(this.getAuditExportUrl('excel'), 'journal_audit.xlsx');
   }
 }

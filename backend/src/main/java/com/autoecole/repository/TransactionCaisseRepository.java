@@ -43,6 +43,21 @@ public interface TransactionCaisseRepository extends JpaRepository<TransactionCa
             @Param("siteIds") Collection<Long> siteIds
     );
 
+    @Query("SELECT tc FROM TransactionCaisse tc WHERE " +
+           "(:type IS NULL OR tc.typeMouvement = :type) " +
+           "AND (:natureOperationId IS NULL OR tc.natureOperation.id = :natureOperationId) " +
+           "AND (CAST(:debut AS timestamp) IS NULL OR tc.dateTransaction >= :debut) " +
+           "AND (CAST(:fin AS timestamp) IS NULL OR tc.dateTransaction <= :fin) " +
+           "AND (:siteIds IS NULL OR tc.site.id IN :siteIds) " +
+           "ORDER BY tc.dateTransaction DESC")
+    List<TransactionCaisse> findTransactionsFiltrees(
+            @Param("type") TypeMouvementCaisse type,
+            @Param("natureOperationId") Long natureOperationId,
+            @Param("debut") LocalDateTime debut,
+            @Param("fin") LocalDateTime fin,
+            @Param("siteIds") Collection<Long> siteIds
+    );
+
     @Query("SELECT COALESCE(SUM(tc.montant), 0) FROM TransactionCaisse tc WHERE tc.typeMouvement = :type " +
            "AND (:siteIds IS NULL OR tc.site.id IN :siteIds)")
     BigDecimal sumByTypeMouvement(@Param("type") TypeMouvementCaisse type, @Param("siteIds") Collection<Long> siteIds);

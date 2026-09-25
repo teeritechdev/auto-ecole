@@ -57,6 +57,26 @@ public class UtilisateurService {
                 .collect(Collectors.toList());
     }
 
+    public List<UtilisateurDTO> getUtilisateursFiltres(String recherche, RoleEnum role, Long siteId, Boolean actif) {
+        return getAllUtilisateurs().stream()
+                .filter(u -> role == null || role.name().equalsIgnoreCase(u.getRole()))
+                .filter(u -> actif == null || u.isActif() == actif)
+                .filter(u -> {
+                    if (siteId == null) return true;
+                    return u.getSiteIds() != null && u.getSiteIds().contains(siteId);
+                })
+                .filter(u -> {
+                    if (recherche == null || recherche.isBlank()) return true;
+                    String q = recherche.toLowerCase().trim();
+                    return (u.getUsername() != null && u.getUsername().toLowerCase().contains(q))
+                            || (u.getNom() != null && u.getNom().toLowerCase().contains(q))
+                            || (u.getPrenom() != null && u.getPrenom().toLowerCase().contains(q))
+                            || (u.getEmail() != null && u.getEmail().toLowerCase().contains(q))
+                            || (u.getTelephone() != null && u.getTelephone().toLowerCase().contains(q));
+                })
+                .collect(Collectors.toList());
+    }
+
     public UtilisateurDTO getUtilisateurById(Long id) {
         Utilisateur user = utilisateurRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Utilisateur non trouvé avec l'id: " + id));

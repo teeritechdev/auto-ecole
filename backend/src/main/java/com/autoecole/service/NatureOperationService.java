@@ -4,6 +4,7 @@ import com.autoecole.dto.CaisseDTOs.CreateNatureOperationRequest;
 import com.autoecole.dto.CaisseDTOs.NatureOperationDTO;
 import com.autoecole.dto.CaisseDTOs.UpdateNatureOperationRequest;
 import com.autoecole.entity.NatureOperation;
+import com.autoecole.entity.enums.TypeMouvementCaisse;
 import com.autoecole.exception.BadRequestException;
 import com.autoecole.exception.ResourceNotFoundException;
 import com.autoecole.repository.NatureOperationRepository;
@@ -35,6 +36,20 @@ public class NatureOperationService {
     public List<NatureOperationDTO> getToutes() {
         return natureOperationRepository.findAllByOrderByLibelleAsc().stream()
                 .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<NatureOperationDTO> getFiltrees(TypeMouvementCaisse sens, Boolean actif, String recherche) {
+        return getToutes().stream()
+                .filter(n -> sens == null || n.getSens() == sens)
+                .filter(n -> actif == null || n.isActif() == actif)
+                .filter(n -> {
+                    if (recherche == null || recherche.isBlank()) return true;
+                    String q = recherche.toLowerCase().trim();
+                    return (n.getCode() != null && n.getCode().toLowerCase().contains(q))
+                            || (n.getLibelle() != null && n.getLibelle().toLowerCase().contains(q))
+                            || (n.getPlanComptable() != null && n.getPlanComptable().toLowerCase().contains(q));
+                })
                 .collect(Collectors.toList());
     }
 

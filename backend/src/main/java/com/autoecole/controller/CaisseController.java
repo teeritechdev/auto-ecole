@@ -19,6 +19,13 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 
+import com.autoecole.service.ExportService;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+
+import java.io.IOException;
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/caisse")
 @RequiredArgsConstructor
@@ -26,6 +33,7 @@ import java.time.LocalDateTime;
 public class CaisseController {
 
     private final CaisseService caisseService;
+    private final ExportService exportService;
 
     @GetMapping("/transactions")
     @PreAuthorize("hasAuthority('PERM_CAISSE_VOIR')")
@@ -66,5 +74,43 @@ public class CaisseController {
     ) {
         caisseService.deleteTransaction(id, motif);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/export/pdf")
+    @PreAuthorize("hasAuthority('PERM_CAISSE_VOIR') or hasAuthority('PERM_RAPPORTS_CAISSE')")
+    @Operation(summary = "Exporter le journal de caisse en PDF avec filtres")
+    public ResponseEntity<byte[]> exportPdf(
+            @RequestParam(required = false) TypeMouvementCaisse type,
+            @RequestParam(required = false) Long natureOperationId,
+            @RequestParam(required = false) Long siteId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime debut,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fin
+    ) {
+        List<TransactionCaisseDTO> transactions = caisseService.getTransactionsPourRapport(type, natureOperationId, debut, fin, siteId);
+        byte[] bytes = exportService.exportCaissePdf(transactions);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=journal_caisse.pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(bytes);
+    }
+
+    @GetMapping("/export/excel")
+    @PreAuthorize("hasAuthority('PERM_CAISSE_VOIR') or hasAuthority('PERM_RAPPORTS_CAISSE')")
+    @Operation(summary = "Exporter le journal de caisse en Excel avec filtres")
+    public ResponseEntity<byte[]> exportExcel(
+            @RequestParam(required = false) TypeMouvementCaisse type,
+            @RequestParam(required = false) Long natureOperationId,
+            @RequestParam(required = false) Long siteId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime debut,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fin
+    ) throws IOException {
+        List<TransactionCaisseDTO> transactions = caisseService.getTransactionsPourRapport(type, natureOperationId, debut, fin, siteId);
+        byte[] bytes = exportService.exportCaisseExcel(transactions);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=journal_caisse.xlsx")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(bytes);
     }
 }

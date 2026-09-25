@@ -36,6 +36,8 @@ public class PaiementDTOs {
         private String utilisateurModifNom;
         private String numeroRecu;
         private Long recuId;
+        private Long siteId;
+        private String siteNom;
     }
 
     @Data

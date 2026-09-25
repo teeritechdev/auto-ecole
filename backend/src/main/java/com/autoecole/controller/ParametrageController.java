@@ -13,6 +13,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import com.autoecole.service.ExportService;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -22,12 +27,61 @@ import java.util.List;
 public class ParametrageController {
 
     private final ParametrageService parametrageService;
+    private final ExportService exportService;
 
     // --- Catégories ---
     @GetMapping("/categories")
     @Operation(summary = "Lister les catégories de permis")
     public ResponseEntity<List<CategoriePermisDTO>> getAllCategories(@RequestParam(defaultValue = "false") boolean onlyActive) {
         return ResponseEntity.ok(parametrageService.getAllCategories(onlyActive));
+    }
+
+    @GetMapping("/categories/export/pdf")
+    @Operation(summary = "Exporter la liste des catégories de permis en PDF")
+    public ResponseEntity<byte[]> exportCategoriesPdf(@RequestParam(defaultValue = "false") boolean onlyActive) {
+        List<CategoriePermisDTO> categories = parametrageService.getAllCategories(onlyActive);
+        byte[] bytes = exportService.exportCategoriesPermisPdf(categories);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=categories_permis.pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(bytes);
+    }
+
+    @GetMapping("/categories/export/excel")
+    @Operation(summary = "Exporter la liste des catégories de permis en Excel (.xlsx)")
+    public ResponseEntity<byte[]> exportCategoriesExcel(@RequestParam(defaultValue = "false") boolean onlyActive) throws IOException {
+        List<CategoriePermisDTO> categories = parametrageService.getAllCategories(onlyActive);
+        byte[] bytes = exportService.exportCategoriesPermisExcel(categories);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=categories_permis.xlsx")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(bytes);
+    }
+
+    @GetMapping("/sites/export/pdf")
+    @Operation(summary = "Exporter la liste des sites de formation en PDF")
+    public ResponseEntity<byte[]> exportSitesPdf(@RequestParam(defaultValue = "false") boolean onlyActive) {
+        List<SiteDTO> sites = parametrageService.getAllSites(onlyActive);
+        byte[] bytes = exportService.exportSitesPdf(sites);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=sites_formation.pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(bytes);
+    }
+
+    @GetMapping("/sites/export/excel")
+    @Operation(summary = "Exporter la liste des sites de formation en Excel (.xlsx)")
+    public ResponseEntity<byte[]> exportSitesExcel(@RequestParam(defaultValue = "false") boolean onlyActive) throws IOException {
+        List<SiteDTO> sites = parametrageService.getAllSites(onlyActive);
+        byte[] bytes = exportService.exportSitesExcel(sites);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=sites_formation.xlsx")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(bytes);
     }
 
     @PostMapping("/categories")

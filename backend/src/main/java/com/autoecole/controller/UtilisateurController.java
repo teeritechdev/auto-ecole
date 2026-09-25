@@ -3,6 +3,7 @@ package com.autoecole.controller;
 import com.autoecole.dto.AuthDTOs.JwtResponse;
 import com.autoecole.dto.CandidatDTOs.IdentifiantsCompteDTO;
 import com.autoecole.dto.UtilisateurDTOs.*;
+import com.autoecole.entity.enums.RoleEnum;
 import com.autoecole.exception.BadRequestException;
 import com.autoecole.service.UtilisateurService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -14,6 +15,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import com.autoecole.service.ExportService;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -23,6 +29,43 @@ import java.util.List;
 public class UtilisateurController {
 
     private final UtilisateurService utilisateurService;
+    private final ExportService exportService;
+
+    @GetMapping("/export/pdf")
+    @PreAuthorize("hasAuthority('PERM_UTILISATEURS_VOIR')")
+    @Operation(summary = "Exporter la liste des utilisateurs en PDF selon les filtres actifs")
+    public ResponseEntity<byte[]> exportUtilisateursPdf(
+            @RequestParam(required = false) String recherche,
+            @RequestParam(required = false) RoleEnum role,
+            @RequestParam(required = false) Long siteId,
+            @RequestParam(required = false) Boolean actif
+    ) {
+        List<UtilisateurDTO> users = utilisateurService.getUtilisateursFiltres(recherche, role, siteId, actif);
+        byte[] bytes = exportService.exportUtilisateursPdf(users);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=utilisateurs.pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(bytes);
+    }
+
+    @GetMapping("/export/excel")
+    @PreAuthorize("hasAuthority('PERM_UTILISATEURS_VOIR')")
+    @Operation(summary = "Exporter la liste des utilisateurs en Excel (.xlsx) selon les filtres actifs")
+    public ResponseEntity<byte[]> exportUtilisateursExcel(
+            @RequestParam(required = false) String recherche,
+            @RequestParam(required = false) RoleEnum role,
+            @RequestParam(required = false) Long siteId,
+            @RequestParam(required = false) Boolean actif
+    ) throws IOException {
+        List<UtilisateurDTO> users = utilisateurService.getUtilisateursFiltres(recherche, role, siteId, actif);
+        byte[] bytes = exportService.exportUtilisateursExcel(users);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=utilisateurs.xlsx")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(bytes);
+    }
 
     @GetMapping
     @PreAuthorize("hasAuthority('PERM_UTILISATEURS_VOIR')")

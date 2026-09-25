@@ -167,6 +167,8 @@ export interface Paiement {
   utilisateurModifNom?: string;
   numeroRecu?: string;
   recuId?: number;
+  siteId?: number;
+  siteNom?: string;
 }
 
 export interface Recu {

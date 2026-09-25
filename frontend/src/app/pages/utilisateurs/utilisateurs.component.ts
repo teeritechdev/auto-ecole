@@ -15,6 +15,18 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
           <h2>Gestion des Utilisateurs & Droits</h2>
         </div>
         <div class="header-buttons">
+          <button class="btn btn-outline btn-sm" (click)="exportPdf()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            Export PDF
+          </button>
+          <button class="btn btn-outline btn-sm" (click)="imprimer()" title="Imprimer directement">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            Imprimer
+          </button>
+          <button class="btn btn-outline btn-sm" (click)="exportExcel()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            Export Excel
+          </button>
           <button class="btn btn-primary" (click)="openCreateModal()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="17" y1="11" x2="23" y2="11"/></svg>
             Nouvel Utilisateur
@@ -644,5 +656,25 @@ export class UtilisateursComponent implements OnInit {
       next: (identifiants) => this.identifiantsCompteAAfficher = identifiants,
       error: (err) => alert(extraireMessageErreur(err, 'Erreur lors de la réinitialisation du mot de passe.'))
     });
+  }
+
+  private getUtilisateursExportUrl(format: 'pdf' | 'excel'): string {
+    const siteIdNum = this.siteFiltre ? Number(this.siteFiltre) : undefined;
+    const actifBool = this.statutFiltre === 'ACTIF' ? true : this.statutFiltre === 'INACTIF' ? false : undefined;
+    return format === 'pdf'
+      ? this.apiService.getUtilisateursPdfUrl(this.rechercheFiltre || undefined, this.roleFiltre || undefined, siteIdNum, actifBool)
+      : this.apiService.getUtilisateursExcelUrl(this.rechercheFiltre || undefined, this.roleFiltre || undefined, siteIdNum, actifBool);
+  }
+
+  exportPdf(): void {
+    this.apiService.downloadBlob(this.getUtilisateursExportUrl('pdf'), 'utilisateurs.pdf');
+  }
+
+  imprimer(): void {
+    this.apiService.printBlob(this.getUtilisateursExportUrl('pdf'));
+  }
+
+  exportExcel(): void {
+    this.apiService.downloadBlob(this.getUtilisateursExportUrl('excel'), 'utilisateurs.xlsx');
   }
 }

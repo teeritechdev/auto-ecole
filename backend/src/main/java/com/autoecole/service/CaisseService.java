@@ -97,14 +97,19 @@ public class CaisseService {
     }
 
     @Transactional(readOnly = true)
-    public List<TransactionCaisseDTO> getTransactionsPourRapport(LocalDateTime debut, LocalDateTime fin) {
-        Set<Long> siteIds = resoudreSiteIdsPourFiltre(null);
+    public List<TransactionCaisseDTO> getTransactionsPourRapport(TypeMouvementCaisse type, Long natureOperationId, LocalDateTime debut, LocalDateTime fin, Long siteId) {
+        Set<Long> siteIds = resoudreSiteIdsPourFiltre(siteId);
         if (siteIds != null && siteIds.isEmpty()) {
             return List.of();
         }
-        return transactionRepository.findPourRapport(debut, fin, siteIds).stream()
+        return transactionRepository.findTransactionsFiltrees(type, natureOperationId, debut, fin, siteIds).stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<TransactionCaisseDTO> getTransactionsPourRapport(LocalDateTime debut, LocalDateTime fin) {
+        return getTransactionsPourRapport(null, null, debut, fin, null);
     }
 
     public RecapCaisseDTO getRecapCaisse(Long siteId) {

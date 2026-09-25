@@ -22,6 +22,18 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
             {{ refreshing ? 'Actualisation...' : 'Actualiser' }}
           </button>
+          <button class="btn btn-outline btn-sm" (click)="exporterPdf()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            Export PDF
+          </button>
+          <button class="btn btn-outline btn-sm" (click)="imprimerListe()" title="Imprimer directement">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            Imprimer
+          </button>
+          <button class="btn btn-outline btn-sm" (click)="exporterExcel()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            Export Excel
+          </button>
           @if (canAdd) {
             <button class="btn btn-primary" (click)="openNewPaiementModal()">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
@@ -710,6 +722,26 @@ export class PaiementsComponent implements OnInit {
 
   get canAdd(): boolean {
     return this.authService.hasPermission(['PAIEMENTS_CREER']);
+  }
+
+  exporterPdf(): void {
+    this.apiService.downloadBlob(
+      this.apiService.getPaiementsPdfUrl(undefined, this.debutISO, this.finISO, this.siteFiltreId),
+      'paiements_auto_ecole.pdf'
+    );
+  }
+
+  imprimerListe(): void {
+    this.apiService.printBlob(
+      this.apiService.getPaiementsPdfUrl(undefined, this.debutISO, this.finISO, this.siteFiltreId)
+    );
+  }
+
+  exporterExcel(): void {
+    this.apiService.downloadBlob(
+      this.apiService.getPaiementsExcelUrl(undefined, this.debutISO, this.finISO, this.siteFiltreId),
+      'paiements_auto_ecole.xlsx'
+    );
   }
 
   /** Rafraîchit la liste ET le résumé : un versement peut être enregistré par un autre

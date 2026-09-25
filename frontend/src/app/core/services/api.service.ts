@@ -448,8 +448,56 @@ export class ApiService {
   public getCandidatsExcelUrl(): string { return `${this.base}/rapports/candidats/excel`; }
   public getRelevePaiementPdfUrl(candidatId: number): string { return `${this.base}/rapports/releve-paiement/${candidatId}/pdf`; }
   public getRecuPdfUrl(recuId: number): string { return `${this.base}/rapports/recu/${recuId}/pdf`; }
-  public getCaissePdfUrl(debut?: string, fin?: string): string { return `${this.base}/rapports/caisse/pdf${this.buildPeriodeQuery(debut, fin)}`; }
-  public getCaisseExcelUrl(debut?: string, fin?: string): string { return `${this.base}/rapports/caisse/excel${this.buildPeriodeQuery(debut, fin)}`; }
+  public getCaissePdfUrl(
+    paramsOrDebut?: { type?: string; natureOperationId?: number; siteId?: number; debut?: string; fin?: string } | string,
+    fin?: string,
+    type?: string,
+    natureOperationId?: number,
+    siteId?: number
+  ): string {
+    const params = new URLSearchParams();
+    if (typeof paramsOrDebut === 'object' && paramsOrDebut !== null) {
+      if (paramsOrDebut.type) params.set('type', paramsOrDebut.type);
+      if (paramsOrDebut.natureOperationId) params.set('natureOperationId', paramsOrDebut.natureOperationId.toString());
+      if (paramsOrDebut.siteId) params.set('siteId', paramsOrDebut.siteId.toString());
+      if (paramsOrDebut.debut) params.set('debut', paramsOrDebut.debut);
+      if (paramsOrDebut.fin) params.set('fin', paramsOrDebut.fin);
+    } else if (typeof paramsOrDebut === 'string') {
+      params.set('debut', paramsOrDebut);
+      if (fin) params.set('fin', fin);
+      if (type) params.set('type', type);
+      if (natureOperationId) params.set('natureOperationId', natureOperationId.toString());
+      if (siteId) params.set('siteId', siteId.toString());
+    }
+    const qs = params.toString();
+    return `${this.base}/rapports/caisse/pdf${qs ? '?' + qs : ''}`;
+  }
+
+  public getCaisseExcelUrl(
+    paramsOrDebut?: { type?: string; natureOperationId?: number; siteId?: number; debut?: string; fin?: string } | string,
+    fin?: string,
+    type?: string,
+    natureOperationId?: number,
+    siteId?: number
+  ): string {
+    const params = new URLSearchParams();
+    if (typeof paramsOrDebut === 'object' && paramsOrDebut !== null) {
+      if (paramsOrDebut.type) params.set('type', paramsOrDebut.type);
+      if (paramsOrDebut.natureOperationId) params.set('natureOperationId', paramsOrDebut.natureOperationId.toString());
+      if (paramsOrDebut.siteId) params.set('siteId', paramsOrDebut.siteId.toString());
+      if (paramsOrDebut.debut) params.set('debut', paramsOrDebut.debut);
+      if (paramsOrDebut.fin) params.set('fin', paramsOrDebut.fin);
+    } else if (typeof paramsOrDebut === 'string') {
+      params.set('debut', paramsOrDebut);
+      if (fin) params.set('fin', fin);
+      if (type) params.set('type', type);
+      if (natureOperationId) params.set('natureOperationId', natureOperationId.toString());
+      if (siteId) params.set('siteId', siteId.toString());
+    }
+    const qs = params.toString();
+    return `${this.base}/rapports/caisse/excel${qs ? '?' + qs : ''}`;
+  }
+
   public getSessionsPdfUrl(siteId?: string, typeEpreuve?: string, statut?: string): string {
     const params = new URLSearchParams();
     if (siteId) params.set('siteId', siteId);
@@ -465,6 +513,114 @@ export class ApiService {
     if (statut) params.set('statut', statut);
     const qs = params.toString();
     return `${this.base}/examens/sessions/export/excel${qs ? '?' + qs : ''}`;
+  }
+
+  public getPaiementsPdfUrl(candidatId?: number, debut?: string, fin?: string, siteId?: number): string {
+    const params = new URLSearchParams();
+    if (candidatId) params.set('candidatId', candidatId.toString());
+    if (debut) params.set('debut', debut);
+    if (fin) params.set('fin', fin);
+    if (siteId) params.set('siteId', siteId.toString());
+    const qs = params.toString();
+    return `${this.base}/paiements/export/pdf${qs ? '?' + qs : ''}`;
+  }
+
+  public getPaiementsExcelUrl(candidatId?: number, debut?: string, fin?: string, siteId?: number): string {
+    const params = new URLSearchParams();
+    if (candidatId) params.set('candidatId', candidatId.toString());
+    if (debut) params.set('debut', debut);
+    if (fin) params.set('fin', fin);
+    if (siteId) params.set('siteId', siteId.toString());
+    const qs = params.toString();
+    return `${this.base}/paiements/export/excel${qs ? '?' + qs : ''}`;
+  }
+
+  public getNaturesCaissePdfUrl(sens?: string, actif?: boolean, recherche?: string): string {
+    const params = new URLSearchParams();
+    if (sens) params.set('sens', sens);
+    if (actif !== undefined) params.set('actif', actif.toString());
+    if (recherche) params.set('recherche', recherche);
+    const qs = params.toString();
+    return `${this.base}/caisse/natures/export/pdf${qs ? '?' + qs : ''}`;
+  }
+
+  public getNaturesCaisseExcelUrl(sens?: string, actif?: boolean, recherche?: string): string {
+    const params = new URLSearchParams();
+    if (sens) params.set('sens', sens);
+    if (actif !== undefined) params.set('actif', actif.toString());
+    if (recherche) params.set('recherche', recherche);
+    const qs = params.toString();
+    return `${this.base}/caisse/natures/export/excel${qs ? '?' + qs : ''}`;
+  }
+
+  public getRelevePaiementExcelUrl(candidatId: number): string {
+    return `${this.base}/rapports/releve-paiement/${candidatId}/excel`;
+  }
+
+  public getCandidatExamensPdfUrl(candidatId: number): string {
+    return `${this.base}/rapports/candidats/${candidatId}/examens/pdf`;
+  }
+
+  public getCategoriesPdfUrl(onlyActive = false): string {
+    return `${this.base}/parametrage/categories/export/pdf?onlyActive=${onlyActive}`;
+  }
+
+  public getCategoriesExcelUrl(onlyActive = false): string {
+    return `${this.base}/parametrage/categories/export/excel?onlyActive=${onlyActive}`;
+  }
+
+  public getSitesPdfUrl(onlyActive = false): string {
+    return `${this.base}/parametrage/sites/export/pdf?onlyActive=${onlyActive}`;
+  }
+
+  public getSitesExcelUrl(onlyActive = false): string {
+    return `${this.base}/parametrage/sites/export/excel?onlyActive=${onlyActive}`;
+  }
+
+  public getUtilisateursPdfUrl(recherche?: string, role?: string, siteId?: string | number, statut?: string | boolean): string {
+    const params = new URLSearchParams();
+    if (recherche) params.set('recherche', recherche);
+    if (role) params.set('role', role);
+    if (siteId) params.set('siteId', siteId.toString());
+    if (statut !== undefined && statut !== null && statut !== '') {
+      params.set('actif', statut === 'ACTIF' || statut === true ? 'true' : 'false');
+    }
+    const qs = params.toString();
+    return `${this.base}/utilisateurs/export/pdf${qs ? '?' + qs : ''}`;
+  }
+
+  public getUtilisateursExcelUrl(recherche?: string, role?: string, siteId?: string | number, statut?: string | boolean): string {
+    const params = new URLSearchParams();
+    if (recherche) params.set('recherche', recherche);
+    if (role) params.set('role', role);
+    if (siteId) params.set('siteId', siteId.toString());
+    if (statut !== undefined && statut !== null && statut !== '') {
+      params.set('actif', statut === 'ACTIF' || statut === true ? 'true' : 'false');
+    }
+    const qs = params.toString();
+    return `${this.base}/utilisateurs/export/excel${qs ? '?' + qs : ''}`;
+  }
+
+  public getAuditPdfUrl(entite?: string, action?: string, debut?: string, fin?: string, utilisateurId?: number): string {
+    const params = new URLSearchParams();
+    if (entite) params.set('entite', entite);
+    if (action) params.set('action', action);
+    if (debut) params.set('debut', debut);
+    if (fin) params.set('fin', fin);
+    if (utilisateurId) params.set('utilisateurId', utilisateurId.toString());
+    const qs = params.toString();
+    return `${this.base}/audit/export/pdf${qs ? '?' + qs : ''}`;
+  }
+
+  public getAuditExcelUrl(entite?: string, action?: string, debut?: string, fin?: string, utilisateurId?: number): string {
+    const params = new URLSearchParams();
+    if (entite) params.set('entite', entite);
+    if (action) params.set('action', action);
+    if (debut) params.set('debut', debut);
+    if (fin) params.set('fin', fin);
+    if (utilisateurId) params.set('utilisateurId', utilisateurId.toString());
+    const qs = params.toString();
+    return `${this.base}/audit/export/excel${qs ? '?' + qs : ''}`;
   }
 
   private buildPeriodeQuery(debut?: string, fin?: string): string {

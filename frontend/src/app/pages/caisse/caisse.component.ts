@@ -43,11 +43,25 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
               </button>
             }
           }
-          @if (activeTab === 'natures' && isAdmin) {
-            <button class="btn btn-primary" (click)="openCreateNatureModal()">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-              Nouvelle Nature d'opération
+          @if (activeTab === 'natures') {
+            <button class="btn btn-outline btn-sm" (click)="exportNaturesPdf()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              Export PDF
             </button>
+            <button class="btn btn-outline btn-sm" (click)="imprimerNatures()" title="Imprimer directement">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+              Imprimer
+            </button>
+            <button class="btn btn-outline btn-sm" (click)="exportNaturesExcel()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+              Export Excel
+            </button>
+            @if (isAdmin) {
+              <button class="btn btn-primary" (click)="openCreateNatureModal()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                Nouvelle Nature d'opération
+              </button>
+            }
           }
         </div>
       </div>
@@ -220,6 +234,28 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
 
       <!-- ===================== ONGLET NATURES D'OPÉRATION ===================== -->
       @if (activeTab === 'natures') {
+        <div class="card filter-card">
+          <div class="filter-grid">
+            <div>
+              <input type="text" class="form-control" placeholder="Recherche code, libellé, plan..." [(ngModel)]="natureRechercheFiltre" />
+            </div>
+            <div>
+              <select class="form-control" [(ngModel)]="natureSensFiltre">
+                <option value="">Tous les sens</option>
+                <option value="ENTREE">Recettes (Entrée)</option>
+                <option value="SORTIE">Dépenses (Sortie)</option>
+              </select>
+            </div>
+            <div>
+              <select class="form-control" [(ngModel)]="natureActifFiltre">
+                <option [ngValue]="null">Tous les statuts</option>
+                <option [ngValue]="true">Actives uniquement</option>
+                <option [ngValue]="false">Inactives uniquement</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
         <div class="card">
           <div class="table-responsive">
             <table class="custom-table">
@@ -239,12 +275,12 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                     <td colspan="6" class="text-center py-4">Chargement des natures d'opération...</td>
                   </tr>
                 }
-                @if (!loadingNatures && naturesToutes.length === 0) {
+                @if (!loadingNatures && naturesFiltrees.length === 0) {
                   <tr>
-                    <td colspan="6" class="text-center py-4">Aucune nature d'opération définie. Créez-en une pour pouvoir enregistrer des opérations.</td>
+                    <td colspan="6" class="text-center py-4">Aucune nature d'opération trouvée.</td>
                   </tr>
                 }
-                @for (n of naturesToutes; track n.id) {
+                @for (n of naturesFiltrees; track n.id) {
                   <tr [class.inactive-row]="!n.actif">
                     <td><code>{{ n.code }}</code></td>
                     <td><strong>{{ n.libelle }}</strong></td>
@@ -748,6 +784,24 @@ export class CaisseComponent implements OnInit {
   naturesActives: NatureOperation[] = [];
   naturesToutes: NatureOperation[] = [];
   loadingNatures = false;
+  natureRechercheFiltre = '';
+  natureSensFiltre: 'ENTREE' | 'SORTIE' | '' = '';
+  natureActifFiltre: boolean | null = null;
+
+  get naturesFiltrees(): NatureOperation[] {
+    return this.naturesToutes.filter(n => {
+      if (this.natureSensFiltre && n.sens !== this.natureSensFiltre) return false;
+      if (this.natureActifFiltre !== null && n.actif !== this.natureActifFiltre) return false;
+      if (this.natureRechercheFiltre) {
+        const q = this.natureRechercheFiltre.toLowerCase().trim();
+        const code = (n.code || '').toLowerCase();
+        const libelle = (n.libelle || '').toLowerCase();
+        const plan = (n.planComptable || '').toLowerCase();
+        if (!code.includes(q) && !libelle.includes(q) && !plan.includes(q)) return false;
+      }
+      return true;
+    });
+  }
 
   showNewTxModal = false;
   newTx: { natureOperationId: number | null; montant: number | null; libelle: string; numeroFacture: string; siteId: number | null } = {
@@ -989,15 +1043,57 @@ export class CaisseComponent implements OnInit {
   }
 
   exportPdf(): void {
-    this.apiService.downloadBlob(this.apiService.getCaissePdfUrl(), 'journal_caisse.pdf');
+    const url = this.apiService.getCaissePdfUrl({
+      type: this.typeFiltre || undefined,
+      natureOperationId: this.natureFiltreId || undefined,
+      siteId: this.siteFiltre || undefined
+    });
+    this.apiService.downloadBlob(url, 'journal_caisse.pdf');
   }
 
   imprimerJournal(): void {
-    this.apiService.printBlob(this.apiService.getCaissePdfUrl());
+    const url = this.apiService.getCaissePdfUrl({
+      type: this.typeFiltre || undefined,
+      natureOperationId: this.natureFiltreId || undefined,
+      siteId: this.siteFiltre || undefined
+    });
+    this.apiService.printBlob(url);
   }
 
   exportExcel(): void {
-    this.apiService.downloadBlob(this.apiService.getCaisseExcelUrl(), 'journal_caisse.xlsx');
+    const url = this.apiService.getCaisseExcelUrl({
+      type: this.typeFiltre || undefined,
+      natureOperationId: this.natureFiltreId || undefined,
+      siteId: this.siteFiltre || undefined
+    });
+    this.apiService.downloadBlob(url, 'journal_caisse.xlsx');
+  }
+
+  exportNaturesPdf(): void {
+    const url = this.apiService.getNaturesCaissePdfUrl(
+      this.natureSensFiltre || undefined,
+      this.natureActifFiltre ?? undefined,
+      this.natureRechercheFiltre || undefined
+    );
+    this.apiService.downloadBlob(url, 'natures_operation.pdf');
+  }
+
+  imprimerNatures(): void {
+    const url = this.apiService.getNaturesCaissePdfUrl(
+      this.natureSensFiltre || undefined,
+      this.natureActifFiltre ?? undefined,
+      this.natureRechercheFiltre || undefined
+    );
+    this.apiService.printBlob(url);
+  }
+
+  exportNaturesExcel(): void {
+    const url = this.apiService.getNaturesCaisseExcelUrl(
+      this.natureSensFiltre || undefined,
+      this.natureActifFiltre ?? undefined,
+      this.natureRechercheFiltre || undefined
+    );
+    this.apiService.downloadBlob(url, 'natures_operation.xlsx');
   }
 
   // ============== NATURES D'OPÉRATION ==============

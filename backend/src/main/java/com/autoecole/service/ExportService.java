@@ -2,6 +2,13 @@ package com.autoecole.service;
 
 import com.autoecole.dto.CandidatDTOs.CandidatDTO;
 import com.autoecole.dto.CaisseDTOs.TransactionCaisseDTO;
+import com.autoecole.dto.CaisseDTOs.NatureOperationDTO;
+import com.autoecole.dto.ExamenDTOs.BilanExamensCandidatDTO;
+import com.autoecole.dto.ExamenDTOs.PassageExamenDTO;
+import com.autoecole.dto.ParametrageDTOs.CategoriePermisDTO;
+import com.autoecole.dto.ParametrageDTOs.SiteDTO;
+import com.autoecole.dto.UtilisateurDTOs.UtilisateurDTO;
+import com.autoecole.dto.AuditDTOs.HistoriqueActionDTO;
 import com.autoecole.dto.ExamenDTOs.SessionExamenDTO;
 import com.autoecole.dto.PaiementDTOs.PaiementDTO;
 import com.autoecole.dto.PaiementDTOs.RecuDTO;
@@ -51,6 +58,7 @@ public class ExportService {
     private final PaiementService paiementService;
     private final RecuService recuService;
     private final CaisseService caisseService;
+    private final ExamenService examenService;
     private final ConfigurationApplicationRepository configurationRepository;
 
     /** Valeur de repli tant qu'aucun nom n'a été saisi par l'ADMIN dans l'onglet Identité
@@ -808,4 +816,702 @@ public class ExportService {
             default: return "Programmé";
         }
     }
+
+    // ==========================================
+    // RELEVÉ PAIEMENT CANDIDAT EXCEL
+    // ==========================================
+    public byte[] exportRelevePaiementCandidatExcel(Long candidatId) throws IOException {
+        CandidatDTO candidat = candidatService.getCandidatById(candidatId);
+        List<PaiementDTO> paiements = paiementService.getPaiementsByCandidat(candidatId);
+
+        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sheet = workbook.createSheet("Relevé Versements");
+
+            org.apache.poi.ss.usermodel.Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerFont.setColor(IndexedColors.WHITE.getIndex());
+
+            CellStyle headerStyle = workbook.createCellStyle();
+            headerStyle.setFont(headerFont);
+            headerStyle.setFillForegroundColor(IndexedColors.DARK_BLUE.getIndex());
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            headerStyle.setAlignment(HorizontalAlignment.CENTER);
+
+            Row r0 = sheet.createRow(0);
+            r0.createCell(0).setCellValue("Candidat: " + candidat.getNom() + " " + candidat.getPrenom() + " | N° Dossier: " + candidat.getNumeroDossier());
+            Row r1 = sheet.createRow(1);
+            r1.createCell(0).setCellValue("Formation: " + candidat.getCategoriePermisLibelle() + " | Total Versé: " + candidat.getTotalVerse() + " FCFA | Reste: " + candidat.getSoldeRestant() + " FCFA");
+
+            Row headerRow = sheet.createRow(3);
+            String[] headers = {"Date Paiement", "N° Reçu", "Montant (FCFA)", "Solde Restant (FCFA)", "Mode Règlement", "Encaissé par"};
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+                cell.setCellStyle(headerStyle);
+            }
+
+            int rowIdx = 4;
+            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+            for (PaiementDTO p : paiements) {
+                Row row = sheet.createRow(rowIdx++);
+                row.createCell(0).setCellValue(sanitizeForExcel(p.getDatePaiement() != null ? p.getDatePaiement().format(dtf) : "-"));
+                row.createCell(1).setCellValue(sanitizeForExcel(p.getNumeroRecu() != null ? p.getNumeroRecu() : "-"));
+                row.createCell(2).setCellValue(p.getMontant() != null ? p.getMontant().doubleValue() : 0);
+                row.createCell(3).setCellValue(p.getSoldeRestant() != null ? p.getSoldeRestant().doubleValue() : 0);
+                row.createCell(4).setCellValue(sanitizeForExcel(p.getModeReglement() != null ? p.getModeReglement().name() : "-"));
+                row.createCell(5).setCellValue(sanitizeForExcel(p.getUtilisateurNomComplet() != null ? p.getUtilisateurNomComplet() : "-"));
+            }
+
+            for (int i = 0; i < headers.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            workbook.write(out);
+            return out.toByteArray();
+        }
+    }
+
+    // ==========================================
+    // BILAN EXAMENS CANDIDAT PDF
+    // ==========================================
+    public byte[] exportBilanExamensCandidatPdf(Long candidatId) {
+        CandidatDTO candidat = candidatService.getCandidatById(candidatId);
+        BilanExamensCandidatDTO bilan = examenService.getBilanExamensCandidat(candidatId);
+
+        Document document = new Document(PageSize.A4, 25, 25, 25, 25);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        try {
+            PdfWriter.getInstance(document, out);
+            document.open();
+
+            Paragraph title = new Paragraph("FICHE PÉDAGOGIQUE & SUIVI DES EXAMENS", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 15, PRIMARY_COLOR));
+            title.setAlignment(Element.ALIGN_CENTER);
+            title.setSpacingAfter(15);
+            document.add(title);
+
+            PdfPTable synthese = new PdfPTable(2);
+            synthese.setWidthPercentage(100);
+            com.lowagie.text.Font boldFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10);
+            com.lowagie.text.Font regFont = FontFactory.getFont(FontFactory.HELVETICA, 10);
+
+            addTableRow(synthese, "Candidat :", candidat.getNom() + " " + candidat.getPrenom(), boldFont, regFont);
+            addTableRow(synthese, "N° Dossier :", candidat.getNumeroDossier(), boldFont, regFont);
+            addTableRow(synthese, "Catégorie de Permis :", candidat.getCategoriePermisCode() + " - " + candidat.getCategoriePermisLibelle(), boldFont, regFont);
+            addTableRow(synthese, "Site de formation :", candidat.getSiteNom() != null ? candidat.getSiteNom() : "-", boldFont, regFont);
+            document.add(synthese);
+
+            Paragraph pStatus = new Paragraph("\nÉtat d'avancement du parcours d'examen :", boldFont);
+            pStatus.setSpacingAfter(10);
+            document.add(pStatus);
+
+            PdfPTable statusTable = new PdfPTable(3);
+            statusTable.setWidthPercentage(100);
+            statusTable.setWidths(new float[]{1f, 1f, 1f});
+
+            addStatusCell(statusTable, "1. Épreuve de CODE", bilan.isCodeReussi());
+            addStatusCell(statusTable, "2. Épreuve de CRÉNEAU", bilan.isCreneauReussi());
+            addStatusCell(statusTable, "3. Épreuve de CIRCULATION", bilan.isCirculationReussi());
+            document.add(statusTable);
+
+            Paragraph pDetails = new Paragraph("\nHistorique détaillé des tentatives de passage (Jusqu'à 5 autorisées) :", boldFont);
+            pDetails.setSpacingAfter(10);
+            document.add(pDetails);
+
+            PdfPTable table = new PdfPTable(5);
+            table.setWidthPercentage(100);
+            table.setWidths(new float[]{3f, 2f, 2.5f, 2.5f, 4f});
+
+            String[] heads = {"Épreuve", "Passage", "Date", "Résultat", "Observations / Moniteur"};
+            for (String h : heads) {
+                PdfPCell cell = new PdfPCell(new Phrase(h, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9, Color.WHITE)));
+                cell.setBackgroundColor(PRIMARY_COLOR);
+                cell.setPadding(5);
+                table.addCell(cell);
+            }
+
+            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+            addPassagesToTable(table, bilan.getPassagesCode(), "Code", regFont, dtf);
+            addPassagesToTable(table, bilan.getPassagesCreneau(), "Créneau", regFont, dtf);
+            addPassagesToTable(table, bilan.getPassagesCirculation(), "Circulation", regFont, dtf);
+
+            document.add(table);
+            document.close();
+        } catch (Exception e) {
+            throw new RuntimeException("Erreur lors de la génération du bilan d'examens: " + e.getMessage());
+        }
+
+        return out.toByteArray();
+    }
+
+    private void addStatusCell(PdfPTable table, String epreuve, boolean reussi) {
+        PdfPCell cell = new PdfPCell();
+        cell.setPadding(8);
+        cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+        com.lowagie.text.Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10);
+        com.lowagie.text.Font resFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, reussi ? new Color(21, 128, 61) : new Color(185, 28, 28));
+        cell.addElement(new Paragraph(epreuve, titleFont));
+        Paragraph pRes = new Paragraph(reussi ? "VALIDÉ" : "NON VALIDÉ", resFont);
+        cell.addElement(pRes);
+        table.addCell(cell);
+    }
+
+    private void addPassagesToTable(PdfPTable table, List<PassageExamenDTO> passages, String epreuveNom, com.lowagie.text.Font regFont, DateTimeFormatter dtf) {
+        if (passages == null || passages.isEmpty()) {
+            return;
+        }
+        for (PassageExamenDTO p : passages) {
+            table.addCell(new Phrase(epreuveNom, regFont));
+            table.addCell(new Phrase(p.getNumeroPassage() != null ? "N° " + p.getNumeroPassage() + "/5" : "-", regFont));
+            table.addCell(new Phrase(p.getDatePassage() != null ? p.getDatePassage().format(dtf) : "-", regFont));
+            table.addCell(new Phrase(p.getResultat() != null ? p.getResultat().name() : "-", regFont));
+            String obs = (p.getObservations() != null ? p.getObservations() : "") + (p.getMoniteurNomComplet() != null ? " (" + p.getMoniteurNomComplet() + ")" : "");
+            table.addCell(new Phrase(obs.isBlank() ? "-" : obs, regFont));
+        }
+    }
+
+    // ==========================================
+    // PAIEMENTS PDF & EXCEL
+    // ==========================================
+    public byte[] exportPaiementsPdf(List<PaiementDTO> paiements) {
+        Document document = new Document(PageSize.A4.rotate(), 20, 20, 20, 20);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        try {
+            PdfWriter.getInstance(document, out);
+            document.open();
+
+            Paragraph title = new Paragraph("JOURNAL DES VERSEMENTS ET ENCAISSEMENTS", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, PRIMARY_COLOR));
+            title.setAlignment(Element.ALIGN_CENTER);
+            title.setSpacingAfter(12);
+            document.add(title);
+
+            PdfPTable table = new PdfPTable(8);
+            table.setWidthPercentage(100);
+            table.setWidths(new float[]{2.5f, 2.5f, 2.5f, 3.5f, 2.5f, 2.5f, 2.5f, 3f});
+
+            String[] heads = {"Date", "N° Reçu", "Dossier", "Candidat", "Montant", "Solde Restant", "Mode", "Encaissé par"};
+            for (String h : heads) {
+                PdfPCell cell = new PdfPCell(new Phrase(h, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9, Color.WHITE)));
+                cell.setBackgroundColor(PRIMARY_COLOR);
+                cell.setPadding(4);
+                table.addCell(cell);
+            }
+
+            com.lowagie.text.Font regFont = FontFactory.getFont(FontFactory.HELVETICA, 8);
+            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+            for (PaiementDTO p : paiements) {
+                table.addCell(new Phrase(p.getDatePaiement() != null ? p.getDatePaiement().format(dtf) : "-", regFont));
+                table.addCell(new Phrase(p.getNumeroRecu() != null ? p.getNumeroRecu() : "-", regFont));
+                table.addCell(new Phrase(p.getCandidatNumeroDossier() != null ? p.getCandidatNumeroDossier() : "-", regFont));
+                table.addCell(new Phrase(p.getCandidatNomComplet() != null ? p.getCandidatNomComplet() : "-", regFont));
+                table.addCell(new Phrase(p.getMontant() != null ? p.getMontant() + " F" : "0 F", regFont));
+                table.addCell(new Phrase(p.getSoldeRestant() != null ? p.getSoldeRestant() + " F" : "-", regFont));
+                table.addCell(new Phrase(p.getModeReglement() != null ? p.getModeReglement().name() : "-", regFont));
+                table.addCell(new Phrase(p.getUtilisateurNomComplet() != null ? p.getUtilisateurNomComplet() : "-", regFont));
+            }
+
+            document.add(table);
+            document.close();
+        } catch (Exception e) {
+            throw new RuntimeException("Erreur lors de l'export des paiements en PDF: " + e.getMessage());
+        }
+
+        return out.toByteArray();
+    }
+
+    public byte[] exportPaiementsExcel(List<PaiementDTO> paiements) throws IOException {
+        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sheet = workbook.createSheet("Versements");
+
+            org.apache.poi.ss.usermodel.Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerFont.setColor(IndexedColors.WHITE.getIndex());
+
+            CellStyle headerStyle = workbook.createCellStyle();
+            headerStyle.setFont(headerFont);
+            headerStyle.setFillForegroundColor(IndexedColors.DARK_BLUE.getIndex());
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            headerStyle.setAlignment(HorizontalAlignment.CENTER);
+
+            Row headerRow = sheet.createRow(0);
+            String[] headers = {"Date", "N° Reçu", "N° Dossier", "Nom Candidat", "Montant (FCFA)", "Solde Restant (FCFA)", "Mode Règlement", "Site", "Encaissé par"};
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+                cell.setCellStyle(headerStyle);
+            }
+
+            int rowIdx = 1;
+            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+            for (PaiementDTO p : paiements) {
+                Row row = sheet.createRow(rowIdx++);
+                row.createCell(0).setCellValue(sanitizeForExcel(p.getDatePaiement() != null ? p.getDatePaiement().format(dtf) : "-"));
+                row.createCell(1).setCellValue(sanitizeForExcel(p.getNumeroRecu() != null ? p.getNumeroRecu() : "-"));
+                row.createCell(2).setCellValue(sanitizeForExcel(p.getCandidatNumeroDossier() != null ? p.getCandidatNumeroDossier() : "-"));
+                row.createCell(3).setCellValue(sanitizeForExcel(p.getCandidatNomComplet() != null ? p.getCandidatNomComplet() : "-"));
+                row.createCell(4).setCellValue(p.getMontant() != null ? p.getMontant().doubleValue() : 0);
+                row.createCell(5).setCellValue(p.getSoldeRestant() != null ? p.getSoldeRestant().doubleValue() : 0);
+                row.createCell(6).setCellValue(sanitizeForExcel(p.getModeReglement() != null ? p.getModeReglement().name() : "-"));
+                row.createCell(7).setCellValue(sanitizeForExcel(p.getSiteNom() != null ? p.getSiteNom() : "-"));
+                row.createCell(8).setCellValue(sanitizeForExcel(p.getUtilisateurNomComplet() != null ? p.getUtilisateurNomComplet() : "-"));
+            }
+
+            for (int i = 0; i < headers.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            workbook.write(out);
+            return out.toByteArray();
+        }
+    }
+
+    // ==========================================
+    // NATURES D'OPÉRATION PDF & EXCEL
+    // ==========================================
+    public byte[] exportNaturesOperationPdf(List<NatureOperationDTO> natures) {
+        Document document = new Document(PageSize.A4, 25, 25, 25, 25);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        try {
+            PdfWriter.getInstance(document, out);
+            document.open();
+
+            Paragraph title = new Paragraph("CATALOGUE DES NATURES D'OPÉRATION DE CAISSE", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, PRIMARY_COLOR));
+            title.setAlignment(Element.ALIGN_CENTER);
+            title.setSpacingAfter(15);
+            document.add(title);
+
+            PdfPTable table = new PdfPTable(5);
+            table.setWidthPercentage(100);
+            table.setWidths(new float[]{2.5f, 4f, 2.5f, 3f, 2f});
+
+            String[] heads = {"Code", "Libellé", "Sens", "Plan Comptable", "Statut"};
+            for (String h : heads) {
+                PdfPCell cell = new PdfPCell(new Phrase(h, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9, Color.WHITE)));
+                cell.setBackgroundColor(PRIMARY_COLOR);
+                cell.setPadding(5);
+                table.addCell(cell);
+            }
+
+            com.lowagie.text.Font regFont = FontFactory.getFont(FontFactory.HELVETICA, 9);
+            for (NatureOperationDTO n : natures) {
+                table.addCell(new Phrase(n.getCode() != null ? n.getCode() : "-", regFont));
+                table.addCell(new Phrase(n.getLibelle() != null ? n.getLibelle() : "-", regFont));
+                table.addCell(new Phrase(n.getSens() != null ? (n.getSens() == com.autoecole.entity.enums.TypeMouvementCaisse.ENTREE ? "RECETTE" : "DÉPENSE") : "-", regFont));
+                table.addCell(new Phrase(n.getPlanComptable() != null ? n.getPlanComptable() : "-", regFont));
+                table.addCell(new Phrase(n.isActif() ? "Active" : "Inactive", regFont));
+            }
+
+            document.add(table);
+            document.close();
+        } catch (Exception e) {
+            throw new RuntimeException("Erreur lors de l'export des natures d'opération en PDF: " + e.getMessage());
+        }
+
+        return out.toByteArray();
+    }
+
+    public byte[] exportNaturesOperationExcel(List<NatureOperationDTO> natures) throws IOException {
+        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sheet = workbook.createSheet("Natures d'opération");
+
+            org.apache.poi.ss.usermodel.Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerFont.setColor(IndexedColors.WHITE.getIndex());
+
+            CellStyle headerStyle = workbook.createCellStyle();
+            headerStyle.setFont(headerFont);
+            headerStyle.setFillForegroundColor(IndexedColors.DARK_BLUE.getIndex());
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            headerStyle.setAlignment(HorizontalAlignment.CENTER);
+
+            Row headerRow = sheet.createRow(0);
+            String[] headers = {"Code", "Libellé", "Sens", "Plan Comptable", "Statut", "Description"};
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+                cell.setCellStyle(headerStyle);
+            }
+
+            int rowIdx = 1;
+            for (NatureOperationDTO n : natures) {
+                Row row = sheet.createRow(rowIdx++);
+                row.createCell(0).setCellValue(sanitizeForExcel(n.getCode() != null ? n.getCode() : "-"));
+                row.createCell(1).setCellValue(sanitizeForExcel(n.getLibelle() != null ? n.getLibelle() : "-"));
+                row.createCell(2).setCellValue(sanitizeForExcel(n.getSens() != null ? (n.getSens() == com.autoecole.entity.enums.TypeMouvementCaisse.ENTREE ? "RECETTE" : "DÉPENSE") : "-"));
+                row.createCell(3).setCellValue(sanitizeForExcel(n.getPlanComptable() != null ? n.getPlanComptable() : "-"));
+                row.createCell(4).setCellValue(n.isActif() ? "Active" : "Inactive");
+                row.createCell(5).setCellValue(sanitizeForExcel(n.getDescription() != null ? n.getDescription() : ""));
+            }
+
+            for (int i = 0; i < headers.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            workbook.write(out);
+            return out.toByteArray();
+        }
+    }
+
+    // ==========================================
+    // CATÉGORIES DE PERMIS PDF & EXCEL
+    // ==========================================
+    public byte[] exportCategoriesPermisPdf(List<CategoriePermisDTO> categories) {
+        Document document = new Document(PageSize.A4, 25, 25, 25, 25);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        try {
+            PdfWriter.getInstance(document, out);
+            document.open();
+
+            Paragraph title = new Paragraph("GRILLE TARIFAIRE DES CATÉGORIES DE PERMIS", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, PRIMARY_COLOR));
+            title.setAlignment(Element.ALIGN_CENTER);
+            title.setSpacingAfter(15);
+            document.add(title);
+
+            PdfPTable table = new PdfPTable(5);
+            table.setWidthPercentage(100);
+            table.setWidths(new float[]{2f, 4f, 3f, 3f, 2f});
+
+            String[] heads = {"Code", "Libellé", "Montant Formation", "Frais d'Examen", "Statut"};
+            for (String h : heads) {
+                PdfPCell cell = new PdfPCell(new Phrase(h, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9, Color.WHITE)));
+                cell.setBackgroundColor(PRIMARY_COLOR);
+                cell.setPadding(5);
+                table.addCell(cell);
+            }
+
+            com.lowagie.text.Font regFont = FontFactory.getFont(FontFactory.HELVETICA, 9);
+            for (CategoriePermisDTO c : categories) {
+                table.addCell(new Phrase(c.getCode() != null ? c.getCode() : "-", regFont));
+                table.addCell(new Phrase(c.getLibelle() != null ? c.getLibelle() : "-", regFont));
+                table.addCell(new Phrase(c.getMontant() != null ? c.getMontant() + " FCFA" : "0 FCFA", regFont));
+                table.addCell(new Phrase(c.getFraisExamen() != null ? c.getFraisExamen() + " FCFA" : "0 FCFA", regFont));
+                table.addCell(new Phrase(c.isActif() ? "Active" : "Inactive", regFont));
+            }
+
+            document.add(table);
+            document.close();
+        } catch (Exception e) {
+            throw new RuntimeException("Erreur lors de l'export des catégories en PDF: " + e.getMessage());
+        }
+
+        return out.toByteArray();
+    }
+
+    public byte[] exportCategoriesPermisExcel(List<CategoriePermisDTO> categories) throws IOException {
+        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sheet = workbook.createSheet("Catégories de Permis");
+
+            org.apache.poi.ss.usermodel.Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerFont.setColor(IndexedColors.WHITE.getIndex());
+
+            CellStyle headerStyle = workbook.createCellStyle();
+            headerStyle.setFont(headerFont);
+            headerStyle.setFillForegroundColor(IndexedColors.DARK_BLUE.getIndex());
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            headerStyle.setAlignment(HorizontalAlignment.CENTER);
+
+            Row headerRow = sheet.createRow(0);
+            String[] headers = {"Code", "Libellé", "Montant Formation (FCFA)", "Frais d'Examen (FCFA)", "Statut", "Description"};
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+                cell.setCellStyle(headerStyle);
+            }
+
+            int rowIdx = 1;
+            for (CategoriePermisDTO c : categories) {
+                Row row = sheet.createRow(rowIdx++);
+                row.createCell(0).setCellValue(sanitizeForExcel(c.getCode() != null ? c.getCode() : "-"));
+                row.createCell(1).setCellValue(sanitizeForExcel(c.getLibelle() != null ? c.getLibelle() : "-"));
+                row.createCell(2).setCellValue(c.getMontant() != null ? c.getMontant().doubleValue() : 0);
+                row.createCell(3).setCellValue(c.getFraisExamen() != null ? c.getFraisExamen().doubleValue() : 0);
+                row.createCell(4).setCellValue(c.isActif() ? "Active" : "Inactive");
+                row.createCell(5).setCellValue(sanitizeForExcel(c.getDescription() != null ? c.getDescription() : ""));
+            }
+
+            for (int i = 0; i < headers.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            workbook.write(out);
+            return out.toByteArray();
+        }
+    }
+
+    // ==========================================
+    // SITES DE FORMATION PDF & EXCEL
+    // ==========================================
+    public byte[] exportSitesPdf(List<SiteDTO> sites) {
+        Document document = new Document(PageSize.A4, 25, 25, 25, 25);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        try {
+            PdfWriter.getInstance(document, out);
+            document.open();
+
+            Paragraph title = new Paragraph("LISTE DES SITES DE FORMATION", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, PRIMARY_COLOR));
+            title.setAlignment(Element.ALIGN_CENTER);
+            title.setSpacingAfter(15);
+            document.add(title);
+
+            PdfPTable table = new PdfPTable(3);
+            table.setWidthPercentage(100);
+            table.setWidths(new float[]{4f, 5f, 2f});
+
+            String[] heads = {"Nom du Site", "Adresse", "Statut"};
+            for (String h : heads) {
+                PdfPCell cell = new PdfPCell(new Phrase(h, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9, Color.WHITE)));
+                cell.setBackgroundColor(PRIMARY_COLOR);
+                cell.setPadding(5);
+                table.addCell(cell);
+            }
+
+            com.lowagie.text.Font regFont = FontFactory.getFont(FontFactory.HELVETICA, 9);
+            for (SiteDTO s : sites) {
+                table.addCell(new Phrase(s.getNom() != null ? s.getNom() : "-", regFont));
+                table.addCell(new Phrase(s.getAdresse() != null ? s.getAdresse() : "-", regFont));
+                table.addCell(new Phrase(s.isActif() ? "Actif" : "Inactif", regFont));
+            }
+
+            document.add(table);
+            document.close();
+        } catch (Exception e) {
+            throw new RuntimeException("Erreur lors de l'export des sites en PDF: " + e.getMessage());
+        }
+
+        return out.toByteArray();
+    }
+
+    public byte[] exportSitesExcel(List<SiteDTO> sites) throws IOException {
+        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sheet = workbook.createSheet("Sites de Formation");
+
+            org.apache.poi.ss.usermodel.Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerFont.setColor(IndexedColors.WHITE.getIndex());
+
+            CellStyle headerStyle = workbook.createCellStyle();
+            headerStyle.setFont(headerFont);
+            headerStyle.setFillForegroundColor(IndexedColors.DARK_BLUE.getIndex());
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            headerStyle.setAlignment(HorizontalAlignment.CENTER);
+
+            Row headerRow = sheet.createRow(0);
+            String[] headers = {"Nom du Site", "Adresse", "Statut"};
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+                cell.setCellStyle(headerStyle);
+            }
+
+            int rowIdx = 1;
+            for (SiteDTO s : sites) {
+                Row row = sheet.createRow(rowIdx++);
+                row.createCell(0).setCellValue(sanitizeForExcel(s.getNom() != null ? s.getNom() : "-"));
+                row.createCell(1).setCellValue(sanitizeForExcel(s.getAdresse() != null ? s.getAdresse() : "-"));
+                row.createCell(2).setCellValue(s.isActif() ? "Actif" : "Inactif");
+            }
+
+            for (int i = 0; i < headers.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            workbook.write(out);
+            return out.toByteArray();
+        }
+    }
+
+    // ==========================================
+    // UTILISATEURS PDF & EXCEL
+    // ==========================================
+    public byte[] exportUtilisateursPdf(List<UtilisateurDTO> utilisateurs) {
+        Document document = new Document(PageSize.A4.rotate(), 20, 20, 20, 20);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        try {
+            PdfWriter.getInstance(document, out);
+            document.open();
+
+            Paragraph title = new Paragraph("LISTE DES UTILISATEURS & DROITS D'ACCÈS", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, PRIMARY_COLOR));
+            title.setAlignment(Element.ALIGN_CENTER);
+            title.setSpacingAfter(15);
+            document.add(title);
+
+            PdfPTable table = new PdfPTable(7);
+            table.setWidthPercentage(100);
+            table.setWidths(new float[]{2.5f, 3.5f, 3.5f, 2.5f, 2.5f, 3.5f, 2f});
+
+            String[] heads = {"Identifiant", "Nom Complet", "Email", "Téléphone", "Rôle", "Sites d'affectation", "Statut"};
+            for (String h : heads) {
+                PdfPCell cell = new PdfPCell(new Phrase(h, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9, Color.WHITE)));
+                cell.setBackgroundColor(PRIMARY_COLOR);
+                cell.setPadding(5);
+                table.addCell(cell);
+            }
+
+            com.lowagie.text.Font regFont = FontFactory.getFont(FontFactory.HELVETICA, 8);
+            for (UtilisateurDTO u : utilisateurs) {
+                table.addCell(new Phrase(u.getUsername() != null ? u.getUsername() : "-", regFont));
+                table.addCell(new Phrase((u.getNom() != null ? u.getNom() : "") + " " + (u.getPrenom() != null ? u.getPrenom() : ""), regFont));
+                table.addCell(new Phrase(u.getEmail() != null ? u.getEmail() : "-", regFont));
+                table.addCell(new Phrase(u.getTelephone() != null ? u.getTelephone() : "-", regFont));
+                table.addCell(new Phrase(u.getRoleLibelle() != null ? u.getRoleLibelle() : (u.getRole() != null ? u.getRole() : "-"), regFont));
+                String sitesStr = u.getSiteNoms() != null && !u.getSiteNoms().isEmpty() ? String.join(", ", u.getSiteNoms()) : "-";
+                table.addCell(new Phrase(sitesStr, regFont));
+                table.addCell(new Phrase(u.isActif() ? "Actif" : "Désactivé", regFont));
+            }
+
+            document.add(table);
+            document.close();
+        } catch (Exception e) {
+            throw new RuntimeException("Erreur lors de l'export des utilisateurs en PDF: " + e.getMessage());
+        }
+
+        return out.toByteArray();
+    }
+
+    public byte[] exportUtilisateursExcel(List<UtilisateurDTO> utilisateurs) throws IOException {
+        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sheet = workbook.createSheet("Utilisateurs");
+
+            org.apache.poi.ss.usermodel.Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerFont.setColor(IndexedColors.WHITE.getIndex());
+
+            CellStyle headerStyle = workbook.createCellStyle();
+            headerStyle.setFont(headerFont);
+            headerStyle.setFillForegroundColor(IndexedColors.DARK_BLUE.getIndex());
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            headerStyle.setAlignment(HorizontalAlignment.CENTER);
+
+            Row headerRow = sheet.createRow(0);
+            String[] headers = {"Identifiant", "Nom", "Prénom", "Email", "Téléphone", "Rôle", "Sites d'affectation", "Statut"};
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+                cell.setCellStyle(headerStyle);
+            }
+
+            int rowIdx = 1;
+            for (UtilisateurDTO u : utilisateurs) {
+                Row row = sheet.createRow(rowIdx++);
+                row.createCell(0).setCellValue(sanitizeForExcel(u.getUsername() != null ? u.getUsername() : "-"));
+                row.createCell(1).setCellValue(sanitizeForExcel(u.getNom() != null ? u.getNom() : "-"));
+                row.createCell(2).setCellValue(sanitizeForExcel(u.getPrenom() != null ? u.getPrenom() : "-"));
+                row.createCell(3).setCellValue(sanitizeForExcel(u.getEmail() != null ? u.getEmail() : "-"));
+                row.createCell(4).setCellValue(sanitizeForExcel(u.getTelephone() != null ? u.getTelephone() : "-"));
+                row.createCell(5).setCellValue(sanitizeForExcel(u.getRoleLibelle() != null ? u.getRoleLibelle() : (u.getRole() != null ? u.getRole() : "-")));
+                String sitesStr = u.getSiteNoms() != null && !u.getSiteNoms().isEmpty() ? String.join(", ", u.getSiteNoms()) : "-";
+                row.createCell(6).setCellValue(sanitizeForExcel(sitesStr));
+                row.createCell(7).setCellValue(u.isActif() ? "Actif" : "Désactivé");
+            }
+
+            for (int i = 0; i < headers.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            workbook.write(out);
+            return out.toByteArray();
+        }
+    }
+
+    // ==========================================
+    // AUDIT & TRAÇABILITÉ PDF & EXCEL
+    // ==========================================
+    public byte[] exportAuditPdf(List<HistoriqueActionDTO> logs) {
+        Document document = new Document(PageSize.A4.rotate(), 20, 20, 20, 20);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        try {
+            PdfWriter.getInstance(document, out);
+            document.open();
+
+            Paragraph title = new Paragraph("JOURNAL D'AUDIT & TRAÇABILITÉ (RG10)", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, PRIMARY_COLOR));
+            title.setAlignment(Element.ALIGN_CENTER);
+            title.setSpacingAfter(15);
+            document.add(title);
+
+            PdfPTable table = new PdfPTable(7);
+            table.setWidthPercentage(100);
+            table.setWidths(new float[]{2.5f, 2.5f, 2f, 2.5f, 2f, 4f, 3f});
+
+            String[] heads = {"Date & Heure", "Opérateur", "Action", "Entité Cible", "ID Cible", "Détails", "Motif"};
+            for (String h : heads) {
+                PdfPCell cell = new PdfPCell(new Phrase(h, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9, Color.WHITE)));
+                cell.setBackgroundColor(PRIMARY_COLOR);
+                cell.setPadding(4);
+                table.addCell(cell);
+            }
+
+            com.lowagie.text.Font regFont = FontFactory.getFont(FontFactory.HELVETICA, 8);
+            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+
+            for (HistoriqueActionDTO l : logs) {
+                table.addCell(new Phrase(l.getTimestamp() != null ? l.getTimestamp().format(dtf) : "-", regFont));
+                table.addCell(new Phrase(l.getUtilisateurNomComplet() != null ? l.getUtilisateurNomComplet() : "-", regFont));
+                table.addCell(new Phrase(l.getAction() != null ? l.getAction() : "-", regFont));
+                table.addCell(new Phrase(l.getEntiteCible() != null ? l.getEntiteCible() : "-", regFont));
+                table.addCell(new Phrase(l.getIdentifiantCible() != null ? l.getIdentifiantCible() : "-", regFont));
+                table.addCell(new Phrase(l.getDetails() != null ? l.getDetails() : "-", regFont));
+                table.addCell(new Phrase(l.getMotif() != null ? l.getMotif() : "-", regFont));
+            }
+
+            document.add(table);
+            document.close();
+        } catch (Exception e) {
+            throw new RuntimeException("Erreur lors de l'export du journal d'audit en PDF: " + e.getMessage());
+        }
+
+        return out.toByteArray();
+    }
+
+    public byte[] exportAuditExcel(List<HistoriqueActionDTO> logs) throws IOException {
+        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sheet = workbook.createSheet("Journal d'Audit");
+
+            org.apache.poi.ss.usermodel.Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerFont.setColor(IndexedColors.WHITE.getIndex());
+
+            CellStyle headerStyle = workbook.createCellStyle();
+            headerStyle.setFont(headerFont);
+            headerStyle.setFillForegroundColor(IndexedColors.DARK_BLUE.getIndex());
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            headerStyle.setAlignment(HorizontalAlignment.CENTER);
+
+            Row headerRow = sheet.createRow(0);
+            String[] headers = {"Date & Heure", "Opérateur", "Action", "Entité Cible", "ID Cible", "Détails", "Motif"};
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+                cell.setCellStyle(headerStyle);
+            }
+
+            int rowIdx = 1;
+            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+            for (HistoriqueActionDTO l : logs) {
+                Row row = sheet.createRow(rowIdx++);
+                row.createCell(0).setCellValue(sanitizeForExcel(l.getTimestamp() != null ? l.getTimestamp().format(dtf) : "-"));
+                row.createCell(1).setCellValue(sanitizeForExcel(l.getUtilisateurNomComplet() != null ? l.getUtilisateurNomComplet() : "-"));
+                row.createCell(2).setCellValue(sanitizeForExcel(l.getAction() != null ? l.getAction() : "-"));
+                row.createCell(3).setCellValue(sanitizeForExcel(l.getEntiteCible() != null ? l.getEntiteCible() : "-"));
+                row.createCell(4).setCellValue(sanitizeForExcel(l.getIdentifiantCible() != null ? l.getIdentifiantCible() : "-"));
+                row.createCell(5).setCellValue(sanitizeForExcel(l.getDetails() != null ? l.getDetails() : "-"));
+                row.createCell(6).setCellValue(sanitizeForExcel(l.getMotif() != null ? l.getMotif() : "-"));
+            }
+
+            for (int i = 0; i < headers.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            workbook.write(out);
+            return out.toByteArray();
+        }
+    }
+
 }

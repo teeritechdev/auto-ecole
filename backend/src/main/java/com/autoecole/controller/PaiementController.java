@@ -1,6 +1,7 @@
 package com.autoecole.controller;
 
 import com.autoecole.dto.PaiementDTOs.*;
+import com.autoecole.service.ExportService;
 import com.autoecole.service.PaiementService;
 import com.autoecole.service.RecuService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -12,11 +13,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -28,6 +32,43 @@ public class PaiementController {
 
     private final PaiementService paiementService;
     private final RecuService recuService;
+    private final ExportService exportService;
+
+    @GetMapping("/export/pdf")
+    @PreAuthorize("hasAuthority('PERM_PAIEMENTS_VOIR')")
+    @Operation(summary = "Exporter les versements en PDF selon les filtres actifs")
+    public ResponseEntity<byte[]> exportPaiementsPdf(
+            @RequestParam(required = false) Long candidatId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime debut,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fin,
+            @RequestParam(required = false) Long siteId
+    ) {
+        List<PaiementDTO> paiements = paiementService.getPaiementsPourRapport(candidatId, debut, fin, siteId);
+        byte[] bytes = exportService.exportPaiementsPdf(paiements);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=paiements_auto_ecole.pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(bytes);
+    }
+
+    @GetMapping("/export/excel")
+    @PreAuthorize("hasAuthority('PERM_PAIEMENTS_VOIR')")
+    @Operation(summary = "Exporter les versements en Excel (.xlsx) selon les filtres actifs")
+    public ResponseEntity<byte[]> exportPaiementsExcel(
+            @RequestParam(required = false) Long candidatId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime debut,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fin,
+            @RequestParam(required = false) Long siteId
+    ) throws IOException {
+        List<PaiementDTO> paiements = paiementService.getPaiementsPourRapport(candidatId, debut, fin, siteId);
+        byte[] bytes = exportService.exportPaiementsExcel(paiements);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=paiements_auto_ecole.xlsx")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(bytes);
+    }
 
     @GetMapping
     @PreAuthorize("hasAuthority('PERM_PAIEMENTS_VOIR')")

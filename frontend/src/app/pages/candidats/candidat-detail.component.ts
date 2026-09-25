@@ -177,8 +177,22 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
         <!-- TAB 2 : HISTORIQUE DES PAIEMENTS -->
         @if (canSeeFinancialData && activeTab === 'paiements') {
           <div class="card tab-content">
-            <div class="card-header">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">
               <div class="card-title">Détail des Versements Enregistrés</div>
+              <div class="action-buttons">
+                <button class="btn btn-outline btn-sm" (click)="imprimerReleve()">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                  Relevé PDF
+                </button>
+                <button class="btn btn-outline btn-sm" (click)="imprimerReleveDirectement()" title="Imprimer directement">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                  Imprimer
+                </button>
+                <button class="btn btn-outline btn-sm" (click)="exportPaiementsExcel()">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                  Relevé Excel
+                </button>
+              </div>
             </div>
             @if (paiements.length === 0) {
               <div class="empty-state">
@@ -218,8 +232,18 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
         <!-- TAB 3 : SUIVI DES EXAMENS -->
         @if (activeTab === 'examens') {
           <div class="card tab-content">
-            <div class="card-header">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">
               <div class="card-title">Épreuves Pédagogiques (Jusqu'à 5 passages autorisés par épreuve)</div>
+              <div class="action-buttons">
+                <button class="btn btn-outline btn-sm" (click)="exportExamensPdf()">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                  Bilan Examens PDF
+                </button>
+                <button class="btn btn-outline btn-sm" (click)="imprimerExamens()" title="Imprimer directement">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                  Imprimer
+                </button>
+              </div>
             </div>
             <div class="exam-grid">
               <!-- 1. CODE -->
@@ -751,6 +775,24 @@ export class CandidatDetailComponent implements OnInit {
 
   imprimerReleveDirectement(): void {
     this.apiService.printBlob(this.apiService.getRelevePaiementPdfUrl(this.candidatId));
+  }
+
+  exportPaiementsExcel(): void {
+    this.apiService.downloadBlob(
+      this.apiService.getRelevePaiementExcelUrl(this.candidatId),
+      `releve_paiement_${this.candidat?.numeroDossier || this.candidatId}.xlsx`
+    );
+  }
+
+  exportExamensPdf(): void {
+    this.apiService.downloadBlob(
+      this.apiService.getCandidatExamensPdfUrl(this.candidatId),
+      `bilan_examens_${this.candidat?.numeroDossier || this.candidatId}.pdf`
+    );
+  }
+
+  imprimerExamens(): void {
+    this.apiService.printBlob(this.apiService.getCandidatExamensPdfUrl(this.candidatId));
   }
 
   imprimerRecu(recuId: number): void {

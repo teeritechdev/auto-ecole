@@ -389,10 +389,13 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   <input type="text" class="form-control" [(ngModel)]="newTx.libelle" name="libelle" required placeholder="Ex: Achat carburant véhicule permis B" />
                 </div>
 
-                <div class="form-group">
-                  <label class="form-label">Numéro de facture</label>
-                  <input type="text" class="form-control" [(ngModel)]="newTx.numeroFacture" name="numeroFacture" placeholder="Ex: FACT-2026-089" />
-                </div>
+                @if (selectedNature?.sens === 'SORTIE') {
+                  <div class="form-group">
+                    <label class="form-label">Numéro de facture / reçu <span class="required">*</span></label>
+                    <input type="text" class="form-control" [(ngModel)]="newTx.numeroFacture" name="numeroFacture" required placeholder="Ex: FACT-2026-089" />
+                    <div class="form-help">Justificatif obligatoire pour une dépense.</div>
+                  </div>
+                }
               </div>
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" (click)="showNewTxModal = false">Annuler</button>
@@ -990,7 +993,9 @@ export class CaisseComponent implements OnInit {
 
   isFormValide(): boolean {
     const siteRequis = this.sitesAutorises.length <= 1 || !!this.newTx.siteId;
-    return !!this.newTx.natureOperationId && !!this.newTx.montant && this.newTx.montant > 0 && !!this.newTx.libelle && siteRequis;
+    const justificatifRequis = this.selectedNature?.sens === 'SORTIE';
+    const justificatifOk = !justificatifRequis || !!this.newTx.numeroFacture?.trim();
+    return !!this.newTx.natureOperationId && !!this.newTx.montant && this.newTx.montant > 0 && !!this.newTx.libelle && siteRequis && justificatifOk;
   }
 
   saveTransaction(): void {
@@ -1004,7 +1009,7 @@ export class CaisseComponent implements OnInit {
       montant: this.newTx.montant!,
       siteId: this.newTx.siteId || undefined,
       libelle: this.newTx.libelle,
-      numeroFacture: this.newTx.numeroFacture || undefined
+      numeroFacture: this.selectedNature?.sens === 'SORTIE' ? this.newTx.numeroFacture.trim() : undefined
     }).subscribe({
       next: () => {
         this.saving = false;

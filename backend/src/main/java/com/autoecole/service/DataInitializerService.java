@@ -38,6 +38,7 @@ public class DataInitializerService implements CommandLineRunner {
     private final PaiementRepository paiementRepository;
     private final RecuRepository recuRepository;
     private final PassageExamenRepository passageRepository;
+    private final SessionExamenRepository sessionExamenRepository;
     private final PasswordEncoder passwordEncoder;
     private final CandidatAccountService candidatAccountService;
 
@@ -300,6 +301,15 @@ public class DataInitializerService implements CommandLineRunner {
         });
     }
 
+    private SessionExamen sessionDemo(TypeEpreuve type, LocalDate date, Utilisateur moniteur, Site site) {
+        return sessionExamenRepository.save(SessionExamen.builder()
+                .typeEpreuve(type)
+                .datePassage(date)
+                .moniteur(moniteur)
+                .site(site)
+                .build());
+    }
+
     private void initDemoData(Utilisateur admin, Utilisateur moniteur, CategoriePermis catB, Site site) {
         log.info("Création des candidats et enregistrements de démonstration...");
 
@@ -359,6 +369,7 @@ public class DataInitializerService implements CommandLineRunner {
                 .datePassage(LocalDate.now().minusDays(5))
                 .resultat(ResultatExamen.REUSSI)
                 .observations("Excellente maîtrise du code de la route (38/40)")
+                .session(sessionDemo(TypeEpreuve.CODE, LocalDate.now().minusDays(5), moniteur, site))
                 .moniteur(moniteur)
                 .build());
 
@@ -431,6 +442,7 @@ public class DataInitializerService implements CommandLineRunner {
                 .datePassage(LocalDate.now().minusMonths(1))
                 .resultat(ResultatExamen.REUSSI)
                 .observations("Validé du premier coup")
+                .session(sessionDemo(TypeEpreuve.CODE, LocalDate.now().minusMonths(1), moniteur, site))
                 .moniteur(moniteur)
                 .build());
 
@@ -441,6 +453,7 @@ public class DataInitializerService implements CommandLineRunner {
                 .datePassage(LocalDate.now().minusDays(12))
                 .resultat(ResultatExamen.REUSSI)
                 .observations("Créneau gauche et bataille réussis")
+                .session(sessionDemo(TypeEpreuve.CRENEAU, LocalDate.now().minusDays(12), moniteur, site))
                 .moniteur(moniteur)
                 .build());
 
@@ -451,6 +464,7 @@ public class DataInitializerService implements CommandLineRunner {
                 .datePassage(LocalDate.now().plusDays(4))
                 .resultat(ResultatExamen.PROGRAMME)
                 .observations("Session de circulation en agglomération")
+                .session(sessionDemo(TypeEpreuve.CIRCULATION, LocalDate.now().plusDays(4), moniteur, site))
                 .moniteur(moniteur)
                 .build());
 

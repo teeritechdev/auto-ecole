@@ -195,14 +195,31 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 }
                 <div class="form-group">
                   <label class="form-label">Sélectionner l'inscrit</label>
-                  <select class="form-control" [(ngModel)]="selectedCandidatId" name="candidatId" (change)="onCandidatSelect()" required>
-                    <option [ngValue]="null">-- Sélectionner un inscrit --</option>
-                    @for (c of nonSoldesCandidats; track c) {
-                      <option [value]="c.id">
-                        {{ c.numeroDossier }} — {{ c.nom }} {{ c.prenom }} (Reste : {{ c.soldeRestant | number }} FCFA)
-                      </option>
+                  <div class="combo">
+                    <input
+                      type="text"
+                      class="form-control"
+                      name="candidatRecherche"
+                      autocomplete="off"
+                      placeholder="Nom, prénom, nom et prénom ou numéro de dossier..."
+                      [ngModel]="candidatRecherche"
+                      (ngModelChange)="onRechercheCandidat($event)"
+                      (focus)="showSuggestions = true"
+                      (blur)="fermerSuggestions()"
+                      />
+                    @if (showSuggestions) {
+                      <ul class="combo-list">
+                        @for (c of suggestions; track c.id) {
+                          <li (mousedown)="choisirCandidat(c)">
+                            <strong>{{ c.numeroDossier }}</strong> — {{ c.nom }} {{ c.prenom }}
+                            <span class="combo-reste">Reste : {{ c.soldeRestant | number }} FCFA</span>
+                          </li>
+                        } @empty {
+                          <li class="combo-empty">Aucun inscrit trouvé</li>
+                        }
+                      </ul>
                     }
-                  </select>
+                  </div>
                 </div>
                 @if (selectedCandidat) {
                   <div class="financial-summary-card">
@@ -637,11 +654,46 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     .value-reste {
       color: #b91c1c;
     }
+
+    .combo { position: relative; }
+    .combo-list {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      z-index: 20;
+      max-height: 240px;
+      overflow-y: auto;
+      margin: 0;
+      padding: 0.25rem;
+      list-style: none;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+    }
+    .combo-list li {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.35rem;
+      padding: 0.55rem 0.75rem;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .combo-list li:hover { background: #eff6ff; }
+    .combo-reste { margin-left: auto; font-size: 0.8rem; color: #b91c1c; }
+    .combo-empty { color: #64748b; cursor: default; }
+    .combo-empty:hover { background: transparent !important; }
   `]
 })
 export class PaiementsComponent implements OnInit {
   paiements: Paiement[] = [];
   nonSoldesCandidats: Candidat[] = [];
+  suggestions: Candidat[] = [];
+  candidatRecherche = '';
+  showSuggestions = false;
+  private rechercheTimer: ReturnType<typeof setTimeout> | null = null;
   loading = false;
   saving = false;
 
@@ -783,8 +835,49 @@ export class PaiementsComponent implements OnInit {
 
   loadNonSoldesCandidats(): void {
     this.apiService.getCandidats('', 'EN_COURS', undefined, 0, 100).subscribe({
-      next: (res) => this.nonSoldesCandidats = res.content || []
+      next: (res) => {
+        this.nonSoldesCandidats = res.content || [];
+        this.suggestions = this.nonSoldesCandidats;
+      }
     });
+  }
+
+  onRechercheCandidat(terme: string): void {
+    this.candidatRecherche = terme;
+    this.selectedCandidatId = null;
+    this.selectedCandidat = null;
+    this.showSuggestions = true;
+    if (this.rechercheTimer) clearTimeout(this.rechercheTimer);
+    this.rechercheTimer = setTimeout(() => {
+      const mots = this.normaliser(terme).split(/\s+/).filter(m => m);
+      // Le backend cherche la saisie entière dans un seul champ : on l'interroge avec le mot
+      // le plus long (le plus sélectif), puis on exige que tous les mots correspondent ici.
+      const motServeur = mots.slice().sort((a, b) => b.length - a.length)[0] || '';
+      this.apiService.getCandidats(motServeur, 'EN_COURS', undefined, 0, 50).subscribe({
+        next: (res) => {
+          const liste: Candidat[] = res.content || [];
+          this.suggestions = mots.length < 2 ? liste : liste.filter(c => {
+            const texte = this.normaliser(`${c.numeroDossier} ${c.nom} ${c.prenom} ${c.telephone || ''}`);
+            return mots.every(m => texte.includes(m));
+          });
+        }
+      });
+    }, 250);
+  }
+
+  private normaliser(v: string): string {
+    return (v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  }
+
+  choisirCandidat(c: Candidat): void {
+    this.selectedCandidatId = c.id;
+    this.selectedCandidat = c;
+    this.candidatRecherche = `${c.numeroDossier} — ${c.nom} ${c.prenom}`;
+    this.showSuggestions = false;
+  }
+
+  fermerSuggestions(): void {
+    this.showSuggestions = false;
   }
 
   changePage(p: number): void {
@@ -804,6 +897,9 @@ export class PaiementsComponent implements OnInit {
     this.formError = '';
     this.selectedCandidatId = null;
     this.selectedCandidat = null;
+    this.candidatRecherche = '';
+    this.suggestions = this.nonSoldesCandidats;
+    this.showSuggestions = false;
     this.newMontant = null;
     this.newMode = 'ESPECES';
     this.showNewModal = true;

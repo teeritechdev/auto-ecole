@@ -13,7 +13,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     <div class="login-page">
       <div class="login-card">
         <div class="brand-header">
-          <img src="/assets/logo-sira.png" alt="SIRA Logo" class="login-logo" />
+          <img [src]="logoData || '/assets/logo-sira.png'" alt="Logo" class="login-logo" />
           <h1 class="brand-title">{{ nomEtablissement }}</h1>
           <p class="brand-subtitle">Solution intégrée de gestion et de suivi</p>
         </div>
@@ -437,6 +437,7 @@ export class LoginComponent implements OnInit {
   showForgotModal = false;
 
   nomEtablissement = 'Nerwaya Auto-École';
+  logoData: string | null = null;
   anneeCourante = new Date().getFullYear();
 
   constructor(private authService: AuthService, private router: Router, private apiService: ApiService) {
@@ -447,7 +448,7 @@ export class LoginComponent implements OnInit {
 
   ngOnInit(): void {
     this.apiService.getIdentitePublique().subscribe({
-      next: (id) => { this.nomEtablissement = id.nomEtablissement; },
+      next: (id) => { this.nomEtablissement = id.nomEtablissement; this.logoData = id.logoData; },
       error: () => {}
     });
   }

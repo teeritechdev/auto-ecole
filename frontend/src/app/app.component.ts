@@ -1023,13 +1023,18 @@ export class AppComponent {
   constructor(public authService: AuthService, private router: Router, private apiService: ApiService) {
     this.authService.currentUser$.subscribe(user => {
       if (user) {
-        this.apiService.getLogo().subscribe({
-          next: response => {
-            this.logoData = response.logoData;
-            this.nomEtablissement = response.nomEtablissement;
-            this.slogan = response.slogan;
-          }
-        });
+        this.chargerLogo();
+      }
+    });
+    this.apiService.identiteModifiee$.subscribe(() => this.chargerLogo());
+  }
+
+  private chargerLogo(): void {
+    this.apiService.getLogo().subscribe({
+      next: response => {
+        this.logoData = response.logoData;
+        this.nomEtablissement = response.nomEtablissement;
+        this.slogan = response.slogan;
       }
     });
   }

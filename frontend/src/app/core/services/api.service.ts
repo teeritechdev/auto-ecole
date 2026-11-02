@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, Subject, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   Candidat,
@@ -43,6 +43,9 @@ import {
 })
 export class ApiService {
   private base = environment.apiUrl;
+
+  /** Émis après chaque enregistrement de l'identité : la barre latérale recharge alors logo et nom. */
+  public readonly identiteModifiee$ = new Subject<void>();
 
   constructor(private http: HttpClient) {}
 
@@ -372,7 +375,7 @@ export class ApiService {
   }
 
   public updateIdentite(data: Identite): Observable<Identite> {
-    return this.http.put<Identite>(`${this.base}/configuration/identite`, data);
+    return this.http.put<Identite>(`${this.base}/configuration/identite`, data).pipe(tap(() => this.identiteModifiee$.next()));
   }
 
   /** Nom et logo affichés sur l'écran de connexion, avant toute authentification. */

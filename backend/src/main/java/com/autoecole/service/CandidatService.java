@@ -250,7 +250,7 @@ public class CandidatService {
         BigDecimal totalVerse = (premierVersement != null) ? premierVersement : BigDecimal.ZERO;
         Inscription inscription = inscriptionService.creerInscriptionInitiale(savedCandidat, categorie, site, dateInsc, request.getMontant(), totalVerse, request.getStatutInscription(), request.isPriseEnChargeExamens(), request.getFraisExamen(), request.getEtapeParcours());
 
-        enregistrerPremierVersementSiFourni(savedCandidat, inscription, premierVersement, request.getModeReglementPremierVersement());
+        enregistrerPremierVersementSiFourni(savedCandidat, inscription, premierVersement, request.getModeReglementPremierVersement(), request.getOperateurPremierVersement(), request.getNumeroEmetteurPremierVersement(), request.getNumeroRecepteurPremierVersement());
 
         // RG-CAND-01 : la première inscription validée d'un candidat crée automatiquement
         // son compte de connexion (rôle CANDIDAT), réutilisé lors des reprises suivantes.
@@ -288,9 +288,12 @@ public class CandidatService {
         BigDecimal totalVerse = (premierVersement != null) ? premierVersement : BigDecimal.ZERO;
         Inscription inscription = inscriptionService.creerNouveauCycle(candidat, categorie, site, request.getDateInscription(), request.getMontant(), totalVerse, request.isPriseEnChargeExamens(), request.getFraisExamen());
 
-        enregistrerPremierVersementSiFourni(candidat, inscription, premierVersement, request.getModeReglementPremierVersement());
+        enregistrerPremierVersementSiFourni(candidat, inscription, premierVersement, request.getModeReglementPremierVersement(), request.getOperateurPremierVersement(), request.getNumeroEmetteurPremierVersement(), request.getNumeroRecepteurPremierVersement());
 
         auditService.logAction("REINSCRIPTION_CANDIDAT", "Candidat", candidat.getNumeroDossier(),
+                .operateurMobileMoney(ModeReglement.validerOperateur(modeReglement, operateur))
+                .numeroEmetteur(ModeReglement.validerNumero(modeReglement, numeroEmetteur, "émetteur"))
+                .numeroRecepteur(ModeReglement.validerNumero(modeReglement, numeroRecepteur, "récepteur"))
                 "Nouvelle inscription (cycle " + inscription.getNumeroCycle() + ", redoublant) pour la catégorie " + categorie.getLibelle(), null);
 
         return mapToDTO(candidat, inscription);
@@ -302,7 +305,7 @@ public class CandidatService {
         }
     }
 
-    private void enregistrerPremierVersementSiFourni(Candidat candidat, Inscription inscription, BigDecimal premierVersement, ModeReglement modeReglement) {
+    private void enregistrerPremierVersementSiFourni(Candidat candidat, Inscription inscription, BigDecimal premierVersement, ModeReglement modeReglement, String operateur, String numeroEmetteur, String numeroRecepteur) {
         if (premierVersement == null || premierVersement.compareTo(BigDecimal.ZERO) <= 0) {
             return;
         }

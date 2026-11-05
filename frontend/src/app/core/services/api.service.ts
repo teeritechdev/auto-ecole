@@ -134,15 +134,15 @@ export class ApiService {
     return this.http.get<ResumePaiements>(`${this.base}/paiements/resume`);
   }
 
-  public enregistrerPaiement(data: { candidatId: number; montant: number; modeReglement: string }): Observable<Paiement> {
+  public enregistrerPaiement(data: { candidatId: number; montant: number; modeReglement: string; operateurMobileMoney?: string | null; numeroEmetteur?: string | null; numeroRecepteur?: string | null }): Observable<Paiement> {
     return this.http.post<Paiement>(`${this.base}/paiements`, data);
   }
 
-  public enregistrerFraisExamen(data: { candidatId: number; typeEpreuve: string; montant: number; modeReglement: string }): Observable<Paiement> {
+  public enregistrerFraisExamen(data: { candidatId: number; typeEpreuve: string; montant: number; modeReglement: string; operateurMobileMoney?: string | null; numeroEmetteur?: string | null; numeroRecepteur?: string | null }): Observable<Paiement> {
     return this.http.post<Paiement>(`${this.base}/paiements/frais-examen`, data);
   }
 
-  public modifierPaiement(id: number, data: { montant: number; modeReglement: string; motif: string }): Observable<Paiement> {
+  public modifierPaiement(id: number, data: { montant: number; modeReglement: string; operateurMobileMoney?: string | null; numeroEmetteur?: string | null; numeroRecepteur?: string | null; motif: string }): Observable<Paiement> {
     return this.http.put<Paiement>(`${this.base}/paiements/${id}`, data);
   }
 

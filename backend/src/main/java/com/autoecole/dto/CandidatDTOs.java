@@ -172,6 +172,9 @@ public class CandidatDTOs {
         // Premier versement optionnel/intégré
         private BigDecimal montantPremierVersement;
         private ModeReglement modeReglementPremierVersement;
+        private String operateurPremierVersement;
+        private String numeroEmetteurPremierVersement;
+        private String numeroRecepteurPremierVersement;
 
         // Les frais de formation englobent-ils la prise en charge totale des frais d'examen ?
         private boolean priseEnChargeExamens;
@@ -198,6 +201,9 @@ public class CandidatDTOs {
 
         private BigDecimal montantPremierVersement;
         private ModeReglement modeReglementPremierVersement;
+        private String operateurPremierVersement;
+        private String numeroEmetteurPremierVersement;
+        private String numeroRecepteurPremierVersement;
 
         // Les frais de formation englobent-ils la prise en charge totale des frais d'examen ?
         private boolean priseEnChargeExamens;

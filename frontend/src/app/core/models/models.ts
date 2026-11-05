@@ -161,6 +161,9 @@ export interface Paiement {
   soldeRestant?: number;
   datePaiement: string;
   modeReglement: 'ESPECES' | 'VIREMENT' | 'MOBILE_MONEY' | 'CHEQUE';
+  operateurMobileMoney?: string | null;
+  numeroEmetteur?: string | null;
+  numeroRecepteur?: string | null;
   statut?: 'VALIDE' | 'ANNULE' | 'MODIFIE' | string;
   motifModification?: string;
   dateModification?: string;
@@ -185,6 +188,10 @@ export interface Recu {
   totalVerse: number;
   soldeRestant: number;
   modeReglement: string;
+  operateurMobileMoney?: string | null;
+  operateurLibelle?: string | null;
+  numeroEmetteur?: string | null;
+  numeroRecepteur?: string | null;
   imprimePar: string;
 }
 

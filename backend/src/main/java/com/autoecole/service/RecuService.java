@@ -67,6 +67,11 @@ public class RecuService {
                 .totalVerse(i != null ? i.getTotalVerse() : null)
                 .soldeRestant(r.getSoldeRestant())
                 .modeReglement(p != null && p.getModeReglement() != null ? p.getModeReglement().name() : "")
+                .operateurMobileMoney(p != null ? p.getOperateurMobileMoney() : null)
+                .operateurLibelle(p != null && p.getOperateurMobileMoney() != null
+                        ? com.autoecole.entity.enums.ModeReglement.OPERATEURS.getOrDefault(p.getOperateurMobileMoney(), p.getOperateurMobileMoney()) : null)
+                .numeroEmetteur(p != null ? p.getNumeroEmetteur() : null)
+                .numeroRecepteur(p != null ? p.getNumeroRecepteur() : null)
                 .imprimePar(r.getImprimePar())
                 .build();
     }

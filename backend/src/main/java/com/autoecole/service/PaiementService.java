@@ -187,6 +187,9 @@ public class PaiementService {
                 .montant(montant)
                 .datePaiement(LocalDateTime.now())
                 .modeReglement(request.getModeReglement() != null ? request.getModeReglement() : ModeReglement.ESPECES)
+                .operateurMobileMoney(ModeReglement.validerOperateur(request.getModeReglement(), request.getOperateurMobileMoney()))
+                .numeroEmetteur(ModeReglement.validerNumero(request.getModeReglement(), request.getNumeroEmetteur(), "émetteur"))
+                .numeroRecepteur(ModeReglement.validerNumero(request.getModeReglement(), request.getNumeroRecepteur(), "récepteur"))
                 .build();
 
         Paiement savedPaiement = paiementRepository.save(paiement);
@@ -244,6 +247,8 @@ public class PaiementService {
                 .montant(montant)
                 .datePaiement(LocalDateTime.now())
                 .modeReglement(request.getModeReglement() != null ? request.getModeReglement() : ModeReglement.ESPECES)
+                .numeroEmetteur(ModeReglement.validerNumero(request.getModeReglement(), request.getNumeroEmetteur(), "émetteur"))
+                .numeroRecepteur(ModeReglement.validerNumero(request.getModeReglement(), request.getNumeroRecepteur(), "récepteur"))
                 .build();
 
         Paiement savedPaiement = paiementRepository.save(paiement);
@@ -296,6 +301,9 @@ public class PaiementService {
         // Mise à jour du paiement
         paiement.setMontant(nouveauMontant);
         paiement.setModeReglement(request.getModeReglement());
+        paiement.setOperateurMobileMoney(ModeReglement.validerOperateur(request.getModeReglement(), request.getOperateurMobileMoney()));
+        paiement.setNumeroEmetteur(ModeReglement.validerNumero(request.getModeReglement(), request.getNumeroEmetteur(), "émetteur"));
+        paiement.setNumeroRecepteur(ModeReglement.validerNumero(request.getModeReglement(), request.getNumeroRecepteur(), "récepteur"));
         paiement.setMotifModification(request.getMotif());
         paiement.setDateModification(LocalDateTime.now());
         paiement.setUtilisateurModif(currentUser);
@@ -366,6 +374,9 @@ public class PaiementService {
                 .soldeRestant(soldeRestant)
                 .datePaiement(p.getDatePaiement())
                 .modeReglement(p.getModeReglement())
+                .operateurMobileMoney(p.getOperateurMobileMoney())
+                .numeroEmetteur(p.getNumeroEmetteur())
+                .numeroRecepteur(p.getNumeroRecepteur())
                 .motifModification(p.getMotifModification())
                 .dateModification(p.getDateModification())
                 .utilisateurModifNom(p.getUtilisateurModif() != null ? p.getUtilisateurModif().getNom() + " " + p.getUtilisateurModif().getPrenom() : null)

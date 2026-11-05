@@ -258,10 +258,30 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                     <option value="CHEQUE">Chèque</option>
                   </select>
                 </div>
+                <div class="form-group" *ngIf="newMode === 'MOBILE_MONEY'">
+                  <label class="form-label">Opérateur <span class="required">*</span></label>
+                  <select class="form-control" [(ngModel)]="newOperateur" name="newOperateur" required>
+                    <option value="">-- Choisir --</option>
+                    <option value="ORANGE_MONEY">Orange Money</option>
+                    <option value="MTN_MONEY">MTN Money</option>
+                    <option value="MOOV_MONEY">Moov Money</option>
+                    <option value="WAVE">Wave</option>
+                  </select>
+                </div>
+                <div class="form-row" *ngIf="newMode === 'MOBILE_MONEY'">
+                  <div class="form-group">
+                    <label class="form-label">N° émetteur (qui envoie) <span class="required">*</span></label>
+                    <input type="tel" class="form-control" [(ngModel)]="newEmetteur" name="newEmetteur" placeholder="Ex: 07 00 00 00 00" required />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">N° récepteur (auto-école) <span class="required">*</span></label>
+                    <input type="tel" class="form-control" [(ngModel)]="newRecepteur" name="newRecepteur" placeholder="Ex: 05 00 00 00 00" required />
+                  </div>
+                </div>
               </div>
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" (click)="showNewModal = false">Annuler</button>
-                <button type="submit" class="btn btn-success" [disabled]="saving || !selectedCandidatId || !newMontant || newMontant <= 0">
+                <button type="submit" class="btn btn-success" [disabled]="saving || !selectedCandidatId || !newMontant || newMontant <= 0 || (newMode === 'MOBILE_MONEY' && (!newOperateur || !newEmetteur.trim() || !newRecepteur.trim()))">
                   {{ saving ? 'Validation...' : 'Valider & Générer Reçu' }}
                 </button>
               </div>
@@ -302,6 +322,26 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                     <option value="CHEQUE">Chèque</option>
                   </select>
                 </div>
+                <div class="form-group" *ngIf="editMode === 'MOBILE_MONEY'">
+                  <label class="form-label">Opérateur <span class="required">*</span></label>
+                  <select class="form-control" [(ngModel)]="editOperateur" name="editOperateur" required>
+                    <option value="">-- Choisir --</option>
+                    <option value="ORANGE_MONEY">Orange Money</option>
+                    <option value="MTN_MONEY">MTN Money</option>
+                    <option value="MOOV_MONEY">Moov Money</option>
+                    <option value="WAVE">Wave</option>
+                  </select>
+                </div>
+                <div class="form-row" *ngIf="editMode === 'MOBILE_MONEY'">
+                  <div class="form-group">
+                    <label class="form-label">N° émetteur (qui envoie) <span class="required">*</span></label>
+                    <input type="tel" class="form-control" [(ngModel)]="editEmetteur" name="editEmetteur" placeholder="Ex: 07 00 00 00 00" required />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">N° récepteur (auto-école) <span class="required">*</span></label>
+                    <input type="tel" class="form-control" [(ngModel)]="editRecepteur" name="editRecepteur" placeholder="Ex: 05 00 00 00 00" required />
+                  </div>
+                </div>
                 <div class="form-group">
                   <label class="form-label">Motif de la modification (obligatoire) <span class="required">*</span></label>
                   <textarea class="form-control" rows="2" [(ngModel)]="editMotif" name="editMotif" placeholder="Justification de la modification" required></textarea>
@@ -309,7 +349,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
               </div>
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" (click)="showEditModal = false">Annuler</button>
-                <button type="submit" class="btn btn-primary" [disabled]="saving || !editMotif || !editMontant">
+                <button type="submit" class="btn btn-primary" [disabled]="saving || !editMotif || !editMontant || (editMode === 'MOBILE_MONEY' && (!editOperateur || !editEmetteur.trim() || !editRecepteur.trim()))">
                   {{ saving ? 'Mise à jour...' : 'Confirmer la modification' }}
                 </button>
               </div>
@@ -713,12 +753,18 @@ export class PaiementsComponent implements OnInit {
   selectedCandidat: Candidat | null = null;
   newMontant: number | null = null;
   newMode = 'ESPECES';
+  newOperateur = '';
+  newEmetteur = '';
+  newRecepteur = '';
   formError = '';
 
   showEditModal = false;
   targetPaiement: Paiement | null = null;
   editMontant = 0;
   editMode = 'ESPECES';
+  editOperateur = '';
+  editEmetteur = '';
+  editRecepteur = '';
   editMotif = '';
 
   showCancelModal = false;
@@ -902,6 +948,9 @@ export class PaiementsComponent implements OnInit {
     this.showSuggestions = false;
     this.newMontant = null;
     this.newMode = 'ESPECES';
+    this.newOperateur = '';
+    this.newEmetteur = '';
+    this.newRecepteur = '';
     this.showNewModal = true;
   }
 
@@ -922,7 +971,10 @@ export class PaiementsComponent implements OnInit {
     this.apiService.enregistrerPaiement({
       candidatId: Number(this.selectedCandidatId),
       montant: this.newMontant,
-      modeReglement: this.newMode
+      modeReglement: this.newMode,
+      operateurMobileMoney: this.newMode === 'MOBILE_MONEY' ? this.newOperateur : null,
+      numeroEmetteur: this.newMode === 'MOBILE_MONEY' ? this.newEmetteur.trim() : null,
+      numeroRecepteur: this.newMode === 'MOBILE_MONEY' ? this.newRecepteur.trim() : null
     }).subscribe({
       next: (res) => {
         this.saving = false;
@@ -946,6 +998,9 @@ export class PaiementsComponent implements OnInit {
     this.targetPaiement = p;
     this.editMontant = p.montant;
     this.editMode = p.modeReglement;
+    this.editOperateur = p.operateurMobileMoney || '';
+    this.editEmetteur = p.numeroEmetteur || '';
+    this.editRecepteur = p.numeroRecepteur || '';
     this.editMotif = '';
     this.formError = '';
     this.showEditModal = true;
@@ -960,6 +1015,9 @@ export class PaiementsComponent implements OnInit {
     this.apiService.modifierPaiement(this.targetPaiement.id, {
       montant: this.editMontant,
       modeReglement: this.editMode,
+      operateurMobileMoney: this.editMode === 'MOBILE_MONEY' ? this.editOperateur : null,
+      numeroEmetteur: this.editMode === 'MOBILE_MONEY' ? this.editEmetteur.trim() : null,
+      numeroRecepteur: this.editMode === 'MOBILE_MONEY' ? this.editRecepteur.trim() : null,
       motif: this.editMotif
     }).subscribe({
       next: () => {

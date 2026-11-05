@@ -31,6 +31,9 @@ public class PaiementDTOs {
         private BigDecimal soldeRestant; // Reste à payer du candidat après ce versement
         private LocalDateTime datePaiement;
         private ModeReglement modeReglement;
+        private String operateurMobileMoney;
+        private String numeroEmetteur;
+        private String numeroRecepteur;
         private String motifModification;
         private LocalDateTime dateModification;
         private String utilisateurModifNom;
@@ -54,6 +57,11 @@ public class PaiementDTOs {
 
         @NotNull(message = "Le mode de règlement est obligatoire")
         private ModeReglement modeReglement;
+
+        /** Obligatoires uniquement si le mode est MOBILE_MONEY. */
+        private String operateurMobileMoney;
+        private String numeroEmetteur;
+        private String numeroRecepteur;
     }
 
     @Data
@@ -73,6 +81,11 @@ public class PaiementDTOs {
 
         @NotNull(message = "Le mode de règlement est obligatoire")
         private ModeReglement modeReglement;
+
+        /** Obligatoires uniquement si le mode est MOBILE_MONEY. */
+        private String operateurMobileMoney;
+        private String numeroEmetteur;
+        private String numeroRecepteur;
     }
 
     @Data
@@ -86,6 +99,11 @@ public class PaiementDTOs {
 
         @NotNull(message = "Le mode de règlement est obligatoire")
         private ModeReglement modeReglement;
+
+        /** Obligatoires uniquement si le mode est MOBILE_MONEY. */
+        private String operateurMobileMoney;
+        private String numeroEmetteur;
+        private String numeroRecepteur;
 
         @NotBlank(message = "Le motif de modification est obligatoire")
         private String motif;
@@ -118,6 +136,10 @@ public class PaiementDTOs {
         private BigDecimal totalVerse;
         private BigDecimal soldeRestant;
         private String modeReglement;
+        private String operateurMobileMoney;
+        private String operateurLibelle;
+        private String numeroEmetteur;
+        private String numeroRecepteur;
         private String imprimePar;
     }
 

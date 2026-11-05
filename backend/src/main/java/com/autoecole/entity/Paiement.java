@@ -50,6 +50,18 @@ public class Paiement {
     @Builder.Default
     private ModeReglement modeReglement = ModeReglement.ESPECES;
 
+    /** Mobile Money uniquement : opérateur (ORANGE_MONEY, MTN_MONEY, MOOV_MONEY, WAVE). */
+    @Column(name = "operateur_mobile_money", length = 30)
+    private String operateurMobileMoney;
+
+    /** Mobile Money uniquement : numéro de l'émetteur (celui qui envoie l'argent). */
+    @Column(name = "numero_emetteur", length = 30)
+    private String numeroEmetteur;
+
+    /** Mobile Money uniquement : numéro du récepteur (celui de l'auto-école qui reçoit l'argent). */
+    @Column(name = "numero_recepteur", length = 30)
+    private String numeroRecepteur;
+
     @Column(name = "motif_modification", length = 255)
     private String motifModification;
 

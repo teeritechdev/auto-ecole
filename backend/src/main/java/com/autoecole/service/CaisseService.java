@@ -169,7 +169,7 @@ public class CaisseService {
                 .typeMouvement(nature.getSens())
                 .montant(request.getMontant())
                 .libelle(request.getLibelle().trim())
-                .numeroFacture(request.getNumeroFacture())
+                .numeroFacture(request.getNumeroFacture() != null && !request.getNumeroFacture().isBlank() ? request.getNumeroFacture().trim() : null)
                 .dateTransaction(LocalDateTime.now())
                 .utilisateur(currentUser)
                 .site(site)

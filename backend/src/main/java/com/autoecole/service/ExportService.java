@@ -227,6 +227,12 @@ public class ExportService {
             addRecuRow(table, "Formation", recu.getForfaitNom() + " (" + recu.getMontantForfait() + " FCFA)", labelFont, valFont);
             addRecuRow(table, "Mode de règlement", recu.getModeReglement(), labelFont, valFont);
             addRecuRow(table, "MONTANT VERSÉ", recu.getMontant() + " FCFA", labelFont, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, RECU_NAVY));
+            if ("MOBILE_MONEY".equals(recu.getModeReglement())) {
+                String op = recu.getOperateurLibelle() != null ? recu.getOperateurLibelle() : "Mobile Money";
+                addRecuRow(table, "Opérateur", op, labelFont, valFont);
+                addRecuRow(table, "N° " + op + " émetteur", recu.getNumeroEmetteur() != null ? recu.getNumeroEmetteur() : "-", labelFont, valFont);
+                addRecuRow(table, "N° " + op + " récepteur", recu.getNumeroRecepteur() != null ? recu.getNumeroRecepteur() : "-", labelFont, valFont);
+            }
             addRecuRow(table, "TOTAL VERSÉ À CE JOUR", recu.getTotalVerse() + " FCFA", labelFont, valFont);
 
             document.add(table);

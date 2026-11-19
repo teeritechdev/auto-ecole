@@ -126,6 +126,7 @@ public class CandidatController {
     @PreAuthorize("hasAuthority('PERM_CANDIDATS_VOIR') or hasAuthority('PERM_RAPPORTS_CANDIDATS')")
     @Operation(summary = "Exporter la liste des candidats en PDF avec filtres")
     public ResponseEntity<byte[]> exportPdf(
+            @RequestParam(required = false) List<Long> ids,
             @RequestParam(required = false) String recherche,
             @RequestParam(required = false) StatutDossier statut,
             @RequestParam(required = false) Long categorieId,
@@ -136,7 +137,7 @@ public class CandidatController {
             @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate dateExamenProgramme
     ) {
         List<CandidatDTO> candidats = candidatService.getTousLesCandidatsPourRapport(
-                recherche, statut, categorieId, statutInscription, siteId, etape, priseEnChargeExamens, dateExamenProgramme);
+                ids, recherche, statut, categorieId, statutInscription, siteId, etape, priseEnChargeExamens, dateExamenProgramme);
         byte[] bytes = exportService.exportCandidatsPdf(candidats);
 
         return ResponseEntity.ok()
@@ -149,6 +150,7 @@ public class CandidatController {
     @PreAuthorize("hasAuthority('PERM_CANDIDATS_VOIR') or hasAuthority('PERM_RAPPORTS_CANDIDATS')")
     @Operation(summary = "Exporter la liste des candidats en Excel avec filtres")
     public ResponseEntity<byte[]> exportExcel(
+            @RequestParam(required = false) List<Long> ids,
             @RequestParam(required = false) String recherche,
             @RequestParam(required = false) StatutDossier statut,
             @RequestParam(required = false) Long categorieId,
@@ -159,7 +161,7 @@ public class CandidatController {
             @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate dateExamenProgramme
     ) throws IOException {
         List<CandidatDTO> candidats = candidatService.getTousLesCandidatsPourRapport(
-                recherche, statut, categorieId, statutInscription, siteId, etape, priseEnChargeExamens, dateExamenProgramme);
+                ids, recherche, statut, categorieId, statutInscription, siteId, etape, priseEnChargeExamens, dateExamenProgramme);
         byte[] bytes = exportService.exportCandidatsExcel(candidats);
 
         return ResponseEntity.ok()

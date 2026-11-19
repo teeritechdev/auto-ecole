@@ -104,7 +104,7 @@ public class ExportService {
             headerCellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
             headerCellStyle.setAlignment(HorizontalAlignment.CENTER);
 
-            String[] columns = {"N° Dossier", "Nom", "Prénom", "Téléphone", "Catégorie", "Libellé Catégorie", "Montant (FCFA)", "Total Versé (FCFA)", "Solde Restant (FCFA)", "Statut", "Date Échéance"};
+            String[] columns = {"N° Dossier", "Nom", "Prénom", "Téléphone", "Catégorie", "Formule", "Libellé Catégorie", "Montant (FCFA)", "Total Versé (FCFA)", "Solde Restant (FCFA)", "Statut", "Date Échéance"};
             org.apache.poi.ss.usermodel.Row headerRow = sheet.createRow(0);
             for (int i = 0; i < columns.length; i++) {
                 org.apache.poi.ss.usermodel.Cell cell = headerRow.createCell(i);
@@ -120,12 +120,13 @@ public class ExportService {
                 row.createCell(2).setCellValue(sanitizeForExcel(c.getPrenom()));
                 row.createCell(3).setCellValue(sanitizeForExcel(c.getTelephone()));
                 row.createCell(4).setCellValue(sanitizeForExcel(c.getCategoriePermisCode() != null ? c.getCategoriePermisCode() : ""));
-                row.createCell(5).setCellValue(sanitizeForExcel(c.getCategoriePermisLibelle() != null ? c.getCategoriePermisLibelle() : ""));
-                row.createCell(6).setCellValue(c.getMontantForfait() != null ? c.getMontantForfait().doubleValue() : 0);
-                row.createCell(7).setCellValue(c.getTotalVerse() != null ? c.getTotalVerse().doubleValue() : 0);
-                row.createCell(8).setCellValue(c.getSoldeRestant() != null ? c.getSoldeRestant().doubleValue() : 0);
-                row.createCell(9).setCellValue(c.getStatutDossier() != null ? c.getStatutDossier().name() : "");
-                row.createCell(10).setCellValue(c.getDateEcheance() != null ? c.getDateEcheance().toString() : "");
+                row.createCell(5).setCellValue(c.isPriseEnChargeExamens() ? "Forfaitaire" : "Non forfaitaire");
+                row.createCell(6).setCellValue(sanitizeForExcel(c.getCategoriePermisLibelle() != null ? c.getCategoriePermisLibelle() : ""));
+                row.createCell(7).setCellValue(c.getMontantForfait() != null ? c.getMontantForfait().doubleValue() : 0);
+                row.createCell(8).setCellValue(c.getTotalVerse() != null ? c.getTotalVerse().doubleValue() : 0);
+                row.createCell(9).setCellValue(c.getSoldeRestant() != null ? c.getSoldeRestant().doubleValue() : 0);
+                row.createCell(10).setCellValue(c.getStatutDossier() != null ? c.getStatutDossier().name() : "");
+                row.createCell(11).setCellValue(c.getDateEcheance() != null ? c.getDateEcheance().toString() : "");
             }
 
             for (int i = 0; i < columns.length; i++) {
@@ -148,19 +149,16 @@ public class ExportService {
             PdfWriter.getInstance(document, out);
             document.open();
 
-            // Titre
-            com.lowagie.text.Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16, PRIMARY_COLOR);
-            Paragraph title = new Paragraph(getNomEtablissement() + " - LISTE OFFICIELLE DES CANDIDATS", titleFont);
-            title.setAlignment(Element.ALIGN_CENTER);
-            title.setSpacingAfter(15);
-            document.add(title);
+            ConfigurationApplication config = getConfiguration();
+            ajouterEnteteOfficiel(document, config, "LISTE OFFICIELLE DES CANDIDATS",
+                    "Édité le " + LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + " • Total : " + candidats.size() + " candidat(s)");
 
-            PdfPTable table = new PdfPTable(8);
+            PdfPTable table = new PdfPTable(9);
             table.setWidthPercentage(100);
-            table.setWidths(new float[]{3f, 4f, 4f, 2.5f, 3f, 3f, 3f, 3f});
+            table.setWidths(new float[]{3f, 3.5f, 3.5f, 2f, 2.5f, 3f, 3f, 3f, 2.5f});
 
-            String[] headers = {"N° Dossier", "Nom", "Prénom", "Permis", "Montant", "Total Versé", "Reste Dû", "Statut"};
-            com.lowagie.text.Font headFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, Color.WHITE);
+            String[] headers = {"N° Dossier", "Nom", "Prénom", "Permis", "Formule", "Montant", "Total Versé", "Reste Dû", "Statut"};
+            com.lowagie.text.Font headFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9, Color.WHITE);
 
             for (String h : headers) {
                 PdfPCell cell = new PdfPCell(new Phrase(h, headFont));
@@ -170,12 +168,13 @@ public class ExportService {
                 table.addCell(cell);
             }
 
-            com.lowagie.text.Font bodyFont = FontFactory.getFont(FontFactory.HELVETICA, 9, Color.BLACK);
+            com.lowagie.text.Font bodyFont = FontFactory.getFont(FontFactory.HELVETICA, 8.5f, Color.BLACK);
             for (CandidatDTO c : candidats) {
                 table.addCell(new Phrase(c.getNumeroDossier(), bodyFont));
                 table.addCell(new Phrase(c.getNom(), bodyFont));
                 table.addCell(new Phrase(c.getPrenom(), bodyFont));
                 table.addCell(new Phrase(c.getCategoriePermisCode(), bodyFont));
+                table.addCell(new Phrase(c.isPriseEnChargeExamens() ? "Forfaitaire" : "Non forfaitaire", bodyFont));
                 table.addCell(new Phrase(c.getMontantForfait() + " FCFA", bodyFont));
                 table.addCell(new Phrase(c.getTotalVerse() + " FCFA", bodyFont));
                 table.addCell(new Phrase(c.getSoldeRestant() + " FCFA", bodyFont));
@@ -183,6 +182,7 @@ public class ExportService {
             }
 
             document.add(table);
+            ajouterPiedDePageOfficiel(document, config, candidats.size(), "CANDIDATS");
             document.close();
         } catch (Exception e) {
             throw new RuntimeException("Erreur lors de la génération du PDF des candidats: " + e.getMessage());
@@ -294,6 +294,240 @@ public class ExportService {
         cell.setPadding(10);
         cell.setHorizontalAlignment(alignment);
         cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+    }
+
+    /**
+     * En-tête officiel standard encadré reproduisant fidèlement la présentation officielle :
+     * - Logo de l'établissement à gauche
+     * - Nom en grand gras majuscule au centre, suivi des activités, téléphones, RCCM, IFU, agrément
+     * - Cadre "AE 206" (Code établissement) à droite
+     * - Ligne épaisse de séparation
+     * - Titre et sous-titre du document
+     */
+    private void ajouterEnteteOfficiel(Document document, ConfigurationApplication config, String titreDocument, String sousTitreDocument) throws DocumentException {
+        ajouterEnteteOfficiel(document, config, titreDocument, sousTitreDocument, true);
+    }
+
+    private void ajouterEnteteOfficiel(Document document, ConfigurationApplication config, String titreDocument, String sousTitreDocument, boolean avecDetailsLegaux) throws DocumentException {
+        PdfPTable headerTable = new PdfPTable(3);
+        headerTable.setWidthPercentage(100);
+        headerTable.setWidths(new float[]{18f, 66f, 16f});
+
+        // 1. Colonne gauche : Logo
+        PdfPCell logoCell = new PdfPCell();
+        logoCell.setBorder(Rectangle.NO_BORDER);
+        logoCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+        logoCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+        logoCell.setPadding(4f);
+
+        if (config != null && isNotBlank(config.getLogoData())) {
+            try {
+                String raw = config.getLogoData();
+                int comma = raw.indexOf(',');
+                byte[] bytes = Base64.getDecoder().decode(comma >= 0 ? raw.substring(comma + 1) : raw);
+                Image logo = Image.getInstance(bytes);
+                float maxSize = 62f;
+                float scale = Math.min(maxSize / logo.getWidth(), maxSize / logo.getHeight()) * 100f;
+                logo.scalePercent(scale);
+                logo.setAlignment(Image.ALIGN_CENTER);
+                logoCell.addElement(logo);
+            } catch (Exception ignored) {
+            }
+        }
+        headerTable.addCell(logoCell);
+
+        // 2. Colonne centrale : Coordonnées complètes
+        PdfPCell centerCell = new PdfPCell();
+        centerCell.setBorder(Rectangle.NO_BORDER);
+        centerCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+        centerCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+        centerCell.setPadding(3f);
+
+        // Nom en grand gras majuscule
+        String nomEtab = getNomEtablissement().toUpperCase();
+        com.lowagie.text.Font nomFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 13.5f, Color.BLACK);
+        Paragraph pNom = new Paragraph(nomEtab, nomFont);
+        pNom.setAlignment(Element.ALIGN_CENTER);
+        pNom.setSpacingAfter(2f);
+        centerCell.addElement(pNom);
+
+        // Activités / Prestations
+        String activites = (config != null && isNotBlank(config.getActivites()))
+                ? config.getActivites()
+                : (config != null && isNotBlank(config.getSlogan()) ? config.getSlogan() : "FORMATION- ASSISTANCE ET PRESTATIONS DIVERSES EN SECURITE ROUTIERE - IMPORT EXPORT");
+        com.lowagie.text.Font actFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 7f, new Color(50, 50, 50));
+        Paragraph pAct = new Paragraph(activites.toUpperCase(), actFont);
+        pAct.setAlignment(Element.ALIGN_CENTER);
+        pAct.setSpacingAfter(3f);
+        centerCell.addElement(pAct);
+
+        // Téléphones
+        if (config != null && isNotBlank(config.getTelephone())) {
+            com.lowagie.text.Font telFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 7.5f, Color.BLACK);
+            Paragraph pTel = new Paragraph("Tél. : " + config.getTelephone(), telFont);
+            pTel.setAlignment(Element.ALIGN_CENTER);
+            pTel.setSpacingAfter(2f);
+            centerCell.addElement(pTel);
+        }
+
+        // Si avecDetailsLegaux est true (ex: Conduite ou documents administratifs généraux), afficher RCCM, IFU et Autorisation
+        if (avecDetailsLegaux) {
+            // RCCM & IFU
+            StringBuilder rccmIfu = new StringBuilder();
+            if (config != null && isNotBlank(config.getRccm())) {
+                rccmIfu.append("RCCM : ").append(config.getRccm());
+            }
+            if (config != null && isNotBlank(config.getIfu())) {
+                if (rccmIfu.length() > 0) rccmIfu.append(" - ");
+                rccmIfu.append("IFU n° : ").append(config.getIfu());
+            }
+            if (rccmIfu.length() > 0) {
+                com.lowagie.text.Font rccmFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 7.5f, Color.BLACK);
+                Paragraph pRccm = new Paragraph(rccmIfu.toString(), rccmFont);
+                pRccm.setAlignment(Element.ALIGN_CENTER);
+                pRccm.setSpacingAfter(2f);
+                centerCell.addElement(pRccm);
+            }
+
+            // Autorisation d'exploitation / Agrément
+            StringBuilder agrement = new StringBuilder();
+            if (config != null && isNotBlank(config.getNumeroAgrement())) {
+                String num = config.getNumeroAgrement();
+                if (!num.toLowerCase().contains("autorisation") && !num.toLowerCase().contains("agrément")) {
+                    agrement.append("Autorisation d'exploitation N° ");
+                }
+                agrement.append(num);
+                if (config.getDateAgrement() != null) {
+                    agrement.append(" du ").append(config.getDateAgrement().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+                }
+            }
+            if (agrement.length() > 0) {
+                com.lowagie.text.Font agrFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 7.5f, Color.BLACK);
+                Paragraph pAgr = new Paragraph(agrement.toString(), agrFont);
+                pAgr.setAlignment(Element.ALIGN_CENTER);
+                centerCell.addElement(pAgr);
+            }
+        }
+
+        headerTable.addCell(centerCell);
+
+        // 3. Colonne droite : Cadre Code Auto-École (ex: "AE 206")
+        PdfPCell rightCell = new PdfPCell();
+        rightCell.setBorder(Rectangle.NO_BORDER);
+        rightCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+        rightCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+        rightCell.setPadding(4f);
+
+        String code = (config != null && isNotBlank(config.getCodeEtablissement()))
+                ? config.getCodeEtablissement()
+                : "AE";
+
+        PdfPTable codeBox = new PdfPTable(1);
+        codeBox.setWidthPercentage(88);
+        PdfPCell codeBoxCell = new PdfPCell();
+        codeBoxCell.setBorder(Rectangle.BOX);
+        codeBoxCell.setBorderWidth(1.2f);
+        codeBoxCell.setBorderColor(Color.BLACK);
+        codeBoxCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+        codeBoxCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+        codeBoxCell.setPadding(6f);
+
+        com.lowagie.text.Font codeFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, Color.BLACK);
+        Paragraph pCode = new Paragraph(code, codeFont);
+        pCode.setAlignment(Element.ALIGN_CENTER);
+        codeBoxCell.addElement(pCode);
+        codeBox.addCell(codeBoxCell);
+
+        rightCell.addElement(codeBox);
+        headerTable.addCell(rightCell);
+
+        // Encadrement global (boîte extérieure de l'en-tête)
+        PdfPTable wrapperTable = new PdfPTable(1);
+        wrapperTable.setWidthPercentage(100);
+        wrapperTable.setSpacingAfter(4f);
+
+        PdfPCell wrapperCell = new PdfPCell(headerTable);
+        wrapperCell.setBorder(Rectangle.BOX);
+        wrapperCell.setBorderWidth(1.1f);
+        wrapperCell.setBorderColor(new Color(50, 50, 50));
+        wrapperCell.setPadding(4f);
+        wrapperTable.addCell(wrapperCell);
+
+        document.add(wrapperTable);
+
+        // Ligne de séparation
+        PdfPTable sepTable = new PdfPTable(1);
+        sepTable.setWidthPercentage(100);
+        sepTable.setSpacingAfter(8f);
+        PdfPCell sepCell = new PdfPCell();
+        sepCell.setBorder(Rectangle.TOP);
+        sepCell.setBorderWidthTop(1.8f);
+        sepCell.setBorderColorTop(Color.BLACK);
+        sepCell.setFixedHeight(2f);
+        sepTable.addCell(sepCell);
+        document.add(sepTable);
+
+        // Titre document
+        if (isNotBlank(titreDocument)) {
+            com.lowagie.text.Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 13, Color.BLACK);
+            Paragraph pTitre = new Paragraph(titreDocument.toUpperCase(), titleFont);
+            pTitre.setAlignment(Element.ALIGN_CENTER);
+            pTitre.setSpacingAfter(isNotBlank(sousTitreDocument) ? 4f : 12f);
+            document.add(pTitre);
+        }
+
+        // Sous-titre document
+        if (isNotBlank(sousTitreDocument)) {
+            com.lowagie.text.Font subFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9.5f, Color.DARK_GRAY);
+            Paragraph pSub = new Paragraph(sousTitreDocument, subFont);
+            pSub.setAlignment(Element.ALIGN_CENTER);
+            pSub.setSpacingAfter(12f);
+            document.add(pSub);
+        }
+    }
+
+    private void ajouterPiedDePageOfficiel(Document document, ConfigurationApplication config, int totalElements, String libelleElements) throws DocumentException {
+        Paragraph pSpacing = new Paragraph(" ");
+        pSpacing.setSpacingBefore(10f);
+        document.add(pSpacing);
+
+        String libelle = (libelleElements != null && !libelleElements.isBlank()) ? libelleElements : "NOMS";
+        String totalTexte = convertirNombreEnLettres(totalElements);
+        String arrete = "ARRÊTÉ LA PRÉSENTE LISTE À " + totalTexte.toUpperCase() + " (" + totalElements + ") " + libelle.toUpperCase();
+
+        com.lowagie.text.Font arreteFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, Color.BLACK);
+        Paragraph pArrete = new Paragraph(arrete, arreteFont);
+        pArrete.setAlignment(Element.ALIGN_CENTER);
+        pArrete.setSpacingAfter(3f);
+        document.add(pArrete);
+
+        String nomEtab = getNomEtablissement().toUpperCase();
+        com.lowagie.text.Font nomFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, Color.BLACK);
+        Paragraph pNom = new Paragraph(nomEtab, nomFont);
+        pNom.setAlignment(Element.ALIGN_CENTER);
+        pNom.setSpacingAfter(2f);
+        document.add(pNom);
+
+        String devise = (config != null && isNotBlank(config.getDevise()))
+                ? config.getDevise()
+                : (config != null && isNotBlank(config.getSlogan()) ? config.getSlogan() : "« Juste conduire »");
+        if (isNotBlank(devise)) {
+            if (!devise.startsWith("«") && !devise.startsWith("\"")) {
+                devise = "« " + devise + " »";
+            }
+            com.lowagie.text.Font devFont = FontFactory.getFont(FontFactory.HELVETICA_OBLIQUE, 9, Color.DARK_GRAY);
+            Paragraph pDev = new Paragraph(devise, devFont);
+            pDev.setAlignment(Element.ALIGN_CENTER);
+            document.add(pDev);
+        }
+    }
+
+    private String convertirNombreEnLettres(int n) {
+        if (n < 0) return String.valueOf(n);
+        String[] UNITES = {"zéro", "un", "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf",
+                "dix", "onze", "douze", "treize", "quatorze", "quinze", "seize", "dix-sept", "dix-huit", "dix-neuf", "vingt"};
+        if (n <= 20) return UNITES[n];
+        return String.valueOf(n);
     }
 
     private boolean isNotBlank(String value) {
@@ -500,10 +734,8 @@ public class ExportService {
             PdfWriter.getInstance(document, out);
             document.open();
 
-            Paragraph title = new Paragraph("RELEVÉ DE COMPTE ET HISTORIQUE DES PAIEMENTS", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, PRIMARY_COLOR));
-            title.setAlignment(Element.ALIGN_CENTER);
-            title.setSpacingAfter(15);
-            document.add(title);
+            ConfigurationApplication config = getConfiguration();
+            ajouterEnteteOfficiel(document, config, "RELEVÉ DE COMPTE ET HISTORIQUE DES PAIEMENTS", null);
 
             // Synthèse candidat
             PdfPTable synthese = new PdfPTable(2);
@@ -546,6 +778,7 @@ public class ExportService {
             }
 
             document.add(table);
+            ajouterPiedDePageOfficiel(document, config, paiements.size(), "VERSEMENTS");
             document.close();
         } catch (Exception e) {
             throw new RuntimeException("Erreur lors de la génération du relevé candidat: " + e.getMessage());
@@ -565,10 +798,9 @@ public class ExportService {
             PdfWriter.getInstance(document, out);
             document.open();
 
-            Paragraph title = new Paragraph("JOURNAL ET RELEVÉ DES MOUVEMENTS DE CAISSE", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, PRIMARY_COLOR));
-            title.setAlignment(Element.ALIGN_CENTER);
-            title.setSpacingAfter(15);
-            document.add(title);
+            ConfigurationApplication config = getConfiguration();
+            ajouterEnteteOfficiel(document, config, "JOURNAL ET RELEVÉ DES MOUVEMENTS DE CAISSE",
+                    "Édité le " + LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + " • Total : " + transactions.size() + " opération(s)");
 
             PdfPTable table = new PdfPTable(7);
             table.setWidthPercentage(100);
@@ -596,6 +828,7 @@ public class ExportService {
             }
 
             document.add(table);
+            ajouterPiedDePageOfficiel(document, config, transactions.size(), "OPÉRATIONS DE CAISSE");
             document.close();
         } catch (Exception e) {
             throw new RuntimeException("Erreur lors de la génération du journal de caisse: " + e.getMessage());
@@ -679,18 +912,9 @@ public class ExportService {
             PdfWriter.getInstance(document, out);
             document.open();
 
-            // Titre
-            com.lowagie.text.Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 15, PRIMARY_COLOR);
-            Paragraph title = new Paragraph(getNomEtablissement() + " - SUIVI PÉDAGOGIQUE & EXAMENS", titleFont);
-            title.setAlignment(Element.ALIGN_CENTER);
-            title.setSpacingAfter(6);
-            document.add(title);
-
-            com.lowagie.text.Font subFont = FontFactory.getFont(FontFactory.HELVETICA, 10, Color.DARK_GRAY);
-            Paragraph sub = new Paragraph("Liste des sessions d'examens • Édité le " + LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")), subFont);
-            sub.setAlignment(Element.ALIGN_CENTER);
-            sub.setSpacingAfter(15);
-            document.add(sub);
+            ConfigurationApplication config = getConfiguration();
+            ajouterEnteteOfficiel(document, config, "SUIVI PÉDAGOGIQUE & SESSIONS D'EXAMENS",
+                    "Liste des sessions d'examens • Édité le " + LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + " • Total : " + sessions.size() + " session(s)");
 
             PdfPTable table = new PdfPTable(5);
             table.setWidthPercentage(100);
@@ -741,9 +965,232 @@ public class ExportService {
             }
 
             document.add(table);
+            ajouterPiedDePageOfficiel(document, config, sessions.size(), "SESSIONS D'EXAMEN");
             document.close();
         } catch (DocumentException e) {
             throw new RuntimeException("Erreur lors de la génération du PDF des sessions d'examens", e);
+        }
+
+        return out.toByteArray();
+    }
+
+    // ==========================================
+    // EXPORT PROGRAMME D'EXAMEN D'UNE SESSION (PDF)
+    // Conforme au modèle officiel d'examen :
+    // - En-tête officiel encadré (Logo | Coordonnées | AE 206)
+    // - Titre : PROGRAMME D'EXAMEN AU PERMIS DE CONDUIRE
+    // - Encadré Épreuve : [ CONDUITE ... ] | Date de l'épreuve
+    // - Tableau : N° | NOM ET PRENOM(S) | DATE DE NAISSANCE | LIEU DE NAISSANCE | OBSERVATIONS
+    // - Pied de page : ARRÊTÉ LA PRÉSENTE LISTE À X NOMS
+    // ==========================================
+    public byte[] exportProgrammeSessionPdf(Long sessionId) {
+        SessionExamenDTO session = examenService.getSessionDetail(sessionId);
+        ConfigurationApplication config = getConfiguration();
+
+        Document document = new Document(PageSize.A4, 25, 25, 25, 25);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        try {
+            PdfWriter.getInstance(document, out);
+            document.open();
+
+            boolean estConduite = session.getTypeEpreuve() != TypeEpreuve.CODE;
+
+            // En-tête officiel encadré :
+            // Image 1 : CONDUITE -> En-tête complet avec RCCM, IFU, et Autorisation d'exploitation
+            // Image 2 : CODE -> En-tête épuré (Nom, Activités, Tél, Code AE) SANS RCCM, IFU, ni Autorisation
+            ajouterEnteteOfficiel(document, config, null, null, estConduite);
+
+            // Titre aligné à gauche sous la ligne de séparation (comme sur les modèles officiels)
+            com.lowagie.text.Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12.5f, Color.BLACK);
+            Paragraph pTitre = new Paragraph("PROGRAMME D'EXAMEN AU PERMIS DE CONDUIRE", titleFont);
+            pTitre.setAlignment(Element.ALIGN_LEFT);
+            pTitre.setSpacingAfter(10f);
+            document.add(pTitre);
+
+            // Déterminer la catégorie dominante (ex: PL si C, VL si B) pour "CONDUITE PL" ou "CODE PL"
+            String catSuffix = "";
+            List<PassageExamenDTO> candidats = session.getCandidats() != null ? session.getCandidats() : List.of();
+            if (!candidats.isEmpty()) {
+                try {
+                    Long firstCandidatId = candidats.get(0).getCandidatId();
+                    if (firstCandidatId != null) {
+                        CandidatDTO c = candidatService.getCandidatById(firstCandidatId);
+                        if (c != null && c.getCategoriePermisCode() != null) {
+                            String code = c.getCategoriePermisCode().toUpperCase().trim();
+                            if (code.startsWith("C")) {
+                                catSuffix = " PL";
+                            } else if (code.startsWith("B")) {
+                                catSuffix = " VL";
+                            } else if (code.startsWith("A")) {
+                                catSuffix = " " + code;
+                            } else {
+                                catSuffix = " " + code;
+                            }
+                        }
+                    }
+                } catch (Exception ignored) {
+                }
+            }
+
+            String testPrefix;
+            if (session.getTypeEpreuve() == TypeEpreuve.CODE) {
+                testPrefix = "CODE";
+            } else if (session.getTypeEpreuve() == TypeEpreuve.CRENEAU) {
+                testPrefix = "CRENEAU";
+            } else {
+                testPrefix = "CONDUITE";
+            }
+            String libelleEpreuve = testPrefix + catSuffix;
+
+            // Bloc Épreuve + Date (exactement comme sur les modèles officiels)
+            PdfPTable infoSessionTable = new PdfPTable(2);
+            infoSessionTable.setWidthPercentage(100);
+            infoSessionTable.setWidths(new float[]{45f, 55f});
+            infoSessionTable.setSpacingAfter(10f);
+
+            com.lowagie.text.Font labelEprFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10.5f, Color.BLACK);
+
+            // 1. Épreuve : label "EPREUVE :" + encadré rectangulaire autour du nom
+            PdfPCell epreuveCell = new PdfPCell();
+            epreuveCell.setBorder(Rectangle.NO_BORDER);
+            epreuveCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+
+            PdfPTable eprSubTable = new PdfPTable(2);
+            eprSubTable.setWidthPercentage(100);
+            eprSubTable.setWidths(new float[]{32f, 68f});
+
+            PdfPCell cEprLbl = new PdfPCell(new Phrase("EPREUVE :", labelEprFont));
+            cEprLbl.setBorder(Rectangle.NO_BORDER);
+            cEprLbl.setVerticalAlignment(Element.ALIGN_MIDDLE);
+            eprSubTable.addCell(cEprLbl);
+
+            PdfPCell cEprBox = new PdfPCell(new Phrase(libelleEpreuve, labelEprFont));
+            cEprBox.setBorder(Rectangle.BOX);
+            cEprBox.setBorderWidth(1.1f);
+            cEprBox.setBorderColor(Color.BLACK);
+            cEprBox.setHorizontalAlignment(Element.ALIGN_CENTER);
+            cEprBox.setVerticalAlignment(Element.ALIGN_MIDDLE);
+            cEprBox.setPadding(4f);
+            eprSubTable.addCell(cEprBox);
+
+            epreuveCell.addElement(eprSubTable);
+            infoSessionTable.addCell(epreuveCell);
+
+            // 2. Date :
+            // Image 1 (CONDUITE) : DATE :  VENDREDI 09/10/2026 (sans cadre autour de la date)
+            // Image 2 (CODE) : DATE : [ MERCREDI 04/11/2026 ] (avec cadre rectangulaire autour de la date)
+            DateTimeFormatter dtfFrench = DateTimeFormatter.ofPattern("EEEE dd/MM/yyyy", java.util.Locale.FRENCH);
+            String dateFormatted = session.getDatePassage() != null ? session.getDatePassage().format(dtfFrench).toUpperCase() : "-";
+
+            PdfPCell dateCell = new PdfPCell();
+            dateCell.setBorder(Rectangle.NO_BORDER);
+            dateCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+
+            if (estConduite) {
+                Paragraph pDate = new Paragraph("DATE :   " + dateFormatted, labelEprFont);
+                pDate.setAlignment(Element.ALIGN_RIGHT);
+                pDate.setSpacingBefore(3f);
+                dateCell.addElement(pDate);
+            } else {
+                PdfPTable dateSubTable = new PdfPTable(2);
+                dateSubTable.setWidthPercentage(100);
+                dateSubTable.setWidths(new float[]{28f, 72f});
+
+                PdfPCell cDateLbl = new PdfPCell(new Phrase("DATE :", labelEprFont));
+                cDateLbl.setBorder(Rectangle.NO_BORDER);
+                cDateLbl.setHorizontalAlignment(Element.ALIGN_RIGHT);
+                cDateLbl.setVerticalAlignment(Element.ALIGN_MIDDLE);
+                cDateLbl.setPaddingRight(5f);
+                dateSubTable.addCell(cDateLbl);
+
+                PdfPCell cDateBox = new PdfPCell(new Phrase(dateFormatted, labelEprFont));
+                cDateBox.setBorder(Rectangle.BOX);
+                cDateBox.setBorderWidth(1.1f);
+                cDateBox.setBorderColor(Color.BLACK);
+                cDateBox.setHorizontalAlignment(Element.ALIGN_CENTER);
+                cDateBox.setVerticalAlignment(Element.ALIGN_MIDDLE);
+                cDateBox.setPadding(4f);
+                dateSubTable.addCell(cDateBox);
+
+                dateCell.addElement(dateSubTable);
+            }
+            infoSessionTable.addCell(dateCell);
+
+            document.add(infoSessionTable);
+
+            // Tableau des candidats
+            PdfPTable table = new PdfPTable(5);
+            table.setWidthPercentage(100);
+            table.setWidths(new float[]{8f, 37f, 18f, 22f, 15f});
+
+            String[] headers = {"N°", "NOM ET PRENOM(S)", "DATE DE NAISSANCE", "LIEU DE NAISSANCE", "OBSERVATIONS"};
+            com.lowagie.text.Font headFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9.5f, Color.BLACK);
+
+            for (String h : headers) {
+                PdfPCell cell = new PdfPCell(new Phrase(h, headFont));
+                cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+                cell.setPadding(6f);
+                cell.setBorderWidth(1.1f);
+                cell.setBorderColor(Color.BLACK);
+                table.addCell(cell);
+            }
+
+            com.lowagie.text.Font bodyFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9, Color.BLACK);
+            com.lowagie.text.Font bodyReg = FontFactory.getFont(FontFactory.HELVETICA, 8.5f, Color.BLACK);
+            DateTimeFormatter dtfBirth = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+            int index = 1;
+            for (PassageExamenDTO p : candidats) {
+                // N°
+                PdfPCell cNum = new PdfPCell(new Phrase(String.valueOf(index++), bodyFont));
+                cNum.setHorizontalAlignment(Element.ALIGN_CENTER);
+                cNum.setVerticalAlignment(Element.ALIGN_MIDDLE);
+                cNum.setPadding(6f);
+                cNum.setBorderWidth(1f);
+                table.addCell(cNum);
+
+                // Nom et Prénom(s)
+                PdfPCell cNom = new PdfPCell(new Phrase(p.getCandidatNomComplet() != null ? p.getCandidatNomComplet().toUpperCase() : "-", bodyFont));
+                cNom.setVerticalAlignment(Element.ALIGN_MIDDLE);
+                cNom.setPadding(6f);
+                cNom.setBorderWidth(1f);
+                table.addCell(cNom);
+
+                // Date de naissance
+                String birthDate = p.getCandidatDateNaissance() != null ? p.getCandidatDateNaissance().format(dtfBirth) : "-";
+                PdfPCell cBirth = new PdfPCell(new Phrase(birthDate, bodyReg));
+                cBirth.setHorizontalAlignment(Element.ALIGN_CENTER);
+                cBirth.setVerticalAlignment(Element.ALIGN_MIDDLE);
+                cBirth.setPadding(6f);
+                cBirth.setBorderWidth(1f);
+                table.addCell(cBirth);
+
+                // Lieu de naissance
+                PdfPCell cLieu = new PdfPCell(new Phrase(p.getCandidatLieuNaissance() != null ? p.getCandidatLieuNaissance().toUpperCase() : "-", bodyReg));
+                cLieu.setVerticalAlignment(Element.ALIGN_MIDDLE);
+                cLieu.setPadding(6f);
+                cLieu.setBorderWidth(1f);
+                table.addCell(cLieu);
+
+                // Observations : laisser vide par défaut (réservé aux inspecteurs de l'examen)
+                String obs = (p.getObservations() != null && !p.getObservations().isBlank()) ? p.getObservations().trim() : "";
+                PdfPCell cObs = new PdfPCell(new Phrase(obs, bodyReg));
+                cObs.setVerticalAlignment(Element.ALIGN_MIDDLE);
+                cObs.setPadding(6f);
+                cObs.setBorderWidth(1f);
+                table.addCell(cObs);
+            }
+
+            document.add(table);
+
+            // Pied officiel : "ARRÊTÉ LA PRÉSENTE LISTE À X NOMS"
+            ajouterPiedDePageOfficiel(document, config, candidats.size(), "NOMS");
+
+            document.close();
+        } catch (DocumentException e) {
+            throw new RuntimeException("Erreur lors de la génération du programme d'examen: " + e.getMessage(), e);
         }
 
         return out.toByteArray();
@@ -891,10 +1338,8 @@ public class ExportService {
             PdfWriter.getInstance(document, out);
             document.open();
 
-            Paragraph title = new Paragraph("FICHE PÉDAGOGIQUE & SUIVI DES EXAMENS", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 15, PRIMARY_COLOR));
-            title.setAlignment(Element.ALIGN_CENTER);
-            title.setSpacingAfter(15);
-            document.add(title);
+            ConfigurationApplication config = getConfiguration();
+            ajouterEnteteOfficiel(document, config, "FICHE PÉDAGOGIQUE & SUIVI DES EXAMENS", null);
 
             PdfPTable synthese = new PdfPTable(2);
             synthese.setWidthPercentage(100);
@@ -942,6 +1387,7 @@ public class ExportService {
             addPassagesToTable(table, bilan.getPassagesCirculation(), "Circulation", regFont, dtf);
 
             document.add(table);
+            ajouterPiedDePageOfficiel(document, config, 1, "DOSSIER CANDIDAT");
             document.close();
         } catch (Exception e) {
             throw new RuntimeException("Erreur lors de la génération du bilan d'examens: " + e.getMessage());
@@ -987,10 +1433,9 @@ public class ExportService {
             PdfWriter.getInstance(document, out);
             document.open();
 
-            Paragraph title = new Paragraph("JOURNAL DES VERSEMENTS ET ENCAISSEMENTS", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, PRIMARY_COLOR));
-            title.setAlignment(Element.ALIGN_CENTER);
-            title.setSpacingAfter(12);
-            document.add(title);
+            ConfigurationApplication config = getConfiguration();
+            ajouterEnteteOfficiel(document, config, "JOURNAL DES VERSEMENTS ET ENCAISSEMENTS",
+                    "Édité le " + LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + " • Total : " + paiements.size() + " encaissement(s)");
 
             PdfPTable table = new PdfPTable(8);
             table.setWidthPercentage(100);
@@ -1019,6 +1464,7 @@ public class ExportService {
             }
 
             document.add(table);
+            ajouterPiedDePageOfficiel(document, config, paiements.size(), "VERSEMENTS");
             document.close();
         } catch (Exception e) {
             throw new RuntimeException("Erreur lors de l'export des paiements en PDF: " + e.getMessage());
@@ -1084,10 +1530,8 @@ public class ExportService {
             PdfWriter.getInstance(document, out);
             document.open();
 
-            Paragraph title = new Paragraph("CATALOGUE DES NATURES D'OPÉRATION DE CAISSE", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, PRIMARY_COLOR));
-            title.setAlignment(Element.ALIGN_CENTER);
-            title.setSpacingAfter(15);
-            document.add(title);
+            ConfigurationApplication config = getConfiguration();
+            ajouterEnteteOfficiel(document, config, "CATALOGUE DES NATURES D'OPÉRATION DE CAISSE", null);
 
             PdfPTable table = new PdfPTable(5);
             table.setWidthPercentage(100);
@@ -1111,6 +1555,7 @@ public class ExportService {
             }
 
             document.add(table);
+            ajouterPiedDePageOfficiel(document, config, natures.size(), "NATURES D'OPÉRATION");
             document.close();
         } catch (Exception e) {
             throw new RuntimeException("Erreur lors de l'export des natures d'opération en PDF: " + e.getMessage());
@@ -1172,10 +1617,8 @@ public class ExportService {
             PdfWriter.getInstance(document, out);
             document.open();
 
-            Paragraph title = new Paragraph("GRILLE TARIFAIRE DES CATÉGORIES DE PERMIS", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, PRIMARY_COLOR));
-            title.setAlignment(Element.ALIGN_CENTER);
-            title.setSpacingAfter(15);
-            document.add(title);
+            ConfigurationApplication config = getConfiguration();
+            ajouterEnteteOfficiel(document, config, "GRILLE TARIFAIRE DES CATÉGORIES DE PERMIS", null);
 
             PdfPTable table = new PdfPTable(5);
             table.setWidthPercentage(100);
@@ -1199,6 +1642,7 @@ public class ExportService {
             }
 
             document.add(table);
+            ajouterPiedDePageOfficiel(document, config, categories.size(), "CATÉGORIES DE PERMIS");
             document.close();
         } catch (Exception e) {
             throw new RuntimeException("Erreur lors de l'export des catégories en PDF: " + e.getMessage());
@@ -1260,10 +1704,8 @@ public class ExportService {
             PdfWriter.getInstance(document, out);
             document.open();
 
-            Paragraph title = new Paragraph("LISTE DES SITES DE FORMATION", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, PRIMARY_COLOR));
-            title.setAlignment(Element.ALIGN_CENTER);
-            title.setSpacingAfter(15);
-            document.add(title);
+            ConfigurationApplication config = getConfiguration();
+            ajouterEnteteOfficiel(document, config, "LISTE DES SITES DE FORMATION", null);
 
             PdfPTable table = new PdfPTable(3);
             table.setWidthPercentage(100);
@@ -1285,6 +1727,7 @@ public class ExportService {
             }
 
             document.add(table);
+            ajouterPiedDePageOfficiel(document, config, sites.size(), "SITES DE FORMATION");
             document.close();
         } catch (Exception e) {
             throw new RuntimeException("Erreur lors de l'export des sites en PDF: " + e.getMessage());
@@ -1343,10 +1786,8 @@ public class ExportService {
             PdfWriter.getInstance(document, out);
             document.open();
 
-            Paragraph title = new Paragraph("LISTE DES UTILISATEURS & DROITS D'ACCÈS", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, PRIMARY_COLOR));
-            title.setAlignment(Element.ALIGN_CENTER);
-            title.setSpacingAfter(15);
-            document.add(title);
+            ConfigurationApplication config = getConfiguration();
+            ajouterEnteteOfficiel(document, config, "LISTE DES UTILISATEURS & DROITS D'ACCÈS", null);
 
             PdfPTable table = new PdfPTable(7);
             table.setWidthPercentage(100);
@@ -1373,6 +1814,7 @@ public class ExportService {
             }
 
             document.add(table);
+            ajouterPiedDePageOfficiel(document, config, utilisateurs.size(), "UTILISATEURS");
             document.close();
         } catch (Exception e) {
             throw new RuntimeException("Erreur lors de l'export des utilisateurs en PDF: " + e.getMessage());
@@ -1437,10 +1879,8 @@ public class ExportService {
             PdfWriter.getInstance(document, out);
             document.open();
 
-            Paragraph title = new Paragraph("JOURNAL D'AUDIT & TRAÇABILITÉ (RG10)", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, PRIMARY_COLOR));
-            title.setAlignment(Element.ALIGN_CENTER);
-            title.setSpacingAfter(15);
-            document.add(title);
+            ConfigurationApplication config = getConfiguration();
+            ajouterEnteteOfficiel(document, config, "JOURNAL D'AUDIT & TRAÇABILITÉ (RG10)", null);
 
             PdfPTable table = new PdfPTable(7);
             table.setWidthPercentage(100);
@@ -1468,6 +1908,7 @@ public class ExportService {
             }
 
             document.add(table);
+            ajouterPiedDePageOfficiel(document, config, logs.size(), "ACTIONS AUDITÉES");
             document.close();
         } catch (Exception e) {
             throw new RuntimeException("Erreur lors de l'export du journal d'audit en PDF: " + e.getMessage());

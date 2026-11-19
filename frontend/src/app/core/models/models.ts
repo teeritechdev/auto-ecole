@@ -209,6 +209,8 @@ export interface PassageExamen {
   moniteurId?: number;
   moniteurNomComplet?: string;
   dateEnregistrement: string;
+  priseEnChargeExamens?: boolean;
+  categoriePermisCode?: string;
 }
 
 export interface SessionExamen {
@@ -322,6 +324,9 @@ export interface Identite {
   imageConnexionAjustement: 'cover' | 'contain';
   nomEtablissement: string;
   slogan: string;
+  activites?: string | null;
+  codeEtablissement?: string | null;
+  devise?: string | null;
   telephone: string | null;
   email: string | null;
   adresseSiege: string | null;

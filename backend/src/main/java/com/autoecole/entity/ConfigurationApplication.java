@@ -47,7 +47,20 @@ public class ConfigurationApplication {
     @Column(name = "slogan", length = 150)
     private String slogan;
 
-    @Column(name = "telephone", length = 30)
+    /** Activités / domaine de compétences affichés sous le nom principal sur l'en-tête officiel
+     *  (ex: "FORMATION- ASSISTANCE ET PRESTATIONS DIVERSES EN SECURITE ROUTIERE - IMPORT EXPORT"). */
+    @Column(name = "activites", length = 255)
+    private String activites;
+
+    /** Code établissement / code auto-école officiel (ex: "AE 206"), encadré en haut à droite. */
+    @Column(name = "code_etablissement", length = 50)
+    private String codeEtablissement;
+
+    /** Devise de l'établissement affichée en bas de page (ex: "« Juste conduire »"). */
+    @Column(name = "devise", length = 150)
+    private String devise;
+
+    @Column(name = "telephone", length = 150)
     private String telephone;
 
     @Column(name = "email", length = 150)
@@ -72,7 +85,7 @@ public class ConfigurationApplication {
 
     /** Numéro d'agrément délivré par le Ministère des Transports (DGTTM) pour exploiter
      *  l'auto-école, et sa date d'obtention/dernier renouvellement. */
-    @Column(name = "numero_agrement", length = 50)
+    @Column(name = "numero_agrement", length = 150)
     private String numeroAgrement;
 
     @Column(name = "date_agrement")

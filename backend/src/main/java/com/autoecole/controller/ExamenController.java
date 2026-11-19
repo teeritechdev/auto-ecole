@@ -106,6 +106,18 @@ public class ExamenController {
                 .body(bytes);
     }
 
+    @GetMapping("/sessions/{id}/pdf")
+    @PreAuthorize("hasAuthority('PERM_EXAMENS_VOIR')")
+    @Operation(summary = "Générer le programme officiel d'examen d'une session en PDF (conforme modèle)")
+    public ResponseEntity<byte[]> exportProgrammeSessionPdf(@PathVariable Long id) {
+        byte[] bytes = exportService.exportProgrammeSessionPdf(id);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=programme_examen_session_" + id + ".pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(bytes);
+    }
+
     @GetMapping("/sessions/export/excel")
     @PreAuthorize("hasAuthority('PERM_EXAMENS_VOIR')")
     @Operation(summary = "Exporter les sessions d'examen en Excel (.xlsx)")

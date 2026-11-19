@@ -57,7 +57,7 @@ app:
   swagger:
     public: ${APP_SWAGGER_PUBLIC:true} # désactiver en production (APP_SWAGGER_PUBLIC=false)
   etablissement:
-    nom: ${APP_ETABLISSEMENT_NOM:NERWAYA AUTO-ÉCOLE} # nom affiché sur les documents officiels (reçus, PDF)
+    nom: ${APP_ETABLISSEMENT_NOM:BARAKA AUTO MOTO ECOLE} # nom affiché sur les documents officiels (reçus, PDF)
   security:
     login:
       max-attempts: ${APP_LOGIN_MAX_ATTEMPTS:5} # tentatives échouées avant verrouillage temporaire

@@ -947,70 +947,127 @@ button, input, select, textarea {
 }
 
 /* =========================================================
-   MODAL DIALOGS
+   MODE PLEINE PAGE / FULL-PAGE VIEW (TRANSFORMATION DES MODALES)
+   Chaque vue/action s'affiche désormais comme une vraie page entière
+   élégante, aérée, sans petite boîte flottante ni défilement étriqué.
    ========================================================= */
 .modal-backdrop {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(10, 25, 60, 0.6);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  z-index: 50;
+  inset: 0;
+  background-color: var(--bg-main, #f8fafc) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  z-index: 1000 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 0 !important;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.modal-content,
+.modal-content.modal-lg,
+.modal-content.modal-md {
+  background: transparent !important;
+  border-radius: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-height: 100vh !important;
+  max-height: none !important;
+  margin: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  animation: none !important;
+  overflow: visible !important;
+}
+
+.modal-content > form {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1.5rem;
-  animation: fadeIn 0.2s ease-out;
-}
-
-.modal-content {
-  background: #ffffff;
-  border-radius: var(--radius-lg);
-  max-width: 600px;
+  flex-direction: column;
+  flex: 1;
   width: 100%;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: var(--shadow-xl);
-  border: 1px solid var(--border-color);
-  animation: slideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.modal-content.modal-lg {
-  max-width: 860px;
 }
 
 .modal-header {
-  padding: 1.35rem 1.75rem;
-  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: #ffffff;
+  border-bottom: 1.5px solid var(--border-color);
+  padding: 1.15rem 2.5rem !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
   display: flex;
   align-items: center;
   justify-content: space-between;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .modal-header h3 {
-  font-size: 1.2rem;
+  font-size: 1.35rem !important;
+  font-weight: 800 !important;
+  color: var(--primary, #103778) !important;
+  letter-spacing: -0.02em;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.modal-header .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
   font-weight: 700;
-  color: var(--primary);
-  letter-spacing: -0.01em;
+  transition: all 0.15s ease;
 }
 
 .modal-body {
-  padding: 1.75rem;
+  flex: 1;
+  padding: 2.25rem 2.5rem !important;
+  max-width: 1380px;
+  width: 100%;
+  margin: 1.75rem auto !important;
+  box-sizing: border-box;
+  background: #ffffff;
+  border-radius: var(--radius-lg, 14px) !important;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 16px rgba(16, 55, 120, 0.04);
+  overflow: visible !important;
+  max-height: none !important;
 }
 
 .modal-footer {
-  padding: 1.15rem 1.75rem;
-  border-top: 1px solid var(--border-color);
-  background-color: #f8fafc;
+  position: sticky;
+  bottom: 0;
+  z-index: 40;
+  background: #ffffff;
+  border-top: 1.5px solid var(--border-color);
+  padding: 1.15rem 2.5rem !important;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.04);
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 0.85rem;
-  border-bottom-left-radius: var(--radius-lg);
-  border-bottom-right-radius: var(--radius-lg);
+  gap: 1rem !important;
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: 0 !important;
+}
+
+.modal-footer .btn {
+  min-height: 42px;
+  padding: 0.6rem 1.4rem;
+  font-size: 0.95rem;
+  font-weight: 700;
 }
 
 /* =========================================================
@@ -1068,89 +1125,261 @@ button, input, select, textarea {
 }
 
 /* =========================================================
-   RESPONSIVE / PETITS & GRANDS TÉLÉPHONES
-   Un !important est nécessaire sur les grid-template-columns : ces classes sont
-   redéfinies dans le style local de chaque page (grand/petit téléphone, tablette),
-   ce qui les rend plus spécifiques (encapsulation Angular) que ces règles globales.
+   RESPONSIVE DESIGN MULTI-ÉCRANS (MOBILES, TABLETTES, PC, 4K)
+   Un !important est appliqué sur les propriétés clés pour primer
+   sur les styles encapsulés des composants Angular.
    ========================================================= */
+
+/* --- 1. RÈGLES FLUIDES GÉNÉRALES --- */
+img, svg {
+  max-width: 100%;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+/* Onglets défilables horizontalement sans barre disgracieuse sur mobile/tablette */
+.forfaits-tabs,
+.modal-forfait-tabs,
+.tabs-bar {
+  display: flex !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  white-space: nowrap !important;
+  padding-bottom: 0.25rem !important;
+  scrollbar-width: none !important;
+}
+
+.forfaits-tabs::-webkit-scrollbar,
+.modal-forfait-tabs::-webkit-scrollbar,
+.tabs-bar::-webkit-scrollbar {
+  display: none !important;
+}
+
+/* --- 2. TABLETTES & PETITS LAPTOPS (max-width: 1024px) --- */
+@media (max-width: 1024px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1.25rem !important;
+  }
+
+  .grid-2-col {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* --- 3. SMARTPHONES & TABLETTES PORTRAIT (max-width: 768px) --- */
 @media (max-width: 768px) {
   .content-area {
-    padding: 1.1rem;
+    padding: 1rem !important;
   }
 
   .topbar {
-    padding: 0 1rem;
+    padding: 0 1rem !important;
+    height: 3.75rem !important;
   }
 
-  /* Grilles à colonnes fixes trop larges pour tenir sur un téléphone (portrait ou
-     paysage) : chaque champ/carte repasse sur sa propre ligne. */
+  /* Barres d'en-tête de page & actions */
+  .page-header-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.85rem !important;
+    margin-bottom: 1.25rem !important;
+  }
+
+  .page-header-bar > div:first-child {
+    width: 100% !important;
+  }
+
+  .header-buttons {
+    width: 100% !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+  }
+
+  .header-buttons .btn {
+    flex: 1 1 calc(50% - 0.25rem) !important;
+    justify-content: center !important;
+    font-size: 0.85rem !important;
+    padding: 0.55rem 0.85rem !important;
+  }
+
+  /* Grilles formulaire & recherche */
   .filter-grid,
   .dashboard-grid,
   .grid-2-col,
   .reports-grid,
   .periode-grid,
   .info-grid,
-  .exam-grid {
+  .exam-grid,
+  .filter-row {
     grid-template-columns: 1fr !important;
+    flex-wrap: wrap !important;
+  }
+
+  .filter-col {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .filter-action {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+  }
+
+  .filter-action .btn {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr !important;
+    gap: 0.85rem !important;
+  }
+
+  /* Cartes statistiques */
+  .stats-sexe-bar {
+    gap: 0.75rem !important;
+    margin-bottom: 1.25rem !important;
+  }
+
+  .stats-sexe-box {
+    min-width: calc(50% - 0.5rem) !important;
+    flex: 1 1 calc(50% - 0.5rem) !important;
+    padding: 0.85rem 1rem !important;
+  }
+
+  /* Tableaux larges défilants */
+  .custom-table {
+    min-width: 620px;
+  }
+
+  .pagination-bar {
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+    text-align: center !important;
+  }
+
+  /* Vues pleine page adaptatives sur mobile / tablette */
+  .modal-backdrop {
+    padding: 0 !important;
   }
 
   .modal-content {
     max-width: 100% !important;
+    width: 100% !important;
+    min-height: 100vh !important;
+    max-height: none !important;
+    border-radius: 0 !important;
+  }
+
+  .modal-header {
+    padding: 1rem 1.25rem !important;
+  }
+
+  .modal-body {
+    padding: 1.25rem !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  .modal-footer {
+    padding: 1rem 1.25rem !important;
+    flex-direction: column-reverse !important;
+    gap: 0.5rem !important;
+  }
+
+  .modal-footer .btn {
+    width: 100% !important;
+    justify-content: center !important;
   }
 }
 
+/* --- 4. PETITS SMARTPHONES (max-width: 480px) --- */
 @media (max-width: 480px) {
   .content-area {
-    padding: 0.85rem;
+    padding: 0.75rem !important;
   }
 
   .topbar {
-    padding: 0 0.75rem;
+    padding: 0 0.65rem !important;
+    height: 3.5rem !important;
+  }
+
+  .page-title h1 {
+    font-size: 1.05rem !important;
+  }
+
+  .header-buttons .btn {
+    flex: 1 1 100% !important;
+  }
+
+  .stats-sexe-box {
+    min-width: 100% !important;
+    flex: 1 1 100% !important;
   }
 
   .stat-card {
-    padding: 1rem 1.1rem;
-    gap: 1rem;
+    padding: 0.85rem 1rem !important;
+    gap: 0.75rem !important;
   }
 
   .stat-icon {
-    width: 40px;
-    height: 40px;
-    font-size: 1.2rem;
+    width: 38px !important;
+    height: 38px !important;
+    font-size: 1.1rem !important;
   }
 
   .stat-info .stat-value {
-    font-size: 1.3rem;
+    font-size: 1.25rem !important;
+  }
+
+  .custom-table th,
+  .custom-table td {
+    padding: 0.55rem 0.65rem !important;
+    font-size: 0.8rem !important;
+  }
+
+  .card {
+    padding: 1rem !important;
+    border-radius: var(--radius-md) !important;
   }
 
   .modal-backdrop {
-    padding: 0.75rem;
+    padding: 0.35rem !important;
   }
 
   .modal-header,
   .modal-body,
   .modal-footer {
-    padding: 1rem;
-  }
-
-  .custom-table th,
-  .custom-table td {
-    padding: 0.6rem 0.7rem;
-    font-size: 0.82rem;
-  }
-
-  .card {
-    padding: 1.1rem;
+    padding: 0.85rem !important;
   }
 }
 
-/* Print Styles */
+/* --- 5. GRANDS ÉCRANS & AFFICHAGES ULTRA-LARGES (min-width: 1600px) --- */
+@media (min-width: 1600px) {
+  .content-area {
+    max-width: 1750px;
+    margin: 0 auto;
+    width: 100%;
+  }
+}
+
+/* --- 6. IMPRESSION DOCUMENTAIRE OFFICIELLE (PDF & PRINT) --- */
 @media print {
   html, body {
     height: auto !important;
     overflow: visible !important;
   }
-  .sidebar, .topbar, .btn, .no-print {
+  .sidebar, .topbar, .btn, .no-print, .sidebar-backdrop, .sidebar-hover-zone {
     display: none !important;
   }
   .main-wrapper {

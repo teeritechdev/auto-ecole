@@ -24,6 +24,8 @@ public class ExamenDTOs {
         private Long candidatId;
         private String candidatNumeroDossier;
         private String candidatNomComplet;
+        private LocalDate candidatDateNaissance;
+        private String candidatLieuNaissance;
         private TypeEpreuve typeEpreuve;
         private Integer numeroPassage;
         private long nombreEchecs;
@@ -33,6 +35,8 @@ public class ExamenDTOs {
         private Long moniteurId;
         private String moniteurNomComplet;
         private LocalDateTime dateEnregistrement;
+        private boolean priseEnChargeExamens;
+        private String categoriePermisCode;
     }
 
     @Data

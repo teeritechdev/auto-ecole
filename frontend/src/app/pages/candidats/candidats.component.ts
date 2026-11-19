@@ -19,19 +19,19 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
         </div>
         <div class="header-buttons">
           @if (canSeeFinancialData) {
-            <button class="btn btn-outline btn-sm" (click)="exporterPdf()">
+            <button class="btn btn-outline btn-sm" (click)="exporterPdf()" [title]="selectedCandidats.size > 0 ? 'Exporter les ' + selectedCandidats.size + ' candidat(s) sélectionnés en PDF' : 'Exporter la liste en PDF'">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-              Export PDF
+              Export PDF {{ selectedCandidats.size > 0 ? '(' + selectedCandidats.size + ')' : '' }}
             </button>
-            <button class="btn btn-outline btn-sm" (click)="imprimerListe()" title="Imprimer directement">
+            <button class="btn btn-outline btn-sm" (click)="imprimerListe()" [title]="selectedCandidats.size > 0 ? 'Imprimer les ' + selectedCandidats.size + ' candidat(s) sélectionnés' : 'Imprimer directement la liste'">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-              Imprimer
+              Imprimer {{ selectedCandidats.size > 0 ? '(' + selectedCandidats.size + ')' : '' }}
             </button>
           }
           @if (canSeeFinancialData) {
-            <button class="btn btn-outline btn-sm" (click)="exporterExcel()">
+            <button class="btn btn-outline btn-sm" (click)="exporterExcel()" [title]="selectedCandidats.size > 0 ? 'Exporter les ' + selectedCandidats.size + ' candidat(s) sélectionnés en Excel' : 'Exporter la liste en Excel'">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-              Export Excel
+              Export Excel {{ selectedCandidats.size > 0 ? '(' + selectedCandidats.size + ')' : '' }}
             </button>
           }
           @if (canProgramExams && selectedCandidats.size > 0) {
@@ -97,6 +97,22 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
         </div>
       </div>
 
+      <!-- ONGLETS DE FILTRAGE FORFAIT / SANS FORFAIT / TOUS -->
+      <div class="tabs-header forfaits-tabs">
+        <button type="button" class="tab-btn" [class.active]="priseEnChargeExamensFiltre === ''" (click)="setForfaitFiltre('')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Tous les inscrits
+        </button>
+        <button type="button" class="tab-btn" [class.active]="priseEnChargeExamensFiltre === 'true'" (click)="setForfaitFiltre('true')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+          Forfaitaire
+        </button>
+        <button type="button" class="tab-btn" [class.active]="priseEnChargeExamensFiltre === 'false'" (click)="setForfaitFiltre('false')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
+          Non Forfaitaire
+        </button>
+      </div>
+
       <!-- FILTER BAR -->
       <div class="card filter-card">
         <div class="filter-grid">
@@ -158,14 +174,6 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
           </div>
 
           <div>
-            <select class="form-control" [(ngModel)]="priseEnChargeExamensFiltre" (change)="loadCandidats()">
-              <option value="">Frais d'examen : tous</option>
-              <option value="true">Frais d'examen pris en charge</option>
-              <option value="false">Frais d'examen non pris en charge</option>
-            </select>
-          </div>
-
-          <div>
             <input
               type="date"
               class="form-control"
@@ -181,15 +189,26 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
         </div>
       </div>
     
+      <!-- SELECTION BANNER -->
+      @if (selectedCandidats.size > 0) {
+        <div class="selection-banner">
+          <div style="display:flex; align-items:center; gap:0.6rem;">
+            <span class="selection-count">{{ selectedCandidats.size }}</span>
+            <span>candidat(s) sélectionné(s) — vos actions d'export, d'impression et de programmation s'appliqueront uniquement sur cette sélection.</span>
+          </div>
+          <button type="button" class="btn btn-outline btn-xs" (click)="clearSelection()" style="padding: 3px 10px; font-size: 0.8rem; background: #ffffff;">Désélectionner tout</button>
+        </div>
+      }
+
       <!-- CANDIDATS TABLE -->
       <div class="card table-card">
         <div class="table-responsive">
           <table class="custom-table">
             <thead>
               <tr>
-                @if (canProgramExams) {
-                  <th style="width: 40px"><input type="checkbox" (change)="toggleAll($event)"></th>
-                }
+                <th style="width: 40px">
+                  <input type="checkbox" [checked]="isAllSelected()" (change)="toggleAll($event)" title="Tout sélectionner / désélectionner">
+                </th>
                 <th>N° Dossier</th>
                 <th>Inscrit</th>
                 <th>Contact</th>
@@ -207,23 +226,21 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
             <tbody>
               @if (loading) {
                 <tr>
-                  <td colspan="8" class="text-center py-4">Chargement des inscrits...</td>
+                  <td colspan="9" class="text-center py-4">Chargement des inscrits...</td>
                 </tr>
               }
               @if (!loading && candidats.length === 0) {
                 <tr>
-                  <td colspan="8" class="text-center py-4">Aucun inscrit trouvé pour ces critères.</td>
+                  <td colspan="9" class="text-center py-4">Aucun inscrit trouvé pour ces critères.</td>
                 </tr>
               }
               @for (c of candidats; track c) {
                 <tr>
-                  @if (canProgramExams) {
-                    <td>
-                      <input type="checkbox" [checked]="selectedCandidats.has(c.id)" [disabled]="estProgramme(c)"
-                        title="{{ estProgramme(c) ? 'Déjà programmé pour un examen en cours' : '' }}"
-                        (change)="toggleSelection(c.id)">
-                    </td>
-                  }
+                  <td>
+                    <input type="checkbox" [checked]="selectedCandidats.has(c.id)"
+                      title="Sélectionner pour imprimer, exporter ou programmer"
+                      (change)="toggleSelection(c.id)">
+                  </td>
                   <td>
                     <strong class="dossier-code">{{ c.numeroDossier }}</strong>
                   </td>
@@ -232,6 +249,11 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                       {{ c.nom }} {{ c.prenom }}
                       @if (c.statutInscription === 'REDOUBLANT') {
                         <span class="badge badge-ajourne redoublant-badge">Redoublant</span>
+                      }
+                      @if (c.priseEnChargeExamens) {
+                        <span class="badge badge-solde" style="font-size: 0.72rem; padding: 2px 7px;" title="Forfaitaire : frais d'examen inclus">Forfaitaire</span>
+                      } @else {
+                        <span class="badge" style="font-size: 0.72rem; padding: 2px 7px; background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0;" title="Non forfaitaire : frais d'examen non inclus">Non Forfaitaire</span>
                       }
                     </div>
                   </td>
@@ -374,8 +396,8 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                       <input type="date" class="form-control" [(ngModel)]="newCandidat.dateNaissance" name="dateNaissance" required />
                     </div>
                     <div class="form-group">
-                      <label class="form-label">Lieu de naissance</label>
-                      <input type="text" class="form-control" [(ngModel)]="newCandidat.lieuNaissance" name="lieuNaissance" />
+                      <label class="form-label">Lieu de naissance <span class="required">*</span></label>
+                      <input type="text" class="form-control" [(ngModel)]="newCandidat.lieuNaissance" name="lieuNaissance" required placeholder="Ex: Ouagadougou, Bobo..." />
                     </div>
                   </div>
                   <div class="form-row">
@@ -470,7 +492,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 <div class="form-group form-check" style="margin-top: 4px;">
                   <label class="checkbox-label">
                     <input type="checkbox" [(ngModel)]="newCandidat.priseEnChargeExamens" name="priseEnChargeExamens" />
-                    Inclus dans les frais (prise en charge totale des frais d'examen)
+                    Formule Forfaitaire (frais d'examen inclus dans le montant global)
                   </label>
                 </div>
               </div>
@@ -521,8 +543,8 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                     <input type="date" class="form-control" [(ngModel)]="editCandidat.dateNaissance" name="editDateNaissance" required />
                   </div>
                   <div class="form-group">
-                    <label class="form-label">Lieu de naissance</label>
-                    <input type="text" class="form-control" [(ngModel)]="editCandidat.lieuNaissance" name="editLieuNaissance" />
+                    <label class="form-label">Lieu de naissance <span class="required">*</span></label>
+                    <input type="text" class="form-control" [(ngModel)]="editCandidat.lieuNaissance" name="editLieuNaissance" required placeholder="Ex: Ouagadougou, Bobo..." />
                   </div>
                 </div>
                 <div class="form-row">
@@ -587,7 +609,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 <div class="form-group form-check" style="margin-top: 4px;">
                   <label class="checkbox-label">
                     <input type="checkbox" [(ngModel)]="editCandidat.priseEnChargeExamens" name="editPriseEnChargeExamens" />
-                    Les frais de formation englobent la prise en charge totale des frais d'examen
+                    Formule Forfaitaire (frais d'examen inclus dans le montant global)
                   </label>
                 </div>
               </div>
@@ -953,6 +975,70 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       margin-top: 0.15rem;
     }
 
+    .forfaits-tabs {
+      display: flex;
+      gap: 0.65rem;
+      margin-bottom: 1.25rem;
+      overflow-x: auto;
+      padding-bottom: 0.25rem;
+    }
+
+    .forfaits-tabs .tab-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      flex-shrink: 0;
+      white-space: nowrap;
+      background: #ffffff;
+      border: 1px solid var(--border-color, #e2e8f0);
+      padding: 0.65rem 1.35rem;
+      border-radius: var(--radius-md, 8px);
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--text-muted, #64748b);
+      cursor: pointer;
+      transition: all 0.15s ease-in-out;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    }
+
+    .forfaits-tabs .tab-btn:hover {
+      background: var(--bg-card, #f8fafc);
+      color: var(--text-main, #0f172a);
+      border-color: #cbd5e1;
+    }
+
+    .forfaits-tabs .tab-btn.active {
+      background: var(--primary, #1e3a8a);
+      color: #ffffff;
+      border-color: var(--primary, #1e3a8a);
+      box-shadow: 0 2px 4px rgba(30, 58, 138, 0.2);
+    }
+
+    .selection-banner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: var(--radius-md, 8px);
+      padding: 0.65rem 1.15rem;
+      margin-bottom: 1rem;
+      font-size: 0.88rem;
+      color: #1e40af;
+      font-weight: 500;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .selection-count {
+      background: #1e3a8a;
+      color: #ffffff;
+      padding: 2px 9px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 0.8rem;
+    }
+
     .filter-card {
       margin-bottom: 1.5rem;
       padding: 1.25rem;
@@ -1033,6 +1119,34 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       margin-left: 0.4rem;
       font-size: 0.65rem;
       vertical-align: middle;
+    }
+
+    @media (max-width: 768px) {
+      .page-header-bar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.85rem;
+      }
+      .header-buttons {
+        width: 100%;
+      }
+      .header-buttons .btn {
+        flex: 1 1 calc(50% - 0.5rem);
+        justify-content: center;
+      }
+      .stats-sexe-box {
+        min-width: 100% !important;
+      }
+      .pagination-bar {
+        flex-direction: column;
+        gap: 0.75rem;
+        text-align: center;
+      }
+    }
+    @media (max-width: 480px) {
+      .header-buttons .btn {
+        flex: 1 1 100%;
+      }
     }
   `]
 })
@@ -1162,16 +1276,16 @@ export class CandidatsComponent implements OnInit {
     observations: ''
   };
 
-  /** Étant déjà programmé pour un examen en cours (résultat en attente), le candidat ne
-   *  doit plus pouvoir être sélectionné pour une nouvelle session tant que celui-ci n'est
-   *  pas noté, retiré ou reprogrammé. */
+  /** Vérifie si un candidat est déjà programmé pour un examen en attente de résultat. */
   estProgramme(c: Candidat): boolean {
     return !!c.etapeParcours && c.etapeParcours.startsWith('EXAMEN_');
   }
 
+  isAllSelected(): boolean {
+    return this.candidats.length > 0 && this.candidats.every(c => this.selectedCandidats.has(c.id));
+  }
+
   toggleSelection(id: number): void {
-    const candidat = this.candidats.find(c => c.id === id);
-    if (candidat && this.estProgramme(candidat)) return;
     if (this.selectedCandidats.has(id)) {
       this.selectedCandidats.delete(id);
     } else {
@@ -1181,10 +1295,14 @@ export class CandidatsComponent implements OnInit {
 
   toggleAll(event: any): void {
     if (event.target.checked) {
-      this.candidats.filter(c => !this.estProgramme(c)).forEach(c => this.selectedCandidats.add(c.id));
+      this.candidats.forEach(c => this.selectedCandidats.add(c.id));
     } else {
       this.selectedCandidats.clear();
     }
+  }
+
+  clearSelection(): void {
+    this.selectedCandidats.clear();
   }
 
   epreuveLabel(t: string): string {
@@ -1194,6 +1312,11 @@ export class CandidatsComponent implements OnInit {
 
   openProgramModal(): void {
     this.programError = '';
+    const dejaProgrammes = this.candidats.filter(c => this.selectedCandidats.has(c.id) && this.estProgramme(c));
+    if (this.selectedCandidats.size > 0 && dejaProgrammes.length === this.selectedCandidats.size) {
+      alert("Tous les candidats sélectionnés sont déjà programmés pour une session d'examen en attente.");
+      return;
+    }
     this.programData = {
       typeEpreuve: this.epreuvesAutorisees[0] || 'CODE',
       siteId: this.sitesAutorises.length === 1 ? this.sitesAutorises[0].id : null,
@@ -1204,10 +1327,14 @@ export class CandidatsComponent implements OnInit {
   }
 
   submitProgrammation(): void {
-    if (this.selectedCandidats.size === 0) return;
+    const candidatIds = Array.from(this.selectedCandidats).filter(id => {
+      const c = this.candidats.find(cand => cand.id === id);
+      return !c || !this.estProgramme(c);
+    });
+    if (candidatIds.length === 0) return;
     this.savingProgram = true;
     const payload = {
-      candidatIds: Array.from(this.selectedCandidats),
+      candidatIds,
       typeEpreuve: this.programData.typeEpreuve,
       siteId: this.programData.siteId,
       datePassage: this.programData.datePassage,
@@ -1280,6 +1407,13 @@ export class CandidatsComponent implements OnInit {
 
   changePage(p: number): void {
     this.page = p;
+    this.loadCandidats();
+  }
+
+  setForfaitFiltre(valeur: string): void {
+    if (this.priseEnChargeExamensFiltre === valeur) return;
+    this.priseEnChargeExamensFiltre = valeur;
+    this.page = 0;
     this.loadCandidats();
   }
 
@@ -1369,6 +1503,10 @@ export class CandidatsComponent implements OnInit {
 
   saveEditCandidat(): void {
     if (!this.selectedCandidat) return;
+    if (!this.editCandidat.nom?.trim() || !this.editCandidat.prenom?.trim() || !this.editCandidat.dateNaissance || !this.editCandidat.lieuNaissance?.trim() || !this.editCandidat.telephone?.trim()) {
+      this.editError = 'Veuillez renseigner tous les champs obligatoires (dont le lieu de naissance).';
+      return;
+    }
     this.saving = true;
     this.editError = '';
     this.apiService.updateCandidat(this.selectedCandidat.id, this.editCandidat).subscribe({
@@ -1432,6 +1570,10 @@ export class CandidatsComponent implements OnInit {
   }
 
   saveCreateCandidat(): void {
+    if (!this.newCandidat.nom?.trim() || !this.newCandidat.prenom?.trim() || !this.newCandidat.dateNaissance || !this.newCandidat.lieuNaissance?.trim() || !this.newCandidat.telephone?.trim()) {
+      this.modalError = 'Veuillez renseigner tous les champs obligatoires (dont le lieu de naissance).';
+      return;
+    }
     this.saving = true;
     this.modalError = '';
 
@@ -1510,6 +1652,7 @@ export class CandidatsComponent implements OnInit {
     const catId = this.categorieFiltre ? Number(this.categorieFiltre) : undefined;
     const siteId = this.siteFiltre ? Number(this.siteFiltre) : undefined;
     const priseEnCharge = this.priseEnChargeExamensFiltre ? this.priseEnChargeExamensFiltre === 'true' : undefined;
+    const ids = this.selectedCandidats.size > 0 ? Array.from(this.selectedCandidats) : undefined;
     return format === 'pdf'
       ? this.apiService.getCandidatsPdfUrl(
           this.recherche || undefined,
@@ -1519,7 +1662,8 @@ export class CandidatsComponent implements OnInit {
           siteId,
           this.etapeFiltre || undefined,
           priseEnCharge,
-          this.dateExamenProgrammeFiltre || undefined
+          this.dateExamenProgrammeFiltre || undefined,
+          ids
         )
       : this.apiService.getCandidatsExcelUrl(
           this.recherche || undefined,
@@ -1529,7 +1673,8 @@ export class CandidatsComponent implements OnInit {
           siteId,
           this.etapeFiltre || undefined,
           priseEnCharge,
-          this.dateExamenProgrammeFiltre || undefined
+          this.dateExamenProgrammeFiltre || undefined,
+          ids
         );
   }
 

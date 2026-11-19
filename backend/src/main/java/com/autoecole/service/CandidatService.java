@@ -161,6 +161,27 @@ public class CandidatService {
     }
 
     public List<CandidatDTO> getTousLesCandidatsPourRapport(
+            List<Long> ids,
+            String recherche,
+            StatutDossier statut,
+            Long categorieId,
+            StatutInscription statutInscription,
+            Long siteFiltreId,
+            com.autoecole.entity.enums.EtapeParcours etapeFiltre,
+            Boolean priseEnChargeExamens,
+            java.time.LocalDate dateExamenProgramme
+    ) {
+        if (ids != null && !ids.isEmpty()) {
+            return ids.stream()
+                    .map(id -> candidatRepository.findById(id).orElse(null))
+                    .filter(java.util.Objects::nonNull)
+                    .map(this::mapToDTO)
+                    .collect(java.util.stream.Collectors.toList());
+        }
+        return getTousLesCandidatsPourRapport(recherche, statut, categorieId, statutInscription, siteFiltreId, etapeFiltre, priseEnChargeExamens, dateExamenProgramme);
+    }
+
+    public List<CandidatDTO> getTousLesCandidatsPourRapport(
             String recherche,
             StatutDossier statut,
             Long categorieId,
@@ -291,9 +312,6 @@ public class CandidatService {
         enregistrerPremierVersementSiFourni(candidat, inscription, premierVersement, request.getModeReglementPremierVersement(), request.getOperateurPremierVersement(), request.getNumeroEmetteurPremierVersement(), request.getNumeroRecepteurPremierVersement());
 
         auditService.logAction("REINSCRIPTION_CANDIDAT", "Candidat", candidat.getNumeroDossier(),
-                .operateurMobileMoney(ModeReglement.validerOperateur(modeReglement, operateur))
-                .numeroEmetteur(ModeReglement.validerNumero(modeReglement, numeroEmetteur, "émetteur"))
-                .numeroRecepteur(ModeReglement.validerNumero(modeReglement, numeroRecepteur, "récepteur"))
                 "Nouvelle inscription (cycle " + inscription.getNumeroCycle() + ", redoublant) pour la catégorie " + categorie.getLibelle(), null);
 
         return mapToDTO(candidat, inscription);
@@ -318,6 +336,9 @@ public class CandidatService {
                 .montant(premierVersement)
                 .datePaiement(LocalDateTime.now())
                 .modeReglement(modeReglement != null ? modeReglement : ModeReglement.ESPECES)
+                .operateurMobileMoney(ModeReglement.validerOperateur(modeReglement, operateur))
+                .numeroEmetteur(ModeReglement.validerNumero(modeReglement, numeroEmetteur, "émetteur"))
+                .numeroRecepteur(ModeReglement.validerNumero(modeReglement, numeroRecepteur, "récepteur"))
                 .build();
 
         Paiement savedPaiement = paiementRepository.save(paiement);

@@ -41,6 +41,7 @@ public class DataInitializerService implements CommandLineRunner {
     private final SessionExamenRepository sessionExamenRepository;
     private final PasswordEncoder passwordEncoder;
     private final CandidatAccountService candidatAccountService;
+    private final ConfigurationApplicationRepository configurationApplicationRepository;
 
     @Value("${app.seed.enabled:true}")
     private boolean seedEnabled;
@@ -51,6 +52,9 @@ public class DataInitializerService implements CommandLineRunner {
     @Override
     public void run(String... args) {
         log.info("Initialisation des données de base de l'auto-école...");
+
+        // 0. Identité officielle et coordonnées par défaut de l'établissement
+        initConfigurationApplication();
 
         // 1. Rôles (toujours nécessaires au fonctionnement du contrôle d'accès)
         Role roleAdmin = initRole(RoleEnum.ADMIN, "Administrateur Général");
@@ -471,5 +475,95 @@ public class DataInitializerService implements CommandLineRunner {
         // Note : aucune donnée de démonstration n'est semée pour la Caisse & Trésorerie —
         // c'est une caisse de dépenses/recettes diverses totalement autonome (cf. CaisseService),
         // dont les Natures d'opération sont définies par l'ADMIN lui-même (aucun contenu imposé).
+    }
+
+    private void initConfigurationApplication() {
+        ConfigurationApplication config = configurationApplicationRepository.findById(1L).orElseGet(() -> {
+            ConfigurationApplication c = new ConfigurationApplication();
+            c.setId(1L);
+            return c;
+        });
+
+        boolean modified = false;
+
+        if (config.getNomEtablissement() == null || config.getNomEtablissement().isBlank()
+                || "AUTO-ÉCOLE PILOTE".equalsIgnoreCase(config.getNomEtablissement())
+                || "NERWAYA AUTO-ÉCOLE".equalsIgnoreCase(config.getNomEtablissement())
+                || "TEERI--TEC".equalsIgnoreCase(config.getNomEtablissement())) {
+            config.setNomEtablissement("BARAKA AUTO MOTO ECOLE");
+            modified = true;
+        }
+
+        if (config.getCodeEtablissement() == null || config.getCodeEtablissement().isBlank()) {
+            config.setCodeEtablissement("AE 206");
+            modified = true;
+        }
+
+        if (config.getActivites() == null || config.getActivites().isBlank()) {
+            config.setActivites("FORMATION- ASSISTANCE ET PRESTATIONS DIVERSES EN SECURITE ROUTIERE - IMPORT EXPORT");
+            modified = true;
+        }
+
+        if (config.getDevise() == null || config.getDevise().isBlank()) {
+            config.setDevise("« Juste conduire »");
+            modified = true;
+        }
+
+        if (config.getTelephone() == null || config.getTelephone().isBlank()) {
+            config.setTelephone("76 15 97 72 – 53 58 26 01 – 79 09 33 52");
+            modified = true;
+        }
+
+        if (config.getRccm() == null || config.getRccm().isBlank()) {
+            config.setRccm("BF-OUA-01-2024 B13-17114");
+            modified = true;
+        }
+
+        if (config.getIfu() == null || config.getIfu().isBlank()) {
+            config.setIfu("00253566L");
+            modified = true;
+        }
+
+        if (config.getNumeroAgrement() == null || config.getNumeroAgrement().isBlank()) {
+            config.setNumeroAgrement("N° 2026-0428-MATM/SG/DGTTM");
+            modified = true;
+        }
+
+        if (config.getDateAgrement() == null) {
+            config.setDateAgrement(LocalDate.of(2026, 7, 30));
+            modified = true;
+        }
+
+        if (config.getSlogan() == null || config.getSlogan().isBlank()) {
+            config.setSlogan("Plateforme Intégrée de Gestion & Formation");
+            modified = true;
+        }
+
+        if (config.getAdresseSiege() == null || config.getAdresseSiege().isBlank()) {
+            config.setAdresseSiege("Secteur 15, Ouagadougou, Burkina Faso");
+            modified = true;
+        }
+
+        if (config.getMentionLegalePied() == null || config.getMentionLegalePied().isBlank()) {
+            config.setMentionLegalePied("Autorisation d'exploitation N° 2026-0428-MATM/SG/DGTTM du 30/07/2026 — RCCM : BF-OUA-01-2024 B13-17114 — IFU n° : 00253566L");
+            modified = true;
+        }
+
+        if (config.getLogoData() == null || config.getLogoData().isBlank()) {
+            try (java.io.InputStream is = getClass().getResourceAsStream("/default-logo-baraka.txt")) {
+                if (is != null) {
+                    String defaultLogo = new String(is.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8).trim();
+                    config.setLogoData(defaultLogo);
+                    modified = true;
+                }
+            } catch (Exception e) {
+                log.warn("Impossible de charger le logo par défaut : {}", e.getMessage());
+            }
+        }
+
+        if (modified || config.getId() == null) {
+            configurationApplicationRepository.save(config);
+            log.info("Identité officielle par défaut initialisée : {} ({})", config.getNomEtablissement(), config.getCodeEtablissement());
+        }
     }
 }

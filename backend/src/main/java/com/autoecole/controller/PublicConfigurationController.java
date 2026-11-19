@@ -44,14 +44,25 @@ public class PublicConfigurationController {
         if (slogan == null || slogan.isBlank()) {
             slogan = SLOGAN_PAR_DEFAUT;
         }
+        String logo = configuration != null ? configuration.getLogoData() : null;
+        if (logo == null || logo.isBlank()) {
+            try (java.io.InputStream is = getClass().getResourceAsStream("/default-logo-baraka.txt")) {
+                if (is != null) {
+                    logo = new String(is.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8).trim();
+                }
+            } catch (Exception ignored) {}
+        }
+        String telephone = configuration != null && configuration.getTelephone() != null ? configuration.getTelephone() : "76 15 97 72 – 53 58 26 01 – 79 09 33 52";
+        String adresse = configuration != null && configuration.getAdresseSiege() != null ? configuration.getAdresseSiege() : "Secteur 15, Ouagadougou, Burkina Faso";
+
         return ResponseEntity.ok(new IdentitePubliqueResponse(
                 nom,
                 slogan,
-                configuration != null ? configuration.getLogoData() : null,
+                logo,
                 configuration != null ? configuration.getImageConnexion() : null,
                 configuration != null ? configuration.getImageConnexionAjustement() : "cover",
-                configuration != null ? configuration.getTelephone() : null,
-                configuration != null ? configuration.getAdresseSiege() : null
+                telephone,
+                adresse
         ));
     }
 

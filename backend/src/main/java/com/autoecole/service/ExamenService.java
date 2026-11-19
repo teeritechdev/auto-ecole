@@ -594,11 +594,16 @@ public class ExamenService {
         long nombreEchecs = pe.getInscription() != null
                 ? passageRepository.countByInscriptionIdAndTypeEpreuveAndResultat(pe.getInscription().getId(), pe.getTypeEpreuve(), ResultatExamen.AJOURNE)
                 : 0;
+        boolean priseEnCharge = pe.getInscription() != null && pe.getInscription().isPriseEnChargeExamens();
+        String catCode = (pe.getInscription() != null && pe.getInscription().getCategoriePermis() != null)
+                ? pe.getInscription().getCategoriePermis().getCode() : "";
         return PassageExamenDTO.builder()
                 .id(pe.getId())
                 .candidatId(candidat != null ? candidat.getId() : null)
                 .candidatNumeroDossier(candidat != null ? candidat.getNumeroDossier() : "")
                 .candidatNomComplet(candidat != null ? candidat.getNom() + " " + candidat.getPrenom() : "")
+                .candidatDateNaissance(candidat != null ? candidat.getDateNaissance() : null)
+                .candidatLieuNaissance(candidat != null ? candidat.getLieuNaissance() : "")
                 .typeEpreuve(pe.getTypeEpreuve())
                 .numeroPassage(pe.getNumeroPassage())
                 .nombreEchecs(nombreEchecs)
@@ -608,6 +613,8 @@ public class ExamenService {
                 .moniteurId(pe.getMoniteur() != null ? pe.getMoniteur().getId() : null)
                 .moniteurNomComplet(pe.getMoniteur() != null ? pe.getMoniteur().getNom() + " " + pe.getMoniteur().getPrenom() : "")
                 .dateEnregistrement(pe.getDateEnregistrement())
+                .priseEnChargeExamens(priseEnCharge)
+                .categoriePermisCode(catCode)
                 .build();
     }
 }

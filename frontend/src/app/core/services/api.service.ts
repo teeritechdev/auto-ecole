@@ -455,9 +455,11 @@ export class ApiService {
     siteId?: number,
     etape?: string,
     priseEnChargeExamens?: boolean,
-    dateExamenProgramme?: string
+    dateExamenProgramme?: string,
+    ids?: number[]
   ): string {
     const params = new URLSearchParams();
+    if (ids && ids.length > 0) params.set('ids', ids.join(','));
     if (recherche) params.set('recherche', recherche);
     if (statut) params.set('statut', statut);
     if (categorieId) params.set('categorieId', categorieId.toString());
@@ -478,9 +480,11 @@ export class ApiService {
     siteId?: number,
     etape?: string,
     priseEnChargeExamens?: boolean,
-    dateExamenProgramme?: string
+    dateExamenProgramme?: string,
+    ids?: number[]
   ): string {
     const params = new URLSearchParams();
+    if (ids && ids.length > 0) params.set('ids', ids.join(','));
     if (recherche) params.set('recherche', recherche);
     if (statut) params.set('statut', statut);
     if (categorieId) params.set('categorieId', categorieId.toString());
@@ -551,6 +555,10 @@ export class ApiService {
     if (statut) params.set('statut', statut);
     const qs = params.toString();
     return `${this.base}/examens/sessions/export/pdf${qs ? '?' + qs : ''}`;
+  }
+
+  public getProgrammeSessionPdfUrl(sessionId: number): string {
+    return `${this.base}/examens/sessions/${sessionId}/pdf`;
   }
   public getSessionsExcelUrl(siteId?: string, typeEpreuve?: string, statut?: string): string {
     const params = new URLSearchParams();

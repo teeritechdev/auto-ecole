@@ -136,6 +136,7 @@ public class CandidatDTOs {
         @NotNull(message = "La date de naissance est obligatoire")
         private LocalDate dateNaissance;
 
+        @NotBlank(message = "Le lieu de naissance est obligatoire")
         private String lieuNaissance;
 
         @NotNull(message = "Le sexe est obligatoire")
@@ -224,6 +225,7 @@ public class CandidatDTOs {
         @NotNull(message = "La date de naissance est obligatoire")
         private LocalDate dateNaissance;
 
+        @NotBlank(message = "Le lieu de naissance est obligatoire")
         private String lieuNaissance;
 
         @NotNull(message = "Le sexe est obligatoire")

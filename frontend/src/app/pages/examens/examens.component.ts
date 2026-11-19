@@ -138,6 +138,14 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   </td>
                   <td class="text-right">
                     <div class="action-flex" style="justify-content: flex-end; gap: 0.35rem;">
+                      <!-- EXPORT PDF -->
+                      <button class="btn btn-outline btn-xs" (click)="exporterProgrammeSession(s.id)" title="Exporter le programme officiel en PDF">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                      </button>
+                      <!-- IMPRIMER -->
+                      <button class="btn btn-outline btn-xs" (click)="imprimerProgrammeSession(s.id)" title="Imprimer le programme officiel d'examen">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                      </button>
                       <!-- VOIR -->
                       <button class="btn btn-outline btn-xs" (click)="openSessionDetail(s.id)" title="Voir le détail et les résultats">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -201,22 +209,22 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   </div>
                   <div>{{ sessionDetail.datePassee ? 'Date passée' : 'À venir' }}</div>
                 </div>
-                @if (peutModifierSession(sessionDetail)) {
-                  @if (!editingSessionDate) {
-                    <button class="btn btn-outline btn-sm" (click)="startEditSessionDate()">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
-                      Modifier la date
+                <div class="session-actions" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                  <button type="button" class="btn btn-outline btn-sm" (click)="exporterProgrammeSession(sessionDetail.id)" title="Télécharger le programme officiel en PDF">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px; vertical-align: text-bottom;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    Export PDF
+                  </button>
+                  <button type="button" class="btn btn-outline btn-sm" (click)="imprimerProgrammeSession(sessionDetail.id)" title="Imprimer directement le programme officiel d'examen">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px; vertical-align: text-bottom;"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                    Imprimer
+                  </button>
+                  @if (peutModifierSession(sessionDetail)) {
+                    <button type="button" class="btn btn-primary btn-sm" (click)="openQuickAffecterModal(sessionDetail)" title="Affecter des candidats à cette session">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px; vertical-align: text-bottom;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                      Ajouter des inscrits
                     </button>
-                  } @else {
-                    <div class="edit-date-row">
-                      <input type="date" class="form-control" [(ngModel)]="editSessionDateValue" name="editSessionDate" />
-                      <button class="btn btn-secondary btn-sm" [disabled]="savingSessionDate" (click)="editingSessionDate = false">Annuler</button>
-                      <button class="btn btn-primary btn-sm" [disabled]="savingSessionDate" (click)="saveSessionDate()">
-                        {{ savingSessionDate ? '...' : 'Enregistrer' }}
-                      </button>
-                    </div>
                   }
-                }
+                </div>
               </div>
 
               @if (hasModificationsResultats) {
@@ -255,7 +263,14 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   @for (p of sessionDetail.candidats; track p.id) {
                     <tr>
                       <td>
-                        <a [routerLink]="['/candidats', p.candidatId]" class="candidat-link"><strong>{{ p.candidatNomComplet }}</strong></a>
+                        <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
+                          <a [routerLink]="['/candidats', p.candidatId]" class="candidat-link"><strong>{{ p.candidatNomComplet }}</strong></a>
+                          @if (p.priseEnChargeExamens || isCandidatForfaitaire(p.candidatId)) {
+                            <span class="badge-forfait" title="Formation avec prise en charge des frais d'examen">Forfaitaire</span>
+                          } @else {
+                            <span class="badge-sans-forfait" title="Formation sans prise en charge des frais d'examen">Non Forfaitaire</span>
+                          }
+                        </div>
                         <div class="sub-text">{{ p.candidatNumeroDossier }}</div>
                       </td>
                       <td>
@@ -323,59 +338,6 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   </button>
                 </div>
               }
-
-              @if (peutModifierSession(sessionDetail)) {
-                <div style="margin-top: 1.25rem;">
-                  @if (!showAjoutCandidats) {
-                    <button class="btn btn-secondary btn-sm" (click)="openAjoutCandidats()">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                      Ajouter des inscrits
-                    </button>
-                  } @else {
-                    <div class="form-group">
-                      @if (sitesAutorises.length > 1) {
-                        <div style="margin-bottom: 0.75rem;">
-                          <label class="form-label">Filtrer les inscrits par site :</label>
-                          <select class="form-control" [(ngModel)]="ajoutFilterSiteId" (change)="onAjoutFilterSiteChange()">
-                            <option value="">Tous mes sites</option>
-                            @for (s of sitesAutorises; track s.id) {
-                              <option [value]="s.id">{{ s.nom }}</option>
-                            }
-                          </select>
-                        </div>
-                      }
-                      <label class="form-label">Inscrits éligibles pour cette épreuve</label>
-                      <div class="candidats-list">
-                        @for (c of candidatsAjoutablesFiltres; track c.id) {
-                          <label class="candidat-option">
-                            <input type="checkbox" [checked]="isAjoutSelected(c.id)" (change)="toggleAjoutCandidat(c.id)" />
-                            <span class="candidat-option-text">
-                              <strong>{{ c.numeroDossier }}</strong>
-                              <span>{{ c.nom }} {{ c.prenom }} ({{ c.categoriePermisCode }}) - {{ c.siteNom }}</span>
-                            </span>
-                          </label>
-                        }
-                        @if (candidatsAjoutablesFiltres.length === 0) {
-                          <div class="form-help" style="padding: 1rem; text-align: center;">
-                            Aucun inscrit éligible disponible pour cette épreuve.
-                          </div>
-                        }
-                      </div>
-                      @if (ajoutSelectionIds.length > 0) {
-                        <div class="selection-count">
-                          {{ ajoutSelectionIds.length }} inscrit(s) sélectionné(s)
-                        </div>
-                      }
-                    </div>
-                    <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem;">
-                      <button class="btn btn-secondary btn-sm" (click)="showAjoutCandidats = false">Annuler</button>
-                      <button class="btn btn-primary btn-sm" [disabled]="ajoutSelectionIds.length === 0 || savingAjout" (click)="confirmerAjout()">
-                        {{ savingAjout ? 'Enregistrement...' : 'Confirmer l\'ajout (' + ajoutSelectionIds.length + ')' }}
-                      </button>
-                    </div>
-                  }
-                </div>
-              }
             </div>
             <div class="modal-footer">
               <button class="btn btn-secondary" (click)="closeSessionModal()">Fermer</button>
@@ -408,7 +370,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 <div class="form-row">
                   <div class="form-group">
                     <label class="form-label">Type d'épreuve <span class="required">*</span></label>
-                    <select class="form-control" [(ngModel)]="newPassage.typeEpreuve" name="typeEpreuve" required>
+                    <select class="form-control" [(ngModel)]="newPassage.typeEpreuve" (ngModelChange)="onTypeEpreuveChange()" name="typeEpreuve" required>
                       @for (t of epreuvesAutorisees; track t) {
                         <option [value]="t">{{ epreuveLabel(t) }}</option>
                       }
@@ -435,11 +397,55 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                   </div>
                 </div>
 
-                <div class="alert alert-info" style="font-size: 0.85rem; margin-bottom: 1rem;">
-                  ℹ️ <em>La session sera créée d'abord. Vous pourrez affecter les candidats à tout moment via l'icône dédiée 👤➕.</em>
+                <div class="form-group" style="margin-top: 0.85rem;">
+                  <label class="form-label" style="font-weight: 600;">Inscrire des candidats à la session (optionnel) :</label>
+
+                  <!-- Onglets Forfaitaire / Non Forfaitaire -->
+                  <div style="margin-bottom: 0.5rem;">
+                    <div class="modal-forfait-tabs">
+                      <button type="button" class="modal-tab-btn" [class.active]="programmerForfaitFiltre === ''" (click)="setProgrammerForfaitFiltre('')">
+                        Tous ({{ countProgrammerTotal }})
+                      </button>
+                      <button type="button" class="modal-tab-btn" [class.active]="programmerForfaitFiltre === 'true'" (click)="setProgrammerForfaitFiltre('true')">
+                        Forfaitaire ({{ countProgrammerForfait }})
+                      </button>
+                      <button type="button" class="modal-tab-btn" [class.active]="programmerForfaitFiltre === 'false'" (click)="setProgrammerForfaitFiltre('false')">
+                        Non Forfaitaire ({{ countProgrammerSansForfait }})
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="candidats-list" style="max-height: 380px;">
+                    @for (c of programmerEligibleCandidatsFiltres; track c.id) {
+                      <label class="candidat-option">
+                        <input type="checkbox" [checked]="isCandidatSelected(c.id)" (change)="toggleCandidat(c.id)" />
+                        <span class="candidat-option-text" style="width: 100%;">
+                          <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 0.5rem;">
+                            <strong>{{ c.numeroDossier }}</strong>
+                            @if (c.priseEnChargeExamens) {
+                              <span class="badge-forfait">Forfaitaire</span>
+                            } @else {
+                              <span class="badge-sans-forfait">Non Forfaitaire</span>
+                            }
+                          </div>
+                          <span>{{ c.nom }} {{ c.prenom }} ({{ c.categoriePermisCode }}) - {{ c.siteNom }}</span>
+                        </span>
+                      </label>
+                    }
+                    @if (programmerEligibleCandidatsFiltres.length === 0) {
+                      <div class="form-help" style="padding: 0.75rem; text-align: center;">
+                        Aucun inscrit éligible disponible pour cette épreuve.
+                      </div>
+                    }
+                  </div>
+                  @if (selectedCandidatIds.length > 0) {
+                    <div class="selection-count">
+                      {{ selectedCandidatIds.length }} candidat(s) sélectionné(s)
+                    </div>
+                  }
                 </div>
 
-                <div class="form-group">
+                <div class="form-group" style="margin-top: 0.75rem;">
                   <label class="form-label">Observations</label>
                   <textarea class="form-control" rows="2" [(ngModel)]="newPassage.observations" name="observations" placeholder="Remarques éventuelles..."></textarea>
                 </div>
@@ -492,16 +498,39 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 </div>
               }
 
+              <!-- Onglets de filtrage Forfaitaire / Non Forfaitaire -->
+              <div style="margin-bottom: 0.75rem;">
+                <label class="form-label" style="font-weight: 600; margin-bottom: 0.35rem; display: block;">Filtrer par formule d'examen :</label>
+                <div class="modal-forfait-tabs">
+                  <button type="button" class="modal-tab-btn" [class.active]="quickForfaitFiltre === ''" (click)="setQuickForfaitFiltre('')">
+                    Tous les inscrits ({{ countQuickTotal }})
+                  </button>
+                  <button type="button" class="modal-tab-btn" [class.active]="quickForfaitFiltre === 'true'" (click)="setQuickForfaitFiltre('true')">
+                    Forfaitaire ({{ countQuickForfait }})
+                  </button>
+                  <button type="button" class="modal-tab-btn" [class.active]="quickForfaitFiltre === 'false'" (click)="setQuickForfaitFiltre('false')">
+                    Non Forfaitaire ({{ countQuickSansForfait }})
+                  </button>
+                </div>
+              </div>
+
               <div class="form-group">
                 <label class="form-label">
                   Sélectionner les inscrits éligibles pour cette épreuve :
                 </label>
-                <div class="candidats-list" style="max-height: 220px;">
+                <div class="candidats-list" style="max-height: 380px;">
                   @for (c of quickEligibleCandidatsFiltres; track c.id) {
                     <label class="candidat-option">
                       <input type="checkbox" [checked]="isQuickSelected(c.id)" (change)="toggleQuickCandidat(c.id)" />
-                      <span class="candidat-option-text">
-                        <strong>{{ c.numeroDossier }}</strong>
+                      <span class="candidat-option-text" style="width: 100%;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 0.5rem;">
+                          <strong>{{ c.numeroDossier }}</strong>
+                          @if (c.priseEnChargeExamens) {
+                            <span class="badge-forfait">Forfaitaire</span>
+                          } @else {
+                            <span class="badge-sans-forfait">Non Forfaitaire</span>
+                          }
+                        </div>
                         <span>{{ c.nom }} {{ c.prenom }} ({{ c.categoriePermisCode }}) - {{ c.siteNom }}</span>
                       </span>
                     </label>
@@ -700,17 +729,30 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     }
 
     @media (max-width: 768px) {
+      .page-header-bar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.85rem;
+      }
       .filter-row {
         flex-wrap: wrap;
       }
       .filter-col {
-        flex: 1 1 calc(50% - 0.5rem);
-        min-width: 140px;
+        flex: 1 1 100%;
+        min-width: 0;
       }
       .filter-action {
         flex: 1 1 100%;
         display: flex;
-        justify-content: flex-end;
+        justify-content: stretch;
+      }
+      .filter-action .btn {
+        width: 100%;
+      }
+      .pagination-bar {
+        flex-direction: column;
+        gap: 0.75rem;
+        text-align: center;
       }
     }
 
@@ -756,7 +798,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
     }
 
     .candidats-list {
-      max-height: 13rem;
+      max-height: 24rem;
       overflow-y: auto;
       border: 1px solid var(--border-color);
       border-radius: 0.5rem;
@@ -874,6 +916,66 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
       margin-left: 0.35rem;
       font-weight: 600;
       vertical-align: middle;
+    }
+
+    .modal-forfait-tabs {
+      display: inline-flex;
+      gap: 0.35rem;
+      background: #f1f5f9;
+      padding: 3px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+    }
+
+    .modal-tab-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.35rem 0.75rem;
+      border: none;
+      background: transparent;
+      color: #64748b;
+      font-size: 0.78rem;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .modal-tab-btn:hover {
+      color: #0f172a;
+    }
+
+    .modal-tab-btn.active {
+      background: #ffffff;
+      color: var(--primary);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .badge-forfait {
+      display: inline-flex;
+      align-items: center;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 9999px;
+      background: #dcfce7;
+      color: #15803d;
+      border: 1px solid #86efac;
+      white-space: nowrap;
+    }
+
+    .badge-sans-forfait {
+      display: inline-flex;
+      align-items: center;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 9999px;
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid #cbd5e1;
+      white-space: nowrap;
     }
   `]
 })
@@ -1001,6 +1103,15 @@ export class ExamensComponent implements OnInit {
     );
   }
 
+  imprimerProgrammeSession(sessionId: number): void {
+    this.apiService.printBlob(this.apiService.getProgrammeSessionPdfUrl(sessionId));
+  }
+
+  exporterProgrammeSession(sessionId: number): void {
+    const filename = `programme_session_${sessionId}.pdf`;
+    this.apiService.downloadBlob(this.apiService.getProgrammeSessionPdfUrl(sessionId), filename);
+  }
+
   loadSessions(): void {
     this.loadingSessions = true;
     this.apiService.getSessions().subscribe({
@@ -1080,10 +1191,36 @@ export class ExamensComponent implements OnInit {
     });
   }
 
+  ajoutForfaitFiltre: '' | 'true' | 'false' = '';
+
+  setAjoutForfaitFiltre(val: '' | 'true' | 'false'): void {
+    this.ajoutForfaitFiltre = val;
+  }
+
+  get countAjoutTotal(): number {
+    return this.candidatsAjoutablesBaseParSite.length;
+  }
+
+  get countAjoutForfait(): number {
+    return this.candidatsAjoutablesBaseParSite.filter(c => c.priseEnChargeExamens).length;
+  }
+
+  get countAjoutSansForfait(): number {
+    return this.candidatsAjoutablesBaseParSite.filter(c => !c.priseEnChargeExamens).length;
+  }
+
+  private get candidatsAjoutablesBaseParSite(): Candidat[] {
+    if (!this.ajoutFilterSiteId) {
+      return this.candidatsAjoutables;
+    }
+    return this.candidatsAjoutables.filter(c => String(c.siteId) === this.ajoutFilterSiteId);
+  }
+
   openAjoutCandidats(): void {
     if (!this.sessionDetail) return;
     this.ajoutSelectionIds = [];
     this.ajoutFilterSiteId = '';
+    this.ajoutForfaitFiltre = '';
     const idsExistants = new Set(this.sessionDetail.candidats.map(p => p.candidatId));
     this.candidatsAjoutables = this.allCandidats.filter(c =>
       !idsExistants.has(c.id) && this.estEligiblePour(c, this.sessionDetail!.typeEpreuve, null)
@@ -1092,14 +1229,20 @@ export class ExamensComponent implements OnInit {
   }
 
   get candidatsAjoutablesFiltres(): Candidat[] {
-    if (!this.ajoutFilterSiteId) {
-      return this.candidatsAjoutables;
+    const list = this.candidatsAjoutablesBaseParSite;
+    if (!this.ajoutForfaitFiltre) {
+      return list;
     }
-    return this.candidatsAjoutables.filter(c => String(c.siteId) === this.ajoutFilterSiteId);
+    return list.filter(c => this.ajoutForfaitFiltre === 'true' ? c.priseEnChargeExamens : !c.priseEnChargeExamens);
   }
 
   onAjoutFilterSiteChange(): void {
     // Filtrage réactif via le getter candidatsAjoutablesFiltres
+  }
+
+  isCandidatForfaitaire(candidatId: number): boolean {
+    const c = this.allCandidats.find(cand => cand.id === candidatId);
+    return c ? !!c.priseEnChargeExamens : false;
   }
 
   isAjoutSelected(candidatId: number): boolean {
@@ -1211,7 +1354,7 @@ export class ExamensComponent implements OnInit {
 
   loadCandidats(): void {
     forkJoin({
-      candidats: this.apiService.getCandidats('', '', undefined, 0, 200),
+      candidats: this.apiService.getCandidats('', '', undefined, 0, 500, '', true),
       examens: this.apiService.getPassages(undefined, '', '', 0, 1000)
     }).subscribe({
       next: ({ candidats, examens }) => {
@@ -1242,9 +1385,37 @@ export class ExamensComponent implements OnInit {
     return this.wizardSteps[this.programmerStepIndex] ?? 'final';
   }
 
+  programmerForfaitFiltre: '' | 'true' | 'false' = '';
+
+  setProgrammerForfaitFiltre(val: '' | 'true' | 'false'): void {
+    this.programmerForfaitFiltre = val;
+  }
+
+  get countProgrammerTotal(): number {
+    return this.eligibleCandidats.length;
+  }
+
+  get countProgrammerForfait(): number {
+    return this.eligibleCandidats.filter(c => c.priseEnChargeExamens).length;
+  }
+
+  get countProgrammerSansForfait(): number {
+    return this.eligibleCandidats.filter(c => !c.priseEnChargeExamens).length;
+  }
+
+  get programmerEligibleCandidatsFiltres(): Candidat[] {
+    if (!this.programmerForfaitFiltre) {
+      return this.eligibleCandidats;
+    }
+    return this.eligibleCandidats.filter(c =>
+      this.programmerForfaitFiltre === 'true' ? c.priseEnChargeExamens : !c.priseEnChargeExamens
+    );
+  }
+
   openProgrammerModal(): void {
     this.formError = '';
     this.selectedCandidatIds = [];
+    this.programmerForfaitFiltre = '';
     this.newPassage = {
       typeEpreuve: this.epreuvesAutorisees[0] || 'CODE',
       siteId: this.sitesAutorises.length === 1 ? this.sitesAutorises[0].id : null,
@@ -1259,20 +1430,41 @@ export class ExamensComponent implements OnInit {
 
   onTypeEpreuveChange(): void {
     this.selectedCandidatIds = [];
+    this.programmerForfaitFiltre = '';
     this.updateEligibleCandidats();
   }
 
   onSiteChange(): void {
     this.selectedCandidatIds = [];
+    this.programmerForfaitFiltre = '';
     this.updateEligibleCandidats();
   }
 
   /** L'étape de parcours (champ stocké, mis à jour par le backend à chaque transition)
-   *  fait foi à elle seule : un candidat n'est éligible pour une épreuve que s'il s'y
-   *  trouve exactement (ni pas encore atteinte, ni déjà programmé/réussi/expiré). Doit en
-   *  outre être inscrit sur le site choisi (une session ne regroupe qu'un seul site). */
+   *  fait foi : un candidat n'est éligible pour une épreuve que s'il est au niveau requis
+   *  (INSCRIPTION ou CODE pour le Code ; CRENEAU pour le créneau ; CIRCULATION pour la circulation).
+   *  Doit en outre être inscrit sur le site choisi (une session ne regroupe qu'un seul site). */
   private estEligiblePour(candidat: Candidat, typeEpreuve: string, siteId: number | null): boolean {
-    if (candidat.statutDossier === 'EXPIRE_NON_SOLDE' || candidat.etapeParcours !== typeEpreuve) {
+    if (candidat.statutDossier === 'EXPIRE_NON_SOLDE') {
+      return false;
+    }
+
+    let etapeValide = false;
+    if (typeEpreuve === 'CODE') {
+      etapeValide = !candidat.codeReussi && (candidat.etapeParcours === 'CODE' || candidat.etapeParcours === 'INSCRIPTION');
+    } else if (typeEpreuve === 'CRENEAU') {
+      etapeValide = !candidat.creneauReussi && (
+        candidat.etapeParcours === 'CRENEAU' ||
+        (candidat.codeReussi && candidat.etapeParcours !== 'EXAMEN_CRENEAU' && candidat.etapeParcours !== 'EXAMEN_CIRCULATION' && candidat.etapeParcours !== 'PERMIS_OBTENU')
+      );
+    } else if (typeEpreuve === 'CIRCULATION') {
+      etapeValide = !candidat.circulationReussi && (
+        candidat.etapeParcours === 'CIRCULATION' ||
+        (candidat.codeReussi && candidat.creneauReussi && candidat.etapeParcours !== 'EXAMEN_CIRCULATION' && candidat.etapeParcours !== 'PERMIS_OBTENU')
+      );
+    }
+
+    if (!etapeValide) {
       return false;
     }
     if (siteId != null && candidat.siteId !== siteId) {
@@ -1438,11 +1630,37 @@ export class ExamensComponent implements OnInit {
 
   // --- ACTIONS RAPIDES SESSION (ICÔNES DU TABLEAU) ---
 
+  quickForfaitFiltre: '' | 'true' | 'false' = '';
+
+  setQuickForfaitFiltre(val: '' | 'true' | 'false'): void {
+    this.quickForfaitFiltre = val;
+  }
+
+  get countQuickTotal(): number {
+    return this.quickEligibleBaseParSite.length;
+  }
+
+  get countQuickForfait(): number {
+    return this.quickEligibleBaseParSite.filter(c => c.priseEnChargeExamens).length;
+  }
+
+  get countQuickSansForfait(): number {
+    return this.quickEligibleBaseParSite.filter(c => !c.priseEnChargeExamens).length;
+  }
+
+  private get quickEligibleBaseParSite(): Candidat[] {
+    if (!this.quickFilterSiteId) {
+      return this.quickEligibleCandidats;
+    }
+    return this.quickEligibleCandidats.filter(c => String(c.siteId) === this.quickFilterSiteId);
+  }
+
   openQuickAffecterModal(s: SessionExamen): void {
     this.quickTargetSession = s;
     this.quickSelectionIds = [];
     this.quickAffecterError = '';
     this.quickFilterSiteId = '';
+    this.quickForfaitFiltre = '';
 
     const idsExistants = new Set(s.candidats.map(p => p.candidatId));
     this.quickEligibleCandidats = this.allCandidats.filter(c =>
@@ -1452,10 +1670,11 @@ export class ExamensComponent implements OnInit {
   }
 
   get quickEligibleCandidatsFiltres(): Candidat[] {
-    if (!this.quickFilterSiteId) {
-      return this.quickEligibleCandidats;
+    const list = this.quickEligibleBaseParSite;
+    if (!this.quickForfaitFiltre) {
+      return list;
     }
-    return this.quickEligibleCandidats.filter(c => String(c.siteId) === this.quickFilterSiteId);
+    return list.filter(c => this.quickForfaitFiltre === 'true' ? c.priseEnChargeExamens : !c.priseEnChargeExamens);
   }
 
   onQuickFilterSiteChange(): void {
@@ -1484,6 +1703,9 @@ export class ExamensComponent implements OnInit {
         this.showQuickAffecterModal = false;
         this.loadSessions();
         this.loadCandidats();
+        if (this.sessionDetail && this.sessionDetail.id === sessionId) {
+          this.openSessionDetail(sessionId);
+        }
       },
       error: (err) => {
         this.savingQuickAffecter = false;

@@ -38,6 +38,7 @@ public class RapportController {
     @PreAuthorize("hasAuthority('PERM_RAPPORTS_CANDIDATS') or hasAuthority('PERM_CANDIDATS_VOIR')")
     @Operation(summary = "Exporter la liste des candidats en Excel (.xlsx)")
     public ResponseEntity<byte[]> exportCandidatsExcel(
+            @RequestParam(required = false) List<Long> ids,
             @RequestParam(required = false) String recherche,
             @RequestParam(required = false) StatutDossier statut,
             @RequestParam(required = false) Long categorieId,
@@ -48,7 +49,7 @@ public class RapportController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateExamenProgramme
     ) throws IOException {
         List<CandidatDTO> candidats = candidatService.getTousLesCandidatsPourRapport(
-                recherche, statut, categorieId, statutInscription, siteId, etape, priseEnChargeExamens, dateExamenProgramme);
+                ids, recherche, statut, categorieId, statutInscription, siteId, etape, priseEnChargeExamens, dateExamenProgramme);
         byte[] bytes = exportService.exportCandidatsExcel(candidats);
 
         return ResponseEntity.ok()
@@ -61,6 +62,7 @@ public class RapportController {
     @PreAuthorize("hasAuthority('PERM_RAPPORTS_CANDIDATS') or hasAuthority('PERM_CANDIDATS_VOIR')")
     @Operation(summary = "Exporter la liste des candidats en PDF")
     public ResponseEntity<byte[]> exportCandidatsPdf(
+            @RequestParam(required = false) List<Long> ids,
             @RequestParam(required = false) String recherche,
             @RequestParam(required = false) StatutDossier statut,
             @RequestParam(required = false) Long categorieId,
@@ -71,7 +73,7 @@ public class RapportController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateExamenProgramme
     ) {
         List<CandidatDTO> candidats = candidatService.getTousLesCandidatsPourRapport(
-                recherche, statut, categorieId, statutInscription, siteId, etape, priseEnChargeExamens, dateExamenProgramme);
+                ids, recherche, statut, categorieId, statutInscription, siteId, etape, priseEnChargeExamens, dateExamenProgramme);
         byte[] bytes = exportService.exportCandidatsPdf(candidats);
 
         return ResponseEntity.ok()

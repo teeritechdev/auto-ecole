@@ -399,7 +399,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" (click)="showNewTxModal = false">Annuler</button>
                 <button type="submit" class="btn btn-primary" [disabled]="saving || !isFormValide()">
-                  {{ saving ? 'Enregistrement...' : 'Valider l\\'Opération' }}
+                  @if (saving) { Enregistrement... } @else { Valider l'Opération }
                 </button>
               </div>
             </form>
@@ -418,7 +418,7 @@ import { extraireMessageErreur } from '../../core/utils/error-utils';
                 } @else {
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
                 }
-                {{ isEditNature ? 'Modifier la Nature d\\'opération' : 'Nouvelle Nature d\\'opération' }}
+                {{ isEditNature ? "Modifier la Nature d'opération" : "Nouvelle Nature d'opération" }}
               </h3>
               <button class="btn btn-outline btn-sm" (click)="showNatureModal = false">✕</button>
             </div>

@@ -45,8 +45,12 @@ public class ConfigurationController {
     @Operation(summary = "Récupérer le logo, le nom et le slogan de l'entreprise (affichés dans la barre latérale et l'en-tête) — volontairement sans l'image de connexion ni les champs légaux, inutiles à cet endroit et lourds à transporter à chaque chargement de page")
     public ResponseEntity<LogoResponse> getLogo() {
         ConfigurationApplication configuration = repository.findById(1L).orElse(null);
+        String logo = configuration != null ? configuration.getLogoData() : null;
+        if (logo == null || logo.isBlank()) {
+            logo = chargerLogoParDefaut();
+        }
         return ResponseEntity.ok(new LogoResponse(
-                configuration != null ? configuration.getLogoData() : null,
+                logo,
                 resoudreNom(configuration),
                 resoudreSlogan(configuration)
         ));
@@ -73,6 +77,9 @@ public class ConfigurationController {
         configuration.setImageConnexionAjustement(request.getImageConnexionAjustement() != null ? request.getImageConnexionAjustement() : "cover");
         configuration.setNomEtablissement(request.getNomEtablissement() != null ? request.getNomEtablissement().trim() : null);
         configuration.setSlogan(request.getSlogan() != null ? request.getSlogan().trim() : null);
+        configuration.setActivites(request.getActivites() != null ? request.getActivites().trim() : null);
+        configuration.setCodeEtablissement(request.getCodeEtablissement() != null ? request.getCodeEtablissement().trim() : null);
+        configuration.setDevise(request.getDevise() != null ? request.getDevise().trim() : null);
         configuration.setTelephone(request.getTelephone());
         configuration.setEmail(request.getEmail());
         configuration.setAdresseSiege(request.getAdresseSiege());
@@ -89,25 +96,42 @@ public class ConfigurationController {
         return ResponseEntity.ok(construireIdentiteResponse(configuration));
     }
 
+    private String chargerLogoParDefaut() {
+        try (java.io.InputStream is = getClass().getResourceAsStream("/default-logo-baraka.txt")) {
+            if (is != null) {
+                return new String(is.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8).trim();
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
+
     private IdentiteResponse construireIdentiteResponse(ConfigurationApplication configuration) {
+        String logo = configuration != null ? configuration.getLogoData() : null;
+        if (logo == null || logo.isBlank()) {
+            logo = chargerLogoParDefaut();
+        }
+
         return new IdentiteResponse(
-                configuration != null ? configuration.getLogoData() : null,
+                logo,
                 configuration != null ? configuration.getImageConnexion() : null,
                 configuration != null ? configuration.getImageConnexionAjustement() : "cover",
                 resoudreNom(configuration),
                 resoudreSlogan(configuration),
-                configuration != null ? configuration.getTelephone() : null,
+                configuration != null && configuration.getActivites() != null ? configuration.getActivites() : "FORMATION- ASSISTANCE ET PRESTATIONS DIVERSES EN SECURITE ROUTIERE - IMPORT EXPORT",
+                configuration != null && configuration.getCodeEtablissement() != null ? configuration.getCodeEtablissement() : "AE 206",
+                configuration != null && configuration.getDevise() != null ? configuration.getDevise() : "« Juste conduire »",
+                configuration != null && configuration.getTelephone() != null ? configuration.getTelephone() : "76 15 97 72 – 53 58 26 01 – 79 09 33 52",
                 configuration != null ? configuration.getEmail() : null,
-                configuration != null ? configuration.getAdresseSiege() : null,
-                configuration != null ? configuration.getNumeroAgrement() : null,
-                configuration != null ? configuration.getDateAgrement() : null,
-                configuration != null ? configuration.getRccm() : null,
-                configuration != null ? configuration.getIfu() : null,
+                configuration != null && configuration.getAdresseSiege() != null ? configuration.getAdresseSiege() : "Secteur 15, Ouagadougou, Burkina Faso",
+                configuration != null && configuration.getNumeroAgrement() != null ? configuration.getNumeroAgrement() : "N° 2026-0428-MATM/SG/DGTTM",
+                configuration != null && configuration.getDateAgrement() != null ? configuration.getDateAgrement() : LocalDate.of(2026, 7, 30),
+                configuration != null && configuration.getRccm() != null ? configuration.getRccm() : "BF-OUA-01-2024 B13-17114",
+                configuration != null && configuration.getIfu() != null ? configuration.getIfu() : "00253566L",
                 configuration != null ? configuration.getNumeroPatente() : null,
                 configuration != null ? configuration.getBoitePostale() : null,
                 configuration != null ? configuration.getNomDirigeant() : null,
                 configuration != null ? configuration.getComptePaiement() : null,
-                configuration != null ? configuration.getMentionLegalePied() : null
+                configuration != null && configuration.getMentionLegalePied() != null ? configuration.getMentionLegalePied() : "Autorisation d'exploitation N° 2026-0428-MATM/SG/DGTTM du 30/07/2026 — RCCM : BF-OUA-01-2024 B13-17114 — IFU n° : 00253566L"
         );
     }
 
@@ -184,6 +208,9 @@ public class ConfigurationController {
         private String imageConnexionAjustement;
         private String nomEtablissement;
         private String slogan;
+        private String activites;
+        private String codeEtablissement;
+        private String devise;
         private String telephone;
         private String email;
         private String adresseSiege;
@@ -206,6 +233,9 @@ public class ConfigurationController {
         private final String imageConnexionAjustement;
         private final String nomEtablissement;
         private final String slogan;
+        private final String activites;
+        private final String codeEtablissement;
+        private final String devise;
         private final String telephone;
         private final String email;
         private final String adresseSiege;

@@ -488,69 +488,6 @@ import { DashboardStats } from '../../core/models/models';
     .text-success { color: #15803d; }
     .text-danger { color: #b91c1c; }
 
-    .modal-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(15, 23, 42, 0.6);
-      backdrop-filter: blur(4px);
-      z-index: 1050;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 1rem;
-      animation: fadeIn 0.15s ease-out;
-    }
-
-    .modal-content {
-      background: var(--surface, #ffffff);
-      border-radius: var(--radius-lg, 12px);
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-      width: 100%;
-      max-width: 580px;
-      max-height: 90vh;
-      display: flex;
-      flex-direction: column;
-      border: 1px solid var(--border-color, #e2e8f0);
-      animation: modalSlideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    .modal-content.modal-lg {
-      max-width: 780px;
-    }
-
-    .modal-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 1.25rem 1.5rem;
-      border-bottom: 1px solid var(--border-color, #e2e8f0);
-    }
-
-    .modal-header h3 {
-      font-size: 1.1rem;
-      font-weight: 700;
-      margin: 0;
-      color: var(--text-dark, #0f172a);
-    }
-
-    .modal-body {
-      padding: 1.25rem 1.5rem;
-      overflow-y: auto;
-      flex: 1;
-    }
-
-    .modal-footer {
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      gap: 0.75rem;
-      padding: 1rem 1.5rem;
-      border-top: 1px solid var(--border-color, #e2e8f0);
-      background: var(--surface-secondary, #f8fafc);
-      border-bottom-left-radius: var(--radius-lg, 12px);
-      border-bottom-right-radius: var(--radius-lg, 12px);
-    }
-
     @keyframes fadeIn {
       from { opacity: 0; }
       to { opacity: 1; }

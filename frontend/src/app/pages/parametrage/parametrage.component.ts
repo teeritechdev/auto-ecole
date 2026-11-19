@@ -29,8 +29,8 @@ const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'sites',
         <div class="card identite-card">
           <div class="card-header">
             <div class="card-title" style="display:flex; align-items:center; gap:0.5rem;">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 13.42 20.6a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82Z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-              Gestion de profil de l'auto-école
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 13.42 20.6a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82Z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+              Gestion du profil de l'auto-école
             </div>
           </div>
           <form (ngSubmit)="saveIdentite()">
@@ -38,109 +38,204 @@ const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'sites',
               <div class="alert alert-danger">{{ identiteError }}</div>
             }
             @if (identiteSuccess) {
-              <div class="alert alert-success">Profil enregistré.</div>
+              <div class="alert alert-success">Profil enregistré avec succès. Les informations sont appliquées sur tous vos documents et exports.</div>
             }
-            <div class="identite-layout">
-              <div class="images-column">
-                <div class="logo-settings">
-                  <div class="logo-preview">
-                    @if (identiteForm.logoData) {
-                      <img [src]="identiteForm.logoData" alt="Logo actuel" />
-                    } @else {
-                      <span>
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L19 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2"/><circle cx="6.5" cy="16.5" r="2.5"/><circle cx="16.5" cy="16.5" r="2.5"/></svg>
-                      </span>
-                    }
+
+            <div class="param-sections">
+              <!-- SECTION 1 : LOGO & IDENTITÉ OFFICIELLE -->
+              <div class="param-section">
+                <div class="param-section-header">
+                  <div class="param-section-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
                   </div>
-                  <input type="file" accept="image/png,image/jpeg,image/webp" (change)="onLogoSelected($event)" />
-                  <p class="form-help">Affiché sur toutes les pages et l'écran de connexion. JPG, PNG ou WebP, maximum 2 Mo.</p>
-                </div>
-              </div>
-              <div class="identite-fields">
-                <h4 style="margin: 0 0 0.75rem;">Informations générales</h4>
-                <div class="form-group">
-                  <label class="form-label">Nom de l'auto-école <span class="required">*</span></label>
-                  <input type="text" class="form-control" [(ngModel)]="identiteForm.nomEtablissement" name="nomEtablissement" required placeholder="Ex: Nerwaya Auto-École" />
-                  <p class="form-help">Affiché sur l'écran de connexion, la barre latérale, l'en-tête et les documents officiels (reçus, PDF).</p>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Slogan</label>
-                  <input type="text" class="form-control" [(ngModel)]="identiteForm.slogan" name="slogan" placeholder="Ex: Plateforme Intégrée de Gestion & Formation" />
-                  <p class="form-help">Sous-titre affiché sous le nom sur l'écran de connexion et dans l'en-tête de l'application.</p>
+                  <div>
+                    <h3 class="param-section-title">1. Identité officielle &amp; Image de marque</h3>
+                    <p class="param-section-subtitle">Logo, nom officiel de l'établissement, code d'agrément et devises figurant sur les en-têtes officiels.</p>
+                  </div>
                 </div>
 
-                <h4 style="margin: 1.25rem 0 0.75rem;">Coordonnées</h4>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label class="form-label">Téléphone</label>
-                    <input type="tel" class="form-control" [(ngModel)]="identiteForm.telephone" name="telephone" placeholder="Ex: 70 12 34 56" />
+                <div class="identite-brand-grid">
+                  <div class="logo-uploader-box">
+                    <div class="logo-preview-frame">
+                      @if (identiteForm.logoData) {
+                        <img [src]="identiteForm.logoData" alt="Logo officiel" />
+                      } @else {
+                        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M14.31 8 20.05 17.94"/><path d="M9.69 8h11.48"/><path d="m7.38 12 5.74-9.94"/><path d="M9.69 16 3.95 6.06"/><path d="M14.31 16H2.83"/><path d="m16.62 12-5.74 9.94"/></svg>
+                      }
+                    </div>
+                    <div>
+                      <strong style="display:block; font-size:0.85rem; color:#1e293b; margin-bottom:0.25rem;">Logo de l'auto-école</strong>
+                      <input type="file" accept="image/png,image/jpeg,image/webp" (change)="onLogoSelected($event)" />
+                      <p class="form-help" style="margin-top:0.35rem;">Formats acceptés : PNG, JPG, WebP (max 2 Mo). Utilisé sur l'en-tête officiel et l'application.</p>
+                    </div>
                   </div>
-                  <div class="form-group">
-                    <label class="form-label">Email</label>
-                    <input type="email" class="form-control" [(ngModel)]="identiteForm.email" name="email" placeholder="Ex: contact@autoecole.bf" />
+
+                  <div class="identite-fields">
+                    <div class="form-row">
+                      <div class="form-group" style="flex: 2;">
+                        <label class="form-label">Nom officiel de l'auto-école <span class="required">*</span></label>
+                        <input type="text" class="form-control" [(ngModel)]="identiteForm.nomEtablissement" name="nomEtablissement" required placeholder="Ex: BARAKA AUTO MOTO ECOLE" />
+                        <p class="form-help">Titre principal affiché en grand sur tous les en-têtes (listes d'examen, attestations, reçus, PDF).</p>
+                      </div>
+                      <div class="form-group" style="flex: 1;">
+                        <label class="form-label">Code Auto-École (AE)</label>
+                        <input type="text" class="form-control" [(ngModel)]="identiteForm.codeEtablissement" name="codeEtablissement" placeholder="Ex: AE 206" />
+                        <p class="form-help">Encadré officiel affiché en haut à droite des documents.</p>
+                      </div>
+                    </div>
+
+                    <div class="form-group">
+                      <label class="form-label">Activités &amp; Prestations officielles</label>
+                      <input type="text" class="form-control" [(ngModel)]="identiteForm.activites" name="activites" placeholder="Ex: FORMATION - ASSISTANCE ET PRESTATIONS DIVERSES EN SECURITE ROUTIERE - IMPORT EXPORT" />
+                      <p class="form-help">Sous-titre officiel figurant directement sous le nom de l'auto-école sur les documents officiels.</p>
+                    </div>
+
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label class="form-label">Devise officielle de l'établissement</label>
+                        <input type="text" class="form-control" [(ngModel)]="identiteForm.devise" name="devise" placeholder="Ex: « Juste conduire »" />
+                        <p class="form-help">Devise affichée en bas des listes d'examen et des relevés de formation.</p>
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label">Slogan de la plateforme</label>
+                        <input type="text" class="form-control" [(ngModel)]="identiteForm.slogan" name="slogan" placeholder="Ex: Plateforme Intégrée de Gestion & Formation" />
+                        <p class="form-help">Sous-titre affiché sur la page de connexion.</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label class="form-label">Adresse du siège</label>
-                    <textarea class="form-control" rows="2" [(ngModel)]="identiteForm.adresseSiege" name="adresseSiege" placeholder="Ex: Secteur 15, Ouagadougou"></textarea>
-                    <p class="form-help">Coordonnées du siège de l'entreprise, distinctes de l'adresse de chaque site de formation.</p>
+              </div>
+
+              <!-- SECTION 2 : COORDONNÉES & SIÈGE SOCIAL -->
+              <div class="param-section">
+                <div class="param-section-header">
+                  <div class="param-section-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                   </div>
+                  <div>
+                    <h3 class="param-section-title">2. Coordonnées &amp; Siège social</h3>
+                    <p class="param-section-subtitle">Téléphones, adresse électronique, boîte postale et localisation du siège de l'auto-école.</p>
+                  </div>
+                </div>
+
+                <div class="identite-fields">
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="form-label">Téléphone(s) officiel(s)</label>
+                      <input type="tel" class="form-control" [(ngModel)]="identiteForm.telephone" name="telephone" placeholder="Ex: 76 15 97 72 – 53 58 26 01 – 79 09 33 52" />
+                      <p class="form-help">Numéros de téléphone imprimés sur l'en-tête officiel, séparés par des tirets.</p>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Adresse email officielle</label>
+                      <input type="email" class="form-control" [(ngModel)]="identiteForm.email" name="email" placeholder="Ex: contact@baraka-autoecole.com" />
+                      <p class="form-help">Email de correspondance pour les candidats et les partenaires.</p>
+                    </div>
+                  </div>
+
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="form-label">Adresse physique du siège social</label>
+                      <textarea class="form-control" rows="2" [(ngModel)]="identiteForm.adresseSiege" name="adresseSiege" placeholder="Ex: Secteur 15, Ouagadougou, Burkina Faso"></textarea>
+                      <p class="form-help">Adresse officielle du siège de l'établissement (distincte des annexes et sites secondaires).</p>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Boîte Postale (B.P.)</label>
+                      <input type="text" class="form-control" [(ngModel)]="identiteForm.boitePostale" name="boitePostale" placeholder="Ex: 01 BP 1234 Ouagadougou 01" />
+                      <p class="form-help">Boîte postale officielle pour le courrier postal.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- SECTION 3 : RÉFÉRENCES LÉGALES & AGRÉMENTS -->
+              <div class="param-section">
+                <div class="param-section-header">
+                  <div class="param-section-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  </div>
+                  <div>
+                    <h3 class="param-section-title">3. Références réglementaires &amp; Légales</h3>
+                    <p class="param-section-subtitle">Agrément ministériel (DGTTM), registre de commerce, IFU et numéro de patente.</p>
+                  </div>
+                </div>
+
+                <div class="identite-fields">
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="form-label">Numéro d'agrément / Autorisation d'exploitation</label>
+                      <input type="text" class="form-control" [(ngModel)]="identiteForm.numeroAgrement" name="numeroAgrement" placeholder="Ex: N° 2026-0428-MATM/SG/DGTTM" />
+                      <p class="form-help">Numéro officiel de l'agrément délivré par le Ministère des Transports.</p>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Date d'autorisation ou de renouvellement</label>
+                      <input type="date" class="form-control" [(ngModel)]="identiteForm.dateAgrement" name="dateAgrement" />
+                      <p class="form-help">Date d'arrêté ou de signature figurant sur l'agrément ministériel.</p>
+                    </div>
+                  </div>
+
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="form-label">Registre du Commerce (RCCM)</label>
+                      <input type="text" class="form-control" [(ngModel)]="identiteForm.rccm" name="rccm" placeholder="Ex: BF-OUA-01-2024 B13-17114" />
+                      <p class="form-help">Numéro d'immatriculation au registre du commerce et du crédit mobilier.</p>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Identifiant Financier Unique (IFU)</label>
+                      <input type="text" class="form-control" [(ngModel)]="identiteForm.ifu" name="ifu" placeholder="Ex: 00253566L" />
+                      <p class="form-help">Numéro IFU délivré par la Direction Générale des Impôts.</p>
+                    </div>
+                  </div>
+
                   <div class="form-group">
-                    <label class="form-label">Boîte postale</label>
-                    <input type="text" class="form-control" [(ngModel)]="identiteForm.boitePostale" name="boitePostale" placeholder="Ex: 01 BP 1234 Ouagadougou 01" />
+                    <label class="form-label">Numéro de patente professionnelle</label>
+                    <input type="text" class="form-control" [(ngModel)]="identiteForm.numeroPatente" name="numeroPatente" placeholder="Ex: 12345678" />
+                    <p class="form-help">Référence de patente pour la comptabilité et les états fiscaux.</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- SECTION 4 : DIRECTION & MODALITÉS DE PAIEMENT -->
+              <div class="param-section">
+                <div class="param-section-header">
+                  <div class="param-section-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  </div>
+                  <div>
+                    <h3 class="param-section-title">4. Direction, Modalités de règlement &amp; Pied de page</h3>
+                    <p class="param-section-subtitle">Nom du dirigeant, comptes bancaires ou Mobile Money pour les versements, et mentions légales.</p>
+                  </div>
+                </div>
+
+                <div class="identite-fields">
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="form-label">Nom du directeur / gérant</label>
+                      <input type="text" class="form-control" [(ngModel)]="identiteForm.nomDirigeant" name="nomDirigeant" placeholder="Ex: M. OUEDRAOGO Jean-Marc" />
+                      <p class="form-help">Nom complet du responsable de l'auto-école imprimé au bas des reçus de paiement.</p>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Comptes de règlement (Banque / Mobile Money)</label>
+                      <input type="text" class="form-control" [(ngModel)]="identiteForm.comptePaiement" name="comptePaiement" placeholder="Ex: Orange Money : 76 15 97 72 / Moov Money : 53 58 26 01" />
+                      <p class="form-help">Comptes indiqués aux candidats pour le versement des frais de formation.</p>
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label">Mention légale officielle (Pied de page des reçus &amp; documents)</label>
+                    <textarea class="form-control" rows="2" [(ngModel)]="identiteForm.mentionLegalePied" name="mentionLegalePied" placeholder="Ex: Auto-école agréée par le Ministère des Transports — Tous droits réservés."></textarea>
+                    <p class="form-help">Texte légal affiché tout en bas des reçus de caisse, relevés et documents imprimés.</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div class="identite-fields" style="margin-top: 1.5rem;">
-              <h4 style="margin: 0 0 0.75rem;">Informations légales</h4>
-              <div class="form-row">
-                <div class="form-group">
-                  <label class="form-label">Numéro d'agrément</label>
-                  <input type="text" class="form-control" [(ngModel)]="identiteForm.numeroAgrement" name="numeroAgrement" placeholder="Agrément Ministère des Transports (DGTTM)" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Date d'obtention / de renouvellement</label>
-                  <input type="date" class="form-control" [(ngModel)]="identiteForm.dateAgrement" name="dateAgrement" />
-                </div>
-              </div>
-              <div class="form-row">
-                <div class="form-group">
-                  <label class="form-label">Registre du Commerce et du Crédit Mobilier (RCCM)</label>
-                  <input type="text" class="form-control" [(ngModel)]="identiteForm.rccm" name="rccm" placeholder="Ex: BF OUA 2020 B 1234" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Identifiant Financier Unique (IFU)</label>
-                  <input type="text" class="form-control" [(ngModel)]="identiteForm.ifu" name="ifu" placeholder="Identifiant Financier Unique" />
-                </div>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Numéro de patente</label>
-                <input type="text" class="form-control" [(ngModel)]="identiteForm.numeroPatente" name="numeroPatente" />
-              </div>
-
-              <h4 style="margin: 1.25rem 0 0.75rem;">Direction &amp; paiement</h4>
-              <div class="form-row">
-                <div class="form-group">
-                  <label class="form-label">Nom du directeur / gérant</label>
-                  <input type="text" class="form-control" [(ngModel)]="identiteForm.nomDirigeant" name="nomDirigeant" placeholder="Affiché en pied des reçus" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Compte de règlement (banque / Mobile Money)</label>
-                  <input type="text" class="form-control" [(ngModel)]="identiteForm.comptePaiement" name="comptePaiement" placeholder="Ex: Orange Money 70 12 34 56 ou IBAN" />
-                </div>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Mention légale (pied de page des reçus/PDF)</label>
-                <textarea class="form-control" rows="2" [(ngModel)]="identiteForm.mentionLegalePied" name="mentionLegalePied" placeholder="Ex: Auto-école agréée par le Ministère des Transports sous le n°... — RCCM ... — IFU ..."></textarea>
-              </div>
+            <!-- BARRE DE VALIDATION -->
+            <div class="param-actions-bar">
+              <button type="submit" class="btn btn-primary" [disabled]="savingIdentite" style="display:flex; align-items:center; gap:0.5rem; padding:0.6rem 1.4rem;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                {{ savingIdentite ? 'Enregistrement en cours...' : 'Enregistrer les modifications' }}
+              </button>
             </div>
-
-            <button type="submit" class="btn btn-primary btn-sm" [disabled]="savingIdentite">
-              {{ savingIdentite ? 'Enregistrement...' : 'Enregistrer' }}
-            </button>
           </form>
         </div>
       }
@@ -579,11 +674,104 @@ const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'sites',
       white-space: normal;
     }
 
-    .identite-layout {
+    .param-sections {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .param-section {
+      background: #ffffff;
+      border: 1px solid var(--border-color, #e2e8f0);
+      border-radius: var(--radius-md, 10px);
+      padding: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    }
+
+    .param-section-header {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      margin-bottom: 1.35rem;
+      padding-bottom: 0.85rem;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .param-section-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: #eff6ff;
+      color: #2563eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .param-section-title {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-main, #0f172a);
+      letter-spacing: -0.2px;
+    }
+
+    .param-section-subtitle {
+      margin: 0.2rem 0 0;
+      font-size: 0.82rem;
+      color: var(--text-muted, #64748b);
+    }
+
+    .identite-brand-grid {
       display: grid;
-      grid-template-columns: minmax(160px, 220px) 1fr;
+      grid-template-columns: 240px 1fr;
       gap: 2rem;
-      margin-bottom: 1.25rem;
+      align-items: start;
+    }
+
+    @media (max-width: 820px) {
+      .identite-brand-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .logo-uploader-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 0.85rem;
+      padding: 1.25rem;
+      border: 1.5px dashed #cbd5e1;
+      border-radius: 10px;
+      background: #f8fafc;
+    }
+
+    .logo-preview-frame {
+      width: 120px;
+      height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      overflow: hidden;
+      padding: 6px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .logo-preview-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .logo-uploader-box input[type="file"] {
+      font-size: 0.8rem;
+      max-width: 100%;
     }
 
     .identite-fields {
@@ -593,37 +781,16 @@ const ONGLETS_VALIDES: OngletParametrage[] = ['identite', 'categories', 'sites',
       min-width: 0;
     }
 
-    /* Sur petit téléphone, le logo passe au-dessus des champs plutôt que de forcer deux
-       colonnes trop étroites pour être utilisables. */
-    @media (max-width: 560px) {
-      .identite-layout {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .images-column {
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
-      min-width: 0;
-      width: 100%;
-    }
-
-    .logo-settings {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0.75rem;
-      /* Un input file natif refuse de rétrécir sous sa largeur intrinsèque : sans ça, il
-         déborde de cette colonne étroite et chevauche la colonne des champs à côté. */
-      min-width: 0;
-      width: 100%;
-    }
-    .logo-settings input[type="file"] { max-width: 100%; }
-    .logo-preview { width: 7rem; height: 7rem; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 0.75rem; background: #eff6ff; color: #2563eb; font-size: 2.5rem; }
-    .logo-preview img { width: 100%; height: 100%; object-fit: contain; }
-    .form-help { color: var(--text-muted); font-size: 0.8rem; margin: 0; }
+    .form-help { color: var(--text-muted); font-size: 0.8rem; margin: 0.2rem 0 0; }
     .tarifs-examens-form { display: flex; flex-direction: column; gap: 0.85rem; margin-bottom: 0.75rem; }
+
+    .param-actions-bar {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.25rem 0 0.5rem;
+    }
 
     .profils-grid {
       display: grid;
@@ -673,9 +840,23 @@ export class ParametrageComponent implements OnInit {
 
   identiteForm: Identite = {
     logoData: null, imageConnexion: null, imageConnexionAjustement: 'cover',
-    nomEtablissement: '', slogan: '', telephone: '', email: '', adresseSiege: '',
-    numeroAgrement: '', dateAgrement: null, rccm: '', ifu: '', numeroPatente: '',
-    boitePostale: '', nomDirigeant: '', comptePaiement: '', mentionLegalePied: ''
+    nomEtablissement: 'BARAKA AUTO MOTO ECOLE',
+    slogan: 'Plateforme Intégrée de Gestion & Formation',
+    activites: 'FORMATION- ASSISTANCE ET PRESTATIONS DIVERSES EN SECURITE ROUTIERE - IMPORT EXPORT',
+    codeEtablissement: 'AE 206',
+    devise: '« Juste conduire »',
+    telephone: '76 15 97 72 – 53 58 26 01 – 79 09 33 52',
+    email: '',
+    adresseSiege: 'Secteur 15, Ouagadougou, Burkina Faso',
+    numeroAgrement: 'N° 2026-0428-MATM/SG/DGTTM',
+    dateAgrement: '2026-07-30',
+    rccm: 'BF-OUA-01-2024 B13-17114',
+    ifu: '00253566L',
+    numeroPatente: '',
+    boitePostale: '',
+    nomDirigeant: '',
+    comptePaiement: '',
+    mentionLegalePied: 'Autorisation d\'exploitation N° 2026-0428-MATM/SG/DGTTM du 30/07/2026 — RCCM : BF-OUA-01-2024 B13-17114 — IFU n° : 00253566L'
   };
   identiteError = '';
   identiteSuccess = false;
@@ -738,7 +919,25 @@ export class ParametrageComponent implements OnInit {
     this.apiService.getCategories().subscribe({ next: (res) => this.categories = res });
     this.apiService.getSites().subscribe({ next: (res) => this.sites = res });
     this.apiService.getStatistiquesSites().subscribe({ next: (res) => this.statsSites = res });
-    this.apiService.getIdentite().subscribe({ next: (res) => this.identiteForm = { ...res } });
+    this.apiService.getIdentite().subscribe({
+      next: (res) => {
+        this.identiteForm = {
+          ...this.identiteForm,
+          ...res,
+          nomEtablissement: res.nomEtablissement || this.identiteForm.nomEtablissement,
+          activites: res.activites || this.identiteForm.activites,
+          codeEtablissement: res.codeEtablissement || this.identiteForm.codeEtablissement,
+          devise: res.devise || this.identiteForm.devise,
+          telephone: res.telephone || this.identiteForm.telephone,
+          adresseSiege: res.adresseSiege || this.identiteForm.adresseSiege,
+          numeroAgrement: res.numeroAgrement || this.identiteForm.numeroAgrement,
+          dateAgrement: res.dateAgrement || this.identiteForm.dateAgrement,
+          rccm: res.rccm || this.identiteForm.rccm,
+          ifu: res.ifu || this.identiteForm.ifu,
+          mentionLegalePied: res.mentionLegalePied || this.identiteForm.mentionLegalePied
+        };
+      }
+    });
     this.apiService.getTarifsExamens().subscribe({ next: (res) => this.tarifsForm = { ...res } });
     this.apiService.getPermissionsCatalogue().subscribe({ next: (res) => this.permissionsCatalogue = res });
     this.loadProfils();
